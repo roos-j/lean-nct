@@ -11,9 +11,9 @@
 /scratch/
 
 # Generated blueprint build artifacts.
-/blueprint/*.aux
-/blueprint/*.fdb_latexmk
-/blueprint/*.fls
-/blueprint/*.log
-/blueprint/*.pdf
-/blueprint/*.synctex.gz
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.pdf
+*.synctex.gz

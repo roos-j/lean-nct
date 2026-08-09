@@ -1,42 +1,42 @@
 # Instructions for the NCT formalization
 
-This document records the user's instructions for continuing the
-formalization in `LeanNct`.  Later instructions below
-clarify or override earlier ones where they conflict.
+This document records the general instructions for continuing the
+formalization in `LeanNct`. User's instructions given in the chat may override these instructions.
 
 ## Scope and file organization
 
-- `blueprint/blueprint.tex` is a supplied copy of the draft manuscript and should be used as a
-  reference. This file must not be modified.
+- The `blueprint` folder contains the draft manuscript which forms the basis of the formalization.
+  It contains multiple versions in the format `blueprint-passN.tex` with different pass numbers `N`. You should only use the latest version, with the highest pass number `N`. Do not consult previous versions unless explicitly instructed to do so and in that case only for comparison, never as basis for formalization.
 - Treat the manuscript's terms *theorem*, *lemma*, and *proposition* as
   synonymous.  Every corresponding Lean result must be declared with
   `theorem`.
 - Formalize the manuscript's Introduction only as follows: define the
   twisted averages and state the main twisted theorem.  Ignore all other
   material in the Introduction.
-- Skip the Introduction subsections “from real to ergodic” and “overview”.
+- Skip the sections “from real to ergodic” and “overview” for now.
 - Leave the main twisted theorem in `Introduction.lean` as `sorry`; do not
   delete it.  This is the sole intentionally unproved theorem.
-- Formalize the top-level sections “Preliminaries” and “The main argument” in
+- Formalize the top-level sections “Preliminaries” and “The main argument” and "Reduction to the main argument" in
   their existing respective folders.
-- Work through each subsection in turn.  Create one Lean file per subsection,
+- Work through each subsection in turn, reflecting the subsection structure with subfolder structure and
+  creating one Lean file per leaf subsection, each
   with a reasonable CamelCase filename derived from its title (omitting
   articles), and put that subsection's formalization entirely in that file.
 - All new work must be contained in a namespace beginning with `Codex` and
   mirroring the file structure, for example `Codex.Preliminaries.KKernels`.
-- Ignore the manuscript sections “Reduction …”, “Supplements …”, and “old …”
-  for now.
-
+- A lot of work has already been done, make sure to inspect the state of the formalization first and continue at the appropriate point.
 
 ## Faithfulness to the manuscript
 
 - Define only notions occurring in the manuscript.  Do not invent new
   mathematical definitions.
 - Stay as close and direct as possible to the manuscript's mathematical
-  wording.  Conditions needed to avoid Lean junk-value behaviour may be
-  added conservatively.
-- When an error or inconsistency occurs, repair it conservatively in the
-  manuscript's style.
+  wording.  Conditions needed to avoid unintented weakening of statements due to Lean junk-value behaviour 
+  should be added conservatively.
+- The manuscript is not expected to contain errors at this point, but if you do find an error, fix it and continue formalizing, but
+  report the error in the file 'ErrorReport.md'.
+  Put date and timestamp on the errors found and specify which source line in blueprint.tex they occur in. Small gaps and omitted details in the reasoning
+  that any beginning graduate student would be able to fill in do not qualify as errors. This is only about substantial definitive mathematical errors.
 - Ignore LaTeX comments.  Resolve author annotations and mildly unfinished
   passages in the most reasonable way; often this means simply removing the
   annotation.
@@ -51,8 +51,8 @@ clarify or override earlier ones where they conflict.
 - Explicit constants in estimates must be defined as
   `def C_<lean theorem name> := ...`, with the specified recursive constants
   expressed as in the manuscript.
-- Operators must be raw maps from functions to functions, not mathlib linear
-  operators.  State needed operator properties propositionally.
+- Operators should generally be implemented as raw maps from functions to functions, not mathlib linear
+  operators.  State needed operator properties propositionally. 
 - Implement Lp norms as `eLpNorm` wherever possible.
 - Do not add assumptions except those necessary for faithful Lean semantics;
   common justified additions include `MemLp` and measurability hypotheses.
@@ -67,9 +67,7 @@ clarify or override earlier ones where they conflict.
   induction-on-positive-terms result, must be sorry-free when finished.
 - Routine results whose manuscript proofs refer to a missing appendix must be
   proved directly; generate the routine proof as needed.
-- The main twisted theorem is the explicit exception: retain its statement
-  and `sorry`, and focus effort on `InductPositiveTerms` and the final main
-  induction theorem instead.
+- You may formalize the statements of theorems first and leave them as sorry while working.
 - A theorem counts as proof-complete only when its proof is sorry-free and
   depends on standard axioms only.
 
@@ -78,7 +76,7 @@ clarify or override earlier ones where they conflict.
 - For a source definition, its Lean definition may have the copied LaTeX
   definition in its docstring.
 - Put the copied LaTeX **statement only**, never the proof, in the docstring
-  of the Lean theorem that actually formalizes the source theorem.
+  of the Lean theorem that actually formalizes the source theorem. Same for definitions.
 - Do not put a theorem statement in a related definition's docstring.
   Instead, a related definition's docstring should name the relevant LaTeX
   label and refer to the Lean theorem that formalizes it.
@@ -97,18 +95,6 @@ clarify or override earlier ones where they conflict.
 - Define the Gaussian and the bracket-bump notation exactly as in the
   manuscript.  Auxiliary bracket-bump lemmas may be introduced as needed and
   must stay in the Notation file.
-- Skip a new Wiener-space subsection file and use the existing
-  `LeanNct/WienerSpace.lean`.
-- In that existing file, add appropriate docstrings to definitions and
-  theorems corresponding to manuscript material; rename author-created
-  helpers to `aux_` and document why they are needed.  Implementations may be
-  adjusted for downstream needs, but the Wiener function space must remain a
-  predicate.
-
-## Main argument-specific requirements
-
-- In `MainArgument/GaussianDomination.lean`, skip the theorem [Gauss domination constant] for now. Make the main combined theorem use the recursive constant instead.
-
 
 ## Status tracking
 
@@ -119,22 +105,26 @@ clarify or override earlier ones where they conflict.
   `aux_` Lean names.
 - Separate definitions from theorems.
 - Every entry has exactly this shape:
-  `[Manuscript label]: [Status] (Lean: [lean name])`.
+  `\label{Manuscript label}: [Status] (Lean: [lean name]) (Date and time of update)`.
 - Definitions use status `Todo` or `Completed`.
 - Theorems use `Todo`, `Statement completed`, or `Proof completed`.
   Use `Proof completed` only for a sorry-free proof depending on standard
   axioms; otherwise use the appropriate earlier status.
 - If you find errors/inconsistencies in `Status.md`, fix them.
 
+## Workflow
+
+- The first stage is to formalize all the statements and definitions, and where proofs are still missing and leave proofs as sorry. Update `Status.md` appropriately.
+- Once all statements and definitions are formalized, you should focus on proving the theorems one by one, in the order they appear in the manuscript. You may locally parallelize independent pieces, but you should not try to do the whole formalization at once. Move on to the next theorem, or batch of theorems only when the previous is completely formalized.
+
 ## Verbatim user directives
 
-The following preserves the operative user messages, so a future agent can
-consult the precise wording as well as the consolidated rules above.
+The following preserves verbatim user messages from a previous pass for future reference. They are partially outdated and the above instructions have been user-updated, so the above instructions take precendence. You should not look at the following.
 
 > Note in the following we use the terms theorem/lemma/proposition
 > synonymously. In the lean formalization everythign should be "theorem".
 > In the attached manuscript, faithfully formalize the following in the
-> LeanNct directory: Introduction, in file Introduction.lean: defn
+> HarmonicAnalysis/nct folder: Introduction, in file Introduction.lean: defn
 > of twisted averages, main twisted theorem (following the rules/conventions
 > below), ignore everything else in the introduction. Skip "from real to
 > ergodic". Skip "overview". Then formalize each of the top level sections
@@ -187,7 +177,7 @@ consult the precise wording as well as the consolidated rules above.
 > this file.
 >
 > Preliminaries/WienerSpace: Skip this one, use the existing file
-> LeanNct/WienerSpace.lean (that file is not written with the above
+> HarmonicAnalysis/WienerSpace.lean (that file is not written with the above
 > conventions yet though; please go back and insert the appropriate docstrings
 > into that file for definitions and theorems that correspond to manuscript
 > ones, and rename authors to "aux_" explaining why they are needed; you may
@@ -230,7 +220,7 @@ consult the precise wording as well as the consolidated rules above.
 > by ignore i dont mean delete it.. i meant leave the main twisted theorem as
 > sorry.
 
-> I've added blueprint/blueprint.tex which also contains the draft i gave you
+> I've added nct/blueprint.tex which also contains the draft i gave you
 > initially in case you forget details due to compacting. In the manuscript
 > there also sections "Reduction ..", "Supplements .." and "old .." you can
 > ignore those for now. Also you should create a separate file "Status.md" in
@@ -249,7 +239,7 @@ consult the precise wording as well as the consolidated rules above.
 > three possible status: Todo, Statement completed, Proof completed (apply the
 > latter only if the proof is sorry free and depdns on standard axioms only).
 
-> Also make a file Instructions.md where you faithfully reproduce all
+> Also make a file nct/Instructions.md where you faithfully reproduce all
 > instructions I have told you in a way that future agents (or yourself after
 > compacting) can pick up the work.
 
