@@ -1,1 +1,2 @@
-import LeanNct.Basic
+import LeanNct.Introduction
+import LeanNct.MainArgument.MainInduction

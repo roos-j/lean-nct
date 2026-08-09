@@ -1,1 +1,19 @@
-/.lake
+/.lake/
+
+# Lean build products written outside Lake's build directory.
+*.olean
+*.ilean
+
+# Local exploratory Lean files; formalization sources remain tracked.
+/Scratch*.lean
+/Check*.lean
+/Probe*.lean
+/scratch/
+
+# Generated blueprint build artifacts.
+/blueprint/*.aux
+/blueprint/*.fdb_latexmk
+/blueprint/*.fls
+/blueprint/*.log
+/blueprint/*.pdf
+/blueprint/*.synctex.gz
