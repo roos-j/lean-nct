@@ -1,202 +1,405 @@
 # Formalization status
 
-Definitions use `Todo` or `Completed`.  Theorems use exactly `Todo`,
-`Statement completed`, or `Proof completed`; the last status means that the
-proof is sorry-free and depends only on standard axioms.
+Definitions use `Todo` or `Completed`. Theorems use `Todo`, `Statement completed`, or `Proof completed`; the latter means that the proof is sorry-free and depends only on standard axioms.
 
 ## Introduction
 
+Lean file: Introduction.lean
+
 ### Twisted averages
+
+Lean file: Introduction.lean
 
 #### Definitions
 
-- [A_def]: [Completed] (Lean: twistedAverage, twistedAverageAtScale)
+\label{A_def}: [Completed] (Lean: twistedAverage, twistedAverageAtScale) (2026-08-09 10:00:00 EDT)
 
 #### Theorems
 
-- [thm:nct main real]: [Statement completed] (Lean: mainTwistedTheorem)
+\label{thm:nct main real}: [Statement completed] (Lean: mainTwistedTheorem) (2026-08-09 10:00:00 EDT)
 
 ## Preliminaries
 
+Lean file: Preliminaries
+
 ### Notation
+
+Lean file: Preliminaries/Notation.lean
 
 #### Definitions
 
-- [closed ball]: [Completed] (Lean: Metric.closedBall)
-- [gaussian]: [Completed] (Lean: Notation.gaussian)
-- [bracket bump]: [Completed] (Lean: Notation.bracketBump, Notation.scaledBracketBump, Notation.scaledBracketBumpReal)
+\label{closed ball}: [Completed] (Lean: Metric.closedBall) (2026-08-09 10:00:00 EDT)
+\label{gaussian}: [Completed] (Lean: Notation.gaussian) (2026-08-09 10:00:00 EDT)
+\label{bracket bump}: [Completed] (Lean: Notation.bracketBump, Notation.scaledBracketBump, Notation.scaledBracketBumpReal) (2026-08-09 10:00:00 EDT)
 
 ### The Wiener space $W_0$
 
-#### Definitions
-
-#### Theorems
-
-- [W_0 radius independence]: [Proof completed] (Lean: wienerNorm_le_max_one_three_mul_div_pow_mul, memW0_iff_integrable_wienerEnvelope)
-- [P:lp-embedding]: [Proof completed] (Lean: MemW0.memLp)
-- [W_0 fiber integrals]: [Proof completed] (Lean: exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinearMap_bound)
-- [tensor Wiener]: [Proof completed] (Lean: MemW0.fintype_tensor, fintype_tensor_wienerNorm_le)
-- [W_0 Brascamp Lieb]: [Proof completed] (Lean: exists_brascamp_lieb_memW0)
-- [P:schwartz-into-wiener]: [Proof completed] (Lean: SchwartzMap.memW0)
-- [convolution vector]: [Proof completed] (Lean: memW0_convolutionAlongVector, fourier_convolutionAlongVector)
-
-### $K$ kernels
+Lean file: WienerSpace.lean
 
 #### Definitions
 
-- [normalized function tuples]: [Completed] (Lean: normalizedFunctionTuples)
-- [cube Brascamp--Lieb]: [Completed] (Lean: cubeBrascampLiebForm)
-- [prism Brascamp--Lieb]: [Completed] (Lean: prismBrascampLiebForm)
+\label{auto:Wiener-space-definition}: [Completed] (Lean: wienerEnvelope, MemW0, wienerNorm, wienerNormOne) (2026-08-09 10:00:00 EDT)
+\label{auto:convolution-along-vector-definition}: [Completed] (Lean: convolutionAlongVector) (2026-08-09 10:00:00 EDT)
 
 #### Theorems
 
-- [cube BL inequality]: [Proof completed] (Lean: cubeBLInequality)
-- [prism BL inequality]: [Proof completed] (Lean: prismBLInequality)
-- [simplification 1 prism]: [Proof completed] (Lean: simplificationOnePrism)
-- [single cancellative Cauchy-Schwarz]: [Proof completed] (Lean: singlyCancellativeKernel_memW0, singlyCancellativeLift_memW0, singlyCancellativeCauchySchwarz_bound)
-- [doubly cancellative Cauchy-Schwarz]: [Proof completed] (Lean: doublyCancellativeKernel_memW0, doublyCancellativeLift_memW0, doublyCancellativeCauchySchwarz_bound)
-- [Positivity K]: [Proof completed] (Lean: positivityKernel_memW0, positivityKernel_nonnegative)
-- [Monotonicity K]: [Proof completed] (Lean: monotonicityK)
+\label{auto:local-supremum-measurability}: [Proof completed] (Lean: localSupremumMeasurability) (2026-08-09 10:15:00 EDT)
+\label{W_0 radius independence}: [Proof completed] (Lean: wienerNorm_le_max_one_three_mul_div_pow_mul, memW0_iff_integrable_wienerEnvelope) (2026-08-09 10:00:00 EDT)
+\label{P:lp-embedding}: [Proof completed] (Lean: MemW0.memLp) (2026-08-09 10:00:00 EDT)
+\label{W_0 fiber integrals}: [Proof completed] (Lean: exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinearMap_bound) (2026-08-09 10:00:00 EDT)
+\label{tensor Wiener}: [Proof completed] (Lean: MemW0.fintype_tensor, fintype_tensor_wienerNorm_le) (2026-08-09 10:00:00 EDT)
+\label{W_0 Brascamp Lieb}: [Proof completed] (Lean: exists_brascamp_lieb_memW0) (2026-08-09 10:00:00 EDT)
+\label{P:schwartz-into-wiener}: [Proof completed] (Lean: SchwartzMap.memW0) (2026-08-09 10:00:00 EDT)
+\label{convolution vector}: [Proof completed] (Lean: memW0_convolutionAlongVector, fourier_convolutionAlongVector) (2026-08-09 10:00:00 EDT)
 
-### $M$ kernels
+### K kernels
+
+Lean file: Preliminaries/KKernels.lean
 
 #### Definitions
 
+\label{normalized function tuples}: [Completed] (Lean: normalizedFunctionTuples) (2026-08-09 10:00:00 EDT)
+\label{cube Brascamp--Lieb}: [Completed] (Lean: cubeBrascampLiebForm) (2026-08-09 10:00:00 EDT)
+\label{prism Brascamp--Lieb}: [Completed] (Lean: prismBrascampLiebForm) (2026-08-09 10:00:00 EDT)
 
 #### Theorems
 
-- [M to K]: [Proof completed] (Lean: mToK, mToK_integrand_memW0, mToK_memW0, mToK_eLpNorm_one_le)
-- [Positivity M]: [Proof completed] (Lean: positivityM_memW0, positivityM_nonnegative)
-- [Cauchy-Schwarz at k]: [Proof completed] (Lean: cauchySchwarzKernel_memW0, cauchySchwarzLift_memW0, cauchySchwarzAtK_bound)
-- [Cauchy-Schwarz at n-1]: [Proof completed] (Lean: doublyCauchySchwarzKernel_memW0, cauchySchwarzLift_memW0, cauchySchwarzAtNMinusOne_bound, cauchySchwarzAtNMinusOne)
+\label{cube BL inequality}: [Proof completed] (Lean: cubeBLInequality) (2026-08-09 10:00:00 EDT)
+\label{prism BL inequality}: [Proof completed] (Lean: prismBLInequality) (2026-08-09 10:00:00 EDT)
+\label{simplification 1 prism}: [Proof completed] (Lean: simplificationOnePrism) (2026-08-09 10:00:00 EDT)
+\label{single cancellative Cauchy-Schwarz}: [Proof completed] (Lean: singlyCancellativeKernel_memW0, singlyCancellativeLift_memW0, singlyCancellativeCauchySchwarz_bound) (2026-08-09 10:00:00 EDT)
+\label{doubly cancellative Cauchy-Schwarz}: [Proof completed] (Lean: doublyCancellativeKernel_memW0, doublyCancellativeLift_memW0, doublyCancellativeCauchySchwarz_bound) (2026-08-09 10:00:00 EDT)
+\label{Positivity K}: [Proof completed] (Lean: positivityKernel_memW0, positivityKernel_nonnegative) (2026-08-09 10:00:00 EDT)
+\label{Monotonicity K}: [Proof completed] (Lean: monotonicityK) (2026-08-09 10:00:00 EDT)
+
+### M kernels
+
+Lean file: Preliminaries/MKernels.lean
+
+#### Definitions
+
+\label{auto:prism-form-definition}: [Completed] (Lean: prismForm) (2026-08-09 10:00:00 EDT)
+
+#### Theorems
+
+\label{M to K}: [Proof completed] (Lean: mToK, mToK_integrand_memW0, mToK_memW0, mToK_eLpNorm_one_le) (2026-08-09 10:00:00 EDT)
+\label{Positivity M}: [Proof completed] (Lean: positivityM_memW0, positivityM_nonnegative) (2026-08-09 10:00:00 EDT)
+\label{Cauchy-Schwarz at k}: [Proof completed] (Lean: cauchySchwarzKernel_memW0, cauchySchwarzLift_memW0, cauchySchwarzAtK_bound) (2026-08-09 10:00:00 EDT)
+\label{Cauchy-Schwarz at n-1}: [Proof completed] (Lean: doublyCauchySchwarzKernel_memW0, cauchySchwarzLift_memW0, cauchySchwarzAtNMinusOne_bound, cauchySchwarzAtNMinusOne) (2026-08-09 10:15:00 EDT)
 
 ### Multiplicatively spaced monotone sequences
 
+Lean file: Preliminaries/MultiplicativelySpacedMonotoneSequences.lean
+
 #### Definitions
 
-- [multiplicatively spaced monotone sequences]: [Completed] (Lean: SpacedSequence, A)
-- [Distance of spaced sequences]: [Completed] (Lean: WithinSequenceDistance, SequenceDistance)
-- [closed balls in A]: [Completed] (Lean: sequenceDistanceBall)
+\label{multiplicatively spaced monotone sequences}: [Completed] (Lean: SpacedSequence, A) (2026-08-09 10:00:00 EDT)
+\label{Distance of spaced sequences}: [Completed] (Lean: WithinSequenceDistance, SequenceDistance) (2026-08-09 10:00:00 EDT)
+\label{closed balls in A}: [Completed] (Lean: sequenceDistanceBall) (2026-08-09 10:00:00 EDT)
 
 #### Theorems
 
-- [Extension of sequences]: [Proof completed] (Lean: extensionOfSequences)
-- [Operations on spaced sequences]: [Proof completed] (Lean: max_mem_A, smul_mem_A, shift_mem_A, sqrt_sq_add_sq_mem_A)
-- [Properties of distance of sequences]: [Proof completed] (Lean: sequenceDistance_zero_eq, sequenceDistance_comm, sequenceDistance_triangle, sequenceDistance_shift_le, sequenceDistance_smul, sequenceDistance_pow_two_smul_le)
+\label{Extension of sequences}: [Proof completed] (Lean: extensionOfSequences) (2026-08-09 10:00:00 EDT)
+\label{Operations on spaced sequences}: [Proof completed] (Lean: max_mem_A, smul_mem_A, shift_mem_A, sqrt_sq_add_sq_mem_A) (2026-08-09 10:00:00 EDT)
+\label{Properties of distance of sequences}: [Proof completed] (Lean: sequenceDistance_zero_eq, sequenceDistance_comm, sequenceDistance_triangle, sequenceDistance_shift_le, sequenceDistance_smul, sequenceDistance_pow_two_smul_le) (2026-08-09 10:00:00 EDT)
 
 ### Gaussians
 
-#### Definitions
+Lean file: Preliminaries/Gaussians.lean
 
 #### Theorems
 
-- [square root one minus Gaussian]: [Proof completed] (Lean: sqrtOneMinusGaussian, continuous_sqrtOneMinusGaussian, sqrtOneMinusGaussian_lower, sqrtOneMinusGaussian_bounds)
-- [Gaussian bump decay]: [Todo] (Lean: gaussianBumpDecay)
-- [Elementary Gaussian properties]: [Todo] (Lean: gaussian_memW0, gaussian_fourier_fixed, gaussianRescale_convolution, gaussianRescale_fourier)
-- [poisson to abel]: [Proof completed] (Lean: poissonKernel, poissonKernel_fourier)
-- [auxiliary function B]: [Proof completed] (Lean: auxiliaryFunctionB_properties)
-- [square root of Gaussian decay]: [Todo] (Lean: sqrtGaussianDecay)
+\label{square root one minus Gaussian}: [Proof completed] (Lean: sqrtOneMinusGaussian, sqrtOneMinusGaussian_wellDefined, continuous_sqrtOneMinusGaussian, sqrtOneMinusGaussian_lower, sqrtOneMinusGaussian_bounds) (2026-08-09 10:15:00 EDT)
+\label{Gaussian bump decay}: [Proof completed] (Lean: gaussianBumpDecay) (2026-08-09 12:04:15 EDT)
+\label{Elementary Gaussian properties}: [Proof completed] (Lean: gaussian_memSchwartz, gaussian_memW0, gaussian_fourier_fixed, gaussianRescale_convolution, gaussianRescale_fourier) (2026-08-09 10:45:23 EDT)
+\label{poisson to abel}: [Proof completed] (Lean: poissonKernel, poissonKernel_fourier) (2026-08-09 10:00:00 EDT)
+\label{auxiliary function B}: [Proof completed] (Lean: auxiliaryFunctionB_properties) (2026-08-09 10:00:00 EDT)
+\label{square root of Gaussian decay}: [Proof completed] (Lean: sqrtGaussianDecay) (2026-08-09 11:24:05 EDT)
 
 ### Bumps and their estimates
 
+Lean file: Preliminaries/BumpsAndEstimates.lean
+
 #### Definitions
 
-- [standard bump]: [Completed] (Lean: standardBumpFinite, standardBump, standardBumpRescale)
+\label{standard bump}: [Completed] (Lean: standardBumpFinite, standardBump, standardBumpRescale) (2026-08-09 10:00:00 EDT)
 
 #### Theorems
 
-- [lem:smoothdecay]: [Todo] (Lean: smoothDecay)
-- [lem: min and bracket]: [Proof completed] (Lean: min_and_bracket)
-- [lem:smoothdecay2]: [Todo] (Lean: smoothDecay2)
-- [mean value bump estimate 2]: [Todo] (Lean: meanValueBumpEstimate)
-- [standard bump properties]: [Todo] (Lean: standardBumpProperties)
-- [compare brackets]: [Proof completed] (Lean: compare_brackets)
-- [two bump estimate]: [Todo] (Lean: twoBumpEstimate)
-- [orthogonal domination]: [Todo] (Lean: orthogonalDomination)
-- [orthogonal decay]: [Todo] (Lean: orthogonalDecay)
-- [bump triangle]: [Proof completed] (Lean: bump_triangle)
-- [Gaussian domination]: [Todo] (Lean: gaussianDomination)
-- [diagonal square root]: [Todo] (Lean: diagonalSquareRoot)
-- [derivative of diagonal square root]: [Todo] (Lean: derivativeDiagonalSquareRoot)
-- [L:gaussian-estimate]: [Todo] (Lean: gaussianEstimate)
-- [L:gaussian-bump-estimate]: [Todo] (Lean: gaussianBumpEstimate)
-- [L:derivative-estimate-for-G]: [Todo] (Lean: derivativeEstimateForG)
-- [L:faa-di-bruno]: [Todo] (Lean: faaDiBruno)
-- [L:second-gaussian-estimate]: [Todo] (Lean: secondGaussianEstimate)
-- [L:gaussian-bump-decomposition]: [Todo] (Lean: gaussianBumpDecomposition)
-- [four scale Gaussian kernel]: [Todo] (Lean: fourScaleGaussianKernel)
-- [mean four scale Gaussian kernel]: [Todo] (Lean: meanFourScaleGaussianKernel)
+\label{lem:smoothdecay}: [Proof completed] (Lean: smoothDecay) (2026-08-09 21:56:52 EDT)
+\label{lem: min and bracket}: [Proof completed] (Lean: min_and_bracket) (2026-08-09 10:00:00 EDT)
+\label{lem:smoothdecay2}: [Todo] (Lean: smoothDecay2) (2026-08-09 10:00:00 EDT)
+\label{mean value bump estimate 2}: [Todo] (Lean: meanValueBumpEstimate) (2026-08-09 10:00:00 EDT)
+\label{standard bump properties}: [Todo] (Lean: standardBumpProperties) (2026-08-09 10:00:00 EDT)
+\label{compare brackets}: [Proof completed] (Lean: compare_brackets) (2026-08-09 10:00:00 EDT)
+\label{two bump estimate}: [Todo] (Lean: twoBumpEstimate) (2026-08-09 10:00:00 EDT)
+\label{orthogonal domination}: [Todo] (Lean: orthogonalDomination) (2026-08-09 10:00:00 EDT)
+\label{orthogonal decay}: [Todo] (Lean: orthogonalDecay) (2026-08-09 10:00:00 EDT)
+\label{bump triangle}: [Proof completed] (Lean: bump_triangle) (2026-08-09 10:00:00 EDT)
+\label{Gaussian domination}: [Todo] (Lean: gaussianDomination) (2026-08-09 10:00:00 EDT)
+\label{diagonal square root}: [Todo] (Lean: diagonalSquareRoot) (2026-08-09 10:00:00 EDT)
+\label{constant diagonal square root}: [Todo] (Lean: constantDiagonalSquareRoot) (2026-08-09 10:00:00 EDT)
+\label{derivative of diagonal square root}: [Todo] (Lean: derivativeDiagonalSquareRoot) (2026-08-09 10:00:00 EDT)
+\label{constant derivative diagonal square root}: [Todo] (Lean: constantDerivativeDiagonalSquareRoot) (2026-08-09 10:00:00 EDT)
+\label{L:gaussian-estimate}: [Todo] (Lean: gaussianEstimate) (2026-08-09 10:00:00 EDT)
+\label{L:gaussian-bump-estimate}: [Todo] (Lean: gaussianBumpEstimate) (2026-08-09 10:00:00 EDT)
+\label{constant gaussian bump estimate}: [Todo] (Lean: constantGaussianBumpEstimate) (2026-08-09 10:00:00 EDT)
+\label{L:derivative-estimate-for-G}: [Todo] (Lean: derivativeEstimateForG) (2026-08-09 10:00:00 EDT)
+\label{L:faa-di-bruno}: [Todo] (Lean: faaDiBruno) (2026-08-09 10:00:00 EDT)
+\label{constant faa di bruno}: [Todo] (Lean: constantFaaDiBruno) (2026-08-09 10:00:00 EDT)
+\label{L:second-gaussian-estimate}: [Todo] (Lean: secondGaussianEstimate) (2026-08-09 10:00:00 EDT)
+\label{constant second gaussian estimate}: [Todo] (Lean: constantSecondGaussianEstimate) (2026-08-09 10:00:00 EDT)
+\label{L:gaussian-bump-decomposition}: [Todo] (Lean: gaussianBumpDecomposition) (2026-08-09 10:00:00 EDT)
+\label{four scale Gaussian kernel}: [Todo] (Lean: fourScaleGaussianKernel) (2026-08-09 10:00:00 EDT)
+\label{constant four scale Gaussian kernel}: [Todo] (Lean: constantFourScaleGaussianKernel) (2026-08-09 10:00:00 EDT)
+\label{mean four scale Gaussian kernel}: [Todo] (Lean: meanFourScaleGaussianKernel) (2026-08-09 10:00:00 EDT)
+\label{constant mean four scale Gaussian kernel}: [Todo] (Lean: constantMeanFourScaleGaussianKernel) (2026-08-09 10:00:00 EDT)
 
 ## The main argument
 
+Lean file: MainArgument
+
 ### The sandwich kernel
+
+Lean file: MainArgument/SandwichKernel.lean
 
 #### Definitions
 
-- [geometric parameters]: [Completed] (Lean: GeometricParameters, sequencePairDistance, geometricDelta)
-- [double sequence of 2D functions]: [Completed] (Lean: DoubleSequence, MemDoubleSequence)
-- [kernel sequences]: [Completed] (Lean: KernelSequence, MemKernelSequence, kernelSequenceSeminorm)
-- [2D Gaussians]: [Completed] (Lean: twoDimensionalGaussian, gammaGaussian)
-- [sandwich kernel]: [Completed] (Lean: sandwichKernel)
+\label{geometric parameters}: [Completed] (Lean: GeometricParameters, sequencePairDistance, geometricDelta) (2026-08-09 10:00:00 EDT)
+\label{auto:unitary-matrices-definition}: [Completed] (Lean: W) (2026-08-09 10:00:00 EDT)
+\label{double sequence of 2D functions}: [Completed] (Lean: DoubleSequence, MemDoubleSequence) (2026-08-09 10:00:00 EDT)
+\label{kernel sequences}: [Completed] (Lean: KernelSequence, MemKernelSequence, kernelSequenceSeminorm) (2026-08-09 10:00:00 EDT)
+\label{2D Gaussians}: [Completed] (Lean: twoDimensionalGaussian, gammaGaussian) (2026-08-09 10:00:00 EDT)
+\label{sandwich kernel}: [Completed] (Lean: sandwichKernel) (2026-08-09 10:00:00 EDT)
+\label{auto:Gaussian-difference-kernel-definition}: [Completed] (Lean: gaussianDifference) (2026-08-09 10:00:00 EDT)
 
 #### Theorems
 
-- [telescoping terms]: [Todo] (Lean: telescopingTerms)
-- [positive terms]: [Todo] (Lean: positiveTerms)
+\label{telescoping terms}: [Todo] (Lean: telescopingTerms) (2026-08-09 10:00:00 EDT)
+\label{positive terms}: [Todo] (Lean: positiveTerms) (2026-08-09 10:00:00 EDT)
 
 ### Multipliers $H$, $L$, $N$
 
+Lean file: MainArgument/MultipliersHLN.lean
+
 #### Definitions
 
-- [square root Gaussian difference]: [Completed] (Lean: squareRootGaussianDifference)
-- [s multiplier]: [Completed] (Lean: sMultiplier)
-- [H multiplier]: [Completed] (Lean: hMultiplier)
-- [L multiplier]: [Completed] (Lean: multiplierIndexSet, lMultiplier)
-- [summation-definition]: [Completed] (Lean: sumOverMultiplierIndex)
-- [N multiplier]: [Completed] (Lean: sigmaMultiplier, nMultiplier)
+\label{square root Gaussian difference}: [Completed] (Lean: squareRootGaussianDifference) (2026-08-09 10:00:00 EDT)
+\label{s multiplier}: [Completed] (Lean: sMultiplier) (2026-08-09 10:00:00 EDT)
+\label{H multiplier}: [Completed] (Lean: hMultiplier) (2026-08-09 10:00:00 EDT)
+\label{auto:L-kernel-definition}: [Completed] (Lean: lMultiplierAtScale) (2026-08-09 10:00:00 EDT)
+\label{L multiplier}: [Completed] (Lean: multiplierIndexSet, lMultiplier) (2026-08-09 10:00:00 EDT)
+\label{summation-definition}: [Completed] (Lean: sumOverMultiplierIndex) (2026-08-09 10:00:00 EDT)
+\label{N multiplier}: [Completed] (Lean: sigmaMultiplier, nMultiplier) (2026-08-09 10:00:00 EDT)
 
 #### Theorems
 
-- [square root Gaussian difference W0]: [Todo] (Lean: squareRootGaussianDifference_memW0, sMultiplier_memW0)
-- [H-in-X]: [Todo] (Lean: hMultiplier_memDoubleSequence)
-- [H vanishing]: [Todo] (Lean: hMultiplier_vanishing)
-- [H vanishing integral]: [Todo] (Lean: hMultiplier_vanishingIntegral)
-- [L:F_t]: [Todo] (Lean: lMultiplierAtScale_memDoubleSequence, lMultiplierAtScale_tendsto_hMultiplier)
-- [L:ft-infty]: [Todo] (Lean: lMultiplierAtScale_tendsto_zero)
-- [sum L multiplier convergence-L1]: [Todo] (Lean: sumLMultiplierConvergenceL1)
-- [sandwich sums L1]: [Todo] (Lean: sandwichSumsL1)
-- [prism sum le sum prism-L1]: [Todo] (Lean: prismSumLeSumPrismL1)
+\label{square root Gaussian difference W0}: [Todo] (Lean: squareRootGaussianDifference_memW0, sMultiplier_memW0) (2026-08-09 10:00:00 EDT)
+\label{H-in-X}: [Todo] (Lean: hMultiplier_memDoubleSequence) (2026-08-09 10:00:00 EDT)
+\label{H vanishing}: [Todo] (Lean: hMultiplier_vanishing) (2026-08-09 10:00:00 EDT)
+\label{H vanishing integral}: [Todo] (Lean: hMultiplier_vanishingIntegral) (2026-08-09 10:00:00 EDT)
+\label{L:F_t}: [Todo] (Lean: lMultiplierAtScale_memDoubleSequence, lMultiplierAtScale_tendsto_hMultiplier) (2026-08-09 10:00:00 EDT)
+\label{L:ft-infty}: [Todo] (Lean: lMultiplierAtScale_tendsto_zero) (2026-08-09 10:00:00 EDT)
+\label{sum L multiplier convergence-L1}: [Todo] (Lean: sumLMultiplierConvergenceL1) (2026-08-09 10:00:00 EDT)
+\label{sandwich sums L1}: [Todo] (Lean: sandwichSumsL1) (2026-08-09 10:00:00 EDT)
+\label{prism sum le sum prism-L1}: [Todo] (Lean: prismSumLeSumPrismL1) (2026-08-09 10:00:00 EDT)
+\label{auto:N-kernel-well-definedness}: [Todo] (Lean: nKernelWellDefinedness) (2026-08-09 10:00:00 EDT)
 
 ### Gaussian domination
 
-#### Definitions
+Lean file: MainArgument/GaussianDomination.lean
 
 #### Theorems
 
-- [H kernel estimate Gaussian domination]: [Todo] (Lean: hKernelEstimateGaussianDomination)
-- [H kernel derivative estimate Gaussian domination]: [Todo] (Lean: hKernelDerivativeEstimateGaussianDomination)
-- [Gaussian domination combined]: [Todo] (Lean: gaussianDominationCombined)
-- [Gauss domination case 1]: [Todo] (Lean: gaussDominationCase1)
-- [Gauss domination case 2]: [Todo] (Lean: gaussDominationCase2)
-- [Gauss domination case 3]: [Todo] (Lean: gaussDominationCase3)
-- [Gauss domination constant]: [Todo] (Lean: gaussDominationConstant)
+\label{H kernel estimate Gaussian domination}: [Todo] (Lean: hKernelEstimateGaussianDomination) (2026-08-09 10:00:00 EDT)
+\label{constant H kernel estimate Gaussian domination}: [Todo] (Lean: constantHKernelEstimateGaussianDomination) (2026-08-09 10:00:00 EDT)
+\label{H kernel derivative estimate Gaussian domination}: [Todo] (Lean: hKernelDerivativeEstimateGaussianDomination) (2026-08-09 10:00:00 EDT)
+\label{constant H kernel derivative estimate Gaussian domination}: [Todo] (Lean: constantHKernelDerivativeEstimateGaussianDomination) (2026-08-09 10:00:00 EDT)
+\label{Gaussian domination combined}: [Todo] (Lean: gaussianDominationCombined) (2026-08-09 10:00:00 EDT)
+\label{Gauss domination case 1}: [Todo] (Lean: gaussDominationCase1) (2026-08-09 10:00:00 EDT)
+\label{Gauss domination case 2}: [Todo] (Lean: gaussDominationCase2) (2026-08-09 10:00:00 EDT)
+\label{Gauss domination case 3}: [Todo] (Lean: gaussDominationCase3) (2026-08-09 10:00:00 EDT)
+\label{Gauss domination constant}: [Todo] (Lean: gaussDominationConstant) (2026-08-09 10:00:00 EDT)
 
 ### Main induction
 
+Lean file: MainArgument/MainInduction.lean
+
 #### Definitions
 
-- [induct positive terms]: [Completed] (Lean: InductPositiveTerms)
-- [vanishing diagonal]: [Completed] (Lean: VanishingDiagonal)
-- [diagonal band]: [Completed] (Lean: DiagonalBand)
-- [increase data]: [Completed] (Lean: IncreaseData)
+\label{induct positive terms}: [Completed] (Lean: InductPositiveTerms) (2026-08-09 10:00:00 EDT)
+\label{vanishing diagonal}: [Completed] (Lean: VanishingDiagonal) (2026-08-09 10:00:00 EDT)
+\label{diagonal band}: [Completed] (Lean: DiagonalBand) (2026-08-09 10:00:00 EDT)
+\label{increase data}: [Completed] (Lean: IncreaseData) (2026-08-09 10:00:00 EDT)
 
 #### Theorems
 
-- [vanishing diagonal implies induct positive terms]: [Todo] (Lean: vanishingDiagonal_implies_inductPositiveTerms)
-- [diagonal band implies vanishing diagonal]: [Todo] (Lean: diagonalBand_implies_vanishingDiagonal)
-- [vanishing kernel integral]: [Todo] (Lean: vanishingKernelIntegral)
-- [increase data implies diagonal band]: [Todo] (Lean: increaseData_implies_diagonalBand)
-- [induct positive terms imply increase data]: [Todo] (Lean: inductPositiveTerms_implies_increaseData)
-- [P:C_k-induction]: [Todo] (Lean: inductPositiveTermsByInduction)
-- [P:better-induction]: [Todo] (Lean: betterInduction)
-- [induct positive terms theorem]: [Todo] (Lean: inductPositiveTermsTheorem)
+\label{vanishing diagonal implies induct positive terms}: [Todo] (Lean: vanishingDiagonal_implies_inductPositiveTerms) (2026-08-09 10:00:00 EDT)
+\label{diagonal band implies vanishing diagonal}: [Todo] (Lean: diagonalBand_implies_vanishingDiagonal) (2026-08-09 10:00:00 EDT)
+\label{vanishing kernel integral}: [Todo] (Lean: vanishingKernelIntegral) (2026-08-09 10:00:00 EDT)
+\label{increase data implies diagonal band}: [Todo] (Lean: increaseData_implies_diagonalBand) (2026-08-09 10:00:00 EDT)
+\label{induct positive terms imply increase data}: [Todo] (Lean: inductPositiveTerms_implies_increaseData) (2026-08-09 10:00:00 EDT)
+\label{constant induct positive terms imply increase data}: [Todo] (Lean: constantInductPositiveTermsImplyIncreaseData) (2026-08-09 10:00:00 EDT)
+\label{P:C_k-induction}: [Todo] (Lean: inductPositiveTermsByInduction) (2026-08-09 10:00:00 EDT)
+\label{P:better-induction}: [Todo] (Lean: betterInduction) (2026-08-09 10:00:00 EDT)
+\label{induct positive terms theorem}: [Todo] (Lean: inductPositiveTermsTheorem) (2026-08-09 10:00:00 EDT)
+\label{constant induct positive terms theorem}: [Todo] (Lean: constantInductPositiveTermsTheorem) (2026-08-09 10:00:00 EDT)
+
+## Reduction to the main argument
+
+Lean file: Reduction
+
+### Further preliminaries for the reduction / Average to prism form
+
+Lean file: Reduction/AToLambda.lean
+
+#### Theorems
+
+\label{A to Lambda}: [Todo] (Lean: aToLambda) (2026-08-09 10:00:00 EDT)
+
+### Further preliminaries for the reduction / Variation seminorms
+
+Lean file: Reduction/VariationSeminorms.lean
+
+#### Theorems
+
+\label{lem:shortlongjumps}: [Todo] (Lean: shortlongJumps) (2026-08-09 10:00:00 EDT)
+\label{lem:ftccs-R}: [Todo] (Lean: ftcCsR) (2026-08-09 10:00:00 EDT)
+
+### Further preliminaries for the reduction / Bump functions
+
+Lean file: Reduction/BumpFunctions.lean
+
+#### Theorems
+
+\label{lem:ft_deriv_mul}: [Todo] (Lean: fourierDerivativeMul) (2026-08-09 10:00:00 EDT)
+\label{lem:transl_pow_v}: [Todo] (Lean: translationPowV) (2026-08-09 10:00:00 EDT)
+\label{lem:widebump}: [Todo] (Lean: wideBump) (2026-08-09 10:00:00 EDT)
+\label{lem:thetat_offcenter}: [Todo] (Lean: thetaTOffcenter) (2026-08-09 10:00:00 EDT)
+\label{constant off center bump}: [Todo] (Lean: constantOffCenterBump) (2026-08-09 10:00:00 EDT)
+\label{lem:int_fct}: [Todo] (Lean: integralFct) (2026-08-09 10:00:00 EDT)
+\label{lem:Phipos_v2}: [Todo] (Lean: phiPosV2) (2026-08-09 10:00:00 EDT)
+
+### Further preliminaries for the reduction / Windows and pairs
+
+Lean file: Reduction/WindowsAndPairs.lean
+
+#### Definitions
+
+\label{def:cn-window}: [Todo] (Lean: cnWindow) (2026-08-09 10:00:00 EDT)
+\label{def:cpair}: [Todo] (Lean: cPair) (2026-08-09 10:00:00 EDT)
+\label{def:unipair}: [Todo] (Lean: uniPair) (2026-08-09 10:00:00 EDT)
+\label{def:window}: [Todo] (Lean: window) (2026-08-09 10:00:00 EDT)
+
+#### Theorems
+
+\label{lem:cpair}: [Todo] (Lean: existsUniversalPair) (2026-08-09 10:15:00 EDT)
+
+### Further preliminaries for the reduction / A smoothing decomposition
+
+Lean file: Reduction/SmoothingDecomposition.lean
+
+#### Theorems
+
+\label{lem:bumpbasic}: [Todo] (Lean: bumpBasic) (2026-08-09 10:00:00 EDT)
+\label{lem:chardecomp}: [Todo] (Lean: charDecomp) (2026-08-09 10:00:00 EDT)
+\label{lem:smoothingdecomp}: [Todo] (Lean: smoothingDecomp) (2026-08-09 10:00:00 EDT)
+\label{lem:theta_decay}: [Todo] (Lean: thetaDecay) (2026-08-09 10:00:00 EDT)
+\label{constant theta decay}: [Todo] (Lean: constantThetaDecay) (2026-08-09 10:00:00 EDT)
+\label{lem:ft_phi3_eq}: [Todo] (Lean: fourierPhiThreeEq) (2026-08-09 10:00:00 EDT)
+\label{lem:abs_deriv_ft_phi3_le}: [Todo] (Lean: absDerivFourierPhiThreeLe) (2026-08-09 10:00:00 EDT)
+\label{constant phi three derivative}: [Todo] (Lean: constantPhiThreeDerivative) (2026-08-09 10:00:00 EDT)
+\label{lem:abs_deriv_ft_Tphi3_le}: [Todo] (Lean: absDerivFourierTPhiThreeLe) (2026-08-09 10:00:00 EDT)
+\label{constant T phi three derivative}: [Todo] (Lean: constantTPhiThreeDerivative) (2026-08-09 10:00:00 EDT)
+\label{lem:theta_prim}: [Todo] (Lean: thetaPrimitive) (2026-08-09 10:00:00 EDT)
+\label{constant theta primitive}: [Todo] (Lean: constantThetaPrimitive) (2026-08-09 10:00:00 EDT)
+\label{lem:phi4_supp}: [Todo] (Lean: phiFourSupport) (2026-08-09 10:00:00 EDT)
+
+### Further preliminaries for the reduction / Miscellany
+
+Lean file: Reduction/Miscellany.lean
+
+#### Theorems
+
+\label{lem:rescaling}: [Todo] (Lean: rescaling) (2026-08-09 10:00:00 EDT)
+\label{lem:norm_A_sum_le_sum}: [Todo] (Lean: normASumLeSum) (2026-08-09 10:00:00 EDT)
+\label{lem:form_pos}: [Todo] (Lean: formPos) (2026-08-09 10:00:00 EDT)
+\label{lem:ftc_ATphi}: [Todo] (Lean: ftcATphi) (2026-08-09 10:00:00 EDT)
+\label{lem:Phij_prop}: [Todo] (Lean: phiJProperties) (2026-08-09 10:00:00 EDT)
+\label{constant Phij proposition}: [Todo] (Lean: constantPhiJProposition) (2026-08-09 10:00:00 EDT)
+\label{lem:bootstrap}: [Todo] (Lean: bootstrap) (2026-08-09 10:00:00 EDT)
+
+### On-diagonal from main argument
+
+Lean file: Reduction/OnDiagonalMainArgument.lean
+
+#### Theorems
+
+\label{lem:rho-kernels-reduction}: [Todo] (Lean: rhoKernelsReduction) (2026-08-09 10:00:00 EDT)
+\label{constant rho kernels reduction}: [Todo] (Lean: constantRhoKernelsReduction) (2026-08-09 10:00:00 EDT)
+\label{lem:affine-diagonal-cancellation-reduction}: [Todo] (Lean: affineDiagonalCancellationReduction) (2026-08-09 10:00:00 EDT)
+\label{lem:increase-data-bracket-domination}: [Todo] (Lean: increaseDataBracketDomination) (2026-08-09 10:00:00 EDT)
+\label{constant increase data bracket domination}: [Todo] (Lean: constantIncreaseDataBracketDomination) (2026-08-09 10:00:00 EDT)
+\label{lem:increase-data-Gaussian-expansion}: [Todo] (Lean: increaseDataGaussianExpansion) (2026-08-09 10:00:00 EDT)
+\label{constant increase data Gaussian expansion}: [Todo] (Lean: constantIncreaseDataGaussianExpansion) (2026-08-09 10:00:00 EDT)
+\label{lem:N-reduction}: [Todo] (Lean: nReduction) (2026-08-09 10:00:00 EDT)
+\label{constant N reduction}: [Todo] (Lean: constantNReduction) (2026-08-09 10:00:00 EDT)
+\label{P:increase-data-reduction}: [Todo] (Lean: increaseDataReduction) (2026-08-09 10:00:00 EDT)
+\label{constant increase data reduction}: [Todo] (Lean: constantIncreaseDataReduction) (2026-08-09 10:00:00 EDT)
+
+### On-diagonal from off-diagonal estimates
+
+Lean file: Reduction/OnDiagonalOffDiagonal.lean
+
+#### Theorems
+
+\label{P:diagonal-band-reduction}: [Todo] (Lean: diagonalBandReduction) (2026-08-09 10:00:00 EDT)
+\label{constant diagonal band reduction}: [Todo] (Lean: constantDiagonalBandReduction) (2026-08-09 10:00:00 EDT)
+\label{lem:L1-reduction}: [Todo] (Lean: lOneReduction) (2026-08-09 10:00:00 EDT)
+\label{P:vanishing-diagonal-reduction}: [Todo] (Lean: vanishingDiagonalReduction) (2026-08-09 10:00:00 EDT)
+\label{P:one-scale-estimate-window}: [Todo] (Lean: oneScaleEstimateWindow) (2026-08-09 10:00:00 EDT)
+\label{auto:constant-one-scale-window}: [Todo] (Lean: constantOneScaleWindow) (2026-08-09 10:00:00 EDT)
+\label{L:fourier-transform-window}: [Todo] (Lean: fourierTransformWindow) (2026-08-09 10:00:00 EDT)
+\label{lem:scaleest}: [Todo] (Lean: scaleEstimate) (2026-08-09 10:00:00 EDT)
+\label{P:induct-positive-terms-reduction-non-whitney}: [Todo] (Lean: inductPositiveTermsReductionNonWhitney) (2026-08-09 10:00:00 EDT)
+\label{constant non Whitney reduction}: [Todo] (Lean: constantNonWhitneyReduction) (2026-08-09 10:00:00 EDT)
+\label{P:induct-positive-terms-reduction-non-whitney-skip}: [Todo] (Lean: inductPositiveTermsReductionNonWhitneySkip) (2026-08-09 10:00:00 EDT)
+\label{constant non Whitney skip reduction}: [Todo] (Lean: constantNonWhitneySkipReduction) (2026-08-09 10:00:00 EDT)
+\label{P:induct-positive-terms-reduction-whitney-gap}: [Todo] (Lean: inductPositiveTermsReductionWhitneyGap) (2026-08-09 10:00:00 EDT)
+\label{constant Whitney gap reduction}: [Todo] (Lean: constantWhitneyGapReduction) (2026-08-09 10:00:00 EDT)
+\label{P:induct-positive-terms-reduction-whitney}: [Todo] (Lean: inductPositiveTermsReductionWhitney) (2026-08-09 10:00:00 EDT)
+\label{constant Whitney reduction}: [Todo] (Lean: constantWhitneyReduction) (2026-08-09 10:00:00 EDT)
+\label{P:induct-positive-terms-reduction-whitney-product}: [Todo] (Lean: inductPositiveTermsReductionWhitneyProduct) (2026-08-09 10:00:00 EDT)
+\label{constant Whitney product reduction}: [Todo] (Lean: constantWhitneyProductReduction) (2026-08-09 10:00:00 EDT)
+
+### Final reduction: proof of main theorem
+
+Lean file: Reduction/FinalReduction.lean
+
+#### Theorems
+
+\label{lem:main_aux1}: [Todo] (Lean: mainAuxOne) (2026-08-09 10:00:00 EDT)
+\label{constant main auxiliary one}: [Todo] (Lean: constantMainAuxiliaryOne) (2026-08-09 10:00:00 EDT)
+\label{lem:shortlongftc_reduction}: [Todo] (Lean: shortlongFtcReduction) (2026-08-09 10:00:00 EDT)
+\label{lem:mainbump1_long1}: [Todo] (Lean: mainBumpOneLongOne) (2026-08-09 10:00:00 EDT)
+\label{constant main bump one long one}: [Todo] (Lean: constantMainBumpOneLongOne) (2026-08-09 10:00:00 EDT)
+\label{lem:mainbump1_long2}: [Todo] (Lean: mainBumpOneLongTwo) (2026-08-09 10:00:00 EDT)
+\label{constant main bump one long two}: [Todo] (Lean: constantMainBumpOneLongTwo) (2026-08-09 10:00:00 EDT)
+\label{lem:mainbump1_long}: [Todo] (Lean: mainBumpOneLong) (2026-08-09 10:00:00 EDT)
+\label{constant main bump one long}: [Todo] (Lean: constantMainBumpOneLong) (2026-08-09 10:00:00 EDT)
+\label{lem:mainbump1}: [Todo] (Lean: mainBumpOne) (2026-08-09 10:00:00 EDT)
+\label{constant main bump one}: [Todo] (Lean: constantMainBumpOne) (2026-08-09 10:00:00 EDT)
+\label{lem:main_aux2}: [Todo] (Lean: mainAuxTwo) (2026-08-09 10:00:00 EDT)
+\label{constant main auxiliary two}: [Todo] (Lean: constantMainAuxiliaryTwo) (2026-08-09 10:00:00 EDT)
+\label{lem:mainbump2}: [Todo] (Lean: mainBumpTwo) (2026-08-09 10:00:00 EDT)
+\label{constant main bump two}: [Todo] (Lean: constantMainBumpTwo) (2026-08-09 10:00:00 EDT)
+\label{lem:leftbump}: [Todo] (Lean: leftBump) (2026-08-09 10:00:00 EDT)
+\label{constant left bump}: [Todo] (Lean: constantLeftBump) (2026-08-09 10:00:00 EDT)
+\label{lem:leftbump1_short1}: [Todo] (Lean: leftBumpOneShortOne) (2026-08-09 10:00:00 EDT)
+\label{constant left bump one short one}: [Todo] (Lean: constantLeftBumpOneShortOne) (2026-08-09 10:00:00 EDT)
+\label{lem:leftbump1_short2}: [Todo] (Lean: leftBumpOneShortTwo) (2026-08-09 10:00:00 EDT)
+\label{constant left bump one short two}: [Todo] (Lean: constantLeftBumpOneShortTwo) (2026-08-09 10:00:00 EDT)
+\label{lem:leftbump1_long}: [Todo] (Lean: leftBumpOneLong) (2026-08-09 10:00:00 EDT)
+\label{constant left bump one long}: [Todo] (Lean: constantLeftBumpOneLong) (2026-08-09 10:00:00 EDT)
+\label{lem:leftbump1}: [Todo] (Lean: leftBumpOne) (2026-08-09 10:00:00 EDT)
+\label{constant left bump one}: [Todo] (Lean: constantLeftBumpOne) (2026-08-09 10:00:00 EDT)

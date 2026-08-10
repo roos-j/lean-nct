@@ -17,3 +17,10 @@
 *.log
 *.pdf
 *.synctex.gz
+
+*.png
+*.svg
+*.html
+*.dot
+SHA256SUMS
+layout_metadata.json

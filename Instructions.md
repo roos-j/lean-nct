@@ -111,6 +111,10 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
   Use `Proof completed` only for a sorry-free proof depending on standard
   axioms; otherwise use the appropriate earlier status.
 - If you find errors/inconsistencies in `Status.md`, fix them.
+- Entries should be organized by the sections and subsections they occur in. After every section/subsection heading also include a line
+for local path (treating LeanNct directory as home, and including filename if applicable) of the formalization of that section/subsection.
+The format should be:
+Lean file: PATH HERE
 
 ## Workflow
 
