@@ -91,13 +91,15 @@ The Settings button opens a temporary settings panel. Controls include:
 - show or hide the document hierarchy independently;
 - export the currently visible graph viewport as SVG or PNG.
 
-The default private-node opacity is 50 percent. Opacity applies to the entire node group.
+The default private-node opacity is 50 percent. Opacity applies to the entire node group and, as a multiplier, to every dependency arrow whose source or target is private. Selected incident arrows remain emphasized but retain the applicable public/private opacity.
 
-Search filters while typing. During a nonempty search, only matching nodes remain visible; edges and hierarchy boxes are hidden. Search covers labels, titles, expanded statements, and Lean names.
+Search filters while typing. During a nonempty search, only matching nodes remain visible; edges and hierarchy boxes are hidden. Search covers labels, titles, expanded statements, and Lean names. The **Inverse** checkbox instead shows exactly the nodes that do not match the current term.
 
-Clicking a section or subsection caption toggles a box filter. Nodes outside that box and every incident edge are hidden. Clicking the same caption again restores them.
+Clicking a section or subsection caption toggles a persistent box filter. Nodes outside that box and every incident edge are hidden. Selecting or deselecting nodes does not clear the filter; it remains active until **Clear** is pressed or the same box caption is clicked again. A subsection filter shows only the selected subsection frame, not its containing section frame.
 
-Clicking a node opens its metadata, MathJax-rendered statement, dependencies, reverse dependencies, and expanded LaTeX. Numbered references to graph nodes are links. The copy-icon button beside Expanded LaTeX copies the source to the clipboard.
+Clicking a node opens its metadata, MathJax-rendered statement, dependencies, reverse dependencies, and expanded LaTeX. Clicking the selected node again deselects it. Numbered references to graph nodes are links. The copy-icon button beside Expanded LaTeX copies the source to the clipboard.
+
+Arrow transparency is applied directly to path strokes and arrowhead fills rather than to rasterized SVG groups. Node hover highlighting likewise avoids SVG filters; this prevents shaded rectangular compositing artifacts when zooming.
 
 ## Layout rules
 

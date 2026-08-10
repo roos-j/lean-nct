@@ -742,7 +742,10 @@ def postprocess_svg(
         text=(
             ".dep-node{opacity:var(--public-opacity,1);}"
             ".dep-node.visibility-private{opacity:var(--private-opacity,.5);}"
-            ".dep-edge{opacity:.48;}"
+            ".dep-edge{--edge-opacity:var(--public-edge-opacity,.48);}"
+            ".dep-edge.visibility-private{--edge-opacity:var(--private-edge-opacity,.24);}"
+            ".dep-edge path{stroke-opacity:var(--edge-opacity);}"
+            ".dep-edge polygon{fill-opacity:var(--edge-opacity);stroke-opacity:var(--edge-opacity);}"
             ".dep-cluster.cluster-level-1>.cluster-box{fill:#cbd5e1;fill-opacity:var(--section-opacity,.15);stroke:#94a3b8;stroke-opacity:.78;stroke-width:1.1;}"
             ".dep-cluster.cluster-level-2>.cluster-box{fill:#dbeafe;fill-opacity:var(--subsection-opacity,.09);stroke:#cbd5e1;stroke-opacity:.72;stroke-width:.9;stroke-dasharray:4 3;}"
             ".cluster-caption-hit{fill:transparent;stroke:none;}"
@@ -783,11 +786,15 @@ def postprocess_svg(
         elif "edge" in classes:
             match = re.fullmatch(r"\s*(n\d+)\s*->\s*(n\d+)\s*", title)
             if match and match.group(1) in token_to_node and match.group(2) in token_to_node:
-                source = token_to_node[match.group(1)]["id"]
-                target = token_to_node[match.group(2)]["id"]
-                group.set("class", " ".join(classes + ["dep-edge"]))
+                source_node = token_to_node[match.group(1)]
+                target_node = token_to_node[match.group(2)]
+                source = source_node["id"]
+                target = target_node["id"]
+                edge_visibility = "private" if "private" in {source_node["visibility"], target_node["visibility"]} else "public"
+                group.set("class", " ".join(classes + ["dep-edge", f"visibility-{edge_visibility}"]))
                 group.set("data-source", source)
                 group.set("data-target", target)
+                group.set("data-visibility", edge_visibility)
                 if title_element is not None:
                     title_element.text = f"{source} → {target}"
     for group in groups_to_remove:
@@ -902,6 +909,8 @@ def build_html(graph: dict[str, Any], layouts: dict[str, LayoutGeometry], mathja
 :root {
   --private-opacity: $private_opacity;
   --public-opacity: $public_opacity;
+  --private-edge-opacity: $private_edge_opacity;
+  --public-edge-opacity: $public_edge_opacity;
   --section-opacity: $section_opacity;
   --subsection-opacity: $subsection_opacity;
   --ink: #0f172a;
@@ -926,9 +935,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, .dep-node:focus
 .brand { min-width: 250px; }
 .brand h1 { font-size: 16px; line-height: 1.2; margin: 0; }
 .brand p { font-size: 11px; color: var(--muted); margin: 3px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 330px; }
-.search-wrap { position: relative; flex: 1 1 420px; max-width: 690px; }
+.search-wrap { display: flex; align-items: center; gap: 8px; flex: 1 1 420px; max-width: 760px; }
+.search-input-wrap { position: relative; flex: 1 1 auto; min-width: 120px; }
 #search { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 9px 100px 9px 12px; color: var(--ink); background: #fff; }
-#search-count { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--muted); }
+#search-count { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--muted); pointer-events: none; }
+.inverse-search { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; color: #475569; font-size: 11px; }
+.inverse-search input { margin: 0; }
 .toolbar-actions { display: flex; gap: 6px; margin-left: auto; }
 .toolbar-icon { min-width: 36px; }
 .stat-chip { border: 1px solid #dbeafe; background: #eff6ff; color: #1e3a8a; border-radius: 999px; padding: 6px 9px; font-size: 11px; white-space: nowrap; }
@@ -972,15 +984,17 @@ body.sidebar-hidden #viewport { left: 0; }
 .cluster-caption:hover .cluster-caption-hit, .cluster-caption.active .cluster-caption-hit { fill: #2563eb; fill-opacity: .08; }
 .cluster-caption-text { font-family: Helvetica, Arial, sans-serif; fill: #334155; font-size: 11px; font-weight: 600; opacity: .82; pointer-events: none; }
 .cluster-level-2 .cluster-caption-text { font-size: 9px; font-weight: 500; fill: #475569; }
-.dep-node { cursor: pointer; opacity: var(--public-opacity); transition: opacity .15s ease, filter .15s ease; }
+.dep-node { cursor: pointer; opacity: var(--public-opacity); transition: opacity .15s ease; }
 .dep-node.visibility-private { opacity: var(--private-opacity); }
-.dep-node:hover { filter: drop-shadow(0 2px 2px rgba(15,23,42,.23)); }
+.dep-node:hover > ellipse, .dep-node:hover > polygon, .dep-node:hover > path { stroke-width: 2.8px !important; }
 .dep-node.search-match > ellipse, .dep-node.search-match > polygon, .dep-node.search-match > path { stroke: #f59e0b !important; stroke-width: 4px !important; }
 .dep-node.selected > ellipse, .dep-node.selected > polygon, .dep-node.selected > path { stroke: #dc2626 !important; stroke-width: 4px !important; }
-.dep-edge { opacity: .48; transition: opacity .15s ease; }
-.dep-edge path { stroke: #64748b; }
-.dep-edge polygon { fill: #64748b; stroke: #64748b; }
-.dep-edge.incident { opacity: 1; }
+.dep-edge { --edge-opacity: var(--public-edge-opacity); }
+.dep-edge.visibility-private { --edge-opacity: var(--private-edge-opacity); }
+.dep-edge path { stroke: #64748b; stroke-opacity: var(--edge-opacity); shape-rendering: geometricPrecision; }
+.dep-edge polygon { fill: #64748b; stroke: #64748b; fill-opacity: var(--edge-opacity); stroke-opacity: var(--edge-opacity); shape-rendering: geometricPrecision; }
+.dep-edge.incident { --edge-opacity: var(--public-opacity); }
+.dep-edge.visibility-private.incident { --edge-opacity: var(--private-opacity); }
 .dep-edge.incident path { stroke: #dc2626; stroke-width: 1.8px; }
 .dep-edge.incident polygon { fill: #dc2626; stroke: #dc2626; }
 .filtered-out { display: none !important; }
@@ -1051,8 +1065,11 @@ window.MathJax = {
 <header id="toolbar">
   <div class="brand"><h1>NCT dependency graph</h1><p>$source_name</p></div>
   <div class="search-wrap">
-    <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="Search labels, titles, statements, or Lean names…" aria-label="Search graph nodes">
-    <span id="search-count"></span>
+    <div class="search-input-wrap">
+      <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="Search labels, titles, statements, or Lean names…" aria-label="Search graph nodes">
+      <span id="search-count"></span>
+    </div>
+    <label class="inverse-search" title="Show nodes that do not match the search term"><input id="search-inverse" type="checkbox"><span>Inverse</span></label>
   </div>
   <span class="stat-chip">$node_count nodes</span>
   <span class="stat-chip">$edge_count dependencies</span>
@@ -1126,6 +1143,7 @@ window.MathJax = {
   const detailsTitle = document.getElementById('details-title');
   const detailsBody = document.getElementById('details-body');
   const search = document.getElementById('search');
+  const searchInverse = document.getElementById('search-inverse');
   const searchCount = document.getElementById('search-count');
   const settingsMenu = document.getElementById('settings-menu');
   const settingsToggle = document.getElementById('settings-toggle');
@@ -1150,6 +1168,7 @@ window.MathJax = {
     showSidebar: data.settings.show_sidebar !== false,
     showLegend: data.settings.show_legend !== false,
     showDocumentHierarchy: data.settings.show_document_hierarchy !== false,
+    inverseSearch: false,
     selectedId: null,
     clusterFilter: null,
     drag: null
@@ -1188,6 +1207,7 @@ window.MathJax = {
     control.sidebar.checked = state.showSidebar;
     control.legend.checked = state.showLegend;
     control.documentHierarchy.checked = state.showDocumentHierarchy;
+    searchInverse.checked = state.inverseSearch;
     document.getElementById('public-opacity-value').textContent = `${Math.round(state.publicOpacity * 100)}%`;
     document.getElementById('private-opacity-value').textContent = `${Math.round(state.privateOpacity * 100)}%`;
     document.getElementById('section-opacity-value').textContent = `${Math.round(state.sectionOpacity * 100)}%`;
@@ -1198,6 +1218,8 @@ window.MathJax = {
     const root = document.documentElement;
     root.style.setProperty('--public-opacity', state.publicOpacity);
     root.style.setProperty('--private-opacity', state.privateOpacity);
+    root.style.setProperty('--public-edge-opacity', state.publicOpacity * .48);
+    root.style.setProperty('--private-edge-opacity', state.privateOpacity * .48);
     root.style.setProperty('--section-opacity', state.sectionOpacity);
     root.style.setProperty('--subsection-opacity', state.subsectionOpacity);
     document.body.classList.toggle('sidebar-hidden', !state.showSidebar);
@@ -1255,7 +1277,8 @@ window.MathJax = {
     const visibleIds = new Set();
     for (const group of svg.querySelectorAll('.dep-node')) {
       const node = nodes.get(group.dataset.nodeId);
-      const matchesSearch = !query || searchBlob.get(node.id).includes(query);
+      const containsQuery = searchBlob.get(node.id).includes(query);
+      const matchesSearch = !query || (state.inverseSearch ? !containsQuery : containsQuery);
       const matchesCluster = clusterContains(node, state.clusterFilter);
       const visible = matchesSearch && matchesCluster;
       group.classList.toggle('filtered-out', !visible);
@@ -1272,9 +1295,8 @@ window.MathJax = {
         if (state.clusterFilter.kind === 'section') {
           visible = cluster.dataset.sectionId === state.clusterFilter.sectionId;
         } else {
-          const parent = cluster.dataset.clusterKind === 'section' && cluster.dataset.sectionId === state.clusterFilter.sectionId;
           const exact = cluster.dataset.clusterKind === 'subsection' && cluster.dataset.sectionId === state.clusterFilter.sectionId && (cluster.dataset.subsectionId || '') === (state.clusterFilter.subsectionId || '');
-          visible = parent || exact;
+          visible = exact;
         }
       }
       cluster.classList.toggle('filtered-out', !visible);
@@ -1287,7 +1309,7 @@ window.MathJax = {
     for (const button of document.querySelectorAll('.hierarchy-filter')) {
       button.classList.toggle('active', Boolean(state.clusterFilter && state.clusterFilter.kind === 'section' && button.dataset.hierarchySection === state.clusterFilter.sectionId));
     }
-    searchCount.textContent = query ? `${visibleIds.size} match${visibleIds.size === 1 ? '' : 'es'}` : '';
+    searchCount.textContent = query ? `${visibleIds.size} shown` : '';
     if (state.selectedId && (!presentIds.has(state.selectedId) || !visibleIds.has(state.selectedId))) clearSelection();
     return [...visibleIds];
   }
@@ -1397,16 +1419,18 @@ window.MathJax = {
       state.includeDefinitions = true;
       changedLayout = true;
     }
-    if (search.value) search.value = '';
-    state.clusterFilter = null;
     if (changedLayout) activateLayout({preserveSelection: false});
     else applyFilters();
     syncControls();
   }
 
-  function selectNode(id, focus = false) {
+  function selectNode(id, focus = false, toggle = false) {
     const node = nodes.get(id);
     if (!node) return;
+    if (toggle && state.selectedId === id) {
+      clearSelection();
+      return;
+    }
     ensureNodeVisible(node);
     const group = nodeElement(id);
     if (!group) return;
@@ -1436,7 +1460,7 @@ window.MathJax = {
     detailsBody.appendChild(dependencyList('Used by', node.used_by));
     details.classList.add('open');
     viewport.classList.add('details-open');
-    if (focus) focusNode(id);
+    if (focus && !group.classList.contains('filtered-out')) focusNode(id);
   }
 
   function focusNode(id) {
@@ -1502,7 +1526,7 @@ window.MathJax = {
       .dep-cluster.cluster-level-1>.cluster-box{fill:#cbd5e1;fill-opacity:${state.sectionOpacity};stroke:#94a3b8;stroke-opacity:.78;stroke-width:1.1}
       .dep-cluster.cluster-level-2>.cluster-box{fill:#dbeafe;fill-opacity:${state.subsectionOpacity};stroke:#cbd5e1;stroke-opacity:.72;stroke-width:.9;stroke-dasharray:4 3}
       .cluster-caption-hit{fill:transparent;stroke:none}.cluster-caption-text{font-family:Helvetica,Arial,sans-serif;fill:#334155;font-size:11px;font-weight:600;opacity:.82}.cluster-level-2 .cluster-caption-text{font-size:9px;font-weight:500;fill:#475569}
-      .dep-edge{opacity:.48}.dep-edge.incident{opacity:1}.dep-edge.incident path{stroke:#dc2626;stroke-width:1.8px}.dep-edge.incident polygon{fill:#dc2626;stroke:#dc2626}
+      .dep-edge{--edge-opacity:${state.publicOpacity * .48}}.dep-edge.visibility-private{--edge-opacity:${state.privateOpacity * .48}}.dep-edge path{stroke:#64748b;stroke-opacity:var(--edge-opacity)}.dep-edge polygon{fill:#64748b;stroke:#64748b;fill-opacity:var(--edge-opacity);stroke-opacity:var(--edge-opacity)}.dep-edge.incident{--edge-opacity:${state.publicOpacity}}.dep-edge.visibility-private.incident{--edge-opacity:${state.privateOpacity}}.dep-edge.incident path{stroke:#dc2626;stroke-width:1.8px}.dep-edge.incident polygon{fill:#dc2626;stroke:#dc2626}
       .dep-node.search-match>ellipse,.dep-node.search-match>polygon,.dep-node.search-match>path{stroke:#f59e0b!important;stroke-width:4px!important}.dep-node.selected>ellipse,.dep-node.selected>polygon,.dep-node.selected>path{stroke:#dc2626!important;stroke-width:4px!important}
     `;
     clone.insertBefore(style, clone.firstChild);
@@ -1590,7 +1614,7 @@ window.MathJax = {
     const nodeGroup = event.target.closest('[data-node-id]');
     if (nodeGroup) {
       event.stopPropagation();
-      selectNode(nodeGroup.dataset.nodeId, false);
+      selectNode(nodeGroup.dataset.nodeId, false, true);
       return;
     }
     const caption = event.target.closest('[data-cluster-caption]');
@@ -1604,7 +1628,7 @@ window.MathJax = {
     const nodeGroup = event.target.closest('[data-node-id]');
     if (nodeGroup && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault();
-      selectNode(nodeGroup.dataset.nodeId, true);
+      selectNode(nodeGroup.dataset.nodeId, true, true);
       return;
     }
     const caption = event.target.closest('[data-cluster-caption]');
@@ -1625,6 +1649,10 @@ window.MathJax = {
   });
 
   search.addEventListener('input', applyFilters);
+  searchInverse.addEventListener('change', () => {
+    state.inverseSearch = searchInverse.checked;
+    applyFilters();
+  });
   search.addEventListener('keydown', event => {
     if (event.key === 'Enter') {
       const matches = applyFilters();
@@ -1639,12 +1667,10 @@ window.MathJax = {
 
   control.hierarchy.addEventListener('change', () => {
     state.hierarchy = control.hierarchy.value;
-    state.clusterFilter = null;
     activateLayout();
   });
   control.definitions.addEventListener('change', () => {
     state.includeDefinitions = control.definitions.checked;
-    state.clusterFilter = null;
     activateLayout();
   });
   for (const [input, property, cssProperty, outputId] of [
@@ -1656,6 +1682,8 @@ window.MathJax = {
     input.addEventListener('input', () => {
       state[property] = Number(input.value) / 100;
       document.documentElement.style.setProperty(cssProperty, state[property]);
+      if (property === 'publicOpacity') document.documentElement.style.setProperty('--public-edge-opacity', state[property] * .48);
+      if (property === 'privateOpacity') document.documentElement.style.setProperty('--private-edge-opacity', state[property] * .48);
       document.getElementById(outputId).textContent = `${input.value}%`;
     });
   }
@@ -1692,6 +1720,8 @@ window.MathJax = {
     replacements = {
         '$private_opacity': str(float(settings['private_opacity'])),
         '$public_opacity': str(float(settings['public_opacity'])),
+        '$private_edge_opacity': str(float(settings['private_opacity']) * 0.48),
+        '$public_edge_opacity': str(float(settings['public_opacity']) * 0.48),
         '$section_opacity': str(float(settings['section_opacity'])),
         '$subsection_opacity': str(float(settings['subsection_opacity'])),
         '$mathjax_source': mathjax_source,
