@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """Extract a rigid dependency-graph JSON document from a LaTeX blueprint.
 
-The extractor reads theorem-like environments, definitions, section hierarchy, and
-``\\using`` annotations.  It also compiles the source (unless an auxiliary file is
-supplied) so that every ``\\ref`` and ``\\eqref`` appearing in a statement is
-resolved to the exact number produced by LaTeX.  User-defined macros are expanded
-before statement data is written to JSON.
+The extractor reads theorem-like environments, definitions, section hierarchy,
+legacy ``\\using`` annotations, typed ``\\uses``/``\\usesdefs`` annotations,
+and Lean metadata supplied by ``\\lean`` and ``\\leanok``.  It also compiles the
+source (unless an auxiliary file is supplied) so that every ``\\ref`` and
+``\\eqref`` appearing in a statement is resolved to the exact number produced by
+LaTeX.  User-defined macros are expanded before statement data is written to JSON.
+
+Metadata is validated conservatively.  An invalid dependency, Lean name entry, or
+status annotation is omitted while parsing continues.  Every omission is reported
+with the source line and the involved node labels.
 """
 
 from __future__ import annotations
@@ -30,7 +35,7 @@ from typing import Any, Iterable, Sequence
 SCHEMA_NAME = "nct-dependency-graph"
 SCHEMA_VERSION = "2.0.0"
 PARSER_NAME = "latex_to_graph_json"
-PARSER_VERSION = "2.0.0"
+PARSER_VERSION = "2.1.1"
 
 THEOREM_ENVIRONMENTS = {
     "theorem",
@@ -108,7 +113,17 @@ STATUS_CATALOG: list[dict[str, Any]] = [
 STATUS_IDS = {entry["id"] for entry in STATUS_CATALOG}
 HEADING_LEVELS = {"section": 1, "subsection": 2, "subsubsection": 3}
 AUTHOR_ANNOTATION_COMMANDS = {"jr", "pd", "ls", "ct", "comment"}
-REMOVED_METADATA_COMMANDS = {"label", "using", "index"} | AUTHOR_ANNOTATION_COMMANDS
+ARGUMENT_METADATA_COMMANDS = {"using", "uses", "usesdefs", "lean"}
+FLAG_METADATA_COMMANDS = {"leanok"}
+VERBATIM_ENVIRONMENTS = {"verbatim", "verbatim*", "lstlisting", "minted"}
+REMOVED_METADATA_COMMANDS = {
+    "label",
+    "using",
+    "uses",
+    "usesdefs",
+    "lean",
+    "index",
+} | AUTHOR_ANNOTATION_COMMANDS
 
 
 @dataclass
@@ -139,9 +154,21 @@ class ParsedEnvironment:
     content_end: int
     title_tex: str | None
     label: str | None
-    uses: list[str]
+    metadata_commands: list["MetadataCommand"]
+    metadata_parse_diagnostics: list[dict[str, Any]]
     line_start: int
     line_end: int
+
+
+@dataclass(frozen=True)
+class MetadataCommand:
+    """A metadata command occurring inside one theorem/definition environment."""
+
+    name: str
+    source_line: int
+    raw_argument: str | None
+    values: tuple[str, ...]
+    empty_item_count: int = 0
 
 
 @dataclass
@@ -258,6 +285,37 @@ def split_top_level_commas(value: str) -> list[str]:
     if item:
         parts.append(item)
     return parts
+
+
+def split_top_level_commas_with_empty_count(value: str) -> tuple[list[str], int]:
+    """Split a metadata list and count empty top-level entries.
+
+    Empty entries are not returned.  They are counted so that valid neighboring
+    entries can still be retained while the malformed entries are diagnosed and
+    omitted conservatively.
+    """
+
+    raw_parts: list[str] = []
+    depth = 0
+    start = 0
+    i = 0
+    while i < len(value):
+        char = value[i]
+        if char == "\\":
+            i += 2
+            continue
+        if char in "{[(":
+            depth += 1
+        elif char in "}])":
+            depth = max(0, depth - 1)
+        elif char == "," and depth == 0:
+            raw_parts.append(value[start:i].strip())
+            start = i + 1
+        i += 1
+    raw_parts.append(value[start:].strip())
+    values = [item for item in raw_parts if item]
+    empty_count = sum(1 for item in raw_parts if not item)
+    return values, empty_count
 
 
 def make_line_starts(text: str) -> list[int]:
@@ -518,16 +576,171 @@ def find_first_label(text: str, start: int, end: int) -> str | None:
     return value.strip() or None
 
 
-def find_using_labels(text: str, start: int, end: int) -> list[str]:
-    values: list[str] = []
-    fragment = text[start:end]
-    for match in re.finditer(r"\\using\s*\{", fragment):
-        try:
-            raw, _ = read_balanced(text, start + match.end() - 1)
-        except ValueError:
+def make_metadata_diagnostic(
+    *,
+    code: str,
+    message: str,
+    source_line: int,
+    node: str | None,
+    command: str,
+    involved_nodes: Sequence[str] = (),
+    value: str | None = None,
+) -> dict[str, Any]:
+    """Create a stable, machine-readable metadata diagnostic."""
+
+    nodes = [item for item in dict.fromkeys(([node] if node else []) + list(involved_nodes)) if item]
+    diagnostic: dict[str, Any] = {
+        "category": "metadata",
+        "severity": "warning",
+        "code": code,
+        "message": message,
+        "source_line": source_line,
+        "node": node,
+        "involved_nodes": nodes,
+        "command": f"\\{command}",
+    }
+    if value is not None:
+        diagnostic["value"] = value
+    return diagnostic
+
+
+def parse_environment_metadata(
+    text: str,
+    start: int,
+    end: int,
+    line_starts: Sequence[int],
+    node_label: str | None,
+) -> tuple[list[MetadataCommand], list[dict[str, Any]]]:
+    """Parse graph metadata commands inside one node environment.
+
+    Commands with missing or unterminated arguments are omitted and diagnosed.
+    Empty comma-list entries are omitted individually while valid neighboring
+    entries are retained.
+    """
+
+    commands: list[MetadataCommand] = []
+    diagnostics: list[dict[str, Any]] = []
+    i = start
+    while i < end:
+        parsed = read_command_name(text, i)
+        if not parsed:
+            i += 1
             continue
-        values.extend(split_top_level_commas(raw))
-    return values
+        name, command_end = parsed
+
+        # Metadata-looking text inside verbatim constructs is literal text, not
+        # an annotation.  Skip it before interpreting any command names.
+        if name == "verb":
+            delimiter_pos = command_end
+            if delimiter_pos < end and text[delimiter_pos] == "*":
+                delimiter_pos += 1
+            if delimiter_pos >= end:
+                i = command_end
+                continue
+            delimiter = text[delimiter_pos]
+            closing = text.find(delimiter, delimiter_pos + 1, end)
+            i = end if closing < 0 else closing + 1
+            continue
+
+        if name == "begin":
+            group = parse_command_group(text, command_end)
+            if group is not None:
+                environment_name, group_end = group
+                environment_name = environment_name.strip()
+                if environment_name in VERBATIM_ENVIRONMENTS:
+                    end_pattern = re.compile(
+                        r"\\end\s*\{" + re.escape(environment_name) + r"\}"
+                    )
+                    end_match = end_pattern.search(text, group_end, end)
+                    i = end if end_match is None else end_match.end()
+                    continue
+
+        if name in FLAG_METADATA_COMMANDS:
+            commands.append(
+                MetadataCommand(
+                    name=name,
+                    source_line=line_number(line_starts, i),
+                    raw_argument=None,
+                    values=(),
+                )
+            )
+            i = command_end
+            continue
+        if name not in ARGUMENT_METADATA_COMMANDS:
+            i = command_end
+            continue
+
+        source_line = line_number(line_starts, i)
+        argument_start = skip_space(text, command_end)
+        if argument_start >= end or text[argument_start] != "{":
+            diagnostics.append(
+                make_metadata_diagnostic(
+                    code="missing_metadata_argument",
+                    message=f"\\{name} has no braced argument; the command was ignored.",
+                    source_line=source_line,
+                    node=node_label,
+                    command=name,
+                )
+            )
+            i = command_end
+            continue
+        try:
+            raw_argument, argument_end = read_balanced(text, argument_start)
+        except ValueError:
+            diagnostics.append(
+                make_metadata_diagnostic(
+                    code="unterminated_metadata_argument",
+                    message=f"\\{name} has an unterminated argument; the command was ignored.",
+                    source_line=source_line,
+                    node=node_label,
+                    command=name,
+                )
+            )
+            i = command_end
+            continue
+        if argument_end > end:
+            diagnostics.append(
+                make_metadata_diagnostic(
+                    code="metadata_argument_crosses_environment",
+                    message=(
+                        f"\\{name} closes outside the containing environment; "
+                        "the command was ignored."
+                    ),
+                    source_line=source_line,
+                    node=node_label,
+                    command=name,
+                )
+            )
+            i = command_end
+            continue
+
+        values, empty_item_count = split_top_level_commas_with_empty_count(raw_argument)
+        commands.append(
+            MetadataCommand(
+                name=name,
+                source_line=source_line,
+                raw_argument=raw_argument,
+                values=tuple(values),
+                empty_item_count=empty_item_count,
+            )
+        )
+        if empty_item_count:
+            diagnostics.append(
+                make_metadata_diagnostic(
+                    code="empty_metadata_list_entry",
+                    message=(
+                        f"\\{name} contains {empty_item_count} empty comma-list "
+                        f"entr{'y' if empty_item_count == 1 else 'ies'}; "
+                        "the empty entries were ignored."
+                    ),
+                    source_line=source_line,
+                    node=node_label,
+                    command=name,
+                    value=raw_argument,
+                )
+            )
+        i = argument_end
+    return commands, diagnostics
 
 
 def parse_environment_title(text: str, begin_end: int) -> tuple[str | None, int]:
@@ -550,9 +763,39 @@ def parse_node_environments(text: str, body_start: int, line_starts: Sequence[in
             continue
         end_match = re.compile(r"\\end\s*\{" + re.escape(env) + r"\}").search(text, match.end())
         if not end_match:
-            result.append(ParsedEnvironment(env, match.start(), len(text), match.end(), len(text), None, None, [], line_number(line_starts, match.start()), line_number(line_starts, len(text) - 1)))
+            label = find_first_label(text, match.end(), len(text))
+            metadata_commands, metadata_diagnostics = parse_environment_metadata(
+                text,
+                match.end(),
+                len(text),
+                line_starts,
+                label,
+            )
+            result.append(
+                ParsedEnvironment(
+                    environment=env,
+                    start=match.start(),
+                    end=len(text),
+                    content_start=match.end(),
+                    content_end=len(text),
+                    title_tex=None,
+                    label=label,
+                    metadata_commands=metadata_commands,
+                    metadata_parse_diagnostics=metadata_diagnostics,
+                    line_start=line_number(line_starts, match.start()),
+                    line_end=line_number(line_starts, len(text) - 1),
+                )
+            )
             continue
         title_tex, content_start = parse_environment_title(text, match.end())
+        label = find_first_label(text, content_start, end_match.start())
+        metadata_commands, metadata_diagnostics = parse_environment_metadata(
+            text,
+            content_start,
+            end_match.start(),
+            line_starts,
+            label,
+        )
         result.append(
             ParsedEnvironment(
                 environment=env,
@@ -561,8 +804,9 @@ def parse_node_environments(text: str, body_start: int, line_starts: Sequence[in
                 content_start=content_start,
                 content_end=end_match.start(),
                 title_tex=title_tex,
-                label=find_first_label(text, content_start, end_match.start()),
-                uses=find_using_labels(text, content_start, end_match.start()),
+                label=label,
+                metadata_commands=metadata_commands,
+                metadata_parse_diagnostics=metadata_diagnostics,
                 line_start=line_number(line_starts, match.start()),
                 line_end=line_number(line_starts, end_match.end()),
             )
@@ -1176,6 +1420,7 @@ class StatementConverter:
 
 def clean_statement_source(raw: str) -> str:
     cleaned = remove_one_argument_commands(raw, REMOVED_METADATA_COMMANDS)
+    cleaned = re.sub(r"\\leanok(?![A-Za-z@])", "", cleaned)
     cleaned = re.sub(r"\\(?:cgpt|cjr|cpd|cls)\b", "", cleaned)
     cleaned = re.sub(r"^[ \t]+|[ \t]+$", "", cleaned, flags=re.MULTILINE)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
@@ -1247,6 +1492,202 @@ def topological_order(node_ids: Iterable[str], edges: Sequence[dict[str, Any]]) 
 # Graph construction
 # ---------------------------------------------------------------------------
 
+
+def node_kind_for_environment(environment: str) -> str:
+    return "definition" if environment in DEFINITION_ENVIRONMENTS else "theorem"
+
+
+def resolve_node_metadata(
+    env: ParsedEnvironment,
+    node_kind_by_label: dict[str, str],
+    default_status: str,
+) -> tuple[list[str], list[str], str, list[dict[str, Any]]]:
+    """Validate and resolve all metadata attached to one node.
+
+    The returned dependency list is ordered by first valid occurrence and contains
+    no duplicates.  ``\\uses`` accepts theorem labels only, ``\\usesdefs`` accepts
+    definition labels only, and legacy ``\\using`` remains untyped for backward
+    compatibility.  Invalid individual entries are diagnosed and omitted without
+    affecting the remaining metadata.
+    """
+
+    node_label = env.label
+    if not node_label:
+        return [], [], default_status, list(env.metadata_parse_diagnostics)
+
+    node_kind = node_kind_for_environment(env.environment)
+    diagnostics = list(env.metadata_parse_diagnostics)
+    dependencies: list[str] = []
+    dependency_first_occurrence: dict[str, MetadataCommand] = {}
+    lean_names: list[str] = []
+    lean_name_first_occurrence: dict[str, MetadataCommand] = {}
+    leanok_commands: list[MetadataCommand] = []
+
+    expected_dependency_kind = {
+        "uses": "theorem",
+        "usesdefs": "definition",
+    }
+
+    for command in env.metadata_commands:
+        if command.name in {"using", "uses", "usesdefs"}:
+            expected_kind = expected_dependency_kind.get(command.name)
+            for dependency in command.values:
+                if dependency == node_label:
+                    diagnostics.append(
+                        make_metadata_diagnostic(
+                            code="self_dependency",
+                            message=(
+                                f"Node {node_label!r} lists itself in \\{command.name}; "
+                                "the dependency was ignored."
+                            ),
+                            source_line=command.source_line,
+                            node=node_label,
+                            command=command.name,
+                            involved_nodes=[dependency],
+                            value=dependency,
+                        )
+                    )
+                    continue
+
+                actual_kind = node_kind_by_label.get(dependency)
+                if actual_kind is None:
+                    diagnostics.append(
+                        make_metadata_diagnostic(
+                            code="unknown_dependency_label",
+                            message=(
+                                f"\\{command.name} refers to unknown node label "
+                                f"{dependency!r}; the dependency was ignored."
+                            ),
+                            source_line=command.source_line,
+                            node=node_label,
+                            command=command.name,
+                            involved_nodes=[dependency],
+                            value=dependency,
+                        )
+                    )
+                    continue
+
+                if expected_kind is not None and actual_kind != expected_kind:
+                    diagnostics.append(
+                        make_metadata_diagnostic(
+                            code="dependency_kind_mismatch",
+                            message=(
+                                f"\\{command.name} requires a {expected_kind} label, but "
+                                f"{dependency!r} is a {actual_kind}; the dependency was ignored."
+                            ),
+                            source_line=command.source_line,
+                            node=node_label,
+                            command=command.name,
+                            involved_nodes=[dependency],
+                            value=dependency,
+                        )
+                    )
+                    continue
+
+                previous = dependency_first_occurrence.get(dependency)
+                if previous is not None:
+                    diagnostics.append(
+                        make_metadata_diagnostic(
+                            code="duplicate_dependency_metadata",
+                            message=(
+                                f"Dependency {dependency!r} is repeated in \\{command.name}; "
+                                f"the repeated entry was ignored (first occurrence: line "
+                                f"{previous.source_line})."
+                            ),
+                            source_line=command.source_line,
+                            node=node_label,
+                            command=command.name,
+                            involved_nodes=[dependency],
+                            value=dependency,
+                        )
+                    )
+                    continue
+
+                dependency_first_occurrence[dependency] = command
+                dependencies.append(dependency)
+            continue
+
+        if command.name == "lean":
+            for lean_name in command.values:
+                previous = lean_name_first_occurrence.get(lean_name)
+                if previous is not None:
+                    diagnostics.append(
+                        make_metadata_diagnostic(
+                            code="duplicate_lean_name",
+                            message=(
+                                f"Lean name {lean_name!r} is repeated; the repeated entry "
+                                f"was ignored (first occurrence: line {previous.source_line})."
+                            ),
+                            source_line=command.source_line,
+                            node=node_label,
+                            command=command.name,
+                            value=lean_name,
+                        )
+                    )
+                    continue
+                lean_name_first_occurrence[lean_name] = command
+                lean_names.append(lean_name)
+            continue
+
+        if command.name == "leanok":
+            leanok_commands.append(command)
+
+    if len(leanok_commands) > 1:
+        first_line = leanok_commands[0].source_line
+        for duplicate in leanok_commands[1:]:
+            diagnostics.append(
+                make_metadata_diagnostic(
+                    code="duplicate_leanok",
+                    message=(
+                        f"\\leanok is repeated; the repeated flag was ignored "
+                        f"(first occurrence: line {first_line})."
+                    ),
+                    source_line=duplicate.source_line,
+                    node=node_label,
+                    command="leanok",
+                )
+            )
+
+    leanok_requested = bool(leanok_commands)
+    leanok_valid = leanok_requested and bool(lean_names)
+    if leanok_requested and not lean_names:
+        diagnostics.append(
+            make_metadata_diagnostic(
+                code="leanok_without_lean",
+                message=(
+                    "\\leanok requires a nonempty \\lean{...} annotation; "
+                    "the \\leanok status was ignored."
+                ),
+                source_line=leanok_commands[0].source_line,
+                node=node_label,
+                command="leanok",
+            )
+        )
+
+    if env.environment == "exttheorem":
+        status = "external_dependency"
+        if leanok_valid:
+            diagnostics.append(
+                make_metadata_diagnostic(
+                    code="leanok_on_external_dependency",
+                    message=(
+                        "An exttheorem always has status 'external_dependency'; "
+                        "the \\leanok status was ignored."
+                    ),
+                    source_line=leanok_commands[0].source_line,
+                    node=node_label,
+                    command="leanok",
+                )
+            )
+    elif leanok_valid:
+        status = "fully_proved"
+    elif lean_names:
+        status = "defined" if node_kind == "definition" else "stated"
+    else:
+        status = default_status
+
+    return dependencies, lean_names, status, diagnostics
+
 def build_graph(
     latex_path: Path,
     *,
@@ -1290,10 +1731,15 @@ def build_graph(
             environment_by_label[env.label] = env
 
     node_ids = set(environment_by_label)
+    node_kind_by_label = {
+        label: node_kind_for_environment(env.environment)
+        for label, env in environment_by_label.items()
+    }
     nodes: list[dict[str, Any]] = []
     node_by_id: dict[str, dict[str, Any]] = {}
     missing_reference_numbers: list[dict[str, Any]] = []
     statement_unexpanded_macros: list[dict[str, Any]] = []
+    metadata_diagnostics: list[dict[str, Any]] = []
 
     for env in environments:
         if not env.label or env.label in node_by_id:
@@ -1302,9 +1748,16 @@ def build_graph(
         ancestry = heading_ancestry(active.id, heading_by_id)
         top_section = next((item for item in ancestry if item.level == 1), headings[0])
         subsection = next((item for item in reversed(ancestry) if item.level == 2), None)
-        kind = "definition" if env.environment in DEFINITION_ENVIRONMENTS else "theorem"
+        kind = node_kind_for_environment(env.environment)
         display_name = ENVIRONMENT_DISPLAY_NAMES.get(env.environment, env.environment.title())
         title_plain = latex_to_plain(env.title_tex)
+
+        uses, lean_names, status, node_metadata_diagnostics = resolve_node_metadata(
+            env,
+            node_kind_by_label,
+            default_status,
+        )
+        metadata_diagnostics.extend(node_metadata_diagnostics)
 
         raw_statement = original[env.content_start : env.content_end]
         cleaned_statement = clean_statement_source(raw_statement)
@@ -1327,11 +1780,11 @@ def build_graph(
             "environment_name": display_name,
             "title_tex": env.title_tex,
             "title": title_plain or f"{display_name}: {env.label}",
-            "status": default_status,
+            "status": status,
             "visibility": "private",
             "visibility_reason": "used only within its section",
-            "lean_names": [],
-            "uses": list(env.uses),
+            "lean_names": lean_names,
+            "uses": uses,
             "used_by": [],
             "location_id": active.id,
             "section_id": top_section.id,
@@ -1354,15 +1807,24 @@ def build_graph(
     for label, info in reference_catalog.items():
         catalog_output[label] = {**info, "node_id": label if label in node_by_id else None}
 
-    unresolved_dependencies: list[dict[str, Any]] = []
+    unresolved_dependencies: list[dict[str, Any]] = [
+        {
+            "dependency": diagnostic.get("value"),
+            "used_by": diagnostic.get("node"),
+            "source_line": diagnostic.get("source_line"),
+            "command": diagnostic.get("command"),
+        }
+        for diagnostic in metadata_diagnostics
+        if diagnostic.get("code") == "unknown_dependency_label"
+    ]
     edges: list[dict[str, Any]] = []
     reverse: dict[str, list[str]] = defaultdict(list)
     annotation_ordinal = 0
     for node in nodes:
         for local_ordinal, dependency in enumerate(node["uses"], start=1):
             annotation_ordinal += 1
+            # Dependency metadata has already been validated conservatively.
             if dependency not in node_by_id:
-                unresolved_dependencies.append({"dependency": dependency, "used_by": node["id"], "source_line": node["source"]["line_start"]})
                 continue
             edges.append({
                 "id": f"edge:{annotation_ordinal}",
@@ -1435,7 +1897,10 @@ def build_graph(
         "nodes": nodes,
         "edges": edges,
         "diagnostics": {
-            "heading_parse_messages": heading_diagnostics,
+            # Keep format-version 2.0 compatibility: the existing parse-message
+            # array also carries structured metadata diagnostics.  They are
+            # additionally printed to stderr by main().
+            "heading_parse_messages": [*heading_diagnostics, *metadata_diagnostics],
             "duplicate_labels": duplicate_labels,
             "missing_node_labels": missing_node_labels,
             "unresolved_dependencies": unresolved_dependencies,
@@ -1523,6 +1988,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     args.output.write_text(json.dumps(graph, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     diagnostics = graph["diagnostics"]
+    metadata_diagnostics = [
+        item
+        for item in diagnostics["heading_parse_messages"]
+        if isinstance(item, dict) and item.get("category") == "metadata"
+    ]
     strict_failures = (
         shape_errors
         or diagnostics["duplicate_labels"]
@@ -1531,6 +2001,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         or diagnostics["cycles"]
         or diagnostics["missing_reference_numbers"]
         or diagnostics["statement_unexpanded_macros"]
+        or metadata_diagnostics
         or not graph["source"]["reference_numbering"].get("succeeded")
     )
     stats = graph["statistics"]
@@ -1540,6 +2011,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     for error in shape_errors:
         print(f"validation error: {error}", file=sys.stderr)
+    for diagnostic in metadata_diagnostics:
+        line = diagnostic.get("source_line", "?")
+        node = diagnostic.get("node")
+        node_text = repr(node) if node else "<unlabeled node>"
+        involved = diagnostic.get("involved_nodes") or []
+        involved_text = ", ".join(repr(item) for item in involved)
+        suffix = f"; involved nodes: {involved_text}" if involved_text else ""
+        print(
+            f"metadata warning: line {line}, node {node_text}: "
+            f"{diagnostic.get('message', diagnostic.get('code', 'inconsistent metadata'))}{suffix}",
+            file=sys.stderr,
+        )
     if args.strict and strict_failures:
         print("strict validation failed; inspect diagnostics in the JSON output", file=sys.stderr)
         return 1

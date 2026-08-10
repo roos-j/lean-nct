@@ -43,6 +43,19 @@ CELL_PAD_X = 14.0
 CELL_PAD_BOTTOM = 14.0
 CELL_TITLE_HEIGHT = 28.0
 
+# Statuses shared by theorem and definition nodes use one combined progress total.
+# The remaining built-in statuses are theorem-only except for ``defined``.
+STATUS_KIND_SCOPES: dict[str, tuple[str, ...]] = {
+    "not_ready": ("theorem", "definition"),
+    "can_state": ("theorem", "definition"),
+    "stated": ("theorem",),
+    "can_prove": ("theorem",),
+    "proved": ("theorem",),
+    "defined": ("definition",),
+    "fully_proved": ("theorem", "definition"),
+    "external_dependency": ("theorem",),
+}
+
 
 class GraphFormatError(ValueError):
     pass
@@ -77,6 +90,7 @@ class ClusterGeometry:
     width: float
     height: float
     member_ids: list[str]
+    clickable: bool = True
 
 
 @dataclass
@@ -385,6 +399,16 @@ def subsection_mode_geometry(
     if leftovers:
         groups.append({"id": None, "title": "", "aria": f"Filter to other direct material in {section['title']}", "synthetic": True, "nodes": leftovers})
 
+    sole_section_level_group = (
+        len(groups) == 1
+        and groups[0]["id"] is None
+        and groups[0]["synthetic"]
+    )
+    for group in groups:
+        group["clickable"] = not (sole_section_level_group and group is groups[0])
+        if not group["clickable"]:
+            group["aria"] = f"Section-level material in {section['title']}"
+
     for group in groups:
         group["layout"] = compute_local_layout(group["nodes"], edges, statuses, node_to_token, dot_binary)
         group["required_width"] = group["layout"].width + 2 * CELL_PAD_X
@@ -450,6 +474,7 @@ def subsection_mode_geometry(
                 title=group["title"], aria_label=group["aria"], synthetic=group["synthetic"],
                 x=cell_x, y=cell_y, width=cell_width, height=cell_height,
                 member_ids=[node["id"] for node in group["nodes"]],
+                clickable=group["clickable"],
             )
         )
     return SectionGeometry(section, result_nodes, clusters, width, height)
@@ -490,6 +515,7 @@ def translate_section(section: SectionGeometry, dx: float, dy: float) -> tuple[d
             width=cluster.width,
             height=cluster.height,
             member_ids=cluster.member_ids,
+            clickable=cluster.clickable,
         )
         for cluster in section.clusters
     ]
@@ -567,6 +593,7 @@ def hierarchy_layout_geometry(
             subsection_id=cluster.subsection_id, title=cluster.title, aria_label=cluster.aria_label,
             synthetic=cluster.synthetic, x=cluster.x + GLOBAL_MARGIN, y=cluster.y + GLOBAL_MARGIN,
             width=cluster.width, height=cluster.height, member_ids=cluster.member_ids,
+            clickable=cluster.clickable,
         )
         for cluster in all_clusters
     ]
@@ -629,6 +656,8 @@ def cluster_svg_group(cluster: ClusterGeometry, index: int) -> ET.Element:
     classes = ["dep-cluster", f"cluster-level-{cluster.level}"]
     if cluster.synthetic:
         classes.append("cluster-synthetic")
+    if not cluster.clickable:
+        classes.append("cluster-noninteractive")
     attributes = {
         "class": " ".join(classes),
         "id": f"cluster-{index:04d}",
@@ -636,13 +665,18 @@ def cluster_svg_group(cluster: ClusterGeometry, index: int) -> ET.Element:
         "data-cluster-title": cluster.title,
         "data-section-id": cluster.section_id,
         "data-member-count": str(len(cluster.member_ids)),
+        "data-cluster-clickable": "true" if cluster.clickable else "false",
     }
     if cluster.subsection_id is not None:
         attributes["data-subsection-id"] = cluster.subsection_id
     else:
         attributes["data-subsection-id"] = ""
+    if not cluster.clickable:
+        # A sole synthetic section-level cell is purely structural.  Disable
+        # pointer targeting on the complete SVG group, not just its caption,
+        # so it cannot highlight, change cursors, or show a native SVG tooltip.
+        attributes["pointer-events"] = "none"
     group = svg_element("g", attributes)
-    group.append(svg_element("title", text=cluster.aria_label))
     y = -(cluster.y + cluster.height)
     group.append(
         svg_element(
@@ -659,19 +693,28 @@ def cluster_svg_group(cluster: ClusterGeometry, index: int) -> ET.Element:
         )
     )
     caption_height = SECTION_TITLE_HEIGHT if cluster.level == 1 else CELL_TITLE_HEIGHT
-    caption = svg_element(
-        "g",
-        {
-            "class": "cluster-caption",
+    caption_attributes = {
+        "class": "cluster-caption" if cluster.clickable else "cluster-caption cluster-caption-static",
+        "data-cluster-kind": cluster.kind,
+        "data-section-id": cluster.section_id,
+        "data-subsection-id": cluster.subsection_id or "",
+    }
+    if cluster.clickable:
+        caption_attributes.update({
             "data-cluster-caption": "true",
-            "data-cluster-kind": cluster.kind,
-            "data-section-id": cluster.section_id,
-            "data-subsection-id": cluster.subsection_id or "",
             "role": "button",
             "tabindex": "0",
             "aria-label": cluster.aria_label,
-        },
-    )
+        })
+    else:
+        caption_attributes["aria-hidden"] = "true"
+    caption = svg_element("g", caption_attributes)
+    if cluster.clickable:
+        # Keep the native tooltip on the interactive caption only.  Attaching
+        # it to the outer cluster group would make the whole box react to
+        # hover, including a sole noninteractive section-level cell layered
+        # over its containing section.
+        caption.append(svg_element("title", text=cluster.aria_label))
     caption.append(
         svg_element(
             "rect",
@@ -679,7 +722,7 @@ def cluster_svg_group(cluster: ClusterGeometry, index: int) -> ET.Element:
                 "class": "cluster-caption-hit",
                 "fill": "none",
                 "stroke": "none",
-                "pointer-events": "all",
+                "pointer-events": "all" if cluster.clickable else "none",
                 "x": f"{cluster.x + 3:.3f}",
                 "y": f"{y + 3:.3f}",
                 "width": f"{max(1.0, cluster.width - 6):.3f}",
@@ -748,6 +791,7 @@ def postprocess_svg(
             ".dep-edge polygon{fill-opacity:var(--edge-opacity);stroke-opacity:var(--edge-opacity);}"
             ".dep-cluster.cluster-level-1>.cluster-box{fill:#cbd5e1;fill-opacity:var(--section-opacity,.15);stroke:#94a3b8;stroke-opacity:.78;stroke-width:1.1;}"
             ".dep-cluster.cluster-level-2>.cluster-box{fill:#dbeafe;fill-opacity:var(--subsection-opacity,.09);stroke:#cbd5e1;stroke-opacity:.72;stroke-width:.9;stroke-dasharray:4 3;}"
+            ".dep-cluster.cluster-noninteractive,.dep-cluster.cluster-noninteractive *{pointer-events:none!important;}"
             ".cluster-caption-hit{fill:transparent;stroke:none;}"
             ".cluster-caption-text{font-family:Helvetica,Arial,sans-serif;fill:#334155;font-size:11px;font-weight:600;opacity:.82;}"
             ".cluster-level-2 .cluster-caption-text{font-size:9px;font-weight:500;fill:#475569;}"
@@ -834,15 +878,38 @@ def render_layout_svg(
 # HTML fragments
 # ---------------------------------------------------------------------------
 
-def status_legend_html(status_catalog: list[dict[str, Any]]) -> str:
+def percentage_label(count: int, total: int) -> str:
+    percentage = 100.0 * count / total if total else 0.0
+    return f"{percentage:.1f}".rstrip("0").rstrip(".") + "%"
+
+
+def status_legend_html(status_catalog: list[dict[str, Any]], nodes: list[dict[str, Any]]) -> str:
+    totals = {
+        kind: sum(node["kind"] == kind for node in nodes)
+        for kind in ("theorem", "definition")
+    }
+    counts: dict[tuple[str, str], int] = defaultdict(int)
+    for node in nodes:
+        counts[(node["kind"], node["status"])] += 1
+
     items: list[str] = []
     for status in status_catalog:
         style = status["style"]
+        scopes = STATUS_KIND_SCOPES.get(status["id"])
+        if scopes is None:
+            observed = tuple(
+                kind for kind in ("theorem", "definition")
+                if counts[(kind, status["id"])]
+            )
+            scopes = observed or ("theorem",)
+        count = sum(counts[(kind, status["id"])] for kind in scopes)
+        total = sum(totals[kind] for kind in scopes)
+        count_summary = f"{count}/{total} ({percentage_label(count, total)})"
         items.append(
             '<div class="legend-status">'
             f'<span class="status-swatch" style="--swatch-border:{html.escape(style["border"])};--swatch-fill:{html.escape(style["fill"])};--swatch-text:{html.escape(style["text"])}"></span>'
             '<span>'
-            f'<strong>{html.escape(status["name"])}</strong>'
+            f'<strong>{html.escape(status["name"])} <span class="legend-status-count">{html.escape(count_summary)}</span></strong>'
             f'<small>{html.escape(status["meaning"])}</small>'
             '</span></div>'
         )
@@ -890,7 +957,7 @@ def build_html(graph: dict[str, Any], layouts: dict[str, LayoutGeometry], mathja
             section_counts[section_id] += 1
 
     graph_data = json.dumps(graph, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    legend = status_legend_html(graph["status_catalog"])
+    legend = status_legend_html(graph["status_catalog"], graph["nodes"])
     hierarchy = hierarchy_html(graph["sections"], section_counts)
     layout_markup = "\n".join(
         f'<div class="layout-slot" data-layout-key="{html.escape(key, quote=True)}">{layout.svg}</div>'
@@ -960,6 +1027,7 @@ body.sidebar-hidden #left-panel { transform: translateX(-100%); }
 .legend-status { display: grid; grid-template-columns: 31px 1fr; gap: 8px; align-items: start; margin: 8px 0; }
 .status-swatch { width: 31px; height: 18px; margin-top: 1px; border-radius: 999px; border: 2px solid var(--swatch-border); background: var(--swatch-fill); color: var(--swatch-text); }
 .legend-status strong { display: block; font-size: 11px; font-weight: 650; line-height: 1.2; }
+.legend-status-count { color: #94a3b8; font-size: 9px; font-weight: 400; margin-left: 3px; }
 .legend-status small { display: block; color: var(--muted); font-size: 10px; line-height: 1.28; margin-top: 2px; }
 .hierarchy ul { list-style: none; margin: 0; padding-left: 12px; border-left: 1px solid #e2e8f0; }
 .hierarchy > ul { padding-left: 0; border-left: 0; }
@@ -980,8 +1048,10 @@ body.sidebar-hidden #viewport { left: 0; }
 .dep-cluster.cluster-level-1 > .cluster-box { fill: #cbd5e1; fill-opacity: var(--section-opacity); stroke: #94a3b8; stroke-opacity: .78; stroke-width: 1.1; vector-effect: non-scaling-stroke; }
 .dep-cluster.cluster-level-2 > .cluster-box { fill: #dbeafe; fill-opacity: var(--subsection-opacity); stroke: #cbd5e1; stroke-opacity: .72; stroke-width: .9; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 .cluster-caption { cursor: pointer; }
+.cluster-caption-static { cursor: default; pointer-events: none; }
+.dep-cluster.cluster-noninteractive, .dep-cluster.cluster-noninteractive * { pointer-events: none !important; }
 .cluster-caption-hit { fill: transparent; stroke: none; pointer-events: all; }
-.cluster-caption:hover .cluster-caption-hit, .cluster-caption.active .cluster-caption-hit { fill: #2563eb; fill-opacity: .08; }
+.cluster-caption[data-cluster-caption="true"]:hover .cluster-caption-hit, .cluster-caption.active .cluster-caption-hit { fill: #2563eb; fill-opacity: .08; }
 .cluster-caption-text { font-family: Helvetica, Arial, sans-serif; fill: #334155; font-size: 11px; font-weight: 600; opacity: .82; pointer-events: none; }
 .cluster-level-2 .cluster-caption-text { font-size: 9px; font-weight: 500; fill: #475569; }
 .dep-node { cursor: pointer; opacity: var(--public-opacity); transition: opacity .15s ease; }
@@ -1286,12 +1356,12 @@ window.MathJax = {
       if (visible) visibleIds.add(node.id);
     }
     for (const edge of svg.querySelectorAll('.dep-edge')) {
-      const visible = !query && visibleIds.has(edge.dataset.source) && visibleIds.has(edge.dataset.target);
+      const visible = visibleIds.has(edge.dataset.source) && visibleIds.has(edge.dataset.target);
       edge.classList.toggle('filtered-out', !visible);
     }
     for (const cluster of svg.querySelectorAll('.dep-cluster')) {
-      let visible = !query;
-      if (visible && state.clusterFilter) {
+      let visible = true;
+      if (state.clusterFilter) {
         if (state.clusterFilter.kind === 'section') {
           visible = cluster.dataset.sectionId === state.clusterFilter.sectionId;
         } else {
