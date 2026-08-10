@@ -840,7 +840,6 @@ Then $M\in W_0((\R^2)^k)$.
 theorem cauchySchwarzKernel_memW0 (n k J : ℕ) (_hk : 1 ≤ k) (_hkn : k < n - 1)
     (_hJ : 1 ≤ J) (rho : Fin J → MKernel k) (phi : Fin J → ℝ → ℝ)
     (hrho : ∀ j, MemW0 (rho j))
-    (_hrho_norm : ∀ j, eLpNorm (rho j) 1 ≤ 1)
     (hphi : ∀ j, MemW0 (phi j)) (i : Fin k) :
     MemW0 (cauchySchwarzKernel rho phi i) := by
   unfold cauchySchwarzKernel
@@ -910,7 +909,12 @@ theorem positivityM_memW0 (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n)
     MemW0 (tensorSquareExtension k hk i tildeM phi) :=
   aux_tensorSquareExtension_memW0 n k hk hkn i tildeM htildeM htildeM_nonneg phi hphi
 
-/-- Definition \ref{prism form}, used in Proposition \ref{Positivity M}; see `positivityM_nonnegative`. -/
+/--
+\begin{definition}[prism form]\label{auto:prism-form-definition}
+Let $1\le k\le n$. We define for $M\in W_0((\R^2)^k)$ and $\mathbf{F}\in\mathfrak{F}$,
+\begin{equation}\label{auto:prism-form-formula}\Lambda_k(M)(\mathbf{F}) := \Theta_k(K_k(M))(\mathbf{F}).\end{equation}
+\end{definition}
+-/
 def prismForm (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n) (M : MKernel k)
     (F : Fin n → RealVector n → ℝ) : ℝ :=
   prismBrascampLiebForm n k hk hkn (mToK k hk M) F
@@ -2352,23 +2356,41 @@ theorem aux_prismBrascampLiebForm_finset_sum
       simpa only [Measure.volume_eq_prod] using (integral_prod (P (K j)) (hP j))
 
 /--
-For all $\F\in\mathfrak{F}$,
-\begin{equation}
-|\Lambda_k(M)(\F)| \le |\Lambda_{k+1}(\tilde{M})(\F)|^{\frac12} J^{\frac12}.
+\begin{proposition}[Cauchy-Schwarz at $k$]\label{Cauchy-Schwarz at k}\using{single cancellative Cauchy-Schwarz}\using{Monotonicity K}\using{M to K}
+Let $k,J\in\N$ with $1\le k<n-1$ and $J\ge1$. For $j\in[J)$, let $\rho_j\in W_0((\R^2)^k)$ and let $\varphi_j\in W_0(\R)$ be real valued. Let $i\in[k)$. Let $M\in W_0((\R^2)^k)$ and $\widetilde M\in W_0((\R^2)^{k+1})$ be defined by
+\begin{equation}\label{before CS}
+M=\sum_{j\in[J)}\rho_j*_{e_i^0+e_i^1}\varphi_j,
 \end{equation}
+and, for $y\in(\R^2)^{k+1}$,
+\begin{equation}\label{Cauchy Schwarz tilde M definition}
+\widetilde M(y)=\sum_{j\in[J)}|\rho_j(y_{[k)})|\varphi_j^{\otimes2}(y_k).
+\end{equation}
+Then for all $\F\in\mathfrak F$,
+\begin{equation}\label{Cauchy Schwarz at k estimate}
+|\Lambda_k(M)(\F)|
+\le
+|\Lambda_{k+1}(\widetilde M)(\F)|^{1/2}
+\Big(\sum_{j\in[J)}\|\rho_j\|_1\Big)^{1/2}.
+\end{equation}
+\end{proposition}
 -/
 theorem cauchySchwarzAtK_bound
     (n k J : ℕ) (hk : 1 ≤ k) (hkn : k < n - 1) (hJ : 1 ≤ J)
     (rho : Fin J → MKernel k) (phi : Fin J → ℝ → ℝ)
     (hrho : ∀ j, MemW0 (rho j))
-    (hrho_norm : ∀ j, eLpNorm (rho j) 1 volume ≤ 1)
     (hphi : ∀ j, MemW0 (phi j)) (i : Fin k)
     (F : Fin n → SchwartzMap (RealVector n) ℝ)
     (hF : F ∈ normalizedFunctionTuples n) :
     |prismForm n k hk (by omega)
       (cauchySchwarzKernel rho phi i) (fun a x => F a x)| ≤
       Real.sqrt |prismForm n (k + 1) (by omega) (by omega)
-        (cauchySchwarzLift rho phi) (fun a x => F a x)| * Real.sqrt (J : ℝ) := by
+        (cauchySchwarzLift rho phi) (fun a x => F a x)| *
+        Real.sqrt (∑ j, (eLpNorm (rho j) 1 volume).toReal) := by
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector k)) :=
+    isAddHaarMeasure_volume_pi (Fin k)
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (RealVector k × RealVector k)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
   let Krho : Fin J → KKernel k := fun j => mToK k hk (rho j)
   let Kabs : Fin J → KKernel k := fun j => mToK k hk (fun y => |rho j y|)
   have hKrho (j : Fin J) : MemW0 (Krho j) := by
@@ -2454,22 +2476,17 @@ theorem cauchySchwarzAtK_bound
           (singlyCancellativeLift k J Kabs phi) (fun a x => F a x) := by
     rw [hAeq, hBeq]
     exact Finset.sum_le_sum (fun j _ => hMono j)
-  have hKrho_norm (j : Fin J) : (eLpNorm (Krho j) 1 volume).toReal ≤ 1 := by
+  have hNormSum : ∑ j, (eLpNorm (Krho j) 1 volume).toReal ≤
+      ∑ j, (eLpNorm (rho j) 1 volume).toReal := by
+    apply Finset.sum_le_sum
+    intro j _
     have hcontract : eLpNorm (Krho j) 1 volume ≤ eLpNorm (rho j) 1 volume := by
       dsimp [Krho]
       exact mToK_eLpNorm_one_le n k hk (by omega) (rho j) (hrho j)
     have htop : eLpNorm (rho j) 1 volume ≠ ∞ :=
-      ne_top_of_le_ne_top ENNReal.one_ne_top (hrho_norm j)
-    calc
-      (eLpNorm (Krho j) 1 volume).toReal ≤ (eLpNorm (rho j) 1 volume).toReal :=
-        ENNReal.toReal_mono htop hcontract
-      _ ≤ 1 := by
-        simpa using ENNReal.toReal_mono ENNReal.one_ne_top (hrho_norm j)
-  have hNormSum : ∑ j, (eLpNorm (Krho j) 1 volume).toReal ≤ (J : ℝ) := by
-    calc
-      ∑ j, (eLpNorm (Krho j) 1 volume).toReal ≤ ∑ _j : Fin J, (1 : ℝ) :=
-        Finset.sum_le_sum (fun j _ => hKrho_norm j)
-      _ = J := by simp
+      (memLp_one_iff_integrable.mpr
+        (aux_memW0_integrable_of_addHaar (hrho j))).eLpNorm_ne_top
+    exact ENNReal.toReal_mono htop hcontract
   have hMLift : mToK (k + 1) (by omega) (cauchySchwarzLift rho phi) =
       singlyCancellativeLift k J Kabs phi := by
     simpa [Kabs] using aux_mToK_cauchySchwarzLift k J hk rho phi hrho hphi
@@ -2482,7 +2499,8 @@ theorem cauchySchwarzAtK_bound
       |prismForm n k hk (by omega)
         (cauchySchwarzKernel rho phi i) (fun a x => F a x)| ^ 2 ≤
         prismBrascampLiebForm n (k + 1) (by omega) (by omega)
-          (singlyCancellativeLift k J Kabs phi) (fun a x => F a x) * (J : ℝ) := by
+          (singlyCancellativeLift k J Kabs phi) (fun a x => F a x) *
+            ∑ j, (eLpNorm (rho j) 1 volume).toReal := by
     calc
       |prismForm n k hk (by omega)
         (cauchySchwarzKernel rho phi i) (fun a x => F a x)| ^ 2 ≤
@@ -2494,13 +2512,15 @@ theorem cauchySchwarzAtK_bound
               ∑ j, (eLpNorm (Krho j) 1 volume).toReal :=
           mul_le_mul_of_nonneg_right hA_le_B hNorm_nonneg
       _ ≤ prismBrascampLiebForm n (k + 1) (by omega) (by omega)
-            (singlyCancellativeLift k J Kabs phi) (fun a x => F a x) * (J : ℝ) :=
+            (singlyCancellativeLift k J Kabs phi) (fun a x => F a x) *
+              ∑ j, (eLpNorm (rho j) 1 volume).toReal :=
           mul_le_mul_of_nonneg_left hNormSum hB_nonneg
   have hSquare :
       |prismForm n k hk (by omega)
         (cauchySchwarzKernel rho phi i) (fun a x => F a x)| ^ 2 ≤
-        prismForm n (k + 1) (by omega) (by omega)
-          (cauchySchwarzLift rho phi) (fun a x => F a x) * (J : ℝ) := by
+      prismForm n (k + 1) (by omega) (by omega)
+          (cauchySchwarzLift rho phi) (fun a x => F a x) *
+            ∑ j, (eLpNorm (rho j) 1 volume).toReal := by
     change _ ≤ prismBrascampLiebForm n (k + 1) (by omega) (by omega)
       (mToK (k + 1) (by omega) (cauchySchwarzLift rho phi)) (fun a x => F a x) * _
     rw [hMLift]
@@ -2513,13 +2533,16 @@ theorem cauchySchwarzAtK_bound
     exact hB_nonneg
   have hTarget_nonneg : 0 ≤
       Real.sqrt |prismForm n (k + 1) (by omega) (by omega)
-        (cauchySchwarzLift rho phi) (fun a x => F a x)| * Real.sqrt (J : ℝ) :=
+        (cauchySchwarzLift rho phi) (fun a x => F a x)| *
+        Real.sqrt (∑ j, (eLpNorm (rho j) 1 volume).toReal) :=
     mul_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)
   have hTarget_sq :
       (Real.sqrt |prismForm n (k + 1) (by omega) (by omega)
-        (cauchySchwarzLift rho phi) (fun a x => F a x)| * Real.sqrt (J : ℝ)) ^ 2 =
+        (cauchySchwarzLift rho phi) (fun a x => F a x)| *
+        Real.sqrt (∑ j, (eLpNorm (rho j) 1 volume).toReal)) ^ 2 =
         prismForm n (k + 1) (by omega) (by omega)
-          (cauchySchwarzLift rho phi) (fun a x => F a x) * (J : ℝ) := by
+          (cauchySchwarzLift rho phi) (fun a x => F a x) *
+            ∑ j, (eLpNorm (rho j) 1 volume).toReal := by
     rw [mul_pow, Real.sq_sqrt (abs_nonneg _), Real.sq_sqrt (by positivity)]
     rw [abs_of_nonneg hLiftM_nonneg]
   apply (sq_le_sq₀ (abs_nonneg _) hTarget_nonneg).mp
