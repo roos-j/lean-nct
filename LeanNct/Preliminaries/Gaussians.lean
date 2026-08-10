@@ -11,6 +11,8 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Analysis.Analytic.Binomial
+import Mathlib.RingTheory.Polynomial.Hermite.Gaussian
 
 /-!
 # Gaussians
@@ -37,9 +39,752 @@ For $\lambda>0$, the rescaled Gaussian is $\g_{(\lambda)}(x)=\lambda^{-1}\g(\lam
 -/
 def gaussianRescale (t : ℝ) : ℝ → ℝ := fun x => t⁻¹ * gaussian (t⁻¹ * x)
 
-/-- The explicit constant prescribed by Proposition \ref{Gaussian bump decay}. -/
+/-- The explicit constant in Proposition \ref{Gaussian bump decay}, formalized by
+`gaussianBumpDecay`. -/
 def C_gaussianBumpDecay (m N : ℕ) : ℝ :=
-  Real.rpow (100 * ((m + N + 1 : ℕ) : ℝ)) (((m + N : ℕ) : ℝ) / 2)
+  Real.rpow (38 * ((m + 1 : ℕ) : ℝ)) ((m : ℝ) / 2) *
+    Real.rpow (4 * ((N + 1 : ℕ) : ℝ)) ((N : ℝ) / 2)
+
+/-- This auxiliary maximization estimate bounds a monomial times a decaying exponential.
+It is used to control the terms in the explicit Hermite-polynomial formula for the
+Gaussian derivatives. -/
+theorem aux_pow_mul_exp_neg_le (n : ℕ) (y : ℝ) (hy : 0 ≤ y) :
+    y ^ n * Real.exp (-y) ≤ ((n : ℝ) * Real.exp (-1)) ^ n := by
+  by_cases hn : n = 0
+  · subst hn
+    simpa using (Real.exp_le_one_iff.mpr (by linarith : -y ≤ 0))
+  · have hnpos : 0 < (n : ℝ) := by
+      exact_mod_cast Nat.pos_of_ne_zero hn
+    have hbase := Real.mul_exp_neg_le_exp_neg_one (y / (n : ℝ))
+    have hleft_nonneg : 0 ≤ y / (n : ℝ) * Real.exp (-(y / (n : ℝ))) := by
+      positivity
+    have hpow : (y / (n : ℝ) * Real.exp (-(y / (n : ℝ)))) ^ n ≤
+        Real.exp (-1) ^ n := by
+      gcongr
+    have hpow' : (y / (n : ℝ)) ^ n * Real.exp (-y) ≤ Real.exp (-1) ^ n := by
+      calc
+        (y / (n : ℝ)) ^ n * Real.exp (-y) =
+            (y / (n : ℝ) * Real.exp (-(y / (n : ℝ)))) ^ n := by
+          rw [mul_pow, ← Real.exp_nat_mul]
+          congr 1
+          field_simp
+        _ ≤ Real.exp (-1) ^ n := hpow
+    calc
+      y ^ n * Real.exp (-y) = (n : ℝ) ^ n *
+          ((y / (n : ℝ)) ^ n * Real.exp (-y)) := by
+        rw [div_pow]
+        field_simp
+      _ ≤ (n : ℝ) ^ n * Real.exp (-1) ^ n :=
+        mul_le_mul_of_nonneg_left hpow' (pow_nonneg hnpos.le _)
+      _ = ((n : ℝ) * Real.exp (-1)) ^ n := by rw [mul_pow]
+
+/-- This auxiliary consequence of `aux_pow_mul_exp_neg_le` controls the monomial factor left
+after splitting a Gaussian into two equal decaying exponentials.  It is used termwise in the
+Hermite-polynomial proof of `gaussianBumpDecay`. -/
+theorem aux_abs_pow_mul_exp_neg_half_le (d : ℕ) (x : ℝ) :
+    |x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2) ≤
+      Real.rpow (((d + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi) ((d : ℝ) / 2) := by
+  let B : ℝ := ((d + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi
+  have hB : 0 < B := by
+    dsimp [B]
+    positivity
+  have hsquared : (|x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2)) ^ 2 ≤
+      ((d : ℝ) * Real.exp (-1) / Real.pi) ^ d := by
+    have h := aux_pow_mul_exp_neg_le d (Real.pi * x ^ 2) (by positivity)
+    have h' : (Real.pi * x ^ 2) ^ d * Real.exp (-Real.pi * x ^ 2) ≤
+        ((d : ℝ) * Real.exp (-1)) ^ d := by
+      simpa using h
+    calc
+      (|x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2)) ^ 2 =
+          (1 / Real.pi) ^ d * ((Real.pi * x ^ 2) ^ d * Real.exp (-Real.pi * x ^ 2)) := by
+        rw [mul_pow, ← Real.exp_nat_mul, ← pow_mul]
+        rw [show (d : ℕ) * 2 = 2 * d by omega, pow_mul, sq_abs]
+        rw [mul_pow, div_pow]
+        field_simp [Real.pi_ne_zero]
+        ring
+      _ ≤ (1 / Real.pi) ^ d * ((d : ℝ) * Real.exp (-1)) ^ d :=
+        mul_le_mul_of_nonneg_left h' (by positivity)
+      _ = ((d : ℝ) * Real.exp (-1) / Real.pi) ^ d := by
+        rw [div_pow]
+        ring
+  have hbase : (d : ℝ) * Real.exp (-1) / Real.pi ≤ B := by
+    dsimp [B]
+    have hd : (d : ℝ) ≤ ((d + 1 : ℕ) : ℝ) := by
+      exact_mod_cast Nat.le_succ d
+    gcongr
+  have hBsquared : (|x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2)) ^ 2 ≤ B ^ d :=
+    hsquared.trans (by gcongr)
+  have hrpow_sq : (Real.rpow B ((d : ℝ) / 2)) ^ 2 = B ^ d := by
+    calc
+      (Real.rpow B ((d : ℝ) / 2)) ^ 2 =
+          Real.rpow B ((d : ℝ) / 2) * Real.rpow B ((d : ℝ) / 2) := by ring
+      _ = Real.rpow B ((d : ℝ) / 2 + (d : ℝ) / 2) :=
+        (Real.rpow_add hB _ _).symm
+      _ = Real.rpow B (d : ℝ) := by congr 1 <;> ring
+      _ = B ^ d := Real.rpow_natCast B d
+  have habs : |(|x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2))| ≤
+      |Real.rpow B ((d : ℝ) / 2)| := by
+    apply (sq_le_sq).mp
+    rw [hrpow_sq]
+    exact hBsquared
+  have hRpos : 0 < Real.rpow B ((d : ℝ) / 2) := Real.rpow_pos_of_pos hB _
+  change |x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2) ≤ Real.rpow B ((d : ℝ) / 2)
+  calc
+    |x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2) =
+        |(|x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2))| :=
+      (abs_of_nonneg (by positivity)).symm
+    _ ≤ |Real.rpow B ((d : ℝ) / 2)| := habs
+    _ = Real.rpow B ((d : ℝ) / 2) := abs_of_pos hRpos
+
+/-- This auxiliary estimate supplies the arbitrary polynomial-decay factor for the
+half-Gaussian left after the Hermite derivative estimate.  It is used in
+`gaussianBumpDecay`. -/
+theorem aux_halfGaussian_le_bracketDecay (x : ℝ) (n : ℕ) :
+    Real.exp (-(Real.pi / 2) * x ^ 2) ≤
+      (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) * bracketBump x ^ n := by
+  have hden : 0 < (1 + |x|) ^ n := pow_pos (by positivity) _
+  have htwo : (4 : ℝ) ^ (1 / 2 : ℝ) = 2 := by
+    calc
+      (4 : ℝ) ^ (1 / 2 : ℝ) = Real.sqrt 4 := (Real.sqrt_eq_rpow 4).symm
+      _ = 2 := by norm_num
+  have htwoPowEq : (2 : ℝ) ^ n = (4 : ℝ) ^ ((n : ℝ) / 2) := by
+    calc
+      (2 : ℝ) ^ n = (2 : ℝ) ^ (n : ℝ) := (Real.rpow_natCast 2 n).symm
+      _ = ((4 : ℝ) ^ (1 / 2 : ℝ)) ^ (n : ℝ) := by rw [htwo]
+      _ = (4 : ℝ) ^ ((1 / 2 : ℝ) * (n : ℝ)) :=
+        (Real.rpow_mul (by norm_num) (1 / 2 : ℝ) (n : ℝ)).symm
+      _ = (4 : ℝ) ^ ((n : ℝ) / 2) := by congr 1 <;> ring
+  have htwopow : (2 : ℝ) ^ n ≤
+      (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) := by
+    have hbase : (4 : ℝ) ≤ 4 * ((n + 1 : ℕ) : ℝ) := by
+      have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+      push_cast
+      nlinarith
+    calc
+      (2 : ℝ) ^ n = (4 : ℝ) ^ ((n : ℝ) / 2) := htwoPowEq
+      _ ≤ (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) :=
+        Real.rpow_le_rpow (by norm_num) hbase (by positivity)
+  have hcore : Real.exp (-(Real.pi / 2) * x ^ 2) * (1 + |x|) ^ n ≤
+      (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) := by
+    by_cases hx : |x| ≤ 1
+    · have hexp : Real.exp (-(Real.pi / 2) * x ^ 2) ≤ 1 :=
+        Real.exp_le_one_iff.mpr (by nlinarith [Real.pi_pos, sq_nonneg x])
+      have hbase : 1 + |x| ≤ 2 := by linarith
+      have hpow : (1 + |x|) ^ n ≤ (2 : ℝ) ^ n := by gcongr
+      calc
+        Real.exp (-(Real.pi / 2) * x ^ 2) * (1 + |x|) ^ n ≤
+            1 * (1 + |x|) ^ n :=
+          mul_le_mul_of_nonneg_right hexp (pow_nonneg (by positivity) _)
+        _ = (1 + |x|) ^ n := by ring
+        _ ≤ (2 : ℝ) ^ n := hpow
+        _ ≤ (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) := htwopow
+    · have hxone : 1 ≤ |x| := le_of_not_ge hx
+      have hbase : 1 + |x| ≤ 2 * |x| := by linarith
+      have hpow : (1 + |x|) ^ n ≤ (2 * |x|) ^ n := by gcongr
+      have habs := aux_abs_pow_mul_exp_neg_half_le n x
+      have hExpPi : Real.exp (-1) ≤ Real.pi := by
+        exact (Real.exp_le_one_iff.mpr (by norm_num)).trans (by nlinarith [Real.pi_gt_three])
+      have hmul : ((n + 1 : ℕ) : ℝ) * Real.exp (-1) ≤ ((n + 1 : ℕ) : ℝ) * Real.pi :=
+        mul_le_mul_of_nonneg_left hExpPi (by positivity)
+      have hsmallbase : ((n + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi ≤ ((n + 1 : ℕ) : ℝ) := by
+        calc
+          ((n + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi ≤
+              (((n + 1 : ℕ) : ℝ) * Real.pi) / Real.pi :=
+            div_le_div_of_nonneg_right hmul Real.pi_pos.le
+          _ = ((n + 1 : ℕ) : ℝ) := by field_simp
+      have hB :
+          (((n + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi) ^ ((n : ℝ) / 2) ≤
+            ((n + 1 : ℕ) : ℝ) ^ ((n : ℝ) / 2) :=
+        Real.rpow_le_rpow (by positivity) hsmallbase (by positivity)
+      have hfinal : (2 : ℝ) ^ n *
+            (((n + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi) ^ ((n : ℝ) / 2) ≤
+            (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) := by
+        calc
+          (2 : ℝ) ^ n *
+              (((n + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi) ^ ((n : ℝ) / 2) ≤
+              (2 : ℝ) ^ n * ((n + 1 : ℕ) : ℝ) ^ ((n : ℝ) / 2) :=
+            mul_le_mul_of_nonneg_left hB (pow_nonneg (by positivity) _)
+          _ = (4 : ℝ) ^ ((n : ℝ) / 2) * ((n + 1 : ℕ) : ℝ) ^ ((n : ℝ) / 2) := by
+            rw [htwoPowEq]
+          _ = (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) :=
+            (Real.mul_rpow (by norm_num) (by positivity)).symm
+      calc
+        Real.exp (-(Real.pi / 2) * x ^ 2) * (1 + |x|) ^ n ≤
+            Real.exp (-(Real.pi / 2) * x ^ 2) * (2 * |x|) ^ n :=
+          mul_le_mul_of_nonneg_left hpow (Real.exp_pos _).le
+        _ = (2 : ℝ) ^ n * (|x| ^ n * Real.exp (-(Real.pi / 2) * x ^ 2)) := by
+          rw [mul_pow]
+          ring
+        _ ≤ (2 : ℝ) ^ n *
+            (((n + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi) ^ ((n : ℝ) / 2) :=
+          mul_le_mul_of_nonneg_left habs (pow_nonneg (by positivity) _)
+        _ ≤ (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) := hfinal
+  have h : Real.exp (-(Real.pi / 2) * x ^ 2) ≤
+      (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) / (1 + |x|) ^ n := by
+    calc
+      Real.exp (-(Real.pi / 2) * x ^ 2) =
+          (Real.exp (-(Real.pi / 2) * x ^ 2) * (1 + |x|) ^ n) / (1 + |x|) ^ n := by
+        field_simp [ne_of_gt hden]
+      _ ≤ (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) / (1 + |x|) ^ n :=
+        div_le_div_of_nonneg_right hcore hden.le
+  simpa only [bracketBump, inv_pow, div_eq_mul_inv] using h
+
+/-- This auxiliary factorial identity rewrites the odd double factorial in the Hermite
+coefficient formula.  It is used to retain the factor of `2` needed for the sharp
+combinatorial estimate in `gaussianBumpDecay`. -/
+theorem aux_oddDoubleFactorial_mul_twoPow_mul_factorial (j : ℕ) :
+    Nat.doubleFactorial (2 * j - 1) * (2 ^ j * j.factorial) = (2 * j).factorial := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [show 2 * (j + 1) - 1 = 2 * j + 1 by omega,
+      Nat.doubleFactorial_add_one]
+    calc
+      (2 * j + 1) * Nat.doubleFactorial (2 * j - 1) *
+          (2 ^ (j + 1) * (j + 1).factorial) =
+          (2 * j + 2) * (2 * j + 1) *
+            (Nat.doubleFactorial (2 * j - 1) * (2 ^ j * j.factorial)) := by
+              rw [pow_succ, Nat.factorial_succ]
+              ring
+      _ = (2 * j + 2) * (2 * j + 1) * (2 * j).factorial := by rw [ih]
+      _ = (2 * (j + 1)).factorial := by
+        rw [show 2 * (j + 1) = (2 * j + 1) + 1 by omega, Nat.factorial_succ]
+        rw [show 2 * j + 1 = (2 * j) + 1 by omega, Nat.factorial_succ]
+        ring
+
+/-- This auxiliary estimate bounds the nonzero Hermite coefficient with index `d` in
+the parametrization `2 * j + d`.  It is used termwise in the proof of
+`gaussianBumpDecay`. -/
+theorem aux_hermiteCoeff_nat_bound (j d : ℕ) :
+    Nat.doubleFactorial (2 * j - 1) * Nat.choose (2 * j + d) d ≤
+      2 ^ (j + d) * (2 * j + d) ^ j := by
+  apply Nat.le_of_mul_le_mul_right (c := 2 ^ j * j.factorial * d.factorial) ?_
+    (by positivity)
+  have hchoose : Nat.choose (2 * j + d) d ≤ 2 ^ (2 * j + d) :=
+    Nat.choose_le_two_pow _ _
+  have hpow : (2 * j) ^ j ≤ (2 * j + d) ^ j :=
+    Nat.pow_le_pow_left (by omega) _
+  have hfact : (2 * j).factorial ≤ (2 * j + d) ^ j * j.factorial := by
+    calc
+      (2 * j).factorial ≤ (2 * j) ^ j * j.factorial := Nat.factorial_two_mul_le j
+      _ ≤ (2 * j + d) ^ j * j.factorial := Nat.mul_le_mul_right _ hpow
+  have hchooseFact :=
+    Nat.choose_mul_factorial_mul_factorial (n := 2 * j + d) (k := d) (by omega)
+  have hsub : 2 * j + d - d = 2 * j := by omega
+  rw [hsub] at hchooseFact
+  calc
+    (Nat.doubleFactorial (2 * j - 1) * Nat.choose (2 * j + d) d) *
+        (2 ^ j * j.factorial * d.factorial) =
+        Nat.choose (2 * j + d) d * d.factorial *
+          (Nat.doubleFactorial (2 * j - 1) * (2 ^ j * j.factorial)) := by ring
+    _ = Nat.choose (2 * j + d) d * d.factorial * (2 * j).factorial := by
+      rw [aux_oddDoubleFactorial_mul_twoPow_mul_factorial]
+    _ = (2 * j + d).factorial := hchooseFact
+    _ ≤ (2 ^ (2 * j + d) * d.factorial) * ((2 * j + d) ^ j * j.factorial) := by
+      rw [← hchooseFact]
+      exact Nat.mul_le_mul (Nat.mul_le_mul_right _ hchoose) hfact
+    _ = (2 ^ (j + d) * (2 * j + d) ^ j) *
+        (2 ^ j * j.factorial * d.factorial) := by
+          rw [show 2 * j + d = (j + d) + j by omega, pow_add]
+          ring
+
+/-- This auxiliary real-valued form of `aux_hermiteCoeff_nat_bound` bounds a Hermite
+coefficient of the parity occurring in the Gaussian derivative formula.  It is used
+termwise in `gaussianBumpDecay`. -/
+theorem aux_hermiteCoeff_bound (m d : ℕ) (hd : d ≤ m) (he : Even (m + d)) :
+    |((Polynomial.hermite m).coeff d : ℝ)| ≤
+      (2 : ℝ) ^ (m - (m - d) / 2) * (m : ℝ) ^ ((m - d) / 2) := by
+  have hsubEven : Even (m - d) := by
+    exact (Nat.even_sub hd).mpr ((Nat.even_add).mp he)
+  have htwice : 2 * ((m - d) / 2) = m - d :=
+    Nat.two_mul_div_two_of_even hsubEven
+  let j : ℕ := (m - d) / 2
+  have hm : m = 2 * j + d := by
+    dsimp [j]
+    omega
+  have hnat := aux_hermiteCoeff_nat_bound j d
+  have hnat' : (m - d - 1).doubleFactorial * m.choose d ≤
+      2 ^ (m - (m - d) / 2) * m ^ ((m - d) / 2) := by
+    rw [hm]
+    have hsub : 2 * j + d - d = 2 * j := by omega
+    rw [hsub]
+    have hj : 2 * j / 2 = j := by omega
+    have hpow : 2 * j + d - j = j + d := by omega
+    rw [hj, hpow]
+    exact hnat
+  have hcast : ((m - d - 1).doubleFactorial : ℝ) * (m.choose d : ℝ) ≤
+      (2 : ℝ) ^ (m - (m - d) / 2) * (m : ℝ) ^ ((m - d) / 2) := by
+    exact_mod_cast hnat'
+  calc
+    |((Polynomial.hermite m).coeff d : ℝ)| =
+        ((m - d - 1).doubleFactorial : ℝ) * (m.choose d : ℝ) := by
+      rw [Polynomial.coeff_hermite, if_pos he]
+      push_cast
+      rw [abs_mul, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul,
+        abs_of_nonneg (by positivity), abs_of_nonneg (by positivity)]
+    _ ≤ (2 : ℝ) ^ (m - (m - d) / 2) * (m : ℝ) ^ ((m - d) / 2) := hcast
+
+/-- This auxiliary identity expresses an iterated derivative of the manuscript's Gaussian
+through the Hermite polynomial formula in mathlib.  It is used to reduce
+`gaussianBumpDecay` to a finite coefficient estimate. -/
+theorem aux_gaussian_iteratedDeriv_hermite (m : ℕ) (x : ℝ) :
+    iteratedDeriv m gaussian x =
+      (Real.sqrt (2 * Real.pi)) ^ m *
+        ((-1 : ℝ) ^ m * (Polynomial.aeval (Real.sqrt (2 * Real.pi) * x)
+          (Polynomial.hermite m)) *
+          Real.exp (-((Real.sqrt (2 * Real.pi) * x) ^ 2 / 2))) := by
+  let s : ℝ := Real.sqrt (2 * Real.pi)
+  let h : ℝ → ℝ := fun y => Real.exp (-(y ^ 2 / 2))
+  have hgauss : gaussian = fun z : ℝ => h (s * z) := by
+    funext z
+    dsimp [h, s, gaussian, Notation.gaussian]
+    rw [show (Real.sqrt (2 * Real.pi) * z) ^ 2 = (2 * Real.pi) * z ^ 2 by
+      rw [mul_pow, Real.sq_sqrt (by positivity)] <;> ring]
+    congr 1
+    ring
+  have hh : ContDiff ℝ m h := by
+    dsimp [h]
+    fun_prop
+  rw [hgauss, iteratedDeriv_comp_const_mul hh s]
+  change s ^ m * iteratedDeriv m h (s * x) = _
+  rw [iteratedDeriv_eq_iterate]
+  change s ^ m * deriv^[m] (fun y : ℝ => Real.exp (-(y ^ 2 / 2))) (s * x) = _
+  rw [Polynomial.deriv_gaussian_eq_hermite_mul_gaussian]
+
+/-- This auxiliary cardinality bound counts the parity-compatible nonzero terms in the
+Hermite polynomial expansion.  It is used to sum the termwise estimate in
+`gaussianBumpDecay`. -/
+theorem aux_hermiteParity_card_le (m : ℕ) :
+    ((Finset.range (m + 1)).filter (fun d => Even (m + d))).card ≤ m / 2 + 1 := by
+  let S := (Finset.range (m + 1)).filter (fun d => Even (m + d))
+  change S.card ≤ m / 2 + 1
+  rw [← Finset.card_range (m / 2 + 1)]
+  refine Finset.card_le_card_of_injOn (fun d => (m - d) / 2) ?_ ?_
+  case refine_1 =>
+    intro d hd
+    have hd' := (Finset.mem_filter.mp hd).1
+    exact Finset.mem_range.mpr
+      (Nat.lt_succ_of_le (Nat.div_le_div_right (Nat.sub_le m d)))
+  case refine_2 =>
+    intro a ha b hb hab
+    change (m - a) / 2 = (m - b) / 2 at hab
+    have ha_le : a ≤ m := by
+      exact Nat.le_of_lt_succ
+        (Finset.mem_range.mp (Finset.mem_filter.mp ha).1)
+    have hb_le : b ≤ m := by
+      exact Nat.le_of_lt_succ
+        (Finset.mem_range.mp (Finset.mem_filter.mp hb).1)
+    have hea : Even (m + a) := (Finset.mem_filter.mp ha).2
+    have heb : Even (m + b) := (Finset.mem_filter.mp hb).2
+    have hsa : Even (m - a) := by
+      exact (Nat.even_sub ha_le).mpr ((Nat.even_add).mp hea)
+    have hsb : Even (m - b) := by
+      exact (Nat.even_sub hb_le).mpr ((Nat.even_add).mp heb)
+    have hta : 2 * ((m - a) / 2) = m - a :=
+      Nat.two_mul_div_two_of_even hsa
+    have htb : 2 * ((m - b) / 2) = m - b :=
+      Nat.two_mul_div_two_of_even hsb
+    have hsub : m - a = m - b := by
+      calc
+        m - a = 2 * ((m - a) / 2) := hta.symm
+        _ = 2 * ((m - b) / 2) := by rw [hab]
+        _ = m - b := htb
+    omega
+
+/-- This auxiliary elementary estimate turns the cardinality in
+`aux_hermiteParity_card_le` into the square-root power of two used in
+`gaussianBumpDecay`. -/
+theorem aux_halfCard_le_rpow_two (m : ℕ) :
+    ((m / 2 + 1 : ℕ) : ℝ) ≤ Real.rpow 2 ((m : ℝ) / 2) := by
+  have hsucc : ∀ k : ℕ, k + 1 ≤ 2 ^ k := by
+    intro k
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      calc
+        k + 1 + 1 ≤ 2 * (k + 1) := by omega
+        _ ≤ 2 * 2 ^ k := Nat.mul_le_mul_left 2 ih
+        _ = 2 ^ (k + 1) := by simp [pow_succ, Nat.mul_comm]
+  have hcast : ((m / 2 + 1 : ℕ) : ℝ) ≤ (2 : ℝ) ^ (m / 2) := by
+    exact_mod_cast hsucc (m / 2)
+  have hdivNat : 2 * (m / 2) ≤ m := Nat.mul_div_le m 2
+  have hdiv : (2 : ℝ) * ((m / 2 : ℕ) : ℝ) ≤ (m : ℝ) := by
+    exact_mod_cast hdivNat
+  calc
+    ((m / 2 + 1 : ℕ) : ℝ) ≤ (2 : ℝ) ^ (m / 2) := hcast
+    _ = Real.rpow 2 ((m / 2 : ℕ) : ℝ) := (Real.rpow_natCast 2 (m / 2)).symm
+    _ ≤ Real.rpow 2 ((m : ℝ) / 2) := by
+      apply Real.rpow_le_rpow_of_exponent_le (by norm_num)
+      nlinarith
+
+/-- This auxiliary estimate combines the scaled Hermite coefficient and monomial bounds into
+the explicit order-dependent factor required by `gaussianBumpDecay`. -/
+theorem aux_scaledHermite_term_le (m j d : Nat) (hm : m = 2 * j + d) :
+    (Real.sqrt (2 * Real.pi)) ^ m * ((2 : Real) ^ (j + d) * (m : Real) ^ j) *
+        (Real.sqrt (2 * Real.pi)) ^ d *
+        (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) ≤
+      (19 * ((m + 1 : Nat) : Real)) ^ ((m : Real) / 2) := by
+  subst m
+  have hsd :
+      (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) * (Real.sqrt (2 * Real.pi)) ^ d =
+        (2 * Real.pi) ^ (j + d) := by
+    have hsquare : (Real.sqrt (2 * Real.pi)) ^ 2 = 2 * Real.pi :=
+      Real.sq_sqrt (by positivity)
+    have hleft : (Real.sqrt (2 * Real.pi)) ^ (2 * j) =
+        ((Real.sqrt (2 * Real.pi)) ^ 2) ^ j := by rw [pow_mul]
+    have hright : (Real.sqrt (2 * Real.pi)) ^ d * (Real.sqrt (2 * Real.pi)) ^ d =
+        ((Real.sqrt (2 * Real.pi)) ^ 2) ^ d := by
+      calc
+        (Real.sqrt (2 * Real.pi)) ^ d * (Real.sqrt (2 * Real.pi)) ^ d =
+            (Real.sqrt (2 * Real.pi)) ^ (d + d) := (pow_add _ _ _).symm
+        _ = (Real.sqrt (2 * Real.pi)) ^ (2 * d) := by congr 1 <;> omega
+        _ = ((Real.sqrt (2 * Real.pi)) ^ 2) ^ d := by rw [pow_mul]
+    calc
+      (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) * (Real.sqrt (2 * Real.pi)) ^ d =
+          (Real.sqrt (2 * Real.pi)) ^ (2 * j) *
+            ((Real.sqrt (2 * Real.pi)) ^ d * (Real.sqrt (2 * Real.pi)) ^ d) := by
+        rw [pow_add]
+        ring
+      _ = ((Real.sqrt (2 * Real.pi)) ^ 2) ^ j *
+            ((Real.sqrt (2 * Real.pi)) ^ 2) ^ d := by rw [hleft, hright]
+      _ = ((Real.sqrt (2 * Real.pi)) ^ 2) ^ (j + d) := by rw [pow_add]
+      _ = (2 * Real.pi) ^ (j + d) := by rw [hsquare]
+  have hfour : (2 * Real.pi) ^ (j + d) * (2 : Real) ^ (j + d) =
+      (4 * Real.pi) ^ (j + d) := by
+    calc
+      (2 * Real.pi) ^ (j + d) * (2 : Real) ^ (j + d) =
+          ((2 * Real.pi) * 2) ^ (j + d) := (mul_pow _ _ _).symm
+      _ = (4 * Real.pi) ^ (j + d) := by congr 1 <;> ring
+  have hlast : (4 * Real.pi) ^ d *
+      (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) =
+      (16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1)) ^ ((d : Real) / 2) := by
+    have ha : 0 ≤ (4 * Real.pi : Real) := by positivity
+    have hB : 0 ≤ ((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi := by positivity
+    have hpow : (4 * Real.pi : Real) ^ d =
+        ((4 * Real.pi : Real) ^ 2) ^ ((d : Real) / 2) := by
+      calc
+        (4 * Real.pi : Real) ^ d = (4 * Real.pi : Real) ^ (d : Real) :=
+          (Real.rpow_natCast (4 * Real.pi) d).symm
+        _ = (4 * Real.pi : Real) ^ ((2 : Real) * ((d : Real) / 2)) := by congr 1 <;> ring
+        _ = ((4 * Real.pi : Real) ^ 2) ^ ((d : Real) / 2) := by
+          simpa using (Real.rpow_mul ha (2 : Real) ((d : Real) / 2))
+    calc
+      (4 * Real.pi) ^ d *
+          (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) =
+          ((4 * Real.pi : Real) ^ 2) ^ ((d : Real) / 2) *
+            (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) := by rw [hpow]
+      _ = (((4 * Real.pi : Real) ^ 2) *
+            (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi)) ^ ((d : Real) / 2) :=
+        (Real.mul_rpow (by positivity) hB).symm
+      _ = (16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1)) ^ ((d : Real) / 2) := by
+        congr 1
+        field_simp [Real.pi_ne_zero]
+        ring
+  have hfactor :
+      (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) * ((2 : Real) ^ (j + d) * ((2 * j + d : Nat) : Real) ^ j) *
+        (Real.sqrt (2 * Real.pi)) ^ d *
+        (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) =
+      (4 * Real.pi * ((2 * j + d : Nat) : Real)) ^ j *
+        (16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1)) ^ ((d : Real) / 2) := by
+    calc
+      (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) *
+          ((2 : Real) ^ (j + d) * ((2 * j + d : Nat) : Real) ^ j) *
+          (Real.sqrt (2 * Real.pi)) ^ d *
+          (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) =
+          ((Real.sqrt (2 * Real.pi)) ^ (2 * j + d) *
+            (Real.sqrt (2 * Real.pi)) ^ d) *
+            ((2 : Real) ^ (j + d) * ((2 * j + d : Nat) : Real) ^ j) *
+            (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) := by ring
+      _ = (2 * Real.pi) ^ (j + d) * (2 : Real) ^ (j + d) *
+            ((2 * j + d : Nat) : Real) ^ j *
+            (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) := by
+        rw [hsd]
+        ring
+      _ = (4 * Real.pi) ^ (j + d) * ((2 * j + d : Nat) : Real) ^ j *
+            (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) := by rw [hfour]
+      _ = (4 * Real.pi) ^ j * (4 * Real.pi) ^ d *
+            ((2 * j + d : Nat) : Real) ^ j *
+            (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) := by rw [pow_add]
+      _ = (4 * Real.pi * ((2 * j + d : Nat) : Real)) ^ j *
+            ((4 * Real.pi) ^ d *
+              (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2)) := by
+            rw [mul_pow]
+            ring
+      _ = (4 * Real.pi * ((2 * j + d : Nat) : Real)) ^ j *
+            (16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1)) ^ ((d : Real) / 2) := by rw [hlast]
+  have hpi4 : Real.pi ≤ 4 := by
+    exact (le_of_lt Real.pi_lt_d2).trans (by norm_num)
+  have hbaseJ : 4 * Real.pi * ((2 * j + d : Nat) : Real) ≤
+      19 * ((2 * j + d + 1 : Nat) : Real) := by
+    have hc4 : 4 * Real.pi ≤ (16 : Real) := by nlinarith
+    have hstep : 4 * Real.pi * ((2 * j + d : Nat) : Real) ≤
+        16 * ((2 * j + d : Nat) : Real) :=
+      mul_le_mul_of_nonneg_right hc4 (Nat.cast_nonneg _)
+    have hn : (0 : Real) ≤ ((2 * j + d : Nat) : Real) := Nat.cast_nonneg _
+    push_cast
+    nlinarith
+  have hconst : 16 * Real.pi * Real.exp (-1) ≤ (19 : Real) := by
+    have hprod : Real.pi * Real.exp (-1) ≤
+        (3.1416 : Real) * (0.3678794412 : Real) := by
+      exact mul_le_mul (le_of_lt Real.pi_lt_d4) (le_of_lt Real.exp_neg_one_lt_d9)
+        (Real.exp_pos _).le (by norm_num)
+    nlinarith
+  have hnumNat : d + 1 ≤ 2 * j + d + 1 := by omega
+  have hnum : ((d + 1 : Nat) : Real) ≤ ((2 * j + d + 1 : Nat) : Real) := by
+    exact_mod_cast hnumNat
+  have hbaseD : 16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1) ≤
+      19 * ((2 * j + d + 1 : Nat) : Real) := by
+    calc
+      16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1) =
+          (16 * Real.pi * Real.exp (-1)) * ((d + 1 : Nat) : Real) := by ring
+      _ ≤ 19 * ((d + 1 : Nat) : Real) :=
+        mul_le_mul_of_nonneg_right hconst (by positivity)
+      _ ≤ 19 * ((2 * j + d + 1 : Nat) : Real) :=
+        mul_le_mul_of_nonneg_left hnum (by norm_num)
+  have hJ : (4 * Real.pi * ((2 * j + d : Nat) : Real)) ^ j ≤
+      (19 * ((2 * j + d + 1 : Nat) : Real)) ^ j := by gcongr
+  have hD : (16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1)) ^ ((d : Real) / 2) ≤
+      (19 * ((2 * j + d + 1 : Nat) : Real)) ^ ((d : Real) / 2) :=
+    Real.rpow_le_rpow (by positivity) hbaseD (by positivity)
+  let A : Real := 19 * ((2 * j + d + 1 : Nat) : Real)
+  have hA : 0 < A := by dsimp [A]; positivity
+  have hcast : A ^ j = A ^ (j : Real) := (Real.rpow_natCast A j).symm
+  calc
+    (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) * ((2 : Real) ^ (j + d) * ((2 * j + d : Nat) : Real) ^ j) *
+        (Real.sqrt (2 * Real.pi)) ^ d *
+        (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) =
+      (4 * Real.pi * ((2 * j + d : Nat) : Real)) ^ j *
+        (16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1)) ^ ((d : Real) / 2) := hfactor
+    _ ≤ (19 * ((2 * j + d + 1 : Nat) : Real)) ^ j *
+          (19 * ((2 * j + d + 1 : Nat) : Real)) ^ ((d : Real) / 2) :=
+      mul_le_mul hJ hD (by positivity) (by positivity)
+    _ = A ^ (j : Real) * A ^ ((d : Real) / 2) := by
+      dsimp [A]
+      rw [hcast]
+    _ = A ^ ((j : Real) + (d : Real) / 2) :=
+      (Real.rpow_add hA _ _).symm
+    _ = (19 * ((2 * j + d + 1 : Nat) : Real)) ^
+          (((2 * j + d : Nat) : Real) / 2) := by
+      dsimp [A]
+      congr 1
+      push_cast
+      ring
+
+/-- This auxiliary applies the Hermite coefficient estimate and the Gaussian monomial
+estimate to one parity-compatible term of the scaled Hermite expansion.  It is used to
+bound the finite sum in `gaussianBumpDecay`. -/
+theorem aux_scaledHermite_summand_le (m d : ℕ) (x : ℝ) (hd : d ≤ m) (he : Even (m + d)) :
+    |(Real.sqrt (2 * Real.pi)) ^ m *
+        (((Polynomial.hermite m).coeff d : ℝ) *
+          (Real.sqrt (2 * Real.pi) * x) ^ d) *
+        Real.exp (-((Real.sqrt (2 * Real.pi) * x) ^ 2 / 2))| ≤
+      (19 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) *
+        Real.exp (-(Real.pi / 2) * x ^ 2) := by
+  let s : ℝ := Real.sqrt (2 * Real.pi)
+  let E : ℝ := Real.exp (-(Real.pi / 2) * x ^ 2)
+  let B : ℝ := (((d + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi) ^ ((d : ℝ) / 2)
+  let j : ℕ := (m - d) / 2
+  have hs : 0 < s := by
+    dsimp [s]
+    positivity
+  have hE : 0 < E := by
+    dsimp [E]
+    positivity
+  have hsubEven : Even (m - d) := by
+    exact (Nat.even_sub hd).mpr ((Nat.even_add).mp he)
+  have htwice : 2 * ((m - d) / 2) = m - d :=
+    Nat.two_mul_div_two_of_even hsubEven
+  have hm : m = 2 * j + d := by
+    dsimp [j]
+    omega
+  have hp : m - (m - d) / 2 = j + d := by
+    dsimp [j]
+    omega
+  have hcoeff := aux_hermiteCoeff_bound m d hd he
+  have hcoeff' : |((Polynomial.hermite m).coeff d : ℝ)| ≤
+      (2 : ℝ) ^ (j + d) * (m : ℝ) ^ j := by
+    rw [← hp]
+    exact hcoeff
+  have habs := aux_abs_pow_mul_exp_neg_half_le d x
+  have habs' : |x| ^ d * E ≤ B := by
+    change |x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2) ≤
+      (((d + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi) ^ ((d : ℝ) / 2)
+    exact habs
+  have hcore := aux_scaledHermite_term_le m j d hm
+  have hinner : s ^ m * |((Polynomial.hermite m).coeff d : ℝ)| * s ^ d *
+      (|x| ^ d * E) ≤ (19 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) := by
+    calc
+      s ^ m * |((Polynomial.hermite m).coeff d : ℝ)| * s ^ d * (|x| ^ d * E) ≤
+          s ^ m * ((2 : ℝ) ^ (j + d) * (m : ℝ) ^ j) * s ^ d * (|x| ^ d * E) := by
+            gcongr
+      _ ≤ s ^ m * ((2 : ℝ) ^ (j + d) * (m : ℝ) ^ j) * s ^ d * B := by
+            gcongr
+      _ = (Real.sqrt (2 * Real.pi)) ^ m * ((2 : ℝ) ^ (j + d) * (m : ℝ) ^ j) *
+          (Real.sqrt (2 * Real.pi)) ^ d *
+          (((d + 1 : ℕ) : ℝ) * Real.exp (-1) / Real.pi) ^ ((d : ℝ) / 2) := by
+            rfl
+      _ ≤ (19 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) := hcore
+  have hexp : Real.exp (-((s * x) ^ 2 / 2)) = E * E := by
+    rw [← Real.exp_add]
+    dsimp [s, E]
+    rw [mul_pow, Real.sq_sqrt (by positivity)]
+    congr 1
+    ring
+  change |s ^ m * (((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) *
+      Real.exp (-((s * x) ^ 2 / 2))| ≤
+      (19 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) * E
+  calc
+    |s ^ m * (((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) *
+        Real.exp (-((s * x) ^ 2 / 2))| =
+        (s ^ m * |((Polynomial.hermite m).coeff d : ℝ)| * s ^ d *
+          (|x| ^ d * E)) * E := by
+            rw [hexp]
+            simp only [abs_mul, abs_pow, abs_of_pos hs, abs_of_pos hE]
+            ring
+    _ ≤ (19 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) * E := by
+      gcongr
+
+/-- This auxiliary sums the parity-compatible Hermite terms to give the order-dependent
+half-Gaussian derivative estimate used in `gaussianBumpDecay`. -/
+theorem aux_gaussian_iteratedDeriv_half_decay (m : ℕ) (x : ℝ) :
+    |iteratedDeriv m gaussian x| ≤
+      (38 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) *
+        Real.exp (-(Real.pi / 2) * x ^ 2) := by
+  let s : ℝ := Real.sqrt (2 * Real.pi)
+  let E : ℝ := Real.exp (-(Real.pi / 2) * x ^ 2)
+  let R : ℝ := (19 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2)
+  let S := (Finset.range (m + 1)).filter (fun d => Even (m + d))
+  have hEval : Polynomial.aeval (s * x) (Polynomial.hermite m) =
+      Finset.sum (Finset.range (m + 1))
+        (fun d => ((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) := by
+    rw [Polynomial.aeval_eq_sum_range, Polynomial.natDegree_hermite]
+    simp [Algebra.smul_def]
+  have hFilter : Finset.sum (Finset.range (m + 1))
+        (fun d => ((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) =
+      Finset.sum S
+        (fun d => ((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) := by
+    rw [show S = (Finset.range (m + 1)).filter (fun d => Even (m + d)) by rfl,
+      Finset.sum_filter]
+    apply Finset.sum_congr rfl
+    intro d hd
+    by_cases h : Even (m + d)
+    · rw [if_pos h]
+    · rw [Polynomial.coeff_hermite, if_neg h, if_neg h]
+      simp
+  have hterm : ∀ d ∈ S,
+      |s ^ m * (((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) *
+        Real.exp (-((s * x) ^ 2 / 2))| ≤ R * E := by
+    intro d hd
+    have hd' : d ∈ (Finset.range (m + 1)).filter (fun d => Even (m + d)) := by
+      simpa only [S] using hd
+    have hdle : d ≤ m := by
+      have hdmem : d ∈ Finset.range (m + 1) :=
+        (Finset.mem_filter.mp hd').1
+      exact Nat.le_of_lt_succ (Finset.mem_range.mp hdmem)
+    have he : Even (m + d) :=
+      (Finset.mem_filter.mp hd').2
+    change |(Real.sqrt (2 * Real.pi)) ^ m *
+        (((Polynomial.hermite m).coeff d : ℝ) *
+          (Real.sqrt (2 * Real.pi) * x) ^ d) *
+        Real.exp (-((Real.sqrt (2 * Real.pi) * x) ^ 2 / 2))| ≤
+      (19 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) *
+        Real.exp (-(Real.pi / 2) * x ^ 2)
+    exact aux_scaledHermite_summand_le m d x hdle he
+  have hcardNat : S.card ≤ m / 2 + 1 := by
+    simpa [S] using aux_hermiteParity_card_le m
+  have hcard : (S.card : ℝ) ≤ Real.rpow 2 ((m : ℝ) / 2) := by
+    calc
+      (S.card : ℝ) ≤ ((m / 2 + 1 : ℕ) : ℝ) := by exact_mod_cast hcardNat
+      _ ≤ Real.rpow 2 ((m : ℝ) / 2) := aux_halfCard_le_rpow_two m
+  have hcombine : Real.rpow 2 ((m : ℝ) / 2) * R =
+      (38 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) := by
+    change Real.rpow 2 ((m : ℝ) / 2) *
+        Real.rpow (19 * ((m + 1 : ℕ) : ℝ)) ((m : ℝ) / 2) = _
+    calc
+      Real.rpow 2 ((m : ℝ) / 2) *
+          Real.rpow (19 * ((m + 1 : ℕ) : ℝ)) ((m : ℝ) / 2) =
+          Real.rpow (2 * (19 * ((m + 1 : ℕ) : ℝ))) ((m : ℝ) / 2) :=
+            (Real.mul_rpow (by norm_num) (by positivity)).symm
+      _ = Real.rpow (38 * ((m + 1 : ℕ) : ℝ)) ((m : ℝ) / 2) := by
+        congr 1
+        ring
+  rw [aux_gaussian_iteratedDeriv_hermite]
+  change |s ^ m * ((-1 : ℝ) ^ m * Polynomial.aeval (s * x) (Polynomial.hermite m) *
+      Real.exp (-((s * x) ^ 2 / 2)))| ≤
+      (38 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) * E
+  rw [hEval, hFilter]
+  have hsumEq : s ^ m * ((-1 : ℝ) ^ m * Finset.sum S
+      (fun d => ((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) *
+      Real.exp (-((s * x) ^ 2 / 2))) =
+      (-1 : ℝ) ^ m * Finset.sum S (fun d =>
+        s ^ m * (((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) *
+          Real.exp (-((s * x) ^ 2 / 2))) := by
+    simp_rw [Finset.mul_sum, Finset.sum_mul]
+    rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro d hd
+    ring
+  have hsign : |(-1 : ℝ) ^ m| = 1 := by
+    rw [abs_pow, abs_neg, abs_one, one_pow]
+  calc
+    |s ^ m * ((-1 : ℝ) ^ m * Finset.sum S
+        (fun d => ((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) *
+        Real.exp (-((s * x) ^ 2 / 2)))| =
+        |(-1 : ℝ) ^ m * Finset.sum S (fun d =>
+          (s ^ m * (((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) *
+            Real.exp (-((s * x) ^ 2 / 2))))| := by rw [hsumEq]
+    _ = |Finset.sum S (fun d =>
+          (s ^ m * (((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) *
+            Real.exp (-((s * x) ^ 2 / 2))))| := by
+      rw [abs_mul, hsign, one_mul]
+    _ ≤ Finset.sum S (fun d => (|s ^ m *
+          (((Polynomial.hermite m).coeff d : ℝ) * (s * x) ^ d) *
+            Real.exp (-((s * x) ^ 2 / 2))|)) :=
+      Finset.abs_sum_le_sum_abs _ S
+    _ ≤ Finset.sum S (fun _ => R * E) := by
+      apply Finset.sum_le_sum
+      intro d hd
+      exact hterm d hd
+    _ = (S.card : ℝ) * (R * E) := by
+      rw [Finset.sum_const, nsmul_eq_mul]
+    _ ≤ Real.rpow 2 ((m : ℝ) / 2) * (R * E) := by
+      gcongr
+    _ = (38 * ((m + 1 : ℕ) : ℝ)) ^ ((m : ℝ) / 2) * E := by
+      rw [show Real.rpow 2 ((m : ℝ) / 2) * (R * E) =
+          (Real.rpow 2 ((m : ℝ) / 2) * R) * E by ring, hcombine]
+
+/--
+\begin{proposition}\label{Gaussian bump decay}
+For every $x\in\R$, $m,N\in\N$,
+\begin{equation}\label{auto:Gaussian-derivative-decay} |\g^{(m)}(x)|\le C_{\ref{Gaussian bump decay},m,N} \langle x\rangle^N, \end{equation}
+where
+\begin{equation}\label{auto:Gaussian-bump-decay-constant}
+C_{\ref{Gaussian bump decay},m,N}
+=\bigl(38(m+1)\bigr)^{m/2}\bigl(4(N+1)\bigr)^{N/2}.
+\end{equation}
+
+\end{proposition}
+-/
+theorem gaussianBumpDecay (x : ℝ) (m N : ℕ) :
+    |iteratedDeriv m gaussian x| ≤ C_gaussianBumpDecay m N * bracketBump x ^ N := by
+  let A : ℝ := Real.rpow (38 * ((m + 1 : ℕ) : ℝ)) ((m : ℝ) / 2)
+  let B : ℝ := Real.rpow (4 * ((N + 1 : ℕ) : ℝ)) ((N : ℝ) / 2)
+  have hderiv : |iteratedDeriv m gaussian x| ≤
+      A * Real.exp (-(Real.pi / 2) * x ^ 2) := by
+    simpa only [A, Real.rpow_eq_pow] using aux_gaussian_iteratedDeriv_half_decay m x
+  have hdecay : Real.exp (-(Real.pi / 2) * x ^ 2) ≤ B * bracketBump x ^ N := by
+    simpa only [B, Real.rpow_eq_pow] using aux_halfGaussian_le_bracketDecay x N
+  have hA : 0 ≤ A := by
+    dsimp [A]
+    positivity
+  calc
+    |iteratedDeriv m gaussian x| ≤
+        A * Real.exp (-(Real.pi / 2) * x ^ 2) := hderiv
+    _ ≤ A * (B * bracketBump x ^ N) :=
+      mul_le_mul_of_nonneg_left hdecay hA
+    _ = C_gaussianBumpDecay m N * bracketBump x ^ N := by
+      dsimp [A, B, C_gaussianBumpDecay]
+      ring
 
 /-- The Gaussian is strictly positive at every real point. -/
 theorem aux_gaussian_pos (x : ℝ) : 0 < gaussian x := by
@@ -68,7 +813,7 @@ theorem aux_gaussianBumpDecay_zero_zero (x : ℝ) :
   exact aux_gaussian_le_one x
 
 /-- This auxiliary quadratic-decay estimate supplies the zero-order case used below. -/
-theorem gaussian_le_four_bracket_sq (x : ℝ) :
+theorem aux_gaussian_le_four_bracket_sq (x : ℝ) :
     gaussian x ≤ 4 * bracketBump x ^ 2 := by
   rw [bracketBump]
   have hden : 0 < (1 + |x|) ^ 2 := sq_pos_of_pos (by positivity)
@@ -108,7 +853,7 @@ theorem gaussian_le_four_bracket_sq (x : ℝ) :
         nlinarith
 
 /-- This auxiliary quartic-decay estimate is used when differentiating the Gaussian. -/
-theorem gaussian_le_sixteen_bracket_four (x : ℝ) :
+theorem aux_gaussian_le_sixteen_bracket_four (x : ℝ) :
     gaussian x ≤ 16 * bracketBump x ^ 4 := by
   rw [bracketBump]
   have hden : 0 < (1 + |x|) ^ 4 := pow_pos (by positivity) _
@@ -189,14 +934,14 @@ theorem gaussianRescale_le_C_gaussianBumpDecay_zero_two {t x : ℝ} (ht : 0 < t)
     norm_num [C_gaussianBumpDecay, Real.rpow_one]
   calc
     t⁻¹ * gaussian (t⁻¹ * x) ≤ t⁻¹ * (4 * bracketBump (t⁻¹ * x) ^ 2) :=
-      mul_le_mul_of_nonneg_left (gaussian_le_four_bracket_sq (t⁻¹ * x))
+      mul_le_mul_of_nonneg_left (aux_gaussian_le_four_bracket_sq (t⁻¹ * x))
         (inv_nonneg.mpr ht.le)
     _ ≤ t⁻¹ * (C_gaussianBumpDecay 0 2 * bracketBump (t⁻¹ * x) ^ 2) := by
       gcongr
     _ = C_gaussianBumpDecay 0 2 * (t⁻¹ * bracketBump (t⁻¹ * x) ^ 2) := by ring
 
 /-- This auxiliary derivative formula starts the first-order Gaussian decay estimate. -/
-theorem gaussian_hasDerivAt (x : ℝ) :
+theorem aux_gaussian_hasDerivAt (x : ℝ) :
     HasDerivAt gaussian (-2 * Real.pi * x * gaussian x) x := by
   have hpow : HasDerivAt (fun y : ℝ => y ^ 2) (2 * x) x := by
     simpa using (hasDerivAt_pow 2 x)
@@ -211,7 +956,7 @@ theorem gaussianRescale_hasDerivAt (t x : ℝ) :
     HasDerivAt (gaussianRescale t)
       (t⁻¹ * (-2 * Real.pi * (t⁻¹ * x) * gaussian (t⁻¹ * x)) * t⁻¹) x := by
   have hlinear : HasDerivAt (fun y : ℝ => t⁻¹ * y) t⁻¹ x := hasDerivAt_const_mul t⁻¹
-  have hcomposed := (gaussian_hasDerivAt (t⁻¹ * x)).comp x hlinear
+  have hcomposed := (aux_gaussian_hasDerivAt (t⁻¹ * x)).comp x hlinear
   have hscaled := hcomposed.const_mul t⁻¹
   change HasDerivAt (fun y : ℝ => t⁻¹ * gaussian (t⁻¹ * y))
     (t⁻¹ * (-2 * Real.pi * (t⁻¹ * x) * gaussian (t⁻¹ * x)) * t⁻¹) x
@@ -234,13 +979,18 @@ theorem aux_gaussian_deriv_le_C_gaussianBumpDecay_one_two (x : ℝ) :
       _ = (1 + |x|)⁻¹ ^ 2 := by
         field_simp [ne_of_gt hden]
   have hconstant : 32 * Real.pi ≤ C_gaussianBumpDecay 1 2 := by
+    have hpi : 32 * Real.pi ≤ 504 / 5 := by
+      nlinarith [Real.pi_lt_d2]
+    have hsquare : (Real.sqrt (76 : ℝ)) ^ 2 = 76 :=
+      Real.sq_sqrt (by norm_num)
+    have hsqrtnonneg : 0 ≤ Real.sqrt (76 : ℝ) := Real.sqrt_nonneg _
+    have hsqrt : (17 / 2 : ℝ) ≤ Real.sqrt 76 := by
+      nlinarith
     calc
-      32 * Real.pi ≤ 128 := by nlinarith [Real.pi_le_four]
-      _ ≤ 400 := by norm_num
-      _ ≤ C_gaussianBumpDecay 1 2 := by
-        convert Real.self_le_rpow_of_one_le (x := (400 : ℝ)) (y := (3 : ℝ) / 2)
-          (by norm_num) (by norm_num) using 1 <;>
-          norm_num [C_gaussianBumpDecay]
+      32 * Real.pi ≤ 504 / 5 := hpi
+      _ ≤ Real.sqrt 76 * 12 := by nlinarith
+      _ = C_gaussianBumpDecay 1 2 := by
+        norm_num [C_gaussianBumpDecay, Real.sqrt_eq_rpow]
   have hfactor : 0 ≤ 2 * Real.pi * |x| := by positivity
   calc
     |-2 * Real.pi * x * gaussian x| = 2 * Real.pi * |x| * gaussian x := by
@@ -249,7 +999,7 @@ theorem aux_gaussian_deriv_le_C_gaussianBumpDecay_one_two (x : ℝ) :
         abs_of_nonneg Real.pi_pos.le,
         abs_of_nonneg (aux_gaussian_pos x).le]
     _ ≤ 2 * Real.pi * |x| * (16 * bracketBump x ^ 4) :=
-      mul_le_mul_of_nonneg_left (gaussian_le_sixteen_bracket_four x) hfactor
+      mul_le_mul_of_nonneg_left (aux_gaussian_le_sixteen_bracket_four x) hfactor
     _ = (32 * Real.pi) * (|x| * bracketBump x ^ 4) := by ring
     _ ≤ (32 * Real.pi) * bracketBump x ^ 2 :=
       mul_le_mul_of_nonneg_left hbracket (by positivity)
@@ -281,7 +1031,7 @@ theorem gaussian_continuous : Continuous gaussian := by
 
 /-- Auxiliary for Proposition \ref{Elementary Gaussian properties}, formalized as
 gaussian_memW0. It supplies the integrability used there. -/
-theorem gaussian_integrable : Integrable gaussian := by
+theorem aux_gaussian_integrable : Integrable gaussian := by
   change Integrable (fun x : ℝ => Real.exp (-Real.pi * x ^ 2))
   exact integrable_exp_neg_mul_sq Real.pi_pos
 
@@ -309,7 +1059,90 @@ theorem aux_wienerEnvelope_gaussian_le (x : ℝ) :
   apply Real.exp_le_exp.mpr
   nlinarith [Real.pi_pos, hsq]
 
-/-- Proposition \ref{Elementary Gaussian properties}, claim (i): $\g\in W_0(\R)$. -/
+/-- Auxiliary smoothness fact used to construct the Schwartz function in
+`gaussian_memSchwartz`, formalizing part (i) of Proposition
+\ref{Elementary Gaussian properties}. -/
+theorem aux_gaussian_contDiff : ContDiff ℝ (↑(⊤ : ℕ∞)) gaussian := by
+  change ContDiff ℝ (↑(⊤ : ℕ∞)) (fun x : ℝ => Real.exp (-Real.pi * x ^ 2))
+  fun_prop
+
+/-- Auxiliary Hermite-type representation used by `gaussian_memSchwartz`, formalizing part (i)
+of Proposition \ref{Elementary Gaussian properties}.  It expresses each derivative as a
+polynomial times the Gaussian, which is needed to transfer rapid decay to all derivatives. -/
+theorem aux_gaussian_iteratedDeriv_polynomial : ∀ n : ℕ, ∃ p : Polynomial ℝ,
+    ∀ x : ℝ, iteratedDeriv n gaussian x = p.eval x * gaussian x := by
+  intro n
+  induction n with
+  | zero =>
+      refine ⟨1, ?_⟩
+      intro x
+      simp
+  | succ n ih =>
+      rcases ih with ⟨p, hp⟩
+      refine ⟨p.derivative + Polynomial.C (-2 * Real.pi) * Polynomial.X * p, ?_⟩
+      intro x
+      rw [iteratedDeriv_succ]
+      have hfun : iteratedDeriv n gaussian = fun x : ℝ => p.eval x * gaussian x := by
+        funext z
+        exact hp z
+      rw [hfun]
+      change deriv ((fun z : ℝ => p.eval z) * gaussian) x = _
+      rw [((p.hasDerivAt x).mul (aux_gaussian_hasDerivAt x)).deriv]
+      simp [Polynomial.eval_add, Polynomial.eval_mul]
+      ring
+
+/-- Auxiliary rapid-decay fact used by `gaussian_memSchwartz`, formalizing part (i) of
+Proposition \ref{Elementary Gaussian properties}.  It packages the standard super-polynomial
+decay of the Gaussian at infinity. -/
+theorem aux_gaussian_superpolynomialDecay :
+    Asymptotics.SuperpolynomialDecay (cocompact ℝ) (fun x : ℝ => x) gaussian := by
+  intro n
+  rw [tendsto_zero_iff_abs_tendsto_zero]
+  convert tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact Real.pi_pos (n : ℝ) using 1
+  funext x
+  simp [gaussian, Notation.gaussian, abs_mul, Real.rpow_natCast]
+
+/-- Auxiliary global bound used by `gaussian_memSchwartz`, formalizing part (i) of Proposition
+\ref{Elementary Gaussian properties}.  It turns rapid Gaussian decay into a uniform bound after
+multiplication by an arbitrary polynomial. -/
+theorem aux_polynomial_gaussian_bound (p : Polynomial ℝ) (k : ℕ) :
+    ∃ C : ℝ, ∀ x : ℝ, |x| ^ k * |p.eval x * gaussian x| ≤ C := by
+  have hspd := aux_gaussian_superpolynomialDecay.polynomial_mul p
+  have htendsto := hspd k
+  have hcont : Continuous (fun x : ℝ => x ^ k * (p.eval x * gaussian x)) := by
+    fun_prop [gaussian, Notation.gaussian]
+  have hbounded := hcont.isBounded_range_iff_isBigO.mpr (htendsto.isBigO_one ℝ)
+  rw [isBounded_iff_forall_norm_le] at hbounded
+  simp only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff] at hbounded
+  obtain ⟨C, hC⟩ := hbounded
+  refine ⟨C, ?_⟩
+  intro x
+  simpa [Real.norm_eq_abs, abs_mul, abs_pow] using hC x
+
+/--
+(i) $\g\in \mathcal{S}(\R)$.
+-/
+theorem gaussian_memSchwartz :
+    ∃ G : SchwartzMap ℝ ℝ, ∀ x : ℝ, G x = gaussian x := by
+  let G : SchwartzMap ℝ ℝ := {
+    toFun := gaussian
+    smooth' := aux_gaussian_contDiff
+    decay' := by
+      intro k n
+      obtain ⟨p, hp⟩ := aux_gaussian_iteratedDeriv_polynomial n
+      obtain ⟨C, hC⟩ := aux_polynomial_gaussian_bound p k
+      refine ⟨C, ?_⟩
+      intro x
+      rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+      simp only [Real.norm_eq_abs]
+      rw [hp x]
+      exact hC x
+    }
+  exact ⟨G, fun x => rfl⟩
+
+/--
+(i) $\g\in W_0(\R)$.
+-/
 theorem gaussian_memW0 : MemW0 gaussian := by
   refine ⟨gaussian_continuous, ?_⟩
   have hmajorant : Integrable (fun x : ℝ =>
@@ -370,7 +1203,7 @@ theorem aux_wienerEnvelope_gaussianRescale_le {t : ℝ} (ht : 0 < t) (x : ℝ) :
 
 /-- Positive rescalings of the Gaussian remain in the manuscript's Wiener space; this helper is
 used by the sandwich-kernel construction. -/
-theorem gaussianRescale_memW0 {t : ℝ} (ht : 0 < t) : MemW0 (gaussianRescale t) := by
+theorem aux_gaussianRescale_memW0 {t : ℝ} (ht : 0 < t) : MemW0 (gaussianRescale t) := by
   have hcontinuous : Continuous (gaussianRescale t) := by
     unfold gaussianRescale
     exact continuous_const.mul
@@ -398,16 +1231,169 @@ theorem aux_integral_gaussian : ∫ x : ℝ, gaussian x = 1 := by
   have h := integral_gaussian Real.pi
   simpa [gaussian, Notation.gaussian, Real.pi_ne_zero, div_self, Real.sqrt_one] using h
 
-/-- Proposition \ref{Elementary Gaussian properties}, claim (ii): $\widehat{\g}=\g$. -/
+/--
+(ii) $\widehat{\g}=\g$.
+-/
 theorem gaussian_fourier_fixed :
     FourierTransform.fourier (fun x : ℝ => (gaussian x : ℂ)) =
       fun ξ : ℝ => (gaussian ξ : ℂ) := by
   simpa [gaussian, Notation.gaussian] using
     (fourier_gaussian_pi (b := (1 : ℂ)) (by norm_num))
 
-/-- Definition used in Proposition \ref{square root one minus Gaussian}, formalized by
-continuous_sqrtOneMinusGaussian, sqrtOneMinusGaussian_lower, and
-sqrtOneMinusGaussian_bounds. -/
+/-- Auxiliary completed-square identity used to evaluate the convolution in
+`gaussianRescale_convolution`. -/
+theorem aux_gaussianRescale_complete_square (a μ x y : ℝ) (ha : 0 < a) (hμ : 0 < μ) :
+    gaussianRescale a (x - y) * gaussianRescale μ y =
+      (a⁻¹ * μ⁻¹ * Real.exp (-Real.pi * x ^ 2 / (a ^ 2 + μ ^ 2))) *
+        Real.exp (-(Real.pi * (a ^ 2 + μ ^ 2) / (a ^ 2 * μ ^ 2)) *
+          (y - μ ^ 2 / (a ^ 2 + μ ^ 2) * x) ^ 2) := by
+  have ha0 : a ≠ 0 := ne_of_gt ha
+  have hμ0 : μ ≠ 0 := ne_of_gt hμ
+  have hs : a ^ 2 + μ ^ 2 ≠ 0 := by positivity
+  unfold gaussianRescale
+  simp only [gaussian, Notation.gaussian]
+  calc
+    a⁻¹ * Real.exp (-Real.pi * (a⁻¹ * (x - y)) ^ 2) *
+          (μ⁻¹ * Real.exp (-Real.pi * (μ⁻¹ * y) ^ 2)) =
+        a⁻¹ * μ⁻¹ * Real.exp
+          (-Real.pi * (a⁻¹ * (x - y)) ^ 2 + -Real.pi * (μ⁻¹ * y) ^ 2) := by
+      calc
+        _ = a⁻¹ * μ⁻¹ *
+            (Real.exp (-Real.pi * (a⁻¹ * (x - y)) ^ 2) *
+              Real.exp (-Real.pi * (μ⁻¹ * y) ^ 2)) := by ring
+        _ = _ := by rw [← Real.exp_add]
+    _ = a⁻¹ * μ⁻¹ * (Real.exp (-Real.pi * x ^ 2 / (a ^ 2 + μ ^ 2)) *
+        Real.exp (-(Real.pi * (a ^ 2 + μ ^ 2) / (a ^ 2 * μ ^ 2)) *
+          (y - μ ^ 2 / (a ^ 2 + μ ^ 2) * x) ^ 2)) := by
+      rw [← Real.exp_add]
+      congr 2
+      field_simp
+      ring
+    _ = (a⁻¹ * μ⁻¹ * Real.exp (-Real.pi * x ^ 2 / (a ^ 2 + μ ^ 2))) *
+        Real.exp (-(Real.pi * (a ^ 2 + μ ^ 2) / (a ^ 2 * μ ^ 2)) *
+          (y - μ ^ 2 / (a ^ 2 + μ ^ 2) * x) ^ 2) := by ring
+
+/-- Auxiliary translation-invariance identity used in `gaussianRescale_convolution`. -/
+theorem aux_integral_gaussian_shift (B c : ℝ) :
+    (∫ y : ℝ, Real.exp (-B * (y - c) ^ 2)) =
+      ∫ y : ℝ, Real.exp (-B * y ^ 2) := by
+  let f : ℝ → ℝ := fun y => Real.exp (-B * y ^ 2)
+  change (∫ y : ℝ, f (y + (-c))) = ∫ y : ℝ, f y
+  exact integral_add_right_eq_self f (-c)
+
+/--
+(iii) We have for $\lambda,\mu>0$
+    \begin{equation}\label{eq:gaussconv}
+      \g_{(\lambda)}*\g_{(\mu)}=\g_{(\sqrt{\lambda^2+\mu^2})}\, .
+    \end{equation}
+-/
+theorem gaussianRescale_convolution (a μ : ℝ) (ha : 0 < a) (hμ : 0 < μ) (x : ℝ) :
+    (∫ y : ℝ, gaussianRescale a (x - y) * gaussianRescale μ y) =
+      gaussianRescale (Real.sqrt (a ^ 2 + μ ^ 2)) x := by
+  have ha0 : a ≠ 0 := ne_of_gt ha
+  have hμ0 : μ ≠ 0 := ne_of_gt hμ
+  have hspos : 0 < a ^ 2 + μ ^ 2 := by positivity
+  have hs0 : a ^ 2 + μ ^ 2 ≠ 0 := ne_of_gt hspos
+  let B : ℝ := Real.pi * (a ^ 2 + μ ^ 2) / (a ^ 2 * μ ^ 2)
+  let c : ℝ := μ ^ 2 / (a ^ 2 + μ ^ 2) * x
+  let C : ℝ := a⁻¹ * μ⁻¹ * Real.exp (-Real.pi * x ^ 2 / (a ^ 2 + μ ^ 2))
+  have hBpos : 0 < B := by
+    dsimp [B]
+    positivity
+  have hpoint (y : ℝ) : gaussianRescale a (x - y) * gaussianRescale μ y =
+      C * Real.exp (-B * (y - c) ^ 2) := by
+    dsimp [B, c, C]
+    exact aux_gaussianRescale_complete_square a μ x y ha hμ
+  have hshift : (∫ y : ℝ, Real.exp (-B * (y - c) ^ 2)) =
+      ∫ y : ℝ, Real.exp (-B * y ^ 2) := aux_integral_gaussian_shift B c
+  have hint : (∫ y : ℝ, Real.exp (-B * (y - c) ^ 2)) =
+      Real.sqrt (Real.pi / B) := by
+    rw [hshift]
+    exact integral_gaussian B
+  calc
+    (∫ y : ℝ, gaussianRescale a (x - y) * gaussianRescale μ y) =
+        ∫ y : ℝ, C * Real.exp (-B * (y - c) ^ 2) := by
+      apply integral_congr_ae
+      filter_upwards [] with y
+      exact hpoint y
+    _ = C * ∫ y : ℝ, Real.exp (-B * (y - c) ^ 2) :=
+      integral_const_mul C _
+    _ = C * Real.sqrt (Real.pi / B) := by rw [hint]
+    _ = gaussianRescale (Real.sqrt (a ^ 2 + μ ^ 2)) x := by
+      dsimp [B, C]
+      have hsqrtpos : 0 < Real.sqrt (a ^ 2 + μ ^ 2) := Real.sqrt_pos.2 hspos
+      have hsqrt0 : Real.sqrt (a ^ 2 + μ ^ 2) ≠ 0 := ne_of_gt hsqrtpos
+      have hinside : Real.pi / (Real.pi * (a ^ 2 + μ ^ 2) / (a ^ 2 * μ ^ 2)) =
+          (a * μ / Real.sqrt (a ^ 2 + μ ^ 2)) ^ 2 := by
+        field_simp
+        rw [Real.sq_sqrt hspos.le]
+      rw [hinside, Real.sqrt_sq_eq_abs,
+        abs_of_pos (div_pos (mul_pos ha hμ) hsqrtpos)]
+      unfold gaussianRescale
+      simp only [gaussian, Notation.gaussian]
+      have hexp : -Real.pi * x ^ 2 / (a ^ 2 + μ ^ 2) =
+          -Real.pi * ((Real.sqrt (a ^ 2 + μ ^ 2))⁻¹ * x) ^ 2 := by
+        field_simp
+        rw [Real.sq_sqrt hspos.le]
+      rw [hexp]
+      field_simp
+
+/--
+(iv) We have for $\lambda>0$
+ \begin{equation}\label{eq:scaleFT}
+     \widehat{\g_{(\lambda)}}(\xi)=\g(\lambda \xi)
+ \end{equation}
+-/
+theorem gaussianRescale_fourier (a : ℝ) (ha : 0 < a) :
+    FourierTransform.fourier (fun x : ℝ => (gaussianRescale a x : ℂ)) =
+      fun ξ : ℝ => (gaussian (a * ξ) : ℂ) := by
+  let b : ℂ := ((a⁻¹ ^ 2 : ℝ) : ℂ)
+  have ha0 : a ≠ 0 := ne_of_gt ha
+  have hb : 0 < b.re := by
+    dsimp [b]
+    positivity
+  have hinput : (fun x : ℝ => (gaussianRescale a x : ℂ)) =
+      (a⁻¹ : ℂ) • (fun x : ℝ => Complex.exp (-Real.pi * b * (x : ℂ) ^ 2)) := by
+    funext x
+    simp only [Pi.smul_apply, smul_eq_mul]
+    simp [gaussianRescale, gaussian, Notation.gaussian, b, Complex.ofReal_exp, ha0]
+    congr 1
+    ring
+  rw [hinput]
+  calc
+    FourierTransform.fourier
+        ((a⁻¹ : ℂ) • fun x : ℝ => Complex.exp (-Real.pi * b * (x : ℂ) ^ 2)) =
+        (a⁻¹ : ℂ) • FourierTransform.fourier
+          (fun x : ℝ => Complex.exp (-Real.pi * b * (x : ℂ) ^ 2)) := by
+      change VectorFourier.fourierIntegral 𝐞 volume (innerₗ ℝ)
+          ((a⁻¹ : ℂ) • fun x : ℝ => Complex.exp (-Real.pi * b * (x : ℂ) ^ 2)) =
+        (a⁻¹ : ℂ) • VectorFourier.fourierIntegral 𝐞 volume (innerₗ ℝ)
+          (fun x : ℝ => Complex.exp (-Real.pi * b * (x : ℂ) ^ 2))
+      rw [VectorFourier.fourierIntegral_const_smul]
+    _ = (a⁻¹ : ℂ) • (fun ξ : ℝ =>
+        1 / b ^ (1 / 2 : ℂ) * Complex.exp (-Real.pi / b * (ξ : ℂ) ^ 2)) := by
+      rw [fourier_gaussian_pi hb]
+    _ = fun ξ : ℝ => (gaussian (a * ξ) : ℂ) := by
+      funext ξ
+      dsimp [b]
+      have hpow_real : (a⁻¹ ^ 2 : ℝ) ^ ((1 : ℝ) / 2) = a⁻¹ := by
+        rw [← Real.sqrt_eq_rpow]
+        rw [Real.sqrt_sq_eq_abs, abs_of_pos (inv_pos.mpr ha)]
+      have hpow : ((a⁻¹ ^ 2 : ℝ) : ℂ) ^ (1 / 2 : ℂ) = (a⁻¹ : ℂ) := by
+        have hpow' := Complex.ofReal_cpow (sq_nonneg a⁻¹) ((1 : ℝ) / 2)
+        have hhalf : (1 / 2 : ℂ) = ((1 / 2 : ℝ) : ℂ) := by norm_num
+        rw [hhalf, ← hpow']
+        exact_mod_cast hpow_real
+      have hexp : -Real.pi / ((a⁻¹ ^ 2 : ℝ) : ℂ) * (ξ : ℂ) ^ 2 =
+          (-Real.pi * (a * ξ) ^ 2 : ℝ) := by
+        push_cast
+        field_simp
+      rw [hpow, hexp]
+      simp [gaussian, Notation.gaussian, Complex.ofReal_exp, ha0]
+
+/-- Definition occurring in Proposition \ref{square root one minus Gaussian}; see
+sqrtOneMinusGaussian_wellDefined, continuous_sqrtOneMinusGaussian,
+sqrtOneMinusGaussian_lower, and sqrtOneMinusGaussian_bounds. -/
 def sqrtOneMinusGaussian (x : ℝ) : ℝ := Real.sqrt (1 - gaussian x)
 
 /-- This auxiliary theorem verifies the nonnegative radicand needed to use the manuscript's
@@ -418,13 +1404,33 @@ theorem aux_one_sub_gaussian_nonneg (x : ℝ) : 0 ≤ 1 - gaussian x := by
   apply Real.exp_le_one_iff.mpr
   nlinarith [Real.pi_pos, sq_nonneg x]
 
-/-- Proposition \ref{square root one minus Gaussian}: $x\mapsto\sqrt{1-\g(x)}$ is continuous. -/
+/--
+The function
+\[
+    f(x)=\sqrt{1-\g(x)}
+\]
+is well-defined using the nonnegative square root.
+-/
+theorem sqrtOneMinusGaussian_wellDefined (x : ℝ) : 0 ≤ 1 - gaussian x :=
+  aux_one_sub_gaussian_nonneg x
+
+/--
+The function
+\[
+    f(x)=\sqrt{1-\g(x)}
+\]
+is continuous on $\R$.
+-/
 theorem continuous_sqrtOneMinusGaussian : Continuous sqrtOneMinusGaussian := by
   apply Continuous.sqrt
   exact continuous_const.sub gaussian_continuous
 
-/-- Proposition \ref{square root one minus Gaussian}: for $|x|\le\tfrac12$,
-$\sqrt{1-\g(x)}\ge\tfrac12|x|$. -/
+/--
+For $|x|\le \frac 12$, we have
+\[
+    f(x)\ge \tfrac 12 |x|.
+\]
+-/
 theorem sqrtOneMinusGaussian_lower (x : ℝ) (hx : |x| ≤ 1 / 2) :
     1 / 2 * |x| ≤ sqrtOneMinusGaussian x := by
   have hx2 : x ^ 2 ≤ 1 / 4 := by
@@ -477,8 +1483,12 @@ theorem sqrtOneMinusGaussian_lower (x : ℝ) (hx : |x| ≤ 1 / 2) :
       _ ≤ 1 - gaussian x := hrad
   · exact aux_one_sub_gaussian_nonneg x
 
-/-- Proposition \ref{square root one minus Gaussian}: for $|x|\ge\tfrac12$,
-$1-\g(x)\le\sqrt{1-\g(x)}\le1$. -/
+/--
+For $|x|\ge \frac 12$ we have
+\[
+    1-\g(x)\le f(x)\le 1.
+\]
+-/
 theorem sqrtOneMinusGaussian_bounds (x : ℝ) (_hx : 1 / 2 ≤ |x|) :
     1 - gaussian x ≤ sqrtOneMinusGaussian x ∧ sqrtOneMinusGaussian x ≤ 1 := by
   let y := 1 - gaussian x
@@ -502,7 +1512,7 @@ derivatives of the manuscript's auxiliary function $B$. -/
 theorem aux_one_sub_gaussian_hasDerivAt (x : ℝ) :
     HasDerivAt (fun y : ℝ => 1 - gaussian y)
       (2 * Real.pi * x * gaussian x) x := by
-  have hraw0 := (hasDerivAt_const x (1 : ℝ)).sub (gaussian_hasDerivAt x)
+  have hraw0 := (hasDerivAt_const x (1 : ℝ)).sub (aux_gaussian_hasDerivAt x)
   have hscalar : 0 - (-2 * Real.pi * x * gaussian x) =
       2 * Real.pi * x * gaussian x := by ring
   rw [← hscalar]
@@ -765,7 +1775,33 @@ theorem aux_inverseFourier_poissonFrequency (x : ℝ) :
           rw [show (2 : ℂ) = ((2 : ℝ) : ℂ) by norm_num, ← Complex.ofReal_div]
           congr 1
 
-/-- Proposition \ref{poisson to abel}: $\widehat p(\xi)=e^{-|\xi|}$. -/
+/-- This change-of-variables identity is used by `aux_inverseFourier_scaledPoissonFrequency`
+in the proof of Proposition \ref{square root of Gaussian decay}. -/
+theorem aux_inverseFourier_comp_mul_pos (f : ℝ → ℂ) (a x : ℝ) (ha : 0 < a) :
+    FourierTransformInv.fourierInv (fun ξ : ℝ => f (a * ξ)) x =
+      (a⁻¹ : ℝ) • FourierTransformInv.fourierInv f (a⁻¹ * x) := by
+  rw [Real.fourierInv_eq, Real.fourierInv_eq]
+  let g : ℝ → ℂ := fun η => 𝐞 ⟪η, a⁻¹ * x⟫ • f η
+  have hscale := MeasureTheory.Measure.integral_comp_mul_left g a
+  rw [show |a⁻¹| = a⁻¹ by exact abs_of_pos (inv_pos.mpr ha)] at hscale
+  rw [← hscale]
+  apply integral_congr_ae
+  filter_upwards [] with ξ
+  dsimp [g]
+  congr 2
+  simp only [starRingEnd_apply, star_trivial]
+  field_simp
+
+/--
+Let
+\[
+    p(x)=2(1+(2\pi x)^2)^{-1}.
+\]
+Then
+\[
+    \widehat{p}(\xi)=e^{- |\xi|}.
+\]
+-/
 theorem poissonKernel_fourier :
     FourierTransform.fourier (fun x : ℝ => (poissonKernel x : ℂ)) =
       fun ξ : ℝ => (aux_poissonFrequency ξ : ℂ) := by
@@ -861,7 +1897,7 @@ theorem aux_auxiliaryFunctionB_hasDerivAt_of_ne_zero {x : ℝ} (hx : x ≠ 0) :
   have hrad_pos : 0 < 1 - gaussian x := sub_pos.mpr hgauss_lt_one
   have hrad_deriv : HasDerivAt (fun y : ℝ => 1 - gaussian y)
       (2 * Real.pi * x * gaussian x) x := by
-    have hraw0 := (hasDerivAt_const x (1 : ℝ)).sub (gaussian_hasDerivAt x)
+    have hraw0 := (hasDerivAt_const x (1 : ℝ)).sub (aux_gaussian_hasDerivAt x)
     have hscalar : 0 - (-2 * Real.pi * x * gaussian x) =
         2 * Real.pi * x * gaussian x := by ring
     rw [← hscalar]
@@ -2051,7 +3087,7 @@ in the off-origin expression for $B''$. -/
 theorem aux_gaussian_deriv_hasDerivAt (x : ℝ) :
     HasDerivAt (fun y : ℝ => -2 * Real.pi * y * gaussian y)
       ((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) x := by
-  have h := ((hasDerivAt_id x).mul (gaussian_hasDerivAt x)).const_mul
+  have h := ((hasDerivAt_id x).mul (aux_gaussian_hasDerivAt x)).const_mul
     (-2 * Real.pi)
   have hfun : (fun y : ℝ => -2 * Real.pi * y * gaussian y) =ᶠ[𝓝 x]
       (fun y : ℝ => -2 * Real.pi * ((id : ℝ → ℝ) * gaussian) y) := by
@@ -2403,15 +3439,117 @@ theorem aux_auxiliaryFunctionBSecondDerivative_eLpNorm_one_le :
     ← ofReal_integral_norm_eq_lintegral_enorm aux_auxiliaryFunctionBSecondDerivative_integrable]
   exact ENNReal.ofReal_le_ofReal hnorm_bound
 
-/-- Definition used in Proposition \ref{square root of Gaussian decay}; its currently formalized
-continuity claim is sqrtGaussianKernel_continuous. -/
-def sqrtGaussianFrequencyProfile (ξ : ℝ) : ℂ :=
+/-- This auxiliary definition gives the reindexed binomial coefficient used to expand the
+square-root Gaussian frequency profile in the proof of `sqrtGaussianDecay`. -/
+noncomputable def aux_sqrtGaussianCoefficient (n : ℕ) : ℝ :=
+  (-1 : ℝ) ^ n * Ring.choose (1 / 2 : ℝ) (n + 1)
+
+/-- This auxiliary binomial recurrence is used to prove positivity of the coefficients in
+`aux_sqrtGaussianCoefficient_nonneg`. -/
+theorem aux_choose_succ (r : ℝ) (n : ℕ) :
+    Ring.choose r (n + 1) = Ring.choose r n * (r - n) / (n + 1) := by
+  rw [Ring.choose_eq_smul, Ring.choose_eq_smul]
+  simp only [smul_eq_mul]
+  rw [descPochhammer_succ_right, Polynomial.smeval_mul, Polynomial.smeval_sub,
+    Polynomial.smeval_X, Polynomial.smeval_natCast, Nat.factorial_succ]
+  push_cast
+  field_simp [Nat.factorial_ne_zero]
+  ring
+
+/-- This auxiliary recurrence reduces the sign of the next binomial coefficient in
+`aux_sqrtGaussianCoefficient` to the preceding coefficient. -/
+theorem aux_sqrtGaussianCoefficient_succ (n : ℕ) :
+    aux_sqrtGaussianCoefficient (n + 1) =
+      aux_sqrtGaussianCoefficient n * ((n : ℝ) + 1 / 2) / ((n : ℝ) + 2) := by
+  rw [aux_sqrtGaussianCoefficient, aux_sqrtGaussianCoefficient, pow_succ, aux_choose_succ]
+  push_cast
+  ring
+
+/-- This auxiliary positivity fact makes the binomial Gaussian-mixture terms nonnegative in
+the proof of Proposition \ref{square root of Gaussian decay}, formalized by `sqrtGaussianDecay`. -/
+theorem aux_sqrtGaussianCoefficient_nonneg (n : ℕ) :
+    0 ≤ aux_sqrtGaussianCoefficient n := by
+  induction n with
+  | zero => simp [aux_sqrtGaussianCoefficient]
+  | succ n ih =>
+    rw [aux_sqrtGaussianCoefficient_succ]
+    positivity
+
+/-- This auxiliary binomial-series identity expands the real square-root profile.  It is used
+to represent the inverse Fourier kernel in `sqrtGaussianDecay` as a positive Gaussian mixture. -/
+theorem aux_sqrtGaussianCoefficient_hasSum (t : ℝ) (ht0 : 0 ≤ t) (ht1 : t < 1) :
+    @HasSum ℝ ℕ Real.instAddCommGroup.toAddCommMonoid _
+      (fun n : ℕ => aux_sqrtGaussianCoefficient n * t ^ (n + 1))
+      (1 - Real.sqrt (1 - t)) (SummationFilter.unconditional ℕ) := by
+  have hmem : edist (-t) (0 : ℝ) < 1 := by
+    simp [edist_dist, abs_of_nonneg ht0]
+    exact_mod_cast ht1
+  have h := (Real.one_add_rpow_hasFPowerSeriesOnBall_zero (a := (1 / 2 : ℝ))).hasSum
+    (Metric.mem_eball.mpr hmem)
+  have htail := (hasSum_nat_add_iff' 1).mpr h
+  have hneg := htail.neg
+  have hfun : (fun n : ℕ =>
+      -(binomialSeries ℝ (1 / 2 : ℝ) (n + 1) (fun _ => -t))) =
+      (fun n : ℕ => aux_sqrtGaussianCoefficient n * t ^ (n + 1)) := by
+    funext n
+    simp [binomialSeries, aux_sqrtGaussianCoefficient]
+    ring
+  rw [hfun] at hneg
+  simpa [binomialSeries, Real.sqrt_eq_rpow, sub_eq_add_neg] using hneg
+
+/-- This auxiliary identity identifies each power in the binomial expansion with the Gaussian
+at the corresponding square-root scale, used by the positive-mixture proof of
+`sqrtGaussianDecay`. -/
+theorem aux_gaussian_pow_succ_eq (x : ℝ) (n : ℕ) :
+    gaussian x ^ (n + 1) = gaussian (Real.sqrt (n + 1) * x) := by
+  change Real.exp (-Real.pi * x ^ 2) ^ (n + 1) =
+    Real.exp (-Real.pi * (Real.sqrt (n + 1) * x) ^ 2)
+  rw [← Real.exp_nat_mul]
+  congr 1
+  rw [mul_pow]
+  rw [Real.sq_sqrt (by positivity : (0 : ℝ) ≤ n + 1)]
+  push_cast
+  ring
+
+/-- This auxiliary specialization of the binomial expansion writes the square-root Gaussian
+frequency profile as a positive Gaussian mixture away from the origin.  It is used by the
+positive-mixture proof of `sqrtGaussianDecay`. -/
+theorem aux_sqrtGaussianFrequencyProfile_hasSum {x : ℝ} (hx : x ≠ 0) :
+    @HasSum ℝ ℕ Real.instAddCommGroup.toAddCommMonoid _
+      (fun n : ℕ => aux_sqrtGaussianCoefficient n *
+        gaussian (Real.sqrt (n + 1) * x))
+      (1 - sqrtOneMinusGaussian x) (SummationFilter.unconditional ℕ) := by
+  have hgauss_lt_one : gaussian x < 1 := by
+    have hneg : -Real.pi * x ^ 2 < 0 := by
+      nlinarith [Real.pi_pos, sq_pos_of_ne_zero hx]
+    simpa [gaussian, Notation.gaussian] using (Real.exp_lt_exp.mpr hneg)
+  have hsum := aux_sqrtGaussianCoefficient_hasSum (gaussian x)
+    (aux_gaussian_pos x).le hgauss_lt_one
+  simpa only [sqrtOneMinusGaussian, aux_gaussian_pow_succ_eq] using hsum
+
+/-- Auxiliary frequency profile for \ref{square root of Gaussian decay}, used to define the
+inverse-Fourier kernel in `sqrtGaussianDecay`. -/
+def aux_sqrtGaussianFrequencyProfile (ξ : ℝ) : ℂ :=
   (1 - sqrtOneMinusGaussian ξ : ℝ)
 
-/-- Definition used in Proposition \ref{square root of Gaussian decay}; its currently formalized
-continuity claim is sqrtGaussianKernel_continuous. -/
-def sqrtGaussianKernel : ℝ → ℂ :=
-  FourierTransformInv.fourierInv sqrtGaussianFrequencyProfile
+/-- Auxiliary complex-valued inverse-Fourier kernel for \ref{square root of Gaussian decay},
+used to define the real-valued function in `sqrtGaussianDecay`. -/
+def aux_sqrtGaussianKernel : ℝ → ℂ :=
+  FourierTransformInv.fourierInv aux_sqrtGaussianFrequencyProfile
+
+/-- The real-valued inverse-Fourier kernel $\rho$ from \ref{square root of Gaussian decay},
+used by the public theorem `sqrtGaussianDecay`. -/
+def aux_sqrtGaussianDecayKernel (x : ℝ) : ℝ := (aux_sqrtGaussianKernel x).re
+
+/-- Auxiliary Abel frequency profile in the decomposition used by
+`sqrtGaussianDecay`. -/
+def aux_scaledPoissonFrequency (ξ : ℝ) : ℝ :=
+  aux_poissonFrequency (Real.sqrt Real.pi * ξ)
+
+/-- Auxiliary inverse-Fourier kernel for `aux_scaledPoissonFrequency`, used by
+`sqrtGaussianDecay`. -/
+def aux_scaledPoissonKernel (x : ℝ) : ℝ :=
+  (Real.sqrt Real.pi)⁻¹ * poissonKernel ((Real.sqrt Real.pi)⁻¹ * x)
 
 /-- This auxiliary inequality is the nonnegative branch condition for the frequency profile
 in the square-root Gaussian kernel. -/
@@ -2439,7 +3577,7 @@ theorem aux_one_sub_sqrtOneMinusGaussian_le_gaussian (x : ℝ) :
 square-root Gaussian kernel. -/
 theorem aux_sqrtGaussianFrequencyProfile_integrable_real :
     Integrable (fun ξ : ℝ => 1 - sqrtOneMinusGaussian ξ) := by
-  refine gaussian_integrable.mono_nonneg
+  refine aux_gaussian_integrable.mono_nonneg
     (continuous_const.sub continuous_sqrtOneMinusGaussian).aestronglyMeasurable
     (ae_of_all _ aux_one_sub_sqrtOneMinusGaussian_nonneg)
     (ae_of_all _ aux_one_sub_sqrtOneMinusGaussian_le_gaussian)
@@ -2447,15 +3585,28 @@ theorem aux_sqrtGaussianFrequencyProfile_integrable_real :
 /-- This auxiliary theorem gives the complex-valued integrability hypothesis required by the
 inverse Fourier transform defining $\rho$. -/
 theorem aux_sqrtGaussianFrequencyProfile_integrable :
-    Integrable sqrtGaussianFrequencyProfile := by
-  unfold sqrtGaussianFrequencyProfile
+    Integrable aux_sqrtGaussianFrequencyProfile := by
+  unfold aux_sqrtGaussianFrequencyProfile
   exact aux_sqrtGaussianFrequencyProfile_integrable_real.ofReal
+
+/-- This evaluates the scaled Abel contribution used in the inverse-Fourier decomposition for
+`sqrtGaussianDecay`. -/
+theorem aux_inverseFourier_scaledPoissonFrequency (x : ℝ) :
+    FourierTransformInv.fourierInv (fun ξ : ℝ => (aux_scaledPoissonFrequency ξ : ℂ)) x =
+      (aux_scaledPoissonKernel x : ℂ) := by
+  change FourierTransformInv.fourierInv
+    (fun ξ : ℝ => (aux_poissonFrequency (Real.sqrt Real.pi * ξ) : ℂ)) x = _
+  have hsqrt : 0 < Real.sqrt Real.pi := Real.sqrt_pos.2 Real.pi_pos
+  rw [aux_inverseFourier_comp_mul_pos (fun ξ : ℝ => (aux_poissonFrequency ξ : ℂ))
+    (Real.sqrt Real.pi) x hsqrt]
+  rw [aux_inverseFourier_poissonFrequency]
+  simp [aux_scaledPoissonKernel]
 
 /-- The inverse-Fourier kernel $\rho$ from Proposition \ref{square root of Gaussian decay} is
 continuous. -/
-theorem sqrtGaussianKernel_continuous : Continuous sqrtGaussianKernel := by
+theorem aux_sqrtGaussianKernel_continuous : Continuous aux_sqrtGaussianKernel := by
   change Continuous
-    (VectorFourier.fourierIntegral 𝐞 volume (-innerₗ ℝ) sqrtGaussianFrequencyProfile)
+    (VectorFourier.fourierIntegral 𝐞 volume (-innerₗ ℝ) aux_sqrtGaussianFrequencyProfile)
   apply VectorFourier.fourierIntegral_continuous Real.continuous_fourierChar
   · fun_prop
   · exact aux_sqrtGaussianFrequencyProfile_integrable
@@ -2467,13 +3618,56 @@ theorem aux_auxiliaryFunctionB_integrable : Integrable auxiliaryFunctionB := by
   exact aux_sqrtGaussianFrequencyProfile_integrable_real.sub
     aux_exp_neg_abs_sqrt_pi_integrable
 
+/-- This inverse-Fourier decomposition combines $B$ with the scaled Abel profile in the proof of
+`sqrtGaussianDecay`. -/
+theorem aux_sqrtGaussianKernel_eq_inverseFourier_auxiliaryFunctionB_add_scaledPoisson
+    (x : ℝ) :
+    aux_sqrtGaussianKernel x =
+      FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x +
+        (aux_scaledPoissonKernel x : ℂ) := by
+  have hinner : Continuous (fun ξ : ℝ => ⟪ξ, x⟫) := by fun_prop
+  have hcircle : Continuous (fun ξ : ℝ => 𝐞 ⟪ξ, x⟫) :=
+    Real.continuous_fourierChar.comp hinner
+  have hB : Integrable (fun ξ : ℝ => 𝐞 ⟪ξ, x⟫ • (auxiliaryFunctionB ξ : ℂ)) := by
+    refine Integrable.mono
+      (f := fun ξ : ℝ => 𝐞 ⟪ξ, x⟫ • (auxiliaryFunctionB ξ : ℂ))
+      (g := fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ))
+      aux_auxiliaryFunctionB_integrable.ofReal ?_ (ae_of_all _ fun ξ => ?_)
+    · exact (hcircle.smul
+        (Complex.continuous_ofReal.comp aux_auxiliaryFunctionB_continuous)).aestronglyMeasurable
+    · simp [Circle.norm_smul]
+  have hE : Integrable (fun ξ : ℝ => 𝐞 ⟪ξ, x⟫ • (aux_scaledPoissonFrequency ξ : ℂ)) := by
+    change Integrable (fun ξ : ℝ => 𝐞 ⟪ξ, x⟫ •
+      (Real.exp (-|Real.sqrt Real.pi * ξ|) : ℂ))
+    refine Integrable.mono
+      (f := fun ξ : ℝ => 𝐞 ⟪ξ, x⟫ • (Real.exp (-|Real.sqrt Real.pi * ξ|) : ℂ))
+      (g := fun ξ : ℝ => (Real.exp (-|Real.sqrt Real.pi * ξ|) : ℂ))
+      aux_exp_neg_abs_sqrt_pi_integrable.ofReal ?_ (ae_of_all _ fun ξ => ?_)
+    · exact (hcircle.smul (Complex.continuous_ofReal.comp
+        (Real.continuous_exp.comp ((continuous_abs.comp
+          (continuous_const.mul continuous_id)).neg)))).aestronglyMeasurable
+    · simp [Circle.norm_smul]
+  have hfreq (ξ : ℝ) : (1 - sqrtOneMinusGaussian ξ : ℝ) =
+      auxiliaryFunctionB ξ + aux_scaledPoissonFrequency ξ := by
+    simp only [auxiliaryFunctionB, aux_scaledPoissonFrequency, aux_poissonFrequency]
+    ring
+  rw [aux_sqrtGaussianKernel, Real.fourierInv_eq, Real.fourierInv_eq]
+  rw [← aux_inverseFourier_scaledPoissonFrequency x, Real.fourierInv_eq]
+  change (∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ • ((1 - sqrtOneMinusGaussian ξ : ℝ) : ℂ)) = _
+  have hintegrand : (fun ξ : ℝ => 𝐞 ⟪ξ, x⟫ • ((1 - sqrtOneMinusGaussian ξ : ℝ) : ℂ)) =
+      fun ξ : ℝ => 𝐞 ⟪ξ, x⟫ • (auxiliaryFunctionB ξ : ℂ) +
+        𝐞 ⟪ξ, x⟫ • (aux_scaledPoissonFrequency ξ : ℂ) := by
+    funext ξ
+    rw [hfreq, Complex.ofReal_add, smul_add]
+  rw [hintegrand, integral_add hB hE]
+
 /-- This auxiliary $L^1$ estimate supplies the $B$ norm clause of
 `auxiliaryFunctionB_properties`. -/
 theorem aux_auxiliaryFunctionB_eLpNorm_one_le :
     eLpNorm auxiliaryFunctionB 1 volume ≤ ENNReal.ofReal 8 := by
   have hprofile_bound :
       (∫ x : ℝ, 1 - sqrtOneMinusGaussian x) ≤ ∫ x : ℝ, gaussian x := by
-    apply integral_mono aux_sqrtGaussianFrequencyProfile_integrable_real gaussian_integrable
+    apply integral_mono aux_sqrtGaussianFrequencyProfile_integrable_real aux_gaussian_integrable
     intro x
     exact aux_one_sub_sqrtOneMinusGaussian_le_gaussian x
   have habel_bound :
@@ -2518,9 +3712,21 @@ theorem aux_auxiliaryFunctionB_eLpNorm_one_le :
     ← ofReal_integral_norm_eq_lintegral_enorm aux_auxiliaryFunctionB_integrable]
   exact ENNReal.ofReal_le_ofReal hnorm_bound
 
-/-- Proposition \ref{auxiliary function B}: $B$ is continuous and smooth off $0$; its chosen
-first derivative extension is continuous and integrable; its zero-extended second derivative is
-measurable and integrable; and their stated eLpNorm bounds are $8$, $20$, and $100$. -/
+/--
+With $p$ as in Proposition \ref{poisson to abel}, define $B:\R\to \R$ by
+\[
+    B(\xi):=1-\sqrt{1-\g(\xi)}-\widehat{p}(\sqrt{\pi}\xi)\, .
+\]
+Then $B$ is smooth on $\R\setminus \{0\}$ and continuous on $\R$. The function $B'$
+has a continuous extension to $\R$ which is integrable and the
+function $B''$, extended to be $0$ at $0$, is Borel measurable and integrable on $\R$.
+Moreover,
+\[
+    \|B\|_1\le 8,\qquad
+    \|B'\|_1\le 20,\qquad
+    \|B''\|_1\le 100.
+\]
+-/
 theorem auxiliaryFunctionB_properties :
     Continuous auxiliaryFunctionB ∧
       ContDiffOn ℝ (↑(⊤ : ℕ∞)) auxiliaryFunctionB ({0}ᶜ : Set ℝ) ∧
@@ -2736,12 +3942,12 @@ theorem aux_quadratic_inverseFourier_auxiliaryFunctionB_bound (x : ℝ) :
 
 /-- This auxiliary decay estimate combines the uniform and quadratic bounds for the inverse
 Fourier transform of $B$ into the bracket-bump majorant used in `sqrtGaussianDecay`. -/
-theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_hundred_bracket_sq (x : ℝ) :
+theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_thirtyTwo_bracket_sq (x : ℝ) :
     ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ ≤
-      100 * bracketBump x ^ 2 := by
+      32 * bracketBump x ^ 2 := by
   rw [bracketBump]
   have hden : 0 < (1 + |x|) ^ 2 := sq_pos_of_pos (by positivity)
-  have hrewrite : 100 * (1 + |x|)⁻¹ ^ 2 = 100 / (1 + |x|) ^ 2 := by
+  have hrewrite : 32 * (1 + |x|)⁻¹ ^ 2 = 32 / (1 + |x|) ^ 2 := by
     field_simp
   rw [hrewrite]
   by_cases hx : |x| ≤ 1
@@ -2757,39 +3963,227 @@ theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_hundred_bracket_sq (x : �
           (1 + |x|) ^ 2 ≤ 8 * (1 + |x|) ^ 2 :=
         mul_le_mul_of_nonneg_right hsmall (sq_nonneg _)
       _ ≤ 8 * 4 := mul_le_mul_of_nonneg_left hfactor (by norm_num)
-      _ ≤ 100 := by norm_num
+      _ = 32 := by norm_num
   · have hx' : 1 ≤ |x| := le_of_not_ge hx
     apply (le_div_iff₀ hden).2
     have hquad := aux_quadratic_inverseFourier_auxiliaryFunctionB_bound x
     have hsum : 1 + |x| ≤ 2 * |x| := by linarith
-    have hfactor : (1 + |x|) ^ 2 ≤ 4 * Real.pi ^ 2 * x ^ 2 := by
+    have hfactor : (1 + |x|) ^ 2 ≤ (8 / 25 : ℝ) * (4 * Real.pi ^ 2 * x ^ 2) := by
+      have hbase : (1 + |x|) ^ 2 ≤ 4 * x ^ 2 := by
+        calc
+          (1 + |x|) ^ 2 ≤ (2 * |x|) ^ 2 :=
+            (sq_le_sq₀ (by positivity) (by positivity)).mpr hsum
+          _ = 4 * x ^ 2 := by
+            rw [show (2 * |x|) ^ 2 = 4 * |x| ^ 2 by ring, sq_abs]
       calc
-        (1 + |x|) ^ 2 ≤ (2 * |x|) ^ 2 :=
-          (sq_le_sq₀ (by positivity) (by positivity)).mpr hsum
-        _ = 4 * x ^ 2 := by
-          have habs_sq : |x| ^ 2 = x ^ 2 := sq_abs x
-          rw [show (2 * |x|) ^ 2 = 4 * |x| ^ 2 by ring, habs_sq]
-        _ ≤ 4 * Real.pi ^ 2 * x ^ 2 := by
-          have hpi : 1 ≤ Real.pi ^ 2 := by nlinarith [Real.pi_gt_three]
-          have hmul : 1 * x ^ 2 ≤ Real.pi ^ 2 * x ^ 2 :=
-            mul_le_mul_of_nonneg_right hpi (sq_nonneg x)
-          nlinarith
+        (1 + |x|) ^ 2 ≤ 4 * x ^ 2 := hbase
+        _ ≤ (32 / 25 : ℝ) * Real.pi ^ 2 * x ^ 2 := by
+          gcongr
+          nlinarith [Real.pi_gt_three]
+        _ = (8 / 25 : ℝ) * (4 * Real.pi ^ 2 * x ^ 2) := by ring
     calc
       ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ *
           (1 + |x|) ^ 2 ≤
           ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ *
-            (4 * Real.pi ^ 2 * x ^ 2) :=
+            ((8 / 25 : ℝ) * (4 * Real.pi ^ 2 * x ^ 2)) :=
         mul_le_mul_of_nonneg_left hfactor (norm_nonneg _)
-      _ = (4 * Real.pi ^ 2 * x ^ 2) *
-          ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ := by ring
-      _ ≤ 100 := hquad
+      _ = (8 / 25 : ℝ) * ((4 * Real.pi ^ 2 * x ^ 2) *
+          ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖) := by ring
+      _ ≤ (8 / 25 : ℝ) * 100 := mul_le_mul_of_nonneg_left hquad (by norm_num)
+      _ = 32 := by norm_num
+
+/-- This bound controls the scaled Abel kernel in the proof of `sqrtGaussianDecay`. -/
+theorem aux_scaledPoissonKernel_le_eight_bracket_sq (x : ℝ) :
+    aux_scaledPoissonKernel x ≤ 8 * bracketBump x ^ 2 := by
+  have hformula : aux_scaledPoissonKernel x =
+      (2 / Real.sqrt Real.pi) * (1 + 4 * Real.pi * x ^ 2)⁻¹ := by
+    have hsqrt : Real.sqrt Real.pi ≠ 0 := ne_of_gt (Real.sqrt_pos.2 Real.pi_pos)
+    have hsq : Real.sqrt Real.pi ^ 2 = Real.pi := Real.sq_sqrt Real.pi_pos.le
+    unfold aux_scaledPoissonKernel poissonKernel
+    field_simp
+    rw [hsq]
+    ring
+  rw [hformula, bracketBump]
+  have hsqrtpos : 0 < Real.sqrt Real.pi := Real.sqrt_pos.2 Real.pi_pos
+  have hsqrtSq : Real.sqrt Real.pi ^ 2 = Real.pi := Real.sq_sqrt Real.pi_pos.le
+  have hsqrtge : 1 ≤ Real.sqrt Real.pi := by nlinarith [Real.pi_gt_three]
+  have hcoef : 2 / Real.sqrt Real.pi ≤ 2 := by
+    apply (div_le_iff₀ hsqrtpos).2
+    nlinarith
+  have hden : 1 + x ^ 2 ≤ 1 + 4 * Real.pi * x ^ 2 := by
+    have hpi : 1 ≤ 4 * Real.pi := by nlinarith [Real.pi_gt_three]
+    nlinarith [mul_le_mul_of_nonneg_right hpi (sq_nonneg x)]
+  have hdenpos : 0 < 1 + x ^ 2 := by positivity
+  have hdenScaledPos : 0 < 1 + 4 * Real.pi * x ^ 2 := by positivity
+  have hinv : (1 + 4 * Real.pi * x ^ 2)⁻¹ ≤ (1 + x ^ 2)⁻¹ := by
+    exact (inv_le_inv₀ hdenScaledPos hdenpos).2 hden
+  have hbracketden : (1 + |x|) ^ 2 ≤ 4 * (1 + x ^ 2) := by
+    calc
+      (1 + |x|) ^ 2 ≤ 4 * (1 + |x| ^ 2) := by
+        nlinarith [sq_nonneg (|x| - 1)]
+      _ = 4 * (1 + x ^ 2) := by rw [sq_abs]
+  have hbracketpos : 0 < (1 + |x|) ^ 2 := sq_pos_of_pos (by positivity)
+  have hlast : 2 * (1 + x ^ 2)⁻¹ ≤ 8 * (1 + |x|)⁻¹ ^ 2 := by
+    have hleft : 2 * (1 + x ^ 2)⁻¹ = 2 / (1 + x ^ 2) := by field_simp
+    have hright : 8 * (1 + |x|)⁻¹ ^ 2 = 8 / (1 + |x|) ^ 2 := by field_simp
+    rw [hleft, hright]
+    apply (div_le_div_iff₀ hdenpos hbracketpos).2
+    nlinarith
+  calc
+    (2 / Real.sqrt Real.pi) * (1 + 4 * Real.pi * x ^ 2)⁻¹ ≤
+        2 * (1 + 4 * Real.pi * x ^ 2)⁻¹ :=
+      mul_le_mul_of_nonneg_right hcoef (inv_nonneg.mpr hdenScaledPos.le)
+    _ ≤ 2 * (1 + x ^ 2)⁻¹ :=
+      mul_le_mul_of_nonneg_left hinv (by norm_num)
+    _ ≤ 8 * (1 + |x|)⁻¹ ^ 2 := hlast
+
+/-- This absolute-value form of the $B$ and scaled Abel estimates is used to establish the
+Wiener-space conclusion in `sqrtGaussianDecay`. -/
+theorem aux_abs_sqrtGaussianDecayKernel_le_forty_bracket_sq (x : ℝ) :
+    |aux_sqrtGaussianDecayKernel x| ≤ 40 * bracketBump x ^ 2 := by
+  have hPoisson_nonneg (y : ℝ) : 0 ≤ aux_scaledPoissonKernel y := by
+    unfold aux_scaledPoissonKernel poissonKernel
+    positivity
+  unfold aux_sqrtGaussianDecayKernel
+  rw [aux_sqrtGaussianKernel_eq_inverseFourier_auxiliaryFunctionB_add_scaledPoisson]
+  calc
+    |(FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x +
+        (aux_scaledPoissonKernel x : ℂ)).re| ≤
+        ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x +
+          (aux_scaledPoissonKernel x : ℂ)‖ := Complex.abs_re_le_norm _
+    _ ≤ ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ +
+          ‖(aux_scaledPoissonKernel x : ℂ)‖ := norm_add_le _ _
+    _ = ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ +
+          aux_scaledPoissonKernel x := by
+      rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hPoisson_nonneg x)]
+    _ ≤ 32 * bracketBump x ^ 2 + 8 * bracketBump x ^ 2 :=
+      add_le_add (aux_norm_inverseFourier_auxiliaryFunctionB_le_thirtyTwo_bracket_sq x)
+        (aux_scaledPoissonKernel_le_eight_bracket_sq x)
+    _ = 40 * bracketBump x ^ 2 := by ring
+
+/-- This one-sided consequence of the absolute decay estimate is used for the upper bound in
+`sqrtGaussianDecay`. -/
+theorem aux_sqrtGaussianDecayKernel_le_forty_bracket_sq (x : ℝ) :
+    aux_sqrtGaussianDecayKernel x ≤ 40 * bracketBump x ^ 2 :=
+  (le_abs_self _).trans (aux_abs_sqrtGaussianDecayKernel_le_forty_bracket_sq x)
+
+/-- This positive Gaussian-mixture argument proves the nonnegativity needed in
+`sqrtGaussianDecay`. -/
+theorem aux_sqrtGaussianDecayKernel_nonneg (x : ℝ) :
+    0 ≤ aux_sqrtGaussianDecayKernel x := by
+  have hinner : Continuous (fun ξ : ℝ => ⟪ξ, x⟫) := by fun_prop
+  have hcircle : Continuous (fun ξ : ℝ => 𝐞 ⟪ξ, x⟫) :=
+    Real.continuous_fourierChar.comp hinner
+  have hne : ∀ᵐ ξ : ℝ ∂volume, ξ ≠ 0 := by
+    rw [MeasureTheory.ae_iff]
+    simpa using (measure_singleton (0 : ℝ))
+  have hDCT : HasSum
+      (fun n : ℕ => ∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ •
+        ((aux_sqrtGaussianCoefficient n *
+          gaussian (Real.sqrt (n + 1) * ξ) : ℝ) : ℂ))
+      (aux_sqrtGaussianKernel x) := by
+    have h := MeasureTheory.hasSum_integral_of_dominated_convergence
+      (μ := volume)
+      (F := fun n : ℕ => fun ξ : ℝ => 𝐞 ⟪ξ, x⟫ •
+        ((aux_sqrtGaussianCoefficient n *
+          gaussian (Real.sqrt (n + 1) * ξ) : ℝ) : ℂ))
+      (f := fun ξ : ℝ => 𝐞 ⟪ξ, x⟫ • (aux_sqrtGaussianFrequencyProfile ξ))
+      (fun n : ℕ => fun ξ : ℝ => aux_sqrtGaussianCoefficient n *
+        gaussian (Real.sqrt (n + 1) * ξ))
+      (by
+        intro n
+        exact (hcircle.smul (Complex.continuous_ofReal.comp
+          (continuous_const.mul (gaussian_continuous.comp
+            (continuous_const.mul continuous_id))))).aestronglyMeasurable)
+      (by
+        intro n
+        filter_upwards [] with ξ
+        rw [Circle.norm_smul, Complex.norm_real, Real.norm_eq_abs,
+          abs_of_nonneg (mul_nonneg (aux_sqrtGaussianCoefficient_nonneg n)
+            (aux_gaussian_pos _).le)])
+      (by
+        filter_upwards [hne] with ξ hξ
+        exact (aux_sqrtGaussianFrequencyProfile_hasSum hξ).summable)
+      (by
+        apply aux_sqrtGaussianFrequencyProfile_integrable_real.congr
+        filter_upwards [hne] with ξ hξ
+        exact (aux_sqrtGaussianFrequencyProfile_hasSum hξ).tsum_eq.symm)
+      (by
+        filter_upwards [hne] with ξ hξ
+        have hsum := (Complex.hasSum_ofReal).mpr
+          (aux_sqrtGaussianFrequencyProfile_hasSum hξ)
+        simpa [Function.comp_def, aux_sqrtGaussianFrequencyProfile] using
+          hsum.const_smul (𝐞 ⟪ξ, x⟫))
+    simpa [aux_sqrtGaussianKernel, Real.fourierInv_eq] using h
+  have hterm (n : ℕ) :
+      (∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ •
+        ((aux_sqrtGaussianCoefficient n *
+          gaussian (Real.sqrt (n + 1) * ξ) : ℝ) : ℂ)) =
+        ((aux_sqrtGaussianCoefficient n *
+          gaussianRescale (Real.sqrt (n + 1)) x : ℝ) : ℂ) := by
+    have hs : 0 < Real.sqrt (n + 1 : ℝ) := Real.sqrt_pos.2 (by positivity)
+    have hbase (y : ℝ) :
+        FourierTransformInv.fourierInv (fun ξ : ℝ => (gaussian ξ : ℂ)) y =
+          (gaussian y : ℂ) := by
+      rw [Real.fourierInv_eq_fourier_neg, gaussian_fourier_fixed]
+      simp [gaussian, Notation.gaussian]
+    have hinv : FourierTransformInv.fourierInv
+        (fun ξ : ℝ => (gaussian (Real.sqrt (n + 1) * ξ) : ℂ)) x =
+        (gaussianRescale (Real.sqrt (n + 1)) x : ℂ) := by
+      rw [aux_inverseFourier_comp_mul_pos
+        (fun ξ : ℝ => (gaussian ξ : ℂ)) (Real.sqrt (n + 1)) x hs]
+      rw [hbase]
+      simp [gaussianRescale]
+    calc
+      (∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ •
+        ((aux_sqrtGaussianCoefficient n *
+          gaussian (Real.sqrt (n + 1) * ξ) : ℝ) : ℂ)) =
+          ∫ ξ : ℝ, (aux_sqrtGaussianCoefficient n : ℂ) *
+            (𝐞 ⟪ξ, x⟫ • (gaussian (Real.sqrt (n + 1) * ξ) : ℂ)) := by
+        apply integral_congr_ae
+        filter_upwards [] with ξ
+        rw [Circle.smul_def, smul_eq_mul, Complex.ofReal_mul,
+          Circle.smul_def, smul_eq_mul]
+        ring
+      _ = (aux_sqrtGaussianCoefficient n : ℂ) *
+          ∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ • (gaussian (Real.sqrt (n + 1) * ξ) : ℂ) :=
+        integral_const_mul _ _
+      _ = (aux_sqrtGaussianCoefficient n : ℂ) *
+          FourierTransformInv.fourierInv
+            (fun ξ : ℝ => (gaussian (Real.sqrt (n + 1) * ξ) : ℂ)) x := by
+        rw [Real.fourierInv_eq]
+      _ = ((aux_sqrtGaussianCoefficient n *
+            gaussianRescale (Real.sqrt (n + 1)) x : ℝ) : ℂ) := by
+        rw [hinv]
+        norm_cast
+  have hterms :
+      (fun n : ℕ => ∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ •
+        ((aux_sqrtGaussianCoefficient n *
+          gaussian (Real.sqrt (n + 1) * ξ) : ℝ) : ℂ)) =
+      fun n : ℕ => ((aux_sqrtGaussianCoefficient n *
+        gaussianRescale (Real.sqrt (n + 1)) x : ℝ) : ℂ) := by
+    funext n
+    exact hterm n
+  rw [hterms] at hDCT
+  have hreal := Complex.reCLM.hasSum hDCT
+  have hsum : HasSum
+      (fun n : ℕ => aux_sqrtGaussianCoefficient n *
+        gaussianRescale (Real.sqrt (n + 1)) x)
+      (aux_sqrtGaussianDecayKernel x) := by
+    simpa [Function.comp_def, Complex.reCLM_apply, aux_sqrtGaussianDecayKernel] using hreal
+  rw [← hsum.tsum_eq]
+  apply tsum_nonneg
+  intro n
+  unfold gaussianRescale
+  exact mul_nonneg (aux_sqrtGaussianCoefficient_nonneg n)
+    (mul_nonneg (inv_nonneg.mpr (Real.sqrt_nonneg _)) (aux_gaussian_pos _).le)
 
 /-- This auxiliary bound is the zero-th order Fourier estimate for the square-root Gaussian
 kernel. It supplies the uniform part of the later decay argument. -/
 theorem aux_norm_sqrtGaussianKernel_le_one (x : ℝ) :
-    ‖sqrtGaussianKernel x‖ ≤ 1 := by
-  rw [sqrtGaussianKernel, Real.fourierInv_eq]
-  unfold sqrtGaussianFrequencyProfile
+    ‖aux_sqrtGaussianKernel x‖ ≤ 1 := by
+  rw [aux_sqrtGaussianKernel, Real.fourierInv_eq]
+  unfold aux_sqrtGaussianFrequencyProfile
   calc
     ‖∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ • ((1 - sqrtOneMinusGaussian ξ : ℝ) : ℂ)‖ ≤
         ∫ ξ : ℝ, ‖𝐞 ⟪ξ, x⟫ • ((1 - sqrtOneMinusGaussian ξ : ℝ) : ℂ)‖ :=
@@ -2801,14 +4195,112 @@ theorem aux_norm_sqrtGaussianKernel_le_one (x : ℝ) :
       simp only [one_mul, Complex.norm_real, Real.norm_eq_abs,
         abs_of_nonneg (aux_one_sub_sqrtOneMinusGaussian_nonneg ξ)]
     _ ≤ ∫ ξ : ℝ, gaussian ξ := by
-      apply integral_mono aux_sqrtGaussianFrequencyProfile_integrable_real gaussian_integrable
+      apply integral_mono aux_sqrtGaussianFrequencyProfile_integrable_real aux_gaussian_integrable
       intro ξ
       exact aux_one_sub_sqrtOneMinusGaussian_le_gaussian ξ
     _ = 1 := aux_integral_gaussian
 
-/-- Constant associated with Proposition \ref{square root of Gaussian decay}; the currently
-formalized continuity claim is sqrtGaussianKernel_continuous. -/
+/-- This elementary comparison gives the integrable majorant used for the Wiener-space clause of
+`sqrtGaussianDecay`. -/
+theorem aux_bracketBump_sq_le_inv_one_add_sq (x : ℝ) :
+    bracketBump x ^ 2 ≤ (1 + x ^ 2)⁻¹ := by
+  rw [bracketBump]
+  have hA : 0 < (1 + |x|) ^ 2 := sq_pos_of_pos (by positivity)
+  have hB : 0 < 1 + x ^ 2 := by positivity
+  have hrewrite : (1 + |x|)⁻¹ ^ 2 = ((1 + |x|) ^ 2)⁻¹ := by field_simp
+  rw [hrewrite]
+  apply (inv_le_inv₀ hA hB).2
+  calc
+    1 + x ^ 2 = 1 + |x| ^ 2 := by rw [sq_abs]
+    _ ≤ (1 + |x|) ^ 2 := by nlinarith [abs_nonneg x]
+
+/-- This local-envelope estimate is used to establish the Wiener-space membership in
+`sqrtGaussianDecay`. -/
+theorem aux_wienerEnvelope_sqrtGaussianDecayKernel_le_hundredSixty_bracket_sq (x : ℝ) :
+    wienerEnvelope aux_sqrtGaussianDecayKernel 1 x ≤
+      160 * bracketBump x ^ 2 := by
+  have hcont : Continuous aux_sqrtGaussianDecayKernel := by
+    exact Complex.continuous_re.comp aux_sqrtGaussianKernel_continuous
+  have hlocal (z : ℝ) (hz : z ∈ Metric.closedBall 0 1) :
+      bracketBump (x + z) ^ 2 ≤ 4 * bracketBump x ^ 2 := by
+    have hzabs : |z| ≤ 1 := by
+      simpa [Metric.mem_closedBall, dist_eq_norm, Real.norm_eq_abs] using hz
+    have htri : |x| ≤ |x + z| + |z| := by
+      calc
+        |x| = |(x + z) + (-z)| := by ring_nf
+        _ ≤ |x + z| + |-z| := abs_add_le _ _
+        _ = |x + z| + |z| := by rw [abs_neg]
+    have hxz_nonneg : 0 ≤ |x + z| := abs_nonneg _
+    have hden : 1 + |x| ≤ 2 * (1 + |x + z|) := by linarith
+    simp only [bracketBump]
+    have hA : 0 < 1 + |x| := by positivity
+    have hB : 0 < 1 + |x + z| := by positivity
+    have hAsq : 0 < (1 + |x|) ^ 2 := sq_pos_of_pos hA
+    have hBsq : 0 < (1 + |x + z|) ^ 2 := sq_pos_of_pos hB
+    have hleft : (1 + |x + z|)⁻¹ ^ 2 = 1 / (1 + |x + z|) ^ 2 := by field_simp
+    have hright : 4 * (1 + |x|)⁻¹ ^ 2 = 4 / (1 + |x|) ^ 2 := by field_simp
+    rw [hleft, hright]
+    apply (div_le_div_iff₀ hBsq hAsq).2
+    have hsq : (1 + |x|) ^ 2 ≤ (2 * (1 + |x + z|)) ^ 2 :=
+      (sq_le_sq₀ hA.le (by positivity)).mpr hden
+    nlinarith
+  unfold wienerEnvelope
+  apply csSup_le
+  · exact (Metric.nonempty_closedBall.mpr zero_le_one).image _
+  rintro _ ⟨z, hz, rfl⟩
+  change ‖aux_sqrtGaussianDecayKernel (x + z)‖ ≤ 160 * bracketBump x ^ 2
+  rw [Real.norm_eq_abs]
+  calc
+    |aux_sqrtGaussianDecayKernel (x + z)| ≤
+        40 * bracketBump (x + z) ^ 2 :=
+      aux_abs_sqrtGaussianDecayKernel_le_forty_bracket_sq _
+    _ ≤ 40 * (4 * bracketBump x ^ 2) :=
+      mul_le_mul_of_nonneg_left (hlocal z hz) (by norm_num)
+    _ = 160 * bracketBump x ^ 2 := by ring
+
+/-- This auxiliary conclusion supplies the $W_0$ clause of `sqrtGaussianDecay`. -/
+theorem aux_sqrtGaussianDecayKernel_memW0 : MemW0 aux_sqrtGaussianDecayKernel := by
+  have hcont : Continuous aux_sqrtGaussianDecayKernel := by
+    exact Complex.continuous_re.comp aux_sqrtGaussianKernel_continuous
+  refine ⟨hcont, ?_⟩
+  have hmajorant : Integrable (fun x : ℝ => 160 * (1 + x ^ 2)⁻¹) :=
+    integrable_inv_one_add_sq.const_mul 160
+  refine hmajorant.mono_nonneg
+    (continuous_wienerEnvelope hcont 1).aestronglyMeasurable
+    (ae_of_all _ fun x => aux_wienerEnvelope_nonneg hcont zero_le_one x)
+    (ae_of_all _ fun x => ?_)
+  calc
+    wienerEnvelope aux_sqrtGaussianDecayKernel 1 x ≤
+        160 * bracketBump x ^ 2 :=
+      aux_wienerEnvelope_sqrtGaussianDecayKernel_le_hundredSixty_bracket_sq x
+    _ ≤ 160 * (1 + x ^ 2)⁻¹ :=
+      mul_le_mul_of_nonneg_left (aux_bracketBump_sq_le_inv_one_add_sq x) (by norm_num)
+
+/-- Constant from \ref{square root of Gaussian decay}, used by `sqrtGaussianDecay`. -/
 def C_squareRootGaussianDecay : ℝ := 100
+
+/--
+\begin{proposition}[square root of Gaussian decay]\label{square root of Gaussian decay}
+For $x\in\R$ let
+\begin{equation}\label{auto:inverse-Fourier-square-root-Gaussian} \rho(x) = \mathcal{F}^{-1}(\xi \mapsto 1- \sqrt{1-\g(\xi)})(x). \end{equation}
+This is a well-defined function in $W_0(\R)$ satisfying for all $x\in\R$,
+\begin{equation} \label{sqr gauss C}
+    0\le \rho(x) \le C_{\ref{square root of Gaussian decay}} \langle x\rangle^2,
+\end{equation}
+where $C_{\ref{square root of Gaussian decay}}=100$.
+\end{proposition}
+-/
+theorem sqrtGaussianDecay :
+    MemW0 aux_sqrtGaussianDecayKernel ∧
+      ∀ x : ℝ, 0 ≤ aux_sqrtGaussianDecayKernel x ∧
+        aux_sqrtGaussianDecayKernel x ≤
+          C_squareRootGaussianDecay * bracketBump x ^ 2 := by
+  refine ⟨aux_sqrtGaussianDecayKernel_memW0, ?_⟩
+  intro x
+  refine ⟨aux_sqrtGaussianDecayKernel_nonneg x, ?_⟩
+  rw [C_squareRootGaussianDecay]
+  exact (aux_sqrtGaussianDecayKernel_le_forty_bracket_sq x).trans
+    (mul_le_mul_of_nonneg_right (by norm_num) (sq_nonneg _))
 
 end
 
