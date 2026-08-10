@@ -1,0 +1,799 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/nct-dependency-graph-2.0.0.schema.json",
+  "title": "NCT dependency graph interchange format",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "source",
+    "settings",
+    "special_sections",
+    "status_catalog",
+    "reference_catalog",
+    "sections",
+    "nodes",
+    "edges",
+    "diagnostics",
+    "statistics"
+  ],
+  "properties": {
+    "schema": {
+      "const": "nct-dependency-graph"
+    },
+    "schema_version": {
+      "const": "2.0.0"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "settings": {
+      "$ref": "#/$defs/settings"
+    },
+    "special_sections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "introduction_section_id"
+      ],
+      "properties": {
+        "introduction_section_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "status_catalog": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/status"
+      },
+      "minItems": 1
+    },
+    "reference_catalog": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/referenceEntry"
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/section"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading_parse_messages",
+        "duplicate_labels",
+        "missing_node_labels",
+        "unresolved_dependencies",
+        "duplicate_edges",
+        "cycles",
+        "missing_reference_numbers",
+        "statement_unexpanded_macros"
+      ],
+      "properties": {
+        "heading_parse_messages": {
+          "type": "array"
+        },
+        "duplicate_labels": {
+          "type": "array"
+        },
+        "missing_node_labels": {
+          "type": "array"
+        },
+        "unresolved_dependencies": {
+          "type": "array"
+        },
+        "duplicate_edges": {
+          "type": "array"
+        },
+        "cycles": {
+          "type": "array"
+        },
+        "missing_reference_numbers": {
+          "type": "array"
+        },
+        "statement_unexpanded_macros": {
+          "type": "array"
+        }
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nodes_total",
+        "theorem_nodes",
+        "definition_nodes",
+        "edges_total",
+        "using_annotations_total",
+        "rendered_nodes",
+        "rendered_edges",
+        "public_nodes",
+        "private_nodes",
+        "sections",
+        "subsections",
+        "subsubsections",
+        "reference_labels",
+        "statement_references",
+        "status_counts",
+        "is_dag",
+        "topological_order"
+      ],
+      "properties": {
+        "nodes_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "theorem_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "definition_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "edges_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "using_annotations_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rendered_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rendered_edges": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "public_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "private_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sections": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "subsections": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "subsubsections": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reference_labels": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "statement_references": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "is_dag": {
+          "type": "boolean"
+        },
+        "topological_order": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    },
+    "opacity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "latex_file",
+        "sha256",
+        "generated_at",
+        "parser",
+        "reference_numbering"
+      ],
+      "properties": {
+        "latex_file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "parser": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "version"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "reference_numbering": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "succeeded",
+            "aux_file",
+            "labels_total"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "compile",
+                "supplied_aux"
+              ]
+            },
+            "engine": {
+              "type": "string",
+              "minLength": 1
+            },
+            "succeeded": {
+              "type": "boolean"
+            },
+            "aux_file": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "labels_total": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "return_code": {
+              "type": "integer"
+            },
+            "log_tail": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grouping_granularity",
+        "include_definitions",
+        "rank_direction",
+        "public_opacity",
+        "private_opacity",
+        "section_opacity",
+        "subsection_opacity",
+        "show_sidebar",
+        "show_legend",
+        "show_document_hierarchy",
+        "default_status"
+      ],
+      "properties": {
+        "grouping_granularity": {
+          "enum": [
+            "none",
+            "section",
+            "subsection"
+          ]
+        },
+        "include_definitions": {
+          "type": "boolean"
+        },
+        "rank_direction": {
+          "enum": [
+            "BT",
+            "TB",
+            "LR",
+            "RL"
+          ]
+        },
+        "public_opacity": {
+          "$ref": "#/$defs/opacity"
+        },
+        "private_opacity": {
+          "$ref": "#/$defs/opacity"
+        },
+        "section_opacity": {
+          "$ref": "#/$defs/opacity"
+        },
+        "subsection_opacity": {
+          "$ref": "#/$defs/opacity"
+        },
+        "show_sidebar": {
+          "type": "boolean"
+        },
+        "show_legend": {
+          "type": "boolean"
+        },
+        "show_document_hierarchy": {
+          "type": "boolean"
+        },
+        "default_status": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "meaning",
+        "style"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "meaning": {
+          "type": "string",
+          "minLength": 1
+        },
+        "style": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "border",
+            "fill",
+            "text",
+            "border_width"
+          ],
+          "properties": {
+            "border": {
+              "$ref": "#/$defs/color"
+            },
+            "fill": {
+              "$ref": "#/$defs/color"
+            },
+            "text": {
+              "$ref": "#/$defs/color"
+            },
+            "border_width": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        }
+      }
+    },
+    "referenceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "number",
+        "number_latex",
+        "page",
+        "title",
+        "anchor",
+        "extra",
+        "node_id"
+      ],
+      "properties": {
+        "number": {
+          "type": "string"
+        },
+        "number_latex": {
+          "type": "string"
+        },
+        "page": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "anchor": {
+          "type": "string"
+        },
+        "extra": {
+          "type": "string"
+        },
+        "node_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "level",
+        "title_tex",
+        "title",
+        "display_title",
+        "number",
+        "label",
+        "synthetic",
+        "starred",
+        "role",
+        "ordinal",
+        "source_line",
+        "children"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "section",
+            "subsection",
+            "subsubsection"
+          ]
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "title_tex": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "display_title": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "synthetic": {
+          "type": "boolean"
+        },
+        "starred": {
+          "type": "boolean"
+        },
+        "role": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ordinal": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/section"
+          }
+        }
+      }
+    },
+    "statementReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "label",
+        "number",
+        "display",
+        "target_node_id"
+      ],
+      "properties": {
+        "command": {
+          "enum": [
+            "ref",
+            "eqref",
+            "autoref"
+          ]
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "number": {
+          "type": "string"
+        },
+        "display": {
+          "type": "string"
+        },
+        "target_node_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "number",
+        "kind",
+        "environment",
+        "environment_name",
+        "title_tex",
+        "title",
+        "status",
+        "visibility",
+        "visibility_reason",
+        "lean_names",
+        "uses",
+        "used_by",
+        "location_id",
+        "section_id",
+        "subsection_id",
+        "section_path",
+        "section_titles",
+        "section_numbers",
+        "statement_latex",
+        "statement_html",
+        "statement_references",
+        "statement_custom_macros_expanded",
+        "statement_unexpanded_custom_macros",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "number": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "theorem",
+            "definition"
+          ]
+        },
+        "environment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "environment_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title_tex": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visibility": {
+          "enum": [
+            "public",
+            "private"
+          ]
+        },
+        "visibility_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lean_names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "uses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "used_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "location_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "section_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subsection_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "section_path": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "section_titles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "section_numbers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "statement_latex": {
+          "type": "string"
+        },
+        "statement_html": {
+          "type": "string"
+        },
+        "statement_references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/statementReference"
+          }
+        },
+        "statement_custom_macros_expanded": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "statement_unexpanded_custom_macros": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "line_start",
+            "line_end"
+          ],
+          "properties": {
+            "line_start": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "line_end": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source",
+        "target",
+        "kind",
+        "annotation_ordinal"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "const": "uses"
+        },
+        "annotation_ordinal": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}
