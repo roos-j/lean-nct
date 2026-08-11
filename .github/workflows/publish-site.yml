@@ -1,4 +1,4 @@
-name: Publish API documentation and dependency graph
+name: Build and publish documentation
 
 on:
   push:
@@ -28,20 +28,57 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Free disk space for API documentation
+        uses: jlumbroso/free-disk-space@main
         with:
-          # doc-gen4 uses repository history to construct source links.
+          tool-cache: false
+          android: true
+          dotnet: false
+          haskell: false
+          large-packages: false
+          docker-images: false
+          swap-storage: false
+
+      - name: Checkout project
+        uses: actions/checkout@v5
+        with:
           fetch-depth: 0
 
       - name: Build Lean project
         uses: leanprover/lean-action@v1
+        with:
+          build: true
+          use-mathlib-cache: true
 
-      - name: Generate API documentation with doc-gen4
+      # This is the cache used by docgen-action: it preserves rendered
+      # documentation for dependencies while LeanNct's docs are rebuilt.
+      - name: Cache dependency API documentation
+        uses: actions/cache@v4
+        with:
+          key: Docs-${{ hashFiles('lake-manifest.json') }}
+          path: |
+            docbuild/.lake/build/doc/Mathlib
+            docbuild/.lake/build/doc/Archive
+            docbuild/.lake/build/doc/Counterexamples
+            docbuild/.lake/build/doc/Plausible
+            docbuild/.lake/build/doc/LeanSearchClient
+            docbuild/.lake/build/doc/ImportGraph
+            docbuild/.lake/build/doc/ProofWidgets
+            docbuild/.lake/build/doc/Aesop
+            docbuild/.lake/build/doc/Qq
+            docbuild/.lake/build/doc/Batteries
+            docbuild/.lake/build/doc/Cli
+            docbuild/.lake/build/doc/Init
+            docbuild/.lake/build/doc/Lake
+            docbuild/.lake/build/doc/Lean
+            docbuild/.lake/build/doc/Std
+
+      - name: Build API documentation
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p docbuild
           lean_version="$(cut -d: -f2 < lean-toolchain)"
+          mkdir -p docbuild
           cat > docbuild/lakefile.toml <<EOF
           name = "docbuild"
           reservoir = false
@@ -65,30 +102,22 @@ jobs:
           mkdir -p site
           cp -r docbuild/.lake/build/doc site/docs
 
-      - name: Create temporary graph workspace
-        shell: bash
-        run: mkdir -p .graph-build
-
-      - name: Extract dependency graph JSON from the blueprint
+      - name: Extract dependency graph data
         uses: xu-cheng/texlive-action@v3
         with:
           run: |
+            mkdir -p .graph-build
             python3 dependency_graph/latex_to_graph_json.py \
               blueprint/blueprint.tex \
               .graph-build/graph.json
 
-      - name: Install dependency-graph renderer requirements
+      - name: Render dependency graph
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install --yes graphviz
           npm install --no-save --prefix "$RUNNER_TEMP/mathjax" mathjax-full@3.2.2
-
-      - name: Render dependency graph
-        shell: bash
-        run: |
-          set -euo pipefail
           mkdir -p site/dependency_graph
           python3 dependency_graph/graph_json_to_html.py \
             .graph-build/graph.json \
@@ -97,31 +126,13 @@ jobs:
             --lean-url-pattern 'https://roos-j.github.io/lean-nct/docs/find/?pattern={lean_name}&strict=false#doc'
           rm -rf .graph-build
 
-      - name: Create timestamped dependency-graph artifact
-        id: dependency-graph-artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          timestamp="$(date -u +'%Y%m%d-%H%M%S')"
-          artifact_path="$RUNNER_TEMP/dependency-graph-$timestamp.html"
-          cp site/dependency_graph/index.html "$artifact_path"
-          echo "name=dependency-graph-$timestamp" >> "$GITHUB_OUTPUT"
-          echo "path=$artifact_path" >> "$GITHUB_OUTPUT"
-
-      - name: Upload timestamped dependency graph
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.dependency-graph-artifact.outputs.name }}
-          path: ${{ steps.dependency-graph-artifact.outputs.path }}
-          retention-days: 30
-
-      - name: Upload combined Pages site
+      - name: Upload Pages site
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy-pages:
-    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     needs: build-site
     runs-on: ubuntu-latest
     environment:
