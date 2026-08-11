@@ -4057,6 +4057,8 @@ Using $\sqrt2<3/2$, the defining sum in Proposition \ref{H kernel derivative est
 
 
 \begin{proposition}[Gaussian domination, combined]\label{Gaussian domination combined}\uses{Gauss domination case 1,Gauss domination case 2,Gauss domination case 3,Gauss domination constant}\usesdefs{multiplicatively spaced monotone sequences,geometric parameters,2D Gaussians,L multiplier,N multiplier}
+\lean{gaussianDominationCombined}
+\leanok
 Set
 \begin{equation}\label{Gaussian domination combined constants}
 C_{\ref{Gaussian domination combined},0}=28,\qquad
@@ -4224,6 +4226,8 @@ The series converges pointwise and in $L^1$ by comparison with the product of tw
 \end{proof}
 
 \begin{proposition}[Gaussian domination, far case]\label{Gauss domination case 2}\uses{standard bump properties,four scale Gaussian kernel,H kernel derivative estimate Gaussian domination,bump triangle,two bump estimate,Operations on spaced sequences,orthogonal decay,H kernel estimate Gaussian domination,Properties of distance of sequences,Gaussian domination}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,standard bump,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,square root Gaussian difference,H multiplier,L multiplier,N multiplier}
+\lean{gaussDominationCase2}
+\leanok
 The conclusion of Proposition \ref{Gaussian domination combined} holds in the case $\iota=(h,0)$, $h<0$, with the constant in \eqref{Gaussian domination main estimate} equal to
 \begin{equation}\label{auto:Gaussian-domination-case-two-constant}
 C_{\ref{Gauss domination case 2}}
@@ -4381,6 +4385,8 @@ The series converges pointwise and has finite $L^1$ norm by comparison with the 
 \end{proof}
 
 \begin{proposition}[Gaussian domination, intermediate case]\label{Gauss domination case 3}\uses{standard bump properties,four scale Gaussian kernel,H kernel estimate Gaussian domination,bump triangle,two bump estimate,Operations on spaced sequences,orthogonal decay,Properties of distance of sequences,Gaussian domination}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,standard bump,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,square root Gaussian difference,H multiplier,L multiplier,N multiplier}
+\lean{gaussDominationCase3}
+\leanok
 The conclusion of Proposition \ref{Gaussian domination combined} holds in the case $\iota=(0,l)$, $|l|\le\Delta_\gamma$, with the constant in \eqref{Gaussian domination main estimate} equal to
 \begin{equation}\label{auto:Gaussian-domination-case-three-constant}
 C_{\ref{Gauss domination case 3}}
@@ -4518,6 +4524,8 @@ The series converges pointwise and has finite $L^1$ norm by comparison with the 
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{Gaussian domination combined},2}$ \auto]\label{Gauss domination constant}\uses{standard bump properties,constant four scale Gaussian kernel,constant mean four scale Gaussian kernel,four scale Gaussian kernel,mean four scale Gaussian kernel,constant H kernel estimate Gaussian domination,constant H kernel derivative estimate Gaussian domination,H kernel estimate Gaussian domination,H kernel derivative estimate Gaussian domination,two bump estimate,bump triangle,Gauss domination case 1,Gauss domination case 2,Gauss domination case 3}\usesdefs{}
+\lean{gaussDominationConstant}
+\leanok
 We have
 \begin{equation}\label{auto:Gaussian-domination-case-constant-bounds}
 C_{\ref{Gauss domination case 1}}<2^{117},
@@ -4883,6 +4891,8 @@ and $\sum_{m\in\N^2} 2^{-\frac{|m|}{2}} (1+|m|)^2\le 2^{10}$.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{induct positive terms imply increase data}}$ \auto]\label{constant induct positive terms imply increase data}\uses{Gaussian domination combined,induct positive terms imply increase data}\usesdefs{}
+\lean{constantInductPositiveTermsImplyIncreaseData}
+\leanok
 \begin{equation}\label{constant induct positive terms imply increase data bound}
 C_{\ref{induct positive terms imply increase data}}<2^{171}.
 \end{equation}
