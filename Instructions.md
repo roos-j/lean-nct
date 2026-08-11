@@ -116,6 +116,11 @@ for local path (treating LeanNct directory as home, and including filename if ap
 The format should be:
 Lean file: PATH HERE
 
+## Blueprint Lean metadata update
+
+- Whenever you update a `Status.md` entry, you should also update the corresponding Lean metadata in the most recent blueprint file as follows:
+find the appropriate label and inside of the def/thm environment update the metadata commands according to the instructions in `UpdateLeanMetadata.md`.
+
 ## Workflow
 
 - The first stage is to formalize all the statements and definitions, and where proofs are still missing and leave proofs as sorry. Update `Status.md` appropriately.
