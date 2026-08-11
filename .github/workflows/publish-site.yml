@@ -1,0 +1,133 @@
+name: Publish API documentation and dependency graph
+
+on:
+  push:
+    paths:
+      - "blueprint/blueprint.tex"
+      - "LeanNct.lean"
+      - "LeanNct/**"
+      - "lakefile.toml"
+      - "lake-manifest.json"
+      - "lean-toolchain"
+      - "dependency_graph/latex_to_graph_json.py"
+      - "dependency_graph/graph_json_to_html.py"
+      - ".github/workflows/publish-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build-site:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # doc-gen4 uses repository history to construct source links.
+          fetch-depth: 0
+
+      - name: Build Lean project
+        uses: leanprover/lean-action@v1
+
+      - name: Generate API documentation with doc-gen4
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p docbuild
+          cat > docbuild/lakefile.toml <<'EOF'
+          name = "docbuild"
+          reservoir = false
+          version = "0.1.0"
+          packagesDir = "../.lake/packages"
+
+          [[require]]
+          name = "lean-nct"
+          path = "../"
+
+          [[require]]
+          scope = "leanprover"
+          name = "doc-gen4"
+          rev = "$(< lean-toolchain cut -f 2 -d: )"
+          EOF
+          (
+            cd docbuild
+            MATHLIB_NO_CACHE_ON_UPDATE=1 lake update lean-nct
+            lake build LeanNct:docs
+          )
+          mkdir -p site
+          cp -r docbuild/.lake/build/doc site/docs
+
+      - name: Create temporary graph workspace
+        shell: bash
+        run: mkdir -p .graph-build
+
+      - name: Extract dependency graph JSON from the blueprint
+        uses: xu-cheng/texlive-action@v3
+        with:
+          run: |
+            python3 dependency_graph/latex_to_graph_json.py \
+              blueprint/blueprint.tex \
+              .graph-build/graph.json
+
+      - name: Install dependency-graph renderer requirements
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes graphviz
+          npm install --no-save --prefix "$RUNNER_TEMP/mathjax" mathjax-full@3.2.2
+
+      - name: Render dependency graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/dependency_graph
+          python3 dependency_graph/graph_json_to_html.py \
+            .graph-build/graph.json \
+            site/dependency_graph/index.html \
+            --mathjax-js "$RUNNER_TEMP/mathjax/node_modules/mathjax-full/es5/tex-svg-full.js" \
+            --lean-url-pattern 'https://roos-j.github.io/lean-nct/docs/find/?pattern={lean_name}&strict=false#doc'
+          rm -rf .graph-build
+
+      - name: Create timestamped dependency-graph artifact
+        id: dependency-graph-artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          timestamp="$(date -u +'%Y%m%d-%H%M%S')"
+          artifact_path="$RUNNER_TEMP/dependency-graph-$timestamp.html"
+          cp site/dependency_graph/index.html "$artifact_path"
+          echo "name=dependency-graph-$timestamp" >> "$GITHUB_OUTPUT"
+          echo "path=$artifact_path" >> "$GITHUB_OUTPUT"
+
+      - name: Upload timestamped dependency graph
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.dependency-graph-artifact.outputs.name }}
+          path: ${{ steps.dependency-graph-artifact.outputs.path }}
+          retention-days: 30
+
+      - name: Upload combined Pages site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy-pages:
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    needs: build-site
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

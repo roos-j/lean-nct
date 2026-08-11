@@ -12,7 +12,7 @@ The renderer consumes only `graph.json`. It never reads the source `.tex` file.
 
 - `latex_to_graph_json.py` — extracts headings, theorem/definition nodes, `\using` dependencies, visibility, expanded statements, and compiled reference numbers.
 - `graph_json_to_html.py` — computes six independent Graphviz layouts and writes a self-contained interactive HTML file.
-- `graph.json` — generated graph data for the supplied manuscript.
+- `graph.json` — generated graph data for the supplied manuscript. The Pages workflow creates this data only in its temporary runner workspace.
 - `graph.schema.json` — JSON Schema Draft 2020-12 definition of format version 2.0.0.
 - `GRAPH_FORMAT.md` — semantic format specification.
 - `nct_dependency_graph.html` — standalone interactive graph.
@@ -37,7 +37,7 @@ The renderer searches two common global MathJax locations. Supply another locati
 
 ```bash
 python3 latex_to_graph_json.py \
-  '/path/to/260809-pass-4-nct-blueprint-generated-edited(3).tex' \
+  blueprint/blueprint.tex \
   graph.json \
   --strict
 ```
@@ -65,6 +65,7 @@ Useful extractor options:
 
 ```bash
 python3 graph_json_to_html.py graph.json nct_dependency_graph.html \
+  --lean-url-pattern 'https://roos-j.github.io/lean-nct/docs/find/?pattern={lean_name}&strict=false#doc' \
   --svg-output nct_dependency_graph.svg \
   --dot-output nct_dependency_graph.dot \
   --layout-metadata-output layout_metadata.json
@@ -78,6 +79,8 @@ python3 graph_json_to_html.py graph.json nct_dependency_graph.html \
 ```
 
 The generated HTML embeds the graph data, six SVG layouts, application JavaScript, styles, and MathJax. It can be opened directly without the LaTeX source or a network connection.
+
+Pass `--lean-url-pattern` to make Lean names in the node-details panel clickable. The template must contain `{lean_name}`; the renderer URL-encodes each name before inserting it. The example above uses doc-gen4's fuzzy API lookup.
 
 ## Interactive controls
 

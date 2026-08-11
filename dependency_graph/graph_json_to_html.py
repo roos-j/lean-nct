@@ -948,7 +948,17 @@ def find_mathjax_bundle(explicit: Path | None) -> Path:
     raise RuntimeError("a local MathJax tex-svg-full.js bundle is required; pass --mathjax-js")
 
 
-def build_html(graph: dict[str, Any], layouts: dict[str, LayoutGeometry], mathjax_source: str) -> str:
+def validate_lean_url_pattern(pattern: str | None) -> None:
+    if pattern is not None and "{lean_name}" not in pattern:
+        raise ValueError("--lean-url-pattern must contain the {lean_name} placeholder")
+
+
+def build_html(
+    graph: dict[str, Any],
+    layouts: dict[str, LayoutGeometry],
+    mathjax_source: str,
+    lean_url_pattern: str | None = None,
+) -> str:
     settings = graph["settings"]
     stats = graph["statistics"]
     section_counts: dict[str, int] = defaultdict(int)
@@ -957,6 +967,7 @@ def build_html(graph: dict[str, Any], layouts: dict[str, LayoutGeometry], mathja
             section_counts[section_id] += 1
 
     graph_data = json.dumps(graph, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    lean_url_pattern_json = json.dumps(lean_url_pattern, ensure_ascii=False).replace("</", "<\\/")
     legend = status_legend_html(graph["status_catalog"], graph["nodes"])
     hierarchy = hierarchy_html(graph["sections"], section_counts)
     layout_markup = "\n".join(
@@ -1077,6 +1088,9 @@ body.sidebar-hidden #viewport { left: 0; }
 .meta-grid { display: grid; grid-template-columns: 96px minmax(0,1fr); gap: 8px 10px; font-size: 12px; }
 .meta-grid dt { color: var(--muted); }
 .meta-grid dd { margin: 0; overflow-wrap: anywhere; }
+.lean-name-links { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.lean-name-link { color: #1d4ed8; text-decoration: underline; text-underline-offset: 2px; }
+.lean-name-link:hover { color: #1e40af; }
 .statement-panel { margin-top: 18px; border-top: 1px solid #e2e8f0; padding-top: 14px; }
 .statement-panel h3, .dep-list h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #475569; margin: 0 0 9px; }
 .statement-content { font-family: Georgia, "Times New Roman", serif; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
@@ -1205,6 +1219,7 @@ window.MathJax = {
 (() => {
   'use strict';
   const data = JSON.parse(document.getElementById('graph-data').textContent);
+  const leanUrlPattern = $lean_url_pattern;
   const nodes = new Map(data.nodes.map(node => [node.id, node]));
   const statuses = new Map(data.status_catalog.map(status => [status.id, status]));
   const viewport = document.getElementById('viewport');
@@ -1398,6 +1413,11 @@ window.MathJax = {
     return item;
   }
 
+  function leanDocumentationUrl(name) {
+    if (!leanUrlPattern) return null;
+    return leanUrlPattern.split('{lean_name}').join(encodeURIComponent(name));
+  }
+
   function dependencyList(title, ids) {
     const section = element('section', null, 'dep-list');
     section.appendChild(element('h3', `${title} (${ids.length})`));
@@ -1518,11 +1538,30 @@ window.MathJax = {
       ['Visibility', `${node.visibility} — ${node.visibility_reason || ''}`],
       ['Section', node.section_titles.join(' › ')],
       ['Source', `${data.source.latex_file}:${node.source.line_start}–${node.source.line_end}`],
-      ['Lean names', node.lean_names.length ? node.lean_names.join(', ') : '(none yet)']
+      ['Lean names', node.lean_names]
     ];
     rows.forEach(([key, value]) => {
       dl.appendChild(element('dt', key));
-      dl.appendChild(element('dd', value));
+      const description = element('dd');
+      if (key === 'Lean names' && Array.isArray(value)) {
+        if (!value.length) {
+          description.textContent = '(none yet)';
+        } else if (!leanUrlPattern) {
+          description.textContent = value.join(', ');
+        } else {
+          const links = element('span', null, 'lean-name-links');
+          value.forEach(name => {
+            const link = element('a', name, 'lean-name-link');
+            link.href = leanDocumentationUrl(name);
+            link.title = `Open Lean API documentation for ${name}`;
+            links.appendChild(link);
+          });
+          description.appendChild(links);
+        }
+      } else {
+        description.textContent = value;
+      }
+      dl.appendChild(description);
     });
     detailsBody.appendChild(dl);
     addStatement(node);
@@ -1802,6 +1841,7 @@ window.MathJax = {
         '$hierarchy': hierarchy,
         '$layout_markup': layout_markup,
         '$graph_data': graph_data,
+        '$lean_url_pattern': lean_url_pattern_json,
     }
     for marker, value in replacements.items():
         template = template.replace(marker, value)
@@ -1819,6 +1859,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dot-binary", default="dot", help="Graphviz dot executable used for local layouts")
     parser.add_argument("--neato-binary", default="neato", help="Graphviz neato executable used for fixed-position SVG output")
     parser.add_argument("--mathjax-js", type=Path, help="local MathJax tex-svg-full.js bundle")
+    parser.add_argument(
+        "--lean-url-pattern",
+        help="URL template containing {lean_name}; each name is URL-encoded and inserted into its link",
+    )
     parser.add_argument("--dot-output", type=Path, help="optional fixed-position DOT for the default layout")
     parser.add_argument("--svg-output", type=Path, help="optional SVG for the default layout")
     parser.add_argument("--layout-metadata-output", type=Path, help="optional JSON containing computed node and cluster geometry")
@@ -1831,6 +1875,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"error: graph JSON not found: {args.graph_json}", file=sys.stderr)
         return 2
     try:
+        validate_lean_url_pattern(args.lean_url_pattern)
         graph = json.loads(args.graph_json.read_text(encoding="utf-8"))
         validate_graph(graph)
         node_to_token, token_to_node = node_tokens(graph)
@@ -1845,7 +1890,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 dot_sources[geometry.key] = dot_source
         mathjax_path = find_mathjax_bundle(args.mathjax_js)
         mathjax_source = mathjax_path.read_text(encoding="utf-8")
-        output = build_html(graph, layouts, mathjax_source)
+        output = build_html(graph, layouts, mathjax_source, args.lean_url_pattern)
     except (OSError, json.JSONDecodeError, GraphFormatError, RuntimeError, ET.ParseError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

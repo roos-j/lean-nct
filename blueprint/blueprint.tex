@@ -3465,6 +3465,8 @@ Let $\gamma=(k,u,a)\in \Gamma$.  For $i\in [k)$, $j\in \Z$, define
 \end{definition}
 
 \begin{proposition}[telescoping terms]\label{telescoping terms}\uses{P:schwartz-into-wiener,prism BL inequality,M to K}\usesdefs{geometric parameters,double sequence of 2D functions,kernel sequences,2D Gaussians,sandwich kernel,auto:Gaussian-difference-kernel-definition}
+\lean{telescopingTerms}
+\leanok
 Let $\gamma=(k,u,a)\in \Gamma$.
 Then $Y_\gamma\in \mathcal{X}_k$ and
 \begin{equation}\label{auto:telescoping-terms-bound}
@@ -3527,6 +3529,8 @@ if $u_i=1$.
 \end{definition}
 
 \begin{proposition}\label{square root Gaussian difference W0}\uses{diagonal square root,Operations on spaced sequences}\usesdefs{auto:Wiener-space-definition,multiplicatively spaced monotone sequences,geometric parameters,square root Gaussian difference,s multiplier}
+\lean{squareRootGaussianDifference_memW0,sMultiplier_memW0}
+\leanok
   For every $a\in\mathrm{A}$ and $j\in\mathbb{Z}$
   we have that $s(a,j)$ is a well-defined function in $W_0(\R)$. Consequently, if $\gamma \in \Gamma$ and $i\in [k)$, $j\in \Z$, then $(s_{\gamma})_{i,j}$ is a well-defined function in $W_0(\R)$.
 \end{proposition}
@@ -3550,6 +3554,8 @@ for every $i\in [k), j\in\mathbb{Z}$.
 \end{definition}
 
 \begin{proposition}\label{H-in-X}\uses{tensor Wiener,telescoping terms,square root Gaussian difference W0}\usesdefs{geometric parameters,double sequence of 2D functions,H multiplier}
+\lean{hMultiplier_memDoubleSequence}
+\leanok
 Let $\gamma=(k,u,a)\in \Gamma$. Then $H_{\gamma}\in \mathcal{X}_k$.
 \end{proposition}
 \begin{proof}

@@ -50,10 +50,13 @@ Do not continue to HTML generation if extraction fails or the JSON file is absen
 Feed the generated JSON into the renderer:
 
 ```powershell
-python dependency_graph/graph_json_to_html.py $graph $html
+python dependency_graph/graph_json_to_html.py $graph $html `
+  --lean-url-pattern 'https://roos-j.github.io/lean-nct/docs/find/?pattern={lean_name}&strict=false#doc'
 ```
 
 If rendering fails because Graphviz or MathJax is unavailable, locate the required executable or MathJax bundle and rerun with the renderer's `--dot-binary`, `--neato-binary`, or `--mathjax-js` option as appropriate. Do not silently substitute an incomplete HTML artifact.
+
+The URL template makes every Lean name in a selected node's details panel a link to the corresponding fuzzy API-documentation lookup. The renderer URL-encodes each Lean name before replacing `{lean_name}`.
 
 ### 5. Verify and report
 

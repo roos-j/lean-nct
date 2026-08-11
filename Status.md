@@ -175,7 +175,7 @@ Lean file: MainArgument/SandwichKernel.lean
 
 #### Theorems
 
-\label{telescoping terms}: [Todo] (Lean: telescopingTerms) (2026-08-09 10:00:00 EDT)
+\label{telescoping terms}: [Proof completed] (Lean: telescopingTerms) (2026-08-10 23:06:21 EDT)
 \label{positive terms}: [Todo] (Lean: positiveTerms) (2026-08-09 10:00:00 EDT)
 
 ### Multipliers $H$, $L$, $N$
@@ -194,8 +194,8 @@ Lean file: MainArgument/MultipliersHLN.lean
 
 #### Theorems
 
-\label{square root Gaussian difference W0}: [Todo] (Lean: squareRootGaussianDifference_memW0, sMultiplier_memW0) (2026-08-09 10:00:00 EDT)
-\label{H-in-X}: [Todo] (Lean: hMultiplier_memDoubleSequence) (2026-08-09 10:00:00 EDT)
+\label{square root Gaussian difference W0}: [Proof completed] (Lean: squareRootGaussianDifference_memW0, sMultiplier_memW0) (2026-08-10 23:13:23 EDT)
+\label{H-in-X}: [Proof completed] (Lean: hMultiplier_memDoubleSequence) (2026-08-10 23:18:44 EDT)
 \label{H vanishing}: [Todo] (Lean: hMultiplier_vanishing) (2026-08-09 10:00:00 EDT)
 \label{H vanishing integral}: [Todo] (Lean: hMultiplier_vanishingIntegral) (2026-08-09 10:00:00 EDT)
 \label{L:F_t}: [Todo] (Lean: lMultiplierAtScale_memDoubleSequence, lMultiplierAtScale_tendsto_hMultiplier) (2026-08-09 10:00:00 EDT)
