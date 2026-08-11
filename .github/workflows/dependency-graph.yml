@@ -1,4 +1,4 @@
-name: Build project and publish dependency graph
+name: Publish dependency graph
 
 on:
   push:
@@ -11,38 +11,22 @@ permissions:
   id-token: write
 
 jobs:
-  build_project:
+  publish_dependency_graph:
     runs-on: ubuntu-latest
-    name: Build project
+    name: Publish dependency graph HTML
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install elan
-        run: curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain "$(cat lean-toolchain)"
-
-      - name: Get cache
-        run: ~/.elan/bin/lake exe cache get || true
-
-      - name: Build project
-        run: ~/.elan/bin/lake build LeanNct
-
-      - name: Build dependency graph
-        uses: xu-cheng/texlive-action@v3
-        with:
-          run: |
-            apk add --no-cache graphviz nodejs npm python3
-            npm install --no-save --prefix /tmp/mathjax mathjax-full@3.2.2
-            python3 dependency_graph/latex_to_graph_json.py blueprint/blueprint.tex /tmp/graph.json
-            mkdir -p site/dependency_graph
-            python3 dependency_graph/graph_json_to_html.py /tmp/graph.json site/dependency_graph/index.html \
-              --mathjax-js /tmp/mathjax/node_modules/mathjax-full/es5/tex-svg-full.js \
-              --lean-url-pattern 'https://roos-j.github.io/lean-nct/docs/find/?pattern={lean_name}&strict=false#doc'
+      - name: Prepare Pages artifact
+        shell: bash
+        run: |
+          test -f dependency_graph/index.html
+          mkdir -p site/dependency_graph
+          cp dependency_graph/index.html site/dependency_graph/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
