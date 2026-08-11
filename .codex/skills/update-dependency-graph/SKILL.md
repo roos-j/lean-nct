@@ -1,6 +1,6 @@
 ---
 name: update-dependency-graph
-description: Regenerate the repository's dependency-graph JSON and standalone HTML from the LaTeX blueprint, using timestamped artifacts and an issue report when the workflow encounters ambiguity or failure. Use when asked to update, rebuild, or refresh the dependency graph in a repository containing `blueprint/` and `dependency_graph/`.
+description: Regenerate the repository's dependency-graph JSON and standalone HTML from the LaTeX blueprint, refresh the deployable `dependency_graph/index.html` entrypoint, and use timestamped artifacts plus an issue report when the workflow encounters ambiguity or failure. Use when asked to update, rebuild, or refresh the dependency graph in a repository containing `blueprint/` and `dependency_graph/`.
 ---
 
 # Update Dependency Graph
@@ -21,6 +21,7 @@ Use the current local date and time in `YYMMDD-HHmm` format. Put both generated 
 
 - `dependency_graph/graph-(datetime).json`
 - `dependency_graph/dependencygraph-(datetime).html`
+- `dependency_graph/index.html` (the deployable Pages entrypoint, intentionally overwritten after a successful render)
 
 For PowerShell, initialize the timestamp and paths as follows:
 
@@ -29,6 +30,7 @@ $stamp = Get-Date -Format 'yyMMdd-HHmm'
 $blueprint = 'blueprint/blueprint.tex'
 $graph = "dependency_graph/graph-$stamp.json"
 $html = "dependency_graph/dependencygraph-$stamp.html"
+$index_html = 'dependency_graph/index.html'
 ```
 
 Use the equivalent local-time command when working in another shell. Check for existing files with the same timestamp before running the pipeline and call out any overwrite in the summary.
@@ -58,15 +60,25 @@ If rendering fails because Graphviz or MathJax is unavailable, locate the requir
 
 The URL template makes every Lean name in a selected node's details panel a link to the corresponding fuzzy API-documentation lookup. The renderer URL-encodes each Lean name before replacing `{lean_name}`.
 
-### 5. Verify and report
+### 5. Refresh the deployable HTML entrypoint
 
-Verify that both timestamped files exist and that the JSON can be parsed. Report the blueprint file path, exact output paths, and any warnings or failures.
+Only after HTML rendering succeeds and `$html` exists, copy the timestamped HTML to the stable Pages source path:
+
+```powershell
+Copy-Item -LiteralPath $html -Destination $index_html -Force
+```
+
+This intentionally overwrites `dependency_graph/index.html`. Do not create or update it when extraction or rendering fails.
+
+### 6. Verify and report
+
+Verify that the two timestamped files and `dependency_graph/index.html` exist, and that the JSON can be parsed. Report the blueprint file path, exact output paths, and any warnings or failures.
 
 Create a diagnostic report only when an issue was encountered. Name it `dependency_graph/diagnostic-(datetime).md` using the same timestamp, and include:
 
 - the blueprint and commands run;
 - the issue or ambiguity, including relevant tool output;
 - the action taken or the reason the pipeline stopped; and
-- whether either output artifact was successfully produced.
+- whether the timestamped artifacts and `dependency_graph/index.html` were successfully produced.
 
 Do not create an empty diagnostic report when the workflow completes clearly and successfully.
