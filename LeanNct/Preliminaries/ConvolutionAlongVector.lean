@@ -5,10 +5,12 @@ namespace Codex.Preliminaries.ConvolutionAlongVector
 open MeasureTheory Metric
 open scoped FourierTransform RealInnerProductSpace
 
-/-- \begin{definition}[Convolution along a vector]
+/-- \begin{definition}[Convolution along a vector]\label{auto:convolution-along-vector-definition}
 For $\rho\in W_0(\R^n), \varphi\in W_0(\R)$ and a vector $\alpha\in\mathbb{R}^n$
 define for $x\in\mathbb{R}^n$,
-\[ (\rho *_\alpha \varphi)(x) = \int_{\R} \rho(x-p\alpha) \varphi(p)\,dp \]
+\begin{equation}\label{auto:convolution-along-vector-formula}
+(\rho *_\alpha \varphi)(x) = \int_{\R} \rho(x-p\alpha) \varphi(p)\,dp
+\end{equation}
 \end{definition} -/
 noncomputable def convolutionAlongVector {n : ℕ} {𝕜 : Type*} [NormedField 𝕜]
     [NormedSpace ℝ 𝕜]
@@ -127,8 +129,11 @@ theorem aux_memW0_integral_real {n : ℕ}
       · simpa [Metric.mem_closedBall, dist_eq_norm] using hw
       · simp
 
-/-- For $\rho \in W_0(\R^n), \varphi\in W_0(\R), \alpha\in\mathbb{R}^n$ we have
-$\rho *_\alpha \varphi\in W_0(\R^n)$. -/
+/-- \begin{proposition}[Properties of convolution along a vector]
+\label{convolution vector}
+For $\rho \in W_0(\R^n), \varphi\in W_0(\R), \alpha,\xi\in\mathbb{R}^n$ we have
+$\rho *_\alpha \varphi\in W_0(\R^n)$.
+\end{proposition} -/
 theorem memW0_convolutionAlongVector {n : ℕ}
     {𝕜 : Type*} [NormedField 𝕜] [NormedSpace ℝ 𝕜] [CompleteSpace 𝕜]
     {rho : EuclideanSpace ℝ (Fin n) → 𝕜} {phi : ℝ → 𝕜}
@@ -151,11 +156,13 @@ theorem memW0_convolutionAlongVector {n : ℕ}
   change MemW0 (fun u ↦ ∫ p : ℝ, rho (u - p • alpha) * phi p)
   simpa [F, aux_shear, Function.comp_def] using hI
 
-/-- For $\rho \in W_0(\R^n), \varphi\in W_0(\R),
-$\alpha,\xi\in\mathbb{R}^n$ we have
-\[
+/-- \begin{proposition}[Properties of convolution along a vector]
+\label{convolution vector}
+For $\rho \in W_0(\R^n), \varphi\in W_0(\R), \alpha,\xi\in\mathbb{R}^n$ we have
+\begin{equation}\label{auto:convolution-along-vector-Fourier-transform}
 \widehat{\rho *_\alpha \varphi}(\xi) = \widehat{\rho}(\xi)\widehat{\varphi}(\alpha\cdot\xi).
-\] -/
+\end{equation}
+\end{proposition} -/
 theorem fourier_convolutionAlongVector {n : ℕ}
     {rho : EuclideanSpace ℝ (Fin n) → ℂ} {phi : ℝ → ℂ}
     (hrho : MemW0 rho) (hphi : MemW0 phi)

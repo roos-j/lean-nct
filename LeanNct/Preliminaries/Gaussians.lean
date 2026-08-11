@@ -4,6 +4,7 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import Mathlib.Analysis.Fourier.Inversion
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.Calculus.FDeriv.Extend
+import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.LHopital
@@ -2300,7 +2301,7 @@ theorem aux_auxiliaryFunctionBDerivative_integrable :
 /-- This auxiliary $L^1$ estimate supplies the $B'$ norm clause of
 `auxiliaryFunctionB_properties`. -/
 theorem aux_auxiliaryFunctionBDerivative_eLpNorm_one_le :
-    eLpNorm auxiliaryFunctionBDerivative 1 volume ≤ ENNReal.ofReal 20 := by
+    eLpNorm auxiliaryFunctionBDerivative 1 volume ≤ ENNReal.ofReal 12 := by
   have hgaussian : Integrable (fun x : ℝ =>
       Real.sqrt Real.pi * Real.exp (-(Real.pi / 2) * x ^ 2)) := by
     simpa using
@@ -2321,7 +2322,7 @@ theorem aux_auxiliaryFunctionBDerivative_eLpNorm_one_le :
       _ = Real.sqrt 2 := by
         congr 1
         field_simp [Real.pi_ne_zero]
-  have hnorm_bound : (∫ x : ℝ, ‖auxiliaryFunctionBDerivative x‖) ≤ 20 := by
+  have hnorm_bound : (∫ x : ℝ, ‖auxiliaryFunctionBDerivative x‖) ≤ 12 := by
     calc
       (∫ x : ℝ, ‖auxiliaryFunctionBDerivative x‖) ≤
           ∫ x : ℝ, Real.sqrt Real.pi * Real.exp (-(Real.pi / 2) * x ^ 2) +
@@ -2336,7 +2337,7 @@ theorem aux_auxiliaryFunctionBDerivative_eLpNorm_one_le :
       _ = Real.sqrt Real.pi * Real.sqrt 2 + Real.sqrt Real.pi * 2 := by
         rw [integral_const_mul, hgaussian_integral,
           integral_const_mul, aux_integral_poissonFrequency]
-      _ ≤ 20 := by
+      _ ≤ 12 := by
         have hsqrtpi_le : Real.sqrt Real.pi ≤ 2 := by
           nlinarith [Real.sq_sqrt Real.pi_pos.le, Real.sqrt_nonneg Real.pi,
             Real.pi_le_four]
@@ -2453,6 +2454,30 @@ theorem aux_exp_three_half_pi_sq_le_nine {x : ℝ} (hx : |x| ≤ 1 / 2) :
     _ ≤ 3 * 3 := mul_le_mul (le_of_lt Real.exp_one_lt_three)
       (le_of_lt Real.exp_one_lt_three) (Real.exp_pos _).le (by norm_num)
     _ = 9 := by norm_num
+
+/-- This auxiliary numerical estimate sharpens the local exponential factor in the
+pass-5 proof of Proposition \ref{auxiliary function B}.  It is used to obtain the stated
+`56` bound for the $L^1$ norm of $B''$. -/
+theorem aux_exp_three_half_pi_sq_le_four {x : ℝ} (hx : |x| ≤ 1 / 2) :
+    Real.exp (3 * (Real.pi * x ^ 2) / 2) ≤ 4 := by
+  have hx2 : x ^ 2 ≤ 1 / 4 := by
+    have h : |x| ^ 2 ≤ (1 / 2 : ℝ) ^ 2 :=
+      (sq_le_sq₀ (abs_nonneg x) (by norm_num)).2 hx
+    rw [sq_abs] at h
+    norm_num at h ⊢
+    exact h
+  have hu0 : 0 ≤ 3 * (Real.pi * x ^ 2) / 2 := by positivity
+  have hu : 3 * (Real.pi * x ^ 2) / 2 ≤ 6 / 5 := by
+    have hpi : Real.pi ≤ 63 / 20 := by nlinarith [Real.pi_lt_d2]
+    nlinarith [mul_le_mul_of_nonneg_left hx2 Real.pi_pos.le,
+      mul_le_mul_of_nonneg_right hpi (sq_nonneg x)]
+  calc
+    Real.exp (3 * (Real.pi * x ^ 2) / 2) ≤
+        (2 + 3 * (Real.pi * x ^ 2) / 2) / (2 - 3 * (Real.pi * x ^ 2) / 2) :=
+      Real.exp_le_two_add_div_two_sub hu0 (by linarith)
+    _ ≤ 4 := by
+      apply (div_le_iff₀ (by linarith : 0 < 2 - 3 * (Real.pi * x ^ 2) / 2)).2
+      nlinarith
 
 /-- The zero extension used for the second derivative assertion in Proposition
 \ref{auxiliary function B}. -/
@@ -2575,6 +2600,154 @@ theorem aux_BSecondGaussianPart_abs_le_near_zero {x : ℝ}
         _ ≤ (16 * |x|) * 9 :=
           mul_le_mul_of_nonneg_left hexp9 (by positivity)
         _ = 144 * |x| := by ring
+
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this retains the sign and sharp local envelope in the
+cancellation of the Gaussian quotient terms of $B''$. -/
+theorem aux_BSecondGaussianPart_nonneg_le_local {x : ℝ}
+    (hx0 : x ≠ 0) (hx : |x| ≤ 1 / 2) :
+    0 ≤ ((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+          (2 * sqrtOneMinusGaussian x) +
+        (-2 * Real.pi * x * gaussian x) ^ 2 /
+          (4 * sqrtOneMinusGaussian x ^ 3) ∧
+      ((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+          (2 * sqrtOneMinusGaussian x) +
+        (-2 * Real.pi * x * gaussian x) ^ 2 /
+          (4 * sqrtOneMinusGaussian x ^ 3) ≤
+        2 * Real.pi * Real.sqrt Real.pi * |x| *
+          Real.exp (3 * (Real.pi * x ^ 2) / 2) := by
+  rw [aux_BSecondGaussianPart_eq_cancelled hx0]
+  let u : ℝ := Real.pi * x ^ 2
+  let L : ℝ := Real.sqrt Real.pi * |x| * Real.exp (-u / 2)
+  let T : ℝ := 2 * Real.pi * Real.sqrt Real.pi * |x| *
+    Real.exp (3 * u / 2)
+  have hnum := aux_BSecondNumerator_bounds hx
+  have hfpos : 0 < sqrtOneMinusGaussian x := aux_sqrtOneMinusGaussian_pos hx0
+  have hL : L ≤ sqrtOneMinusGaussian x := by
+    dsimp [L, u]
+    convert aux_sqrtOneMinusGaussian_lower x using 1 <;> ring
+  have hLpos : 0 < L := by
+    dsimp [L]
+    exact mul_pos (mul_pos (Real.sqrt_pos.2 Real.pi_pos) (abs_pos.mpr hx0))
+      (Real.exp_pos _)
+  have hTnonneg : 0 ≤ T := by
+    dsimp [T]
+    positivity
+  have hnumscaled : Real.pi * aux_BSecondNumerator x ≤
+      2 * Real.pi ^ 3 * x ^ 4 := by
+    calc
+      Real.pi * aux_BSecondNumerator x ≤ Real.pi * (2 * u ^ 2) :=
+        mul_le_mul_of_nonneg_left hnum.2 Real.pi_pos.le
+      _ = 2 * Real.pi ^ 3 * x ^ 4 := by
+        dsimp [u]
+        ring
+  have hfcube : L ^ 3 ≤ sqrtOneMinusGaussian x ^ 3 :=
+    pow_le_pow_left₀ hLpos.le hL 3
+  have hsqrtsq : Real.sqrt Real.pi ^ 2 = Real.pi :=
+    Real.sq_sqrt Real.pi_pos.le
+  have hexp : Real.exp (3 * u / 2) * Real.exp (-u / 2) ^ 3 = 1 := by
+    calc
+      Real.exp (3 * u / 2) * Real.exp (-u / 2) ^ 3 =
+          Real.exp (3 * u / 2) * Real.exp (3 * (-u / 2)) := by
+          rw [← Real.exp_nat_mul]
+          norm_num
+      _ = Real.exp (3 * u / 2 + 3 * (-u / 2)) := by rw [← Real.exp_add]
+      _ = 1 := by
+        rw [show 3 * u / 2 + 3 * (-u / 2) = 0 by ring, Real.exp_zero]
+  have hTL : T * L ^ 3 = 2 * Real.pi ^ 3 * x ^ 4 := by
+    calc
+      T * L ^ 3 = 2 * Real.pi * (Real.sqrt Real.pi) ^ 4 * |x| ^ 4 *
+          (Real.exp (3 * u / 2) * Real.exp (-u / 2) ^ 3) := by
+          dsimp [T, L]
+          ring
+      _ = 2 * Real.pi ^ 3 * x ^ 4 := by
+        rw [hexp, show (Real.sqrt Real.pi) ^ 4 =
+            (Real.sqrt Real.pi ^ 2) ^ 2 by ring, hsqrtsq,
+          show |x| ^ 4 = (|x| ^ 2) ^ 2 by ring, sq_abs]
+        ring
+  have hcore : Real.pi * aux_BSecondNumerator x ≤
+      T * sqrtOneMinusGaussian x ^ 3 := by
+    calc
+      Real.pi * aux_BSecondNumerator x ≤ 2 * Real.pi ^ 3 * x ^ 4 := hnumscaled
+      _ = T * L ^ 3 := hTL.symm
+      _ ≤ T * sqrtOneMinusGaussian x ^ 3 :=
+        mul_le_mul_of_nonneg_left hfcube hTnonneg
+  have hquot : Real.pi * aux_BSecondNumerator x /
+      sqrtOneMinusGaussian x ^ 3 ≤ T :=
+    (div_le_iff₀ (pow_pos hfpos 3)).2 hcore
+  have hquotnonneg : 0 ≤ Real.pi * aux_BSecondNumerator x /
+      sqrtOneMinusGaussian x ^ 3 :=
+    div_nonneg (mul_nonneg Real.pi_pos.le hnum.1) (pow_nonneg hfpos.le _)
+  constructor
+  · exact hquotnonneg
+  · simpa [T, u] using hquot
+
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this is the pass-5 local $B''$ estimate on the interval where
+the quotient formula has a removable singularity. -/
+theorem aux_auxiliaryFunctionBSecondDerivative_norm_le_twentySix {x : ℝ}
+    (hx : |x| ≤ 1 / 2) :
+    ‖auxiliaryFunctionBSecondDerivative x‖ ≤ 26 := by
+  by_cases hx0 : x = 0
+  · subst x
+    simp [auxiliaryFunctionBSecondDerivative]
+  · rcases aux_BSecondGaussianPart_nonneg_le_local hx0 hx with ⟨hpart_nonneg, hpart⟩
+    have hscale :
+        2 * Real.pi * Real.sqrt Real.pi * |x| *
+            Real.exp (3 * (Real.pi * x ^ 2) / 2) ≤
+          4 * Real.pi * Real.sqrt Real.pi := by
+      calc
+        2 * Real.pi * Real.sqrt Real.pi * |x| *
+            Real.exp (3 * (Real.pi * x ^ 2) / 2) ≤
+            2 * Real.pi * Real.sqrt Real.pi * (1 / 2) * 4 := by
+              gcongr
+              exact aux_exp_three_half_pi_sq_le_four hx
+        _ = 4 * Real.pi * Real.sqrt Real.pi := by ring
+    have habel : Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) ≤ Real.pi := by
+      calc
+        Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) ≤ Real.pi * 1 :=
+          mul_le_mul_of_nonneg_left
+            (Real.exp_le_one_iff.mpr (neg_nonpos.mpr (abs_nonneg _))) Real.pi_pos.le
+        _ = Real.pi := by ring
+    have hnum : 4 * Real.pi * Real.sqrt Real.pi + Real.pi ≤ 26 := by
+      have hpi : Real.pi ≤ (3.1416 : ℝ) := le_of_lt Real.pi_lt_d4
+      have hsqrt : Real.sqrt Real.pi ≤ 89 / 50 := by
+        calc
+          Real.sqrt Real.pi ≤ Real.sqrt ((89 / 50 : ℝ) ^ 2) :=
+            Real.sqrt_le_sqrt (by nlinarith [hpi])
+          _ = 89 / 50 := by rw [Real.sqrt_sq_eq_abs]; norm_num
+      have hprod : Real.pi * Real.sqrt Real.pi ≤ (3.1416 : ℝ) * (89 / 50) :=
+        mul_le_mul hpi hsqrt (Real.sqrt_nonneg _) (by norm_num)
+      nlinarith
+    rw [Real.norm_eq_abs, auxiliaryFunctionBSecondDerivative, if_neg hx0]
+    calc
+      |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+            (2 * sqrtOneMinusGaussian x) +
+          (-2 * Real.pi * x * gaussian x) ^ 2 /
+            (4 * sqrtOneMinusGaussian x ^ 3) -
+          Real.pi * Real.exp (-|Real.sqrt Real.pi * x|)| ≤
+          |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+              (2 * sqrtOneMinusGaussian x) +
+            (-2 * Real.pi * x * gaussian x) ^ 2 /
+              (4 * sqrtOneMinusGaussian x ^ 3)| +
+            |Real.pi * Real.exp (-|Real.sqrt Real.pi * x|)| := by
+            simpa only [sub_zero, zero_sub, abs_neg] using
+              (abs_sub_le
+                (((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+                    (2 * sqrtOneMinusGaussian x) +
+                  (-2 * Real.pi * x * gaussian x) ^ 2 /
+                    (4 * sqrtOneMinusGaussian x ^ 3))
+                0 (Real.pi * Real.exp (-|Real.sqrt Real.pi * x|)))
+      _ = ((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+              (2 * sqrtOneMinusGaussian x) +
+            (-2 * Real.pi * x * gaussian x) ^ 2 /
+              (4 * sqrtOneMinusGaussian x ^ 3) +
+            Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) := by
+            rw [abs_of_nonneg hpart_nonneg,
+              abs_of_nonneg (by positivity : 0 ≤ Real.pi * Real.exp (-|Real.sqrt Real.pi * x|))]
+      _ ≤ 4 * Real.pi * Real.sqrt Real.pi + Real.pi :=
+        add_le_add (hpart.trans hscale) habel
+      _ ≤ 26 := hnum
 
 /-- This auxiliary elementary estimate replaces the linear Gaussian factor arising in the
 off-origin $B''$ bound by a standard integrable Gaussian. -/
@@ -2793,6 +2966,188 @@ theorem aux_BSecondGaussianPart_abs_le_outer {x : ℝ}
       ring
     _ ≤ 12 * Real.exp (-(1 / 2) * x ^ 2) + 8 * q := add_le_add hfirst hsecond
 
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this supplies the tail lower bound for the square-root
+denominators in the sharp $B''$ estimate. -/
+theorem aux_sqrtOneMinusGaussian_half_of_half_le_abs {x : ℝ}
+    (hx : 1 / 2 ≤ |x|) :
+    1 / 2 ≤ sqrtOneMinusGaussian x := by
+  have hx2 : 1 / 4 ≤ x ^ 2 := by
+    have h := sq_le_sq₀ (by norm_num : (0 : ℝ) ≤ 1 / 2) (abs_nonneg x)
+    have h' := h.mpr hx
+    rw [sq_abs] at h'
+    norm_num at h' ⊢
+    exact h'
+  have hu : 1 / 3 ≤ Real.pi * x ^ 2 := by
+    calc
+      (1 / 3 : ℝ) ≤ 3 * (1 / 4) := by norm_num
+      _ ≤ Real.pi * x ^ 2 := by
+        nlinarith [Real.pi_gt_three,
+          mul_le_mul_of_nonneg_left hx2 Real.pi_pos.le,
+          mul_le_mul_of_nonneg_right Real.pi_gt_three.le (sq_nonneg x)]
+  have hrecip : gaussian x ≤ (1 + Real.pi * x ^ 2)⁻¹ := by
+    change Real.exp (-Real.pi * x ^ 2) ≤ (1 + Real.pi * x ^ 2)⁻¹
+    rw [show -Real.pi * x ^ 2 = -(Real.pi * x ^ 2) by ring, Real.exp_neg]
+    exact (inv_le_inv₀ (Real.exp_pos _) (by positivity)).2
+      (by simpa [add_comm] using Real.add_one_le_exp (Real.pi * x ^ 2))
+  have hgauss : gaussian x ≤ 3 / 4 := by
+    calc
+      gaussian x ≤ (1 + Real.pi * x ^ 2)⁻¹ := hrecip
+      _ ≤ (1 + 1 / 3)⁻¹ :=
+        (inv_le_inv₀ (by positivity) (by positivity)).2 (by linarith)
+      _ = 3 / 4 := by norm_num
+  apply le_of_sq_le_sq ?_ (Real.sqrt_nonneg _)
+  rw [Real.sq_sqrt (aux_one_sub_gaussian_nonneg x)]
+  linarith
+
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this is the pass-5 tail envelope for the Gaussian quotient
+terms of $B''$. -/
+theorem aux_BSecondGaussianPart_abs_le_outer_sharp {x : ℝ}
+    (hx : 1 / 2 ≤ |x|) :
+    |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+          (2 * sqrtOneMinusGaussian x) +
+        (-2 * Real.pi * x * gaussian x) ^ 2 /
+          (4 * sqrtOneMinusGaussian x ^ 3)| ≤
+      2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x := by
+  let s := sqrtOneMinusGaussian x
+  have hs : 1 / 2 ≤ s := aux_sqrtOneMinusGaussian_half_of_half_le_abs hx
+  have hspos : 0 < s := by linarith
+  have hgauss_nonneg : 0 ≤ gaussian x := (aux_gaussian_pos x).le
+  have hgauss_le_one : gaussian x ≤ 1 := by
+    change Real.exp (-Real.pi * x ^ 2) ≤ 1
+    exact Real.exp_le_one_iff.mpr (by nlinarith [Real.pi_pos, sq_nonneg x])
+  have hcoef : |4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi| ≤
+      4 * Real.pi ^ 2 * x ^ 2 + 2 * Real.pi := by
+    calc
+      |4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi| ≤
+          |4 * Real.pi ^ 2 * x ^ 2| + |2 * Real.pi| := by
+        simpa only [sub_zero, zero_sub, abs_neg] using
+          (abs_sub_le (4 * Real.pi ^ 2 * x ^ 2) 0 (2 * Real.pi))
+      _ = 4 * Real.pi ^ 2 * x ^ 2 + 2 * Real.pi := by
+        rw [abs_of_nonneg (by positivity), abs_of_nonneg (by positivity)]
+  have hfirst :
+      |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+          (2 * s)| ≤ 2 * Real.pi * gaussian x + 4 * Real.pi ^ 2 * x ^ 2 * gaussian x := by
+    have hden : 0 < 2 * s := by positivity
+    calc
+      |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+            (2 * s)| =
+          |4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi| * gaussian x / (2 * s) := by
+            rw [abs_div, abs_mul, abs_of_nonneg hgauss_nonneg, abs_of_pos hden]
+      _ ≤ |4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi| * gaussian x := by
+        apply (div_le_iff₀ hden).2
+        have hscale : 1 ≤ 2 * s := by linarith
+        calc
+          |4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi| * gaussian x =
+              (|4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi| * gaussian x) * 1 := by ring
+          _ ≤ (|4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi| * gaussian x) * (2 * s) :=
+            mul_le_mul_of_nonneg_left hscale
+              (mul_nonneg (abs_nonneg _) hgauss_nonneg)
+      _ ≤ (4 * Real.pi ^ 2 * x ^ 2 + 2 * Real.pi) * gaussian x :=
+        mul_le_mul_of_nonneg_right hcoef hgauss_nonneg
+      _ = 2 * Real.pi * gaussian x + 4 * Real.pi ^ 2 * x ^ 2 * gaussian x := by ring
+  have hs3 : (1 / 2 : ℝ) ^ 3 ≤ s ^ 3 :=
+    pow_le_pow_left₀ (by norm_num) hs 3
+  have hden3 : 1 / 2 ≤ 4 * s ^ 3 := by nlinarith
+  have hsecond :
+      |(-2 * Real.pi * x * gaussian x) ^ 2 / (4 * s ^ 3)| ≤
+        8 * Real.pi ^ 2 * x ^ 2 * gaussian x := by
+    have hden : 0 < 4 * s ^ 3 := by positivity
+    have hinv : (4 * s ^ 3)⁻¹ ≤ 2 := by
+      apply (inv_le_iff_one_le_mul₀ hden).2
+      nlinarith
+    calc
+      |(-2 * Real.pi * x * gaussian x) ^ 2 / (4 * s ^ 3)| =
+          (-2 * Real.pi * x * gaussian x) ^ 2 * (4 * s ^ 3)⁻¹ := by
+        rw [abs_div, abs_of_nonneg (sq_nonneg _), abs_of_pos hden, div_eq_mul_inv]
+      _ ≤ (-2 * Real.pi * x * gaussian x) ^ 2 * 2 :=
+        mul_le_mul_of_nonneg_left hinv (sq_nonneg _)
+      _ = 8 * Real.pi ^ 2 * x ^ 2 * gaussian x ^ 2 := by ring
+      _ ≤ 8 * Real.pi ^ 2 * x ^ 2 * gaussian x := by
+        gcongr
+        simpa [pow_two] using mul_le_of_le_one_right hgauss_nonneg hgauss_le_one
+  change |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+          (2 * s) +
+        (-2 * Real.pi * x * gaussian x) ^ 2 /
+          (4 * s ^ 3)| ≤ _
+  calc
+    |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+          (2 * s) +
+        (-2 * Real.pi * x * gaussian x) ^ 2 /
+          (4 * s ^ 3)| ≤
+        |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+          (2 * s)| + |(-2 * Real.pi * x * gaussian x) ^ 2 /
+          (4 * s ^ 3)| := abs_add_le _ _
+    _ ≤ (2 * Real.pi * gaussian x + 4 * Real.pi ^ 2 * x ^ 2 * gaussian x) +
+          8 * Real.pi ^ 2 * x ^ 2 * gaussian x := add_le_add hfirst hsecond
+    _ = 2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x := by ring
+
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this supplies the integrability of the Gaussian second moment
+needed for the sharp tail majorant. -/
+theorem aux_sq_mul_gaussian_integrable :
+    Integrable (fun x : ℝ => x ^ 2 * gaussian x) := by
+  simpa [gaussian, Notation.gaussian, Real.rpow_natCast] using
+    (integrable_rpow_mul_exp_neg_mul_sq (b := Real.pi) Real.pi_pos
+      (s := (2 : ℝ)) (by norm_num : (-1 : ℝ) < 2))
+
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this evaluates the Gaussian second moment in the sharp
+tail estimate. -/
+theorem aux_integral_gaussian_second_moment :
+    (∫ x : ℝ, x ^ 2 * gaussian x) = (2 * Real.pi)⁻¹ := by
+  have hlin : Integrable (fun x : ℝ => x * gaussian x) := by
+    simpa [gaussian, Notation.gaussian] using
+      (integrable_mul_exp_neg_mul_sq (b := Real.pi) Real.pi_pos)
+  have hderiv : Integrable (fun x : ℝ => x * (fderiv ℝ gaussian x) 1) := by
+    convert aux_sq_mul_gaussian_integrable.const_mul (-(2 * Real.pi)) using 1
+    funext x
+    rw [(aux_gaussian_hasDerivAt x).hasFDerivAt.fderiv]
+    simp [smul_eq_mul]
+    ring
+  have hfirst : Integrable (fun x : ℝ => (fderiv ℝ id x) 1 * gaussian x) := by
+    convert aux_gaussian_integrable using 1
+    funext x
+    simp
+  have hparts := integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable
+    (f := id) (g := gaussian) (v := (1 : ℝ))
+    hfirst hderiv hlin
+    (fun x _ => differentiableAt_id)
+    (fun x _ => (aux_gaussian_hasDerivAt x).differentiableAt)
+  simp only [id, fderiv_id, ContinuousLinearMap.id_apply, one_mul] at hparts
+  simp_rw [(aux_gaussian_hasDerivAt _).hasFDerivAt.fderiv] at hparts
+  simp [ContinuousLinearMap.toSpanSingleton_apply] at hparts
+  rw [integral_neg, aux_integral_gaussian] at hparts
+  have hmul : (∫ x : ℝ, x * (2 * Real.pi * x * gaussian x)) = 1 := by
+    linarith
+  have hmoment : (2 * Real.pi) * ∫ x : ℝ, x ^ 2 * gaussian x = 1 := by
+    calc
+      (2 * Real.pi) * ∫ x : ℝ, x ^ 2 * gaussian x =
+          ∫ x : ℝ, x * (2 * Real.pi * x * gaussian x) := by
+        rw [← integral_const_mul]
+        congr 1
+        funext x
+        ring
+      _ = 1 := hmul
+  have hp : 2 * Real.pi ≠ 0 := by positivity
+  field_simp [hp]
+  linarith [hmoment]
+
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this evaluates the Abel tail occurring in the sharp $B''$
+majorant. -/
+theorem aux_integral_exp_neg_abs_sqrt_pi :
+    (∫ x : ℝ, Real.exp (-|Real.sqrt Real.pi * x|)) = 2 / Real.sqrt Real.pi := by
+  have hsqrt : 0 < Real.sqrt Real.pi := Real.sqrt_pos.2 Real.pi_pos
+  change (∫ x : ℝ, aux_poissonFrequency (Real.sqrt Real.pi * x)) = _
+  rw [MeasureTheory.Measure.integral_comp_mul_left,
+    aux_integral_poissonFrequency]
+  rw [show |(Real.sqrt Real.pi)⁻¹| = (Real.sqrt Real.pi)⁻¹ by
+    exact abs_of_pos (inv_pos.mpr hsqrt)]
+  simp only [smul_eq_mul]
+  ring
+
 /-- This auxiliary integral computes the compactly supported local majorant used in the
 explicit $L^1$ estimate for $B''$. -/
 theorem aux_integral_indicator_localQuadratic :
@@ -2949,6 +3304,180 @@ theorem aux_auxiliaryFunctionBSecondDerivative_norm_le (x : ℝ) :
           rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem hx]
           simp only [mul_zero, zero_add]
           exact le_rfl
+
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this combines the pass-5 local and tail estimates into the
+sharp integrable majorant for the zero extension of $B''$. -/
+theorem aux_auxiliaryFunctionBSecondDerivative_norm_le_sharp (x : ℝ) :
+    ‖auxiliaryFunctionBSecondDerivative x‖ ≤
+      26 * (Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator (fun _ : ℝ => (1 : ℝ)) x +
+        2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x +
+          Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) := by
+  let S : Set ℝ := Set.Icc (-(1 / 2 : ℝ)) (1 / 2)
+  let G : ℝ → ℝ := fun y =>
+    26 * S.indicator (fun _ : ℝ => (1 : ℝ)) y +
+      2 * Real.pi * gaussian y + 12 * Real.pi ^ 2 * y ^ 2 * gaussian y +
+        Real.pi * Real.exp (-|Real.sqrt Real.pi * y|)
+  change ‖auxiliaryFunctionBSecondDerivative x‖ ≤ G x
+  by_cases hx : x ∈ S
+  · have hxabs : |x| ≤ 1 / 2 := by
+      rw [abs_le]
+      simpa [S] using hx
+    calc
+      ‖auxiliaryFunctionBSecondDerivative x‖ ≤ 26 :=
+        aux_auxiliaryFunctionBSecondDerivative_norm_le_twentySix hxabs
+      _ ≤ G x := by
+        dsimp [G]
+        rw [Set.indicator_of_mem hx]
+        have hg : 0 ≤ gaussian x := (aux_gaussian_pos x).le
+        have htail : 0 ≤
+            2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x +
+              Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) := by
+          have hfirst : 0 ≤ 2 * Real.pi * gaussian x := by positivity
+          have hsecond : 0 ≤ 12 * Real.pi ^ 2 * x ^ 2 * gaussian x := by
+            positivity
+          have hthird : 0 ≤ Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) := by
+            positivity
+          linarith
+        linarith
+  · have hxhalf : 1 / 2 ≤ |x| := by
+      apply le_of_not_ge
+      intro hsmall
+      apply hx
+      simpa [S] using (abs_le.mp hsmall)
+    have hx0 : x ≠ 0 := by
+      intro hzero
+      subst x
+      apply hx
+      simp [S]
+    have hquot := aux_BSecondGaussianPart_abs_le_outer_sharp hxhalf
+    have habel_nonneg : 0 ≤ Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) := by
+      positivity
+    rw [Real.norm_eq_abs, auxiliaryFunctionBSecondDerivative, if_neg hx0]
+    calc
+      |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+            (2 * sqrtOneMinusGaussian x) +
+          (-2 * Real.pi * x * gaussian x) ^ 2 /
+            (4 * sqrtOneMinusGaussian x ^ 3) -
+          Real.pi * Real.exp (-|Real.sqrt Real.pi * x|)| ≤
+          |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+              (2 * sqrtOneMinusGaussian x) +
+            (-2 * Real.pi * x * gaussian x) ^ 2 /
+              (4 * sqrtOneMinusGaussian x ^ 3)| +
+            |Real.pi * Real.exp (-|Real.sqrt Real.pi * x|)| := by
+            simpa only [sub_zero, zero_sub, abs_neg] using
+              (abs_sub_le
+                (((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+                    (2 * sqrtOneMinusGaussian x) +
+                  (-2 * Real.pi * x * gaussian x) ^ 2 /
+                    (4 * sqrtOneMinusGaussian x ^ 3))
+                0 (Real.pi * Real.exp (-|Real.sqrt Real.pi * x|)))
+      _ = |((4 * Real.pi ^ 2 * x ^ 2 - 2 * Real.pi) * gaussian x) /
+              (2 * sqrtOneMinusGaussian x) +
+            (-2 * Real.pi * x * gaussian x) ^ 2 /
+              (4 * sqrtOneMinusGaussian x ^ 3)| +
+              Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) := by
+            rw [abs_of_nonneg habel_nonneg]
+      _ ≤ 2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x +
+              Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) :=
+            add_le_add hquot le_rfl
+      _ ≤ G x := by
+            dsimp [G]
+            rw [Set.indicator_of_notMem hx]
+            simp only [mul_zero, zero_add]
+            exact le_rfl
+
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this proves integrability of the pass-5 sharp $B''$
+majorant. -/
+theorem aux_BSecondSharpMajorant_integrable :
+    Integrable (fun x : ℝ =>
+      26 * (Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator (fun _ : ℝ => (1 : ℝ)) x +
+        2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x +
+          Real.pi * Real.exp (-|Real.sqrt Real.pi * x|)) := by
+  have hlocal : Integrable ((Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator
+      (fun _ : ℝ => (1 : ℝ))) :=
+    (continuous_const.continuousOn.integrableOn_compact isCompact_Icc).integrable_indicator
+      measurableSet_Icc
+  have hsum :=
+    (((hlocal.const_mul 26).add (aux_gaussian_integrable.const_mul (2 * Real.pi))).add
+      (aux_sq_mul_gaussian_integrable.const_mul (12 * Real.pi ^ 2))).add
+        (aux_exp_neg_abs_sqrt_pi_integrable.const_mul Real.pi)
+  refine hsum.congr ?_
+  filter_upwards [] with x
+  simp only [Pi.add_apply]
+  ring
+
+/-- Auxiliary for Proposition \ref{auxiliary function B}, formalized by
+`auxiliaryFunctionB_properties`: this integrates the pass-5 sharp $B''$ majorant and verifies
+the constant $56$. -/
+theorem aux_BSecondSharpMajorant_integral_le_fiftySix :
+    (∫ x : ℝ,
+      26 * (Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator (fun _ : ℝ => (1 : ℝ)) x +
+        2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x +
+          Real.pi * Real.exp (-|Real.sqrt Real.pi * x|)) ≤ 56 := by
+  have hlocal : Integrable ((Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator
+      (fun _ : ℝ => (1 : ℝ))) :=
+    (continuous_const.continuousOn.integrableOn_compact isCompact_Icc).integrable_indicator
+      measurableSet_Icc
+  have hlocalMul : Integrable (fun x : ℝ =>
+      26 * (Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator (fun _ : ℝ => (1 : ℝ)) x) := by
+    exact hlocal.const_mul 26
+  have hgaussianMul : Integrable (fun x : ℝ => 2 * Real.pi * gaussian x) := by
+    exact aux_gaussian_integrable.const_mul (2 * Real.pi)
+  have hmomentMul : Integrable (fun x : ℝ =>
+      12 * Real.pi ^ 2 * x ^ 2 * gaussian x) := by
+    have h := aux_sq_mul_gaussian_integrable.const_mul (12 * Real.pi ^ 2)
+    refine h.congr ?_
+    filter_upwards [] with x
+    ring
+  have habelMul : Integrable (fun x : ℝ =>
+      Real.pi * Real.exp (-|Real.sqrt Real.pi * x|)) := by
+    exact aux_exp_neg_abs_sqrt_pi_integrable.const_mul Real.pi
+  have hlocalGaussian : Integrable (fun x : ℝ =>
+      26 * (Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator (fun _ : ℝ => (1 : ℝ)) x +
+        2 * Real.pi * gaussian x) := by
+    have h := hlocalMul.add hgaussianMul
+    refine h.congr ?_
+    filter_upwards [] with x
+    simp only [Pi.add_apply]
+  have hlocalGaussianMoment : Integrable (fun x : ℝ =>
+      26 * (Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator (fun _ : ℝ => (1 : ℝ)) x +
+        2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x) := by
+    have h := hlocalGaussian.add hmomentMul
+    refine h.congr ?_
+    filter_upwards [] with x
+    simp only [Pi.add_apply]
+  have hmoment_integral :
+      (∫ x : ℝ, 12 * Real.pi ^ 2 * x ^ 2 * gaussian x) =
+        12 * Real.pi ^ 2 * (∫ x : ℝ, x ^ 2 * gaussian x) := by
+    rw [← integral_const_mul]
+    congr 1
+    funext x
+    ring
+  rw [integral_add hlocalGaussianMoment habelMul,
+    integral_add hlocalGaussian hmomentMul,
+    integral_add hlocalMul hgaussianMul,
+    integral_const_mul, aux_integral_indicator_localOne,
+    integral_const_mul, aux_integral_gaussian,
+    hmoment_integral, aux_integral_gaussian_second_moment,
+    integral_const_mul, aux_integral_exp_neg_abs_sqrt_pi]
+  have hpi : Real.pi ≤ 63 / 20 := by nlinarith [Real.pi_lt_d2]
+  have hsqrt : Real.sqrt Real.pi ≤ 9 / 5 := by
+    calc
+      Real.sqrt Real.pi ≤ Real.sqrt ((9 / 5 : ℝ) ^ 2) :=
+        Real.sqrt_le_sqrt (by nlinarith)
+      _ = 9 / 5 := by rw [Real.sqrt_sq_eq_abs]; norm_num
+  have hpine : Real.pi ≠ 0 := ne_of_gt Real.pi_pos
+  have hsqrtne : Real.sqrt Real.pi ≠ 0 := ne_of_gt (Real.sqrt_pos.2 Real.pi_pos)
+  have hmoment : 12 * Real.pi ^ 2 * (2 * Real.pi)⁻¹ = 6 * Real.pi := by
+    field_simp [hpine]
+    ring
+  have habel : Real.pi * (2 / Real.sqrt Real.pi) = 2 * Real.sqrt Real.pi := by
+    field_simp [hsqrtne]
+    rw [Real.sq_sqrt Real.pi_pos.le]
+  rw [hmoment, habel]
+  nlinarith
 
 /-- This auxiliary theorem proves integrability of the explicit pointwise majorant for the
 zero extension of $B''$, so that it can be used both for integrability and the stated norm
@@ -3398,9 +3927,9 @@ theorem aux_deriv_auxiliaryFunctionBDerivative (x : ℝ) :
 $B''$ into the integrability component of Proposition \ref{auxiliary function B}. -/
 theorem aux_auxiliaryFunctionBSecondDerivative_integrable :
     Integrable auxiliaryFunctionBSecondDerivative := by
-  exact aux_BSecondMajorant_integrable.mono'
+  exact aux_BSecondSharpMajorant_integrable.mono'
     aux_auxiliaryFunctionBSecondDerivative_measurable.aestronglyMeasurable
-    (ae_of_all _ aux_auxiliaryFunctionBSecondDerivative_norm_le)
+    (ae_of_all _ aux_auxiliaryFunctionBSecondDerivative_norm_le_sharp)
 
 /-- This auxiliary integrability fact replaces the manuscript's value $B''(0)=0$ by the true
 derivative value $-\pi$ at a single null point, so it can serve as `deriv B'` in Fourier
@@ -3418,23 +3947,20 @@ theorem aux_auxiliaryFunctionBTrueSecondDerivative_integrable :
 /-- This is the $B''$ norm component of Proposition \ref{auxiliary function B}; the complete
 source proposition is recorded in `auxiliaryFunctionB_properties`. -/
 theorem aux_auxiliaryFunctionBSecondDerivative_eLpNorm_one_le :
-    eLpNorm auxiliaryFunctionBSecondDerivative 1 volume ≤ ENNReal.ofReal 100 := by
-  have hnorm_bound : (∫ x : ℝ, ‖auxiliaryFunctionBSecondDerivative x‖) ≤ 100 := by
+    eLpNorm auxiliaryFunctionBSecondDerivative 1 volume ≤ ENNReal.ofReal 56 := by
+  have hnorm_bound : (∫ x : ℝ, ‖auxiliaryFunctionBSecondDerivative x‖) ≤ 56 := by
     calc
       (∫ x : ℝ, ‖auxiliaryFunctionBSecondDerivative x‖) ≤
           ∫ x : ℝ,
-            144 * (Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator
-                (fun y : ℝ => y ^ 2 + 1 / 4) x +
-              4 * (Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator
+            26 * (Set.Icc (-(1 / 2 : ℝ)) (1 / 2)).indicator
                 (fun _ : ℝ => (1 : ℝ)) x +
-              12 * Real.exp (-(1 / 2) * x ^ 2) +
-              8 * Real.exp (-(Real.pi / 2) * x ^ 2) +
-              Real.pi * aux_poissonFrequency x := by
+              2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x +
+                Real.pi * Real.exp (-|Real.sqrt Real.pi * x|) := by
         apply integral_mono aux_auxiliaryFunctionBSecondDerivative_integrable.norm
-          aux_BSecondMajorant_integrable
+          aux_BSecondSharpMajorant_integrable
         intro x
-        exact aux_auxiliaryFunctionBSecondDerivative_norm_le x
-      _ ≤ 100 := aux_BSecondMajorant_integral_le_hundred
+        exact aux_auxiliaryFunctionBSecondDerivative_norm_le_sharp x
+      _ ≤ 56 := aux_BSecondSharpMajorant_integral_le_fiftySix
   rw [eLpNorm_one_eq_lintegral_enorm,
     ← ofReal_integral_norm_eq_lintegral_enorm aux_auxiliaryFunctionBSecondDerivative_integrable]
   exact ENNReal.ofReal_le_ofReal hnorm_bound
@@ -3664,7 +4190,7 @@ theorem aux_sqrtGaussianKernel_eq_inverseFourier_auxiliaryFunctionB_add_scaledPo
 /-- This auxiliary $L^1$ estimate supplies the $B$ norm clause of
 `auxiliaryFunctionB_properties`. -/
 theorem aux_auxiliaryFunctionB_eLpNorm_one_le :
-    eLpNorm auxiliaryFunctionB 1 volume ≤ ENNReal.ofReal 8 := by
+    eLpNorm auxiliaryFunctionB 1 volume ≤ ENNReal.ofReal 6 := by
   have hprofile_bound :
       (∫ x : ℝ, 1 - sqrtOneMinusGaussian x) ≤ ∫ x : ℝ, gaussian x := by
     apply integral_mono aux_sqrtGaussianFrequencyProfile_integrable_real aux_gaussian_integrable
@@ -3676,7 +4202,7 @@ theorem aux_auxiliaryFunctionB_eLpNorm_one_le :
     apply integral_mono aux_exp_neg_abs_sqrt_pi_integrable aux_poissonFrequency_integrable
     intro x
     exact aux_exp_neg_abs_sqrt_pi_le_poissonFrequency x
-  have hnorm_bound : (∫ x : ℝ, ‖auxiliaryFunctionB x‖) ≤ 8 := by
+  have hnorm_bound : (∫ x : ℝ, ‖auxiliaryFunctionB x‖) ≤ 6 := by
     have hsum_integrable : Integrable (fun x : ℝ =>
         (1 - sqrtOneMinusGaussian x) + Real.exp (-|Real.sqrt Real.pi * x|)) :=
       aux_sqrtGaussianFrequencyProfile_integrable_real.add
@@ -3707,7 +4233,7 @@ theorem aux_auxiliaryFunctionB_eLpNorm_one_le :
       _ = (3 : ℝ) := by
         rw [aux_integral_gaussian, aux_integral_poissonFrequency]
         norm_num
-      _ ≤ (8 : ℝ) := by norm_num
+      _ ≤ (6 : ℝ) := by norm_num
   rw [eLpNorm_one_eq_lintegral_enorm,
     ← ofReal_integral_norm_eq_lintegral_enorm aux_auxiliaryFunctionB_integrable]
   exact ENNReal.ofReal_le_ofReal hnorm_bound
@@ -3722,9 +4248,9 @@ has a continuous extension to $\R$ which is integrable and the
 function $B''$, extended to be $0$ at $0$, is Borel measurable and integrable on $\R$.
 Moreover,
 \[
-    \|B\|_1\le 8,\qquad
-    \|B'\|_1\le 20,\qquad
-    \|B''\|_1\le 100.
+    \|B\|_1\le 6,\qquad
+    \|B'\|_1\le 12,\qquad
+    \|B''\|_1\le 56.
 \]
 -/
 theorem auxiliaryFunctionB_properties :
@@ -3738,9 +4264,9 @@ theorem auxiliaryFunctionB_properties :
         HasDerivAt auxiliaryFunctionBDerivative (auxiliaryFunctionBSecondDerivative x) x) ∧
       Measurable auxiliaryFunctionBSecondDerivative ∧
       Integrable auxiliaryFunctionBSecondDerivative ∧
-      eLpNorm auxiliaryFunctionB 1 volume ≤ ENNReal.ofReal 8 ∧
-      eLpNorm auxiliaryFunctionBDerivative 1 volume ≤ ENNReal.ofReal 20 ∧
-      eLpNorm auxiliaryFunctionBSecondDerivative 1 volume ≤ ENNReal.ofReal 100 := by
+      eLpNorm auxiliaryFunctionB 1 volume ≤ ENNReal.ofReal 6 ∧
+      eLpNorm auxiliaryFunctionBDerivative 1 volume ≤ ENNReal.ofReal 12 ∧
+      eLpNorm auxiliaryFunctionBSecondDerivative 1 volume ≤ ENNReal.ofReal 56 := by
   exact ⟨aux_auxiliaryFunctionB_continuous, aux_auxiliaryFunctionB_smoothOffZero,
     fun x hx ↦ aux_auxiliaryFunctionB_hasDerivAt_of_ne_zero hx,
     aux_auxiliaryFunctionBDerivative_continuous, aux_auxiliaryFunctionBDerivative_integrable,
@@ -3843,14 +4369,34 @@ theorem aux_inverseFourier_auxiliaryFunctionBTrueSecondDerivative (x : ℝ) :
     (fun ξ => (aux_auxiliaryFunctionBDerivative_complex_hasDerivAt ξ).differentiableAt)
     aux_deriv_auxiliaryFunctionBDerivative_complex_integrable x
 
-/-- This auxiliary real-valued estimate extracts the $L^1$ bound for $B$ from the corresponding
-`eLpNorm` clause of `auxiliaryFunctionB_properties`. -/
-theorem aux_integral_norm_auxiliaryFunctionB_le_eight :
-    (∫ ξ : ℝ, ‖auxiliaryFunctionB ξ‖) ≤ 8 := by
+/-- This auxiliary real-valued estimate extracts the sharpened $L^1$ bound for $B$ from the
+corresponding `eLpNorm` clause of `auxiliaryFunctionB_properties`. -/
+theorem aux_integral_norm_auxiliaryFunctionB_le_six :
+    (∫ ξ : ℝ, ‖auxiliaryFunctionB ξ‖) ≤ 6 := by
   have h := aux_auxiliaryFunctionB_eLpNorm_one_le
   rw [eLpNorm_one_eq_lintegral_enorm,
     ← ofReal_integral_norm_eq_lintegral_enorm aux_auxiliaryFunctionB_integrable] at h
   exact (ENNReal.ofReal_le_ofReal_iff (by norm_num)).mp h
+
+/-- This weaker form of the $B$ integral estimate is retained for earlier auxiliary bounds. -/
+theorem aux_integral_norm_auxiliaryFunctionB_le_eight :
+    (∫ ξ : ℝ, ‖auxiliaryFunctionB ξ‖) ≤ 8 :=
+  aux_integral_norm_auxiliaryFunctionB_le_six.trans (by norm_num)
+
+/-- This auxiliary uniform estimate is the sharpened zeroth-order inverse-Fourier bound for
+$B$. -/
+theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_six (x : ℝ) :
+    ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ ≤ 6 := by
+  rw [Real.fourierInv_eq]
+  calc
+    ‖∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ • (auxiliaryFunctionB ξ : ℂ)‖ ≤
+        ∫ ξ : ℝ, ‖𝐞 ⟪ξ, x⟫ • (auxiliaryFunctionB ξ : ℂ)‖ :=
+      norm_integral_le_integral_norm _
+    _ = ∫ ξ : ℝ, ‖auxiliaryFunctionB ξ‖ := by
+      apply integral_congr_ae
+      filter_upwards [] with ξ
+      simp [Circle.norm_smul]
+    _ ≤ 6 := aux_integral_norm_auxiliaryFunctionB_le_six
 
 /-- This auxiliary uniform estimate is the zeroth-order inverse-Fourier bound for $B$. -/
 theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_eight (x : ℝ) :
@@ -3868,8 +4414,8 @@ theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_eight (x : ℝ) :
 
 /-- This auxiliary real-valued estimate extracts the $L^1$ bound for the manuscript's zero
 extension of $B''$ from `auxiliaryFunctionB_properties`. -/
-theorem aux_integral_norm_auxiliaryFunctionBSecondDerivative_le_hundred :
-    (∫ ξ : ℝ, ‖auxiliaryFunctionBSecondDerivative ξ‖) ≤ 100 := by
+theorem aux_integral_norm_auxiliaryFunctionBSecondDerivative_le_fiftySix :
+    (∫ ξ : ℝ, ‖auxiliaryFunctionBSecondDerivative ξ‖) ≤ 56 := by
   have h := aux_auxiliaryFunctionBSecondDerivative_eLpNorm_one_le
   rw [eLpNorm_one_eq_lintegral_enorm,
     ← ofReal_integral_norm_eq_lintegral_enorm
@@ -3878,8 +4424,8 @@ theorem aux_integral_norm_auxiliaryFunctionBSecondDerivative_le_hundred :
 
 /-- This auxiliary $L^1$ estimate changes the zero extension of $B''$ to the true derivative of
 the continuous extension of $B'$; the functions differ only on a null singleton. -/
-theorem aux_integral_norm_auxiliaryFunctionBTrueSecondDerivative_le_hundred :
-    (∫ ξ : ℝ, ‖if ξ = 0 then -Real.pi else auxiliaryFunctionBSecondDerivative ξ‖) ≤ 100 := by
+theorem aux_integral_norm_auxiliaryFunctionBTrueSecondDerivative_le_fiftySix :
+    (∫ ξ : ℝ, ‖if ξ = 0 then -Real.pi else auxiliaryFunctionBSecondDerivative ξ‖) ≤ 56 := by
   have hne : ∀ᵐ ξ : ℝ ∂volume, ξ ≠ 0 := by
     rw [MeasureTheory.ae_iff]
     simpa using (measure_singleton (0 : ℝ))
@@ -3889,14 +4435,14 @@ theorem aux_integral_norm_auxiliaryFunctionBTrueSecondDerivative_le_hundred :
       apply integral_congr_ae
       filter_upwards [hne] with ξ hξ
       simp [hξ]
-    _ ≤ 100 := aux_integral_norm_auxiliaryFunctionBSecondDerivative_le_hundred
+    _ ≤ 56 := aux_integral_norm_auxiliaryFunctionBSecondDerivative_le_fiftySix
 
 /-- This auxiliary uniform estimate is the zeroth-order inverse-Fourier bound for the true
 second derivative of the continuous extension of $B'$. -/
-theorem aux_norm_inverseFourier_auxiliaryFunctionBTrueSecondDerivative_le_hundred (x : ℝ) :
+theorem aux_norm_inverseFourier_auxiliaryFunctionBTrueSecondDerivative_le_fiftySix (x : ℝ) :
     ‖FourierTransformInv.fourierInv
         (fun ξ : ℝ => (((if ξ = 0 then -Real.pi
-          else auxiliaryFunctionBSecondDerivative ξ) : ℝ) : ℂ)) x‖ ≤ 100 := by
+          else auxiliaryFunctionBSecondDerivative ξ) : ℝ) : ℂ)) x‖ ≤ 56 := by
   rw [Real.fourierInv_eq]
   calc
     ‖∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ •
@@ -3908,7 +4454,7 @@ theorem aux_norm_inverseFourier_auxiliaryFunctionBTrueSecondDerivative_le_hundre
       apply integral_congr_ae
       filter_upwards [] with ξ
       simp [Circle.norm_smul]
-    _ ≤ 100 := aux_integral_norm_auxiliaryFunctionBTrueSecondDerivative_le_hundred
+    _ ≤ 56 := aux_integral_norm_auxiliaryFunctionBTrueSecondDerivative_le_fiftySix
 
 /-- This auxiliary norm computation records the Fourier multiplier introduced by one
 integration-by-parts step. -/
@@ -3936,9 +4482,9 @@ theorem aux_auxiliaryFunctionBTrueSecondDerivative_factor_norm (x : ℝ) :
 its second derivative. -/
 theorem aux_quadratic_inverseFourier_auxiliaryFunctionB_bound (x : ℝ) :
     (4 * Real.pi ^ 2 * x ^ 2) *
-        ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ ≤ 100 := by
+        ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ ≤ 56 := by
   rw [← aux_auxiliaryFunctionBTrueSecondDerivative_factor_norm]
-  exact aux_norm_inverseFourier_auxiliaryFunctionBTrueSecondDerivative_le_hundred x
+  exact aux_norm_inverseFourier_auxiliaryFunctionBTrueSecondDerivative_le_fiftySix x
 
 /-- This auxiliary decay estimate combines the uniform and quadratic bounds for the inverse
 Fourier transform of $B$ into the bracket-bump majorant used in `sqrtGaussianDecay`. -/
@@ -3989,8 +4535,122 @@ theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_thirtyTwo_bracket_sq (x : 
         mul_le_mul_of_nonneg_left hfactor (norm_nonneg _)
       _ = (8 / 25 : ℝ) * ((4 * Real.pi ^ 2 * x ^ 2) *
           ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖) := by ring
-      _ ≤ (8 / 25 : ℝ) * 100 := mul_le_mul_of_nonneg_left hquad (by norm_num)
-      _ = 32 := by norm_num
+      _ ≤ (8 / 25 : ℝ) * 56 := mul_le_mul_of_nonneg_left hquad (by norm_num)
+      _ ≤ 32 := by norm_num
+
+/-- Auxiliary for Proposition \ref{square root of Gaussian decay}, formalized by
+`sqrtGaussianDecay`: this combines the sharpened uniform and second-derivative bounds for the
+inverse transform of $B$. -/
+theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_fifteen_bracket_sq (x : ℝ) :
+    ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ ≤
+      15 * bracketBump x ^ 2 := by
+  rw [bracketBump]
+  have hden : 0 < (1 + |x|) ^ 2 := sq_pos_of_pos (by positivity)
+  have hrewrite : 15 * (1 + |x|)⁻¹ ^ 2 = 15 / (1 + |x|) ^ 2 := by
+    field_simp
+  rw [hrewrite]
+  by_cases hx : |x| ≤ 5 / 9
+  · apply (le_div_iff₀ hden).2
+    have hsmall := aux_norm_inverseFourier_auxiliaryFunctionB_le_six x
+    have hfactor : (1 + |x|) ^ 2 ≤ (14 / 9 : ℝ) ^ 2 := by
+      apply (sq_le_sq₀ (by positivity) (by positivity)).2
+      linarith
+    calc
+      ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ *
+          (1 + |x|) ^ 2 ≤ 6 * (1 + |x|) ^ 2 :=
+        mul_le_mul_of_nonneg_right hsmall (sq_nonneg _)
+      _ ≤ 6 * (14 / 9 : ℝ) ^ 2 :=
+        mul_le_mul_of_nonneg_left hfactor (by norm_num)
+      _ ≤ 15 := by norm_num
+  · have hx' : 5 / 9 ≤ |x| := le_of_not_ge hx
+    apply (le_div_iff₀ hden).2
+    have hquad := aux_quadratic_inverseFourier_auxiliaryFunctionB_bound x
+    have hsum : 1 + |x| ≤ (14 / 5 : ℝ) * |x| := by linarith
+    have hbase : (1 + |x|) ^ 2 ≤ (14 / 5 : ℝ) ^ 2 * x ^ 2 := by
+      calc
+        (1 + |x|) ^ 2 ≤ ((14 / 5 : ℝ) * |x|) ^ 2 :=
+          (sq_le_sq₀ (by positivity) (by positivity)).2 hsum
+        _ = (14 / 5 : ℝ) ^ 2 * x ^ 2 := by rw [mul_pow, sq_abs]
+    have hpiSq : 9 ≤ Real.pi ^ 2 := by nlinarith [Real.pi_gt_three]
+    have hcoeff : (196 / 25 : ℝ) ≤ (49 / 225 : ℝ) * (4 * Real.pi ^ 2) := by
+      nlinarith
+    have hfactor : (1 + |x|) ^ 2 ≤
+        (49 / 225 : ℝ) * (4 * Real.pi ^ 2 * x ^ 2) := by
+      calc
+        (1 + |x|) ^ 2 ≤ (14 / 5 : ℝ) ^ 2 * x ^ 2 := hbase
+        _ = (196 / 25 : ℝ) * x ^ 2 := by norm_num
+        _ ≤ ((49 / 225 : ℝ) * (4 * Real.pi ^ 2)) * x ^ 2 :=
+          mul_le_mul_of_nonneg_right hcoeff (sq_nonneg _)
+        _ = (49 / 225 : ℝ) * (4 * Real.pi ^ 2 * x ^ 2) := by ring
+    calc
+      ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ *
+          (1 + |x|) ^ 2 ≤
+          ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ *
+            ((49 / 225 : ℝ) * (4 * Real.pi ^ 2 * x ^ 2)) :=
+        mul_le_mul_of_nonneg_left hfactor (norm_nonneg _)
+      _ = (49 / 225 : ℝ) * ((4 * Real.pi ^ 2 * x ^ 2) *
+          ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖) := by
+        ring
+      _ ≤ (49 / 225 : ℝ) * 56 :=
+        mul_le_mul_of_nonneg_left hquad (by norm_num)
+      _ ≤ 15 := by norm_num
+
+/-- Auxiliary for Proposition \ref{square root of Gaussian decay}, formalized by
+`sqrtGaussianDecay`: this is the retained weaker pass-5 bracket-bump estimate for the inverse
+transform of $B$. -/
+theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_seventeen_bracket_sq (x : ℝ) :
+    ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ ≤
+      17 * bracketBump x ^ 2 := by
+  rw [bracketBump]
+  have hden : 0 < (1 + |x|) ^ 2 := sq_pos_of_pos (by positivity)
+  have hrewrite : 17 * (1 + |x|)⁻¹ ^ 2 = 17 / (1 + |x|) ^ 2 := by
+    field_simp
+  rw [hrewrite]
+  by_cases hx : |x| ≤ 4 / 9
+  · apply (le_div_iff₀ hden).2
+    have hsmall := aux_norm_inverseFourier_auxiliaryFunctionB_le_eight x
+    have hfactor : (1 + |x|) ^ 2 ≤ (13 / 9 : ℝ) ^ 2 := by
+      apply (sq_le_sq₀ (by positivity) (by positivity)).2
+      linarith
+    calc
+      ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ *
+          (1 + |x|) ^ 2 ≤ 8 * (1 + |x|) ^ 2 :=
+        mul_le_mul_of_nonneg_right hsmall (sq_nonneg _)
+      _ ≤ 8 * (13 / 9 : ℝ) ^ 2 :=
+        mul_le_mul_of_nonneg_left hfactor (by norm_num)
+      _ ≤ 17 := by norm_num
+  · have hx' : 4 / 9 ≤ |x| := le_of_not_ge hx
+    apply (le_div_iff₀ hden).2
+    have hquad := aux_quadratic_inverseFourier_auxiliaryFunctionB_bound x
+    have hsum : 1 + |x| ≤ (13 / 4 : ℝ) * |x| := by linarith
+    have hbase : (1 + |x|) ^ 2 ≤ (13 / 4 : ℝ) ^ 2 * x ^ 2 := by
+      calc
+        (1 + |x|) ^ 2 ≤ ((13 / 4 : ℝ) * |x|) ^ 2 :=
+          (sq_le_sq₀ (by positivity) (by positivity)).2 hsum
+        _ = (13 / 4 : ℝ) ^ 2 * x ^ 2 := by rw [mul_pow, sq_abs]
+    have hpiSq : 9 ≤ Real.pi ^ 2 := by nlinarith [Real.pi_gt_three]
+    have hcoeff : (169 / 16 : ℝ) ≤ (169 / 576 : ℝ) * (4 * Real.pi ^ 2) := by
+      nlinarith
+    have hfactor : (1 + |x|) ^ 2 ≤
+        (169 / 576 : ℝ) * (4 * Real.pi ^ 2 * x ^ 2) := by
+      calc
+        (1 + |x|) ^ 2 ≤ (13 / 4 : ℝ) ^ 2 * x ^ 2 := hbase
+        _ = (169 / 16 : ℝ) * x ^ 2 := by norm_num
+        _ ≤ ((169 / 576 : ℝ) * (4 * Real.pi ^ 2)) * x ^ 2 :=
+          mul_le_mul_of_nonneg_right hcoeff (sq_nonneg _)
+        _ = (169 / 576 : ℝ) * (4 * Real.pi ^ 2 * x ^ 2) := by ring
+    calc
+      ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ *
+          (1 + |x|) ^ 2 ≤
+          ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ *
+            ((169 / 576 : ℝ) * (4 * Real.pi ^ 2 * x ^ 2)) :=
+        mul_le_mul_of_nonneg_left hfactor (norm_nonneg _)
+      _ = (169 / 576 : ℝ) * ((4 * Real.pi ^ 2 * x ^ 2) *
+          ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖) := by
+        ring
+      _ ≤ (169 / 576 : ℝ) * 56 :=
+        mul_le_mul_of_nonneg_left hquad (by norm_num)
+      _ ≤ 17 := by norm_num
 
 /-- This bound controls the scaled Abel kernel in the proof of `sqrtGaussianDecay`. -/
 theorem aux_scaledPoissonKernel_le_eight_bracket_sq (x : ℝ) :
@@ -4037,6 +4697,62 @@ theorem aux_scaledPoissonKernel_le_eight_bracket_sq (x : ℝ) :
       mul_le_mul_of_nonneg_left hinv (by norm_num)
     _ ≤ 8 * (1 + |x|)⁻¹ ^ 2 := hlast
 
+/-- Auxiliary for Proposition \ref{square root of Gaussian decay}, formalized by
+`sqrtGaussianDecay`: this is the pass-5 bracket-bump bound for the scaled Abel kernel. -/
+theorem aux_scaledPoissonKernel_le_three_halves_bracket_sq (x : ℝ) :
+    aux_scaledPoissonKernel x ≤ (3 / 2 : ℝ) * bracketBump x ^ 2 := by
+  have hformula : aux_scaledPoissonKernel x =
+      (2 / Real.sqrt Real.pi) * (1 + 4 * Real.pi * x ^ 2)⁻¹ := by
+    have hsqrt : Real.sqrt Real.pi ≠ 0 := ne_of_gt (Real.sqrt_pos.2 Real.pi_pos)
+    have hsq : Real.sqrt Real.pi ^ 2 = Real.pi := Real.sq_sqrt Real.pi_pos.le
+    unfold aux_scaledPoissonKernel poissonKernel
+    field_simp
+    rw [hsq]
+    ring
+  rw [hformula, bracketBump]
+  have hsqrtpos : 0 < Real.sqrt Real.pi := Real.sqrt_pos.2 Real.pi_pos
+  have hsqrtlower : (12 / 7 : ℝ) ≤ Real.sqrt Real.pi := by
+    calc
+      (12 / 7 : ℝ) = Real.sqrt ((12 / 7 : ℝ) ^ 2) := by
+        rw [Real.sqrt_sq_eq_abs]
+        norm_num
+      _ ≤ Real.sqrt Real.pi := Real.sqrt_le_sqrt (by nlinarith [Real.pi_gt_three])
+  have hcoef : 2 / Real.sqrt Real.pi ≤ (7 / 6 : ℝ) := by
+    apply (div_le_iff₀ hsqrtpos).2
+    nlinarith
+  have hbracket : 12 * (1 + |x|) ^ 2 ≤ 13 * (1 + 12 * x ^ 2) := by
+    rw [← sq_abs x]
+    nlinarith [sq_nonneg (12 * |x| - 1)]
+  have hbracket' : (1 + |x|) ^ 2 ≤ (13 / 12 : ℝ) * (1 + 12 * x ^ 2) := by
+    nlinarith [hbracket]
+  have hpiDen : 1 + 12 * x ^ 2 ≤ 1 + 4 * Real.pi * x ^ 2 := by
+    have hmul : 12 * x ^ 2 ≤ 4 * Real.pi * x ^ 2 := by
+      apply mul_le_mul_of_nonneg_right _ (sq_nonneg x)
+      nlinarith [Real.pi_gt_three]
+    linarith
+  have hscaledpos : 0 < 1 + 4 * Real.pi * x ^ 2 := by positivity
+  have hbracketpos : 0 < (1 + |x|) ^ 2 := sq_pos_of_pos (by positivity)
+  have hleft : (2 / Real.sqrt Real.pi) * (1 + 4 * Real.pi * x ^ 2)⁻¹ =
+      (2 / Real.sqrt Real.pi) / (1 + 4 * Real.pi * x ^ 2) := by
+    field_simp
+  have hright : (3 / 2 : ℝ) * (1 + |x|)⁻¹ ^ 2 =
+      (3 / 2 : ℝ) / (1 + |x|) ^ 2 := by
+    field_simp
+  rw [hleft, hright]
+  apply (div_le_div_iff₀ hscaledpos hbracketpos).2
+  calc
+    (2 / Real.sqrt Real.pi) * (1 + |x|) ^ 2 ≤
+        (7 / 6 : ℝ) * (1 + |x|) ^ 2 :=
+      mul_le_mul_of_nonneg_right hcoef (sq_nonneg _)
+    _ ≤ (7 / 6 : ℝ) * ((13 / 12 : ℝ) * (1 + 12 * x ^ 2)) :=
+      mul_le_mul_of_nonneg_left hbracket' (by norm_num)
+    _ = ((7 / 6 : ℝ) * (13 / 12 : ℝ)) * (1 + 12 * x ^ 2) := by ring
+    _ ≤ (3 / 2 : ℝ) * (1 + 12 * x ^ 2) := by
+      apply mul_le_mul_of_nonneg_right _ (by positivity)
+      norm_num
+    _ ≤ (3 / 2 : ℝ) * (1 + 4 * Real.pi * x ^ 2) :=
+      mul_le_mul_of_nonneg_left hpiDen (by norm_num)
+
 /-- This absolute-value form of the $B$ and scaled Abel estimates is used to establish the
 Wiener-space conclusion in `sqrtGaussianDecay`. -/
 theorem aux_abs_sqrtGaussianDecayKernel_le_forty_bracket_sq (x : ℝ) :
@@ -4061,16 +4777,81 @@ theorem aux_abs_sqrtGaussianDecayKernel_le_forty_bracket_sq (x : ℝ) :
         (aux_scaledPoissonKernel_le_eight_bracket_sq x)
     _ = 40 * bracketBump x ^ 2 := by ring
 
+/-- Auxiliary for Proposition \ref{square root of Gaussian decay}, formalized by
+`sqrtGaussianDecay`: this combines the sharpened $15$ and $3/2$ estimates into the pass-8
+decay constant. -/
+theorem aux_abs_sqrtGaussianDecayKernel_le_seventeen_bracket_sq (x : ℝ) :
+    |aux_sqrtGaussianDecayKernel x| ≤ 17 * bracketBump x ^ 2 := by
+  have hPoisson_nonneg (y : ℝ) : 0 ≤ aux_scaledPoissonKernel y := by
+    unfold aux_scaledPoissonKernel poissonKernel
+    positivity
+  unfold aux_sqrtGaussianDecayKernel
+  rw [aux_sqrtGaussianKernel_eq_inverseFourier_auxiliaryFunctionB_add_scaledPoisson]
+  calc
+    |(FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x +
+        (aux_scaledPoissonKernel x : ℂ)).re| ≤
+        ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x +
+          (aux_scaledPoissonKernel x : ℂ)‖ := Complex.abs_re_le_norm _
+    _ ≤ ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ +
+          ‖(aux_scaledPoissonKernel x : ℂ)‖ := norm_add_le _ _
+    _ = ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ +
+          aux_scaledPoissonKernel x := by
+      rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hPoisson_nonneg x)]
+    _ ≤ 15 * bracketBump x ^ 2 + (3 / 2 : ℝ) * bracketBump x ^ 2 :=
+      add_le_add (aux_norm_inverseFourier_auxiliaryFunctionB_le_fifteen_bracket_sq x)
+        (aux_scaledPoissonKernel_le_three_halves_bracket_sq x)
+    _ ≤ 17 * bracketBump x ^ 2 := by
+      nlinarith [sq_nonneg (bracketBump x)]
+
+/-- Auxiliary for Proposition \ref{square root of Gaussian decay}, formalized by
+`sqrtGaussianDecay`: this retains the weaker pass-5 decay estimate. -/
+theorem aux_abs_sqrtGaussianDecayKernel_le_nineteen_bracket_sq (x : ℝ) :
+    |aux_sqrtGaussianDecayKernel x| ≤ 19 * bracketBump x ^ 2 := by
+  have hPoisson_nonneg (y : ℝ) : 0 ≤ aux_scaledPoissonKernel y := by
+    unfold aux_scaledPoissonKernel poissonKernel
+    positivity
+  unfold aux_sqrtGaussianDecayKernel
+  rw [aux_sqrtGaussianKernel_eq_inverseFourier_auxiliaryFunctionB_add_scaledPoisson]
+  calc
+    |(FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x +
+        (aux_scaledPoissonKernel x : ℂ)).re| ≤
+        ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x +
+          (aux_scaledPoissonKernel x : ℂ)‖ := Complex.abs_re_le_norm _
+    _ ≤ ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ +
+          ‖(aux_scaledPoissonKernel x : ℂ)‖ := norm_add_le _ _
+    _ = ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ +
+          aux_scaledPoissonKernel x := by
+      rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hPoisson_nonneg x)]
+    _ ≤ 17 * bracketBump x ^ 2 + (3 / 2 : ℝ) * bracketBump x ^ 2 :=
+      add_le_add (aux_norm_inverseFourier_auxiliaryFunctionB_le_seventeen_bracket_sq x)
+        (aux_scaledPoissonKernel_le_three_halves_bracket_sq x)
+    _ ≤ 19 * bracketBump x ^ 2 := by
+      nlinarith [sq_nonneg (bracketBump x)]
+
 /-- This one-sided consequence of the absolute decay estimate is used for the upper bound in
 `sqrtGaussianDecay`. -/
 theorem aux_sqrtGaussianDecayKernel_le_forty_bracket_sq (x : ℝ) :
     aux_sqrtGaussianDecayKernel x ≤ 40 * bracketBump x ^ 2 :=
   (le_abs_self _).trans (aux_abs_sqrtGaussianDecayKernel_le_forty_bracket_sq x)
 
-/-- This positive Gaussian-mixture argument proves the nonnegativity needed in
+/-- Auxiliary for Proposition \ref{square root of Gaussian decay}, formalized by
+`sqrtGaussianDecay`: this is the one-sided form of the pass-8 decay estimate. -/
+theorem aux_sqrtGaussianDecayKernel_le_seventeen_bracket_sq (x : ℝ) :
+    aux_sqrtGaussianDecayKernel x ≤ 17 * bracketBump x ^ 2 :=
+  (le_abs_self _).trans (aux_abs_sqrtGaussianDecayKernel_le_seventeen_bracket_sq x)
+
+/-- Auxiliary for Proposition \ref{square root of Gaussian decay}, formalized by
+`sqrtGaussianDecay`: this retains the weaker pass-5 one-sided decay estimate. -/
+theorem aux_sqrtGaussianDecayKernel_le_nineteen_bracket_sq (x : ℝ) :
+    aux_sqrtGaussianDecayKernel x ≤ 19 * bracketBump x ^ 2 :=
+  (le_abs_self _).trans (aux_abs_sqrtGaussianDecayKernel_le_nineteen_bracket_sq x)
+
+/-- This exports the positive Gaussian-mixture representation used in the proof of
 `sqrtGaussianDecay`. -/
-theorem aux_sqrtGaussianDecayKernel_nonneg (x : ℝ) :
-    0 ≤ aux_sqrtGaussianDecayKernel x := by
+theorem aux_sqrtGaussianDecayKernel_hasSum (x : ℝ) :
+    HasSum (fun n : ℕ => aux_sqrtGaussianCoefficient n *
+      gaussianRescale (Real.sqrt (n + 1)) x)
+      (aux_sqrtGaussianDecayKernel x) := by
   have hinner : Continuous (fun ξ : ℝ => ⟪ξ, x⟫) := by fun_prop
   have hcircle : Continuous (fun ξ : ℝ => 𝐞 ⟪ξ, x⟫) :=
     Real.continuous_fourierChar.comp hinner
@@ -4171,7 +4952,13 @@ theorem aux_sqrtGaussianDecayKernel_nonneg (x : ℝ) :
         gaussianRescale (Real.sqrt (n + 1)) x)
       (aux_sqrtGaussianDecayKernel x) := by
     simpa [Function.comp_def, Complex.reCLM_apply, aux_sqrtGaussianDecayKernel] using hreal
-  rw [← hsum.tsum_eq]
+  exact hsum
+
+/-- This positive Gaussian-mixture argument proves the nonnegativity needed in
+`sqrtGaussianDecay`. -/
+theorem aux_sqrtGaussianDecayKernel_nonneg (x : ℝ) :
+    0 ≤ aux_sqrtGaussianDecayKernel x := by
+  rw [← (aux_sqrtGaussianDecayKernel_hasSum x).tsum_eq]
   apply tsum_nonneg
   intro n
   unfold gaussianRescale
@@ -4277,7 +5064,7 @@ theorem aux_sqrtGaussianDecayKernel_memW0 : MemW0 aux_sqrtGaussianDecayKernel :=
       mul_le_mul_of_nonneg_left (aux_bracketBump_sq_le_inv_one_add_sq x) (by norm_num)
 
 /-- Constant from \ref{square root of Gaussian decay}, used by `sqrtGaussianDecay`. -/
-def C_squareRootGaussianDecay : ℝ := 100
+def C_squareRootGaussianDecay : ℝ := 17
 
 /--
 \begin{proposition}[square root of Gaussian decay]\label{square root of Gaussian decay}
@@ -4287,7 +5074,7 @@ This is a well-defined function in $W_0(\R)$ satisfying for all $x\in\R$,
 \begin{equation} \label{sqr gauss C}
     0\le \rho(x) \le C_{\ref{square root of Gaussian decay}} \langle x\rangle^2,
 \end{equation}
-where $C_{\ref{square root of Gaussian decay}}=100$.
+where $C_{\ref{square root of Gaussian decay}}=17$.
 \end{proposition}
 -/
 theorem sqrtGaussianDecay :
@@ -4299,8 +5086,7 @@ theorem sqrtGaussianDecay :
   intro x
   refine ⟨aux_sqrtGaussianDecayKernel_nonneg x, ?_⟩
   rw [C_squareRootGaussianDecay]
-  exact (aux_sqrtGaussianDecayKernel_le_forty_bracket_sq x).trans
-    (mul_le_mul_of_nonneg_right (by norm_num) (sq_nonneg _))
+  exact aux_sqrtGaussianDecayKernel_le_seventeen_bracket_sq x
 
 end
 

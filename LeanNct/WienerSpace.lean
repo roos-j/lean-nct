@@ -17,9 +17,8 @@ namespace Codex
 open MeasureTheory Metric Set Filter Topology
 open scoped BigOperators ENNReal Function
 
-/-- \begin{equation}
-    g(x)=\sup_{|x-y|\le r}|f(y)|
-\end{equation} -/
+/-- Auxiliary definition for Proposition \ref{auto:local-supremum-measurability}; see
+localSupremumMeasurability. -/
 noncomputable def wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
     (f : E → F) (r : ℝ) (x : E) : ℝ :=
   sSup ((fun z : E ↦ ‖f (x + z)‖) '' closedBall 0 r)
@@ -40,8 +39,8 @@ theorem aux_wienerEnvelope_eq_sSup {E F : Type*} [NormedAddCommGroup E] [NormedA
     · simpa [Metric.mem_closedBall, dist_eq_norm] using hy
     · simp
 
-/-- Auxiliary for Proposition \ref{W_0 radius independence}, formalized as
-`wienerNorm_le_max_one_three_mul_div_pow_mul`. -/
+/-- Auxiliary for Proposition \ref{auto:local-supremum-measurability}; it proves the stronger
+continuity assertion used by localSupremumMeasurability. -/
 theorem continuous_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [NormedAddCommGroup F] {f : E → F} (hf : Continuous f) (r : ℝ) :
     Continuous (wienerEnvelope f r) := by
@@ -50,8 +49,8 @@ theorem continuous_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSp
   exact (isCompact_closedBall (0 : E) r).continuous_sSup
     (show Continuous (fun p : E × E ↦ ‖f (p.1 + p.2)‖) by fun_prop)
 
-/-- Auxiliary for Proposition \ref{W_0 radius independence}, formalized as
-`wienerNorm_le_max_one_three_mul_div_pow_mul`. -/
+/-- The measurability conclusion of Proposition \ref{auto:local-supremum-measurability}; see
+localSupremumMeasurability. -/
 theorem measurable_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [NormedAddCommGroup F] [MeasurableSpace E] [BorelSpace E] {f : E → F}
     (hf : Continuous f) (r : ℝ) : Measurable (wienerEnvelope f r) :=
@@ -68,12 +67,25 @@ theorem aux_exists_wienerEnvelope_eq_and_ge {E F : Type*} [NormedAddCommGroup E]
       (Metric.nonempty_closedBall.mpr hr) h.continuousOn
   exact ⟨z, hz, hEq, hzmax⟩
 
-/-- Auxiliary for Proposition \ref{W_0 radius independence}, formalized as
-`wienerNorm_le_max_one_three_mul_div_pow_mul`. -/
+/-- The upper-semicontinuity conclusion of Proposition \ref{auto:local-supremum-measurability};
+see localSupremumMeasurability. -/
 theorem upperSemicontinuous_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [NormedAddCommGroup F] {f : E → F} (hf : Continuous f) (r : ℝ) :
     UpperSemicontinuous (wienerEnvelope f r) :=
   (continuous_wienerEnvelope hf r).upperSemicontinuous
+
+/-- \begin{proposition}\label{auto:local-supremum-measurability}
+Let $d\in \N$ and $f:\R^d\to \mathbb{K}$ be continuous.
+Then for $r\in (0,\infty)$, the function $g:\R^d\to [0,\infty]$ defined by
+\begin{equation}\label{auto:local-supremum-function}
+    g(x)=\sup_{|x-y|\le r}|f(y)|
+\end{equation}
+is finite and upper semi continuous and measurable.
+\end{proposition} -/
+theorem localSupremumMeasurability {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
+    {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : Continuous f) {r : ℝ} (_hr : 0 < r) :
+    UpperSemicontinuous (wienerEnvelope f r) ∧ Measurable (wienerEnvelope f r) := by
+  exact ⟨upperSemicontinuous_wienerEnvelope hf r, measurable_wienerEnvelope hf r⟩
 
 /-- Write $W_0(\R^d)$ or $W_0(d)$ for the set of continuous functions $f:\R^d\to\mathbb{K}$ so that
 \[  \|f\|_{W_0}< \infty\, . \]
@@ -83,14 +95,16 @@ def MemW0 {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpace E] [NormedAddCom
     (f : E → 𝕜) : Prop :=
   Continuous f ∧ Integrable (wienerEnvelope f 1)
 
-/-- \begin{equation}
+/-- Let $d\in \N$. Define
+\begin{equation}\label{auto:Wiener-local-norm}
 \|f\|_{W_0,d,r}:=    \int_{\R^d} \sup_{|x-y|\le r} |f(y)|\,dx.
 \end{equation} -/
 noncomputable def wienerNorm {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpace E]
     [NormedAddCommGroup 𝕜] (f : E → 𝕜) (r : ℝ) : ℝ≥0∞ :=
   ∫⁻ x, ENNReal.ofReal (wienerEnvelope f r x)
 
-/-- \begin{equation}
+/-- We also set
+\begin{equation}\label{auto:Wiener-norm}
     \|f\|_{W_0}:=\|f\|_{W_0,1}\, .
 \end{equation} -/
 noncomputable abbrev wienerNormOne {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpace E]

@@ -12,11 +12,12 @@ namespace Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
 open Set
 
 /--
-\begin{definition}[Multiplicatively spaced monotone sequences]
-A sequence $a: \Z\to \R_{>0}$ is called multiplicatively spaced, if for each $j\in \Z$
-\[
+\begin{definition}[Multiplicatively spaced monotone sequences]\label{multiplicatively spaced monotone sequences}
+A sequence $a:\Z\to\R$ with $a(j)>0$ for every $j\in\Z$ is called multiplicatively spaced if, for each $j\in\Z$
+\begin{equation}\label{auto:spaced-sequence-growth}
     2a(j)\le a(j+1)\, .
-\]
+\end{equation}
+Let $\mathrm{A}$ be the set of such sequences.
 \end{definition}
 -/
 def SpacedSequence (a : ℤ → ℝ) : Prop :=
@@ -66,16 +67,16 @@ theorem aux_pow_two_mul_shift_le {a : ℤ → ℝ} (ha : SpacedSequence a) (j : 
     (2 : ℝ) ^ k * a (j - k) ≤ a j := by
   convert aux_pow_two_mul_le_shift ha (j - k) k using 1 <;> ring
 
-/-- Explicit extension used in Proposition \ref{Extension of sequences}, formalized by
+/-- Auxiliary explicit extension used in Proposition \ref{Extension of sequences}, formalized by
 `extensionOfSequences`. -/
-noncomputable def extensionOfSequence (J : ℕ) (a : ℤ → ℝ) : ℤ → ℝ := fun j =>
+noncomputable def aux_extensionOfSequence (J : ℕ) (a : ℤ → ℝ) : ℤ → ℝ := fun j =>
   if j < 0 then (2 : ℝ) ^ j * a 0
   else if j < (J : ℤ) then a j
   else (2 : ℝ) ^ (j - J + 1) * a (J - 1)
 
 /--
 \begin{proposition}[Extension of sequences]\label{Extension of sequences}
-Let $J\in \N_{>0}$ and $a:[J)\to \R_{>0}$ such that for all $ j\in [J-1)$ we have $a(j+1)\ge 2a(j)$.
+Let $J\in\N$ with $J\ge1$ and let $a:[J)\to\R$ satisfy $a(j)>0$ for every $j\in[J)$ and, for all $j\in[J-1)$, we have $a(j+1)\ge 2a(j)$.
 Then there is a unique $b\in A$ such that for all $j\in [J)$ we have $a(j)=b(j)$ and for $j\ge J$ we have $b(j)=2^{j-J+1} a(J-1)$ and for $j<0$ we have $b(j)=2^j a(0)$\, .
 \end{proposition}
 -/
@@ -86,7 +87,7 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
       (∀ j : ℤ, 0 ≤ j → j < (J : ℤ) → b j = a j) ∧
       (∀ j : ℤ, (J : ℤ) ≤ j → b j = (2 : ℝ) ^ (j - J + 1) * a (J - 1)) ∧
       (∀ j : ℤ, j < 0 → b j = (2 : ℝ) ^ j * a 0) := by
-  let b := extensionOfSequence J a
+  let b := aux_extensionOfSequence J a
   have htwo : (2 : ℝ) ≠ 0 := by norm_num
   have hfirst : 0 < a 0 := ha_pos 0 (by omega) (by omega)
   have hlast : 0 < a (J - 1) := by
@@ -96,13 +97,13 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
   have hb_pos : ∀ j : ℤ, 0 < b j := by
     intro j
     by_cases hneg : j < 0
-    · rw [show b j = (2 : ℝ) ^ j * a 0 by simp [b, extensionOfSequence, hneg]]
+    · rw [show b j = (2 : ℝ) ^ j * a 0 by simp [b, aux_extensionOfSequence, hneg]]
       exact mul_pos (zpow_pos (by norm_num) _) hfirst
     · by_cases hmid : j < (J : ℤ)
-      · rw [show b j = a j by simp [b, extensionOfSequence, hneg, hmid]]
+      · rw [show b j = a j by simp [b, aux_extensionOfSequence, hneg, hmid]]
         exact ha_pos j (le_of_not_gt hneg) hmid
       · rw [show b j = (2 : ℝ) ^ (j - J + 1) * a (J - 1) by
-          simp [b, extensionOfSequence, hneg, hmid]]
+          simp [b, aux_extensionOfSequence, hneg, hmid]]
         exact mul_pos (zpow_pos (by norm_num) _) hlast
   have hb_space : ∀ j : ℤ, 2 * b j ≤ b (j + 1) := by
     intro j
@@ -110,10 +111,10 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
     · by_cases hmone : j = -1
       · subst j
         have hbneg : b (-1) = (2 : ℝ) ^ (-1 : ℤ) * a 0 := by
-          simp [b, extensionOfSequence]
+          simp [b, aux_extensionOfSequence]
         have hbzero : b 0 = a 0 := by
           have hJz : (0 : ℤ) < J := by exact_mod_cast hJ
-          simp [b, extensionOfSequence, hJ, hJz]
+          simp [b, aux_extensionOfSequence, hJ, hJz]
         rw [hbneg]
         norm_num
         rw [hbzero]
@@ -121,9 +122,9 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
         apply le_of_eq
         ring
       · have hneg' : j + 1 < 0 := by omega
-        rw [show b j = (2 : ℝ) ^ j * a 0 by simp [b, extensionOfSequence, hneg]]
+        rw [show b j = (2 : ℝ) ^ j * a 0 by simp [b, aux_extensionOfSequence, hneg]]
         rw [show b (j + 1) = (2 : ℝ) ^ (j + 1) * a 0 by
-          simp [b, extensionOfSequence, hneg']]
+          simp [b, aux_extensionOfSequence, hneg']]
         rw [zpow_add₀ htwo j 1]
         norm_num
         apply le_of_eq
@@ -132,7 +133,7 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
       by_cases hbefore : j + 1 < (J : ℤ)
       · have hj : j < (J : ℤ) := by omega
         have hnextneg : ¬ (j + 1 < 0) := by omega
-        simp [b, extensionOfSequence, hneg, hj, hnextneg, hbefore]
+        simp [b, aux_extensionOfSequence, hneg, hj, hnextneg, hbefore]
         exact ha_space j hj0 hbefore
       · have hjge : (J : ℤ) ≤ j + 1 := le_of_not_gt hbefore
         by_cases hjlast : j = (J : ℤ) - 1
@@ -142,17 +143,17 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
           have hJnextneg : ¬ ((J : ℤ) - 1 + 1 < 0) := by omega
           have hJnext : ¬ ((J : ℤ) - 1 + 1 < (J : ℤ)) := by omega
           rw [show b ((J : ℤ) - 1) = a ((J : ℤ) - 1) by
-            simp [b, extensionOfSequence, hJneg, hJlt]]
+            simp [b, aux_extensionOfSequence, hJneg, hJlt]]
           rw [show b (((J : ℤ) - 1) + 1) = 2 * a ((J : ℤ) - 1) by
-            simp [b, extensionOfSequence, hJneg, hJlt, hJnextneg, hJnext]]
+            simp [b, aux_extensionOfSequence, hJneg, hJlt, hJnextneg, hJnext]]
         · have hjgeJ : (J : ℤ) ≤ j := by omega
           have hnextneg : ¬ (j + 1 < 0) := by omega
           have hjnotlt : ¬ (j < (J : ℤ)) := by omega
           have hnextnotlt : ¬ (j + 1 < (J : ℤ)) := by omega
           rw [show b j = (2 : ℝ) ^ (j - J + 1) * a (J - 1) by
-            simp [b, extensionOfSequence, hneg, hjnotlt]]
+            simp [b, aux_extensionOfSequence, hneg, hjnotlt]]
           rw [show b (j + 1) = (2 : ℝ) ^ (j + 1 - J + 1) * a (J - 1) by
-            simp [b, extensionOfSequence, hnextneg, hnextnotlt]]
+            simp [b, aux_extensionOfSequence, hnextneg, hnextnotlt]]
           rw [show j + 1 - J + 1 = (j - J + 1) + 1 by ring,
             zpow_add₀ htwo (j - J + 1) 1]
           norm_num
@@ -163,21 +164,21 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
     · intro j
       exact ⟨hb_pos j, hb_space j⟩
     · intro j hj0 hjJ
-      simp [b, extensionOfSequence, not_lt.mpr hj0, hjJ]
+      simp [b, aux_extensionOfSequence, not_lt.mpr hj0, hjJ]
     · intro j hj
-      simp [b, extensionOfSequence, not_lt.mpr (by omega : 0 ≤ j), not_lt.mpr hj]
+      simp [b, aux_extensionOfSequence, not_lt.mpr (by omega : 0 ≤ j), not_lt.mpr hj]
     · intro j hj
-      simp [b, extensionOfSequence, hj]
+      simp [b, aux_extensionOfSequence, hj]
   · intro c hc
     funext j
     by_cases hjneg : j < 0
     · rw [hc.2.2.2 j hjneg]
-      simp [b, extensionOfSequence, hjneg]
+      simp [b, aux_extensionOfSequence, hjneg]
     · by_cases hjmid : j < (J : ℤ)
       · rw [hc.2.1 j (le_of_not_gt hjneg) hjmid]
-        simp [b, extensionOfSequence, hjneg, hjmid]
+        simp [b, aux_extensionOfSequence, hjneg, hjmid]
       · rw [hc.2.2.1 j (le_of_not_gt hjmid)]
-        simp [b, extensionOfSequence, hjneg, hjmid]
+        simp [b, aux_extensionOfSequence, hjneg, hjmid]
 
 /--
 \begin{proposition}[Operations on spaced sequences]\label{Operations on spaced sequences}
@@ -255,24 +256,17 @@ theorem sqrt_sq_add_sq_mem_A {a b : ℤ → ℝ} (ha : SpacedSequence a) (hb : S
     nlinarith [Real.sqrt_nonneg (a j ^ 2 + b j ^ 2),
       Real.sqrt_nonneg (a (j + 1) ^ 2 + b (j + 1) ^ 2)]
 
-/--
-\begin{definition}[Distance of spaced sequences]\label{Distance of spaced sequences}
-Given $a,b\in {\rm A}$, define
-\[
-    \dist(a,b)=\min\{k\in\mathbb{Z}_{\ge 0}\,:\,\forall j, a(j-k)\le b(j)\le a(j+k)\}
-\]
-with the understanding that the value is $\infty$ if there is no such $k$.
-\end{definition}
--/
+/-- The finite-shift comparison occurring in Definition
+\ref{Distance of spaced sequences}; it is used by 'SequenceDistance'. -/
 def WithinSequenceDistance (a b : ℤ → ℝ) (k : ℕ) : Prop :=
   ∀ j : ℤ, a (j - k) ≤ b j ∧ b j ≤ a (j + k)
 
 /--
 \begin{definition}[Distance of spaced sequences]\label{Distance of spaced sequences}
 Given $a,b\in {\rm A}$, define
-\[
+\begin{equation}\label{auto:spaced-sequence-distance}
     \dist(a,b)=\min\{k\in\mathbb{Z}_{\ge 0}\,:\,\forall j, a(j-k)\le b(j)\le a(j+k)\}
-\]
+\end{equation}
 with the understanding that the value is $\infty$ if there is no such $k$.
 \end{definition}
 -/
@@ -511,7 +505,7 @@ theorem sequenceDistance_pow_two_smul_le {a : ℤ → ℝ} (ha : SpacedSequence 
 /--
 \begin{definition}[Closed balls in $\mathrm{A}$]\label{closed balls in A}
 For $a\in\mathrm{A}$ and $r>0$ denote
-\[B_{\mathrm{dist}}(a,r)=\{b\in\mathrm{A}\,:\,\dist(a,b)\le r\}.\]
+\begin{equation}\label{auto:spaced-sequence-distance-ball}B_{\mathrm{dist}}(a,r)=\{b\in\mathrm{A}\,:\,\dist(a,b)\le r\}.\end{equation}
 \end{definition}
 -/
 def sequenceDistanceBall (a : ℤ → ℝ) (r : WithTop ℕ) : Set (ℤ → ℝ) :=
