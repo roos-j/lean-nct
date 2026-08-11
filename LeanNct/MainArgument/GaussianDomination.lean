@@ -178,11 +178,9 @@ theorem aux_abs_diagonalDerivative_twoDimensionalGaussian_zero_le
     dsimp [b₁]
     exact aux_scaledBracketBump_nonneg 2 (ht 1) _
   have hC₀ : 0 ≤ C_gaussianBumpDecay 0 2 := by
-    unfold C_gaussianBumpDecay
-    exact Real.rpow_nonneg (by positivity) _
+    exact aux_C_gaussianBumpDecay_nonneg 0 2
   have hC₁ : 0 ≤ C_gaussianBumpDecay 1 2 := by
-    unfold C_gaussianBumpDecay
-    exact Real.rpow_nonneg (by positivity) _
+    exact aux_C_gaussianBumpDecay_nonneg 1 2
   have hd₀ : |deriv (gaussianRescale (t 0)) v.1| ≤
       (t 0)⁻¹ * C_gaussianBumpDecay 1 2 * b₀ := by
     simpa [b₀] using gaussianRescale_deriv_bound (t := t 0) (x := v.1) (ht 0)
@@ -253,6 +251,132 @@ theorem aux_abs_diagonalDerivative_twoDimensionalGaussian_zero_le
           (scaledBracketBump 2 (t 0) v.1 * scaledBracketBump 2 (t 1) v.2) := by
       simp only [b₀, b₁]
 
+/-- This auxiliary product-rule identity evaluates the diagonal derivative of a two-dimensional
+Gaussian in the nontrivial orientation. -/
+theorem aux_diagonalDerivative_twoDimensionalGaussian_one
+    (t : Fin 2 → ℝ) (v : RealPlane) :
+    aux_diagonalDerivative (twoDimensionalGaussian t 1) v =
+      Real.sqrt 2 * deriv (gaussianRescale (t 0)) (W 1 v).1 *
+        gaussianRescale (t 1) (W 1 v).2 := by
+  have hsqrtPos : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqrtSq : (Real.sqrt (2 : ℝ)) ^ 2 = 2 := by norm_num
+  let p : ℝ → ℝ := fun s => ((v.1 + s) + (v.2 + s)) / Real.sqrt 2
+  let q : ℝ → ℝ := fun s => (-(v.1 + s) + (v.2 + s)) / Real.sqrt 2
+  have hv₁ : HasDerivAt (fun s : ℝ => v.1 + s) 1 0 := by
+    simpa using (hasDerivAt_id 0).const_add v.1
+  have hv₂ : HasDerivAt (fun s : ℝ => v.2 + s) 1 0 := by
+    simpa using (hasDerivAt_id 0).const_add v.2
+  have hpraw : HasDerivAt (fun s : ℝ => (v.1 + s) + (v.2 + s)) 2 0 := by
+    change HasDerivAt ((fun s : ℝ => v.1 + s) + fun s => v.2 + s) 2 0
+    have hsum := hv₁.add hv₂
+    norm_num at hsum
+    exact hsum
+  have hqraw : HasDerivAt (fun s : ℝ => -(v.1 + s) + (v.2 + s)) 0 0 := by
+    change HasDerivAt (-(fun s : ℝ => v.1 + s) + fun s => v.2 + s) 0 0
+    have hsum := hv₁.neg.add hv₂
+    norm_num at hsum
+    exact hsum
+  have htwoDiv : (2 : ℝ) / Real.sqrt 2 = Real.sqrt 2 := by
+    field_simp
+    nlinarith [hsqrtSq]
+  have hp : HasDerivAt p (Real.sqrt 2) 0 := by
+    simpa [p, htwoDiv] using hpraw.div_const (Real.sqrt 2)
+  have hq : HasDerivAt q 0 0 := by
+    simpa [q] using hqraw.div_const (Real.sqrt 2)
+  have hfirstRaw := (gaussianRescale_hasDerivAt (t 0) (p 0)).comp 0 hp
+  have hsecondRaw := (gaussianRescale_hasDerivAt (t 1) (q 0)).comp 0 hq
+  have hprodRaw := hfirstRaw.mul hsecondRaw
+  have hp0 : p 0 = (W 1 v).1 := by
+    simp [p, W]
+  have hq0 : q 0 = (W 1 v).2 := by
+    simp [q, W]
+  have hfirstDeriv : deriv (gaussianRescale (t 0)) (p 0) =
+      (t 0)⁻¹ * (-2 * Real.pi * ((t 0)⁻¹ * p 0) *
+        Preliminaries.Gaussians.gaussian ((t 0)⁻¹ * p 0)) * (t 0)⁻¹ :=
+    (gaussianRescale_hasDerivAt (t 0) (p 0)).deriv
+  have hdiag : (fun s : ℝ => twoDimensionalGaussian t 1 (v.1 + s, v.2 + s)) =
+      (gaussianRescale (t 0) ∘ p) * (gaussianRescale (t 1) ∘ q) := by
+    funext s
+    simp [twoDimensionalGaussian, W, p, q, Function.comp_apply]
+  unfold aux_diagonalDerivative
+  rw [hdiag]
+  rw [hprodRaw.deriv]
+  simp only [Function.comp_apply]
+  rw [← hfirstDeriv, hp0, hq0]
+  ring
+
+/-- This auxiliary estimate bounds the diagonal derivative of a product Gaussian in the
+nontrivial orientation by the weighted bracket product used in the derivative kernel estimate. -/
+theorem aux_abs_diagonalDerivative_twoDimensionalGaussian_one_le
+    (t : Fin 2 → ℝ) (ht : ∀ r : Fin 2, 0 < t r) (v : RealPlane) :
+    |aux_diagonalDerivative (twoDimensionalGaussian t 1) v| ≤
+      2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 *
+        ((t 0)⁻¹ + (t 1)⁻¹) *
+          (scaledBracketBump 2 (t 0) (W 1 v).1 *
+            scaledBracketBump 2 (t 1) (W 1 v).2) := by
+  rw [aux_diagonalDerivative_twoDimensionalGaussian_one]
+  let b₀ : ℝ := scaledBracketBump 2 (t 0) (W 1 v).1
+  let b₁ : ℝ := scaledBracketBump 2 (t 1) (W 1 v).2
+  have hb₀ : 0 ≤ b₀ := by
+    dsimp [b₀]
+    exact aux_scaledBracketBump_nonneg 2 (ht 0) _
+  have hb₁ : 0 ≤ b₁ := by
+    dsimp [b₁]
+    exact aux_scaledBracketBump_nonneg 2 (ht 1) _
+  have hC₀ : 0 ≤ C_gaussianBumpDecay 0 2 :=
+    aux_C_gaussianBumpDecay_nonneg 0 2
+  have hC₁ : 0 ≤ C_gaussianBumpDecay 1 2 :=
+    aux_C_gaussianBumpDecay_nonneg 1 2
+  have hinv₀ : 0 ≤ (t 0)⁻¹ := inv_nonneg.mpr (ht 0).le
+  have hinv₁ : 0 ≤ (t 1)⁻¹ := inv_nonneg.mpr (ht 1).le
+  have hd₀ : |deriv (gaussianRescale (t 0)) (W 1 v).1| ≤
+      (t 0)⁻¹ * C_gaussianBumpDecay 1 2 * b₀ := by
+    simpa [b₀] using gaussianRescale_deriv_bound
+      (t := t 0) (x := (W 1 v).1) (ht 0)
+  have hg₁ : |gaussianRescale (t 1) (W 1 v).2| ≤
+      C_gaussianBumpDecay 0 2 * b₁ := by
+    simpa [b₁] using gaussianRescale_le_C_gaussianBumpDecay_zero_two
+      (t := t 1) (x := (W 1 v).2) (ht 1)
+  have hsqrtNonneg : 0 ≤ Real.sqrt (2 : ℝ) := Real.sqrt_nonneg _
+  have hsqrtLe : Real.sqrt (2 : ℝ) ≤ 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : 0 ≤ (2 : ℝ))]
+  have hrightNonneg : 0 ≤ (t 0)⁻¹ * C_gaussianBumpDecay 1 2 * b₀ :=
+    mul_nonneg (mul_nonneg hinv₀ hC₁) hb₀
+  have hrest : 0 ≤ C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 * b₀ * b₁ :=
+    mul_nonneg (mul_nonneg (mul_nonneg hC₀ hC₁) hb₀) hb₁
+  have hfactor : Real.sqrt (2 : ℝ) * (t 0)⁻¹ ≤
+      2 * ((t 0)⁻¹ + (t 1)⁻¹) := by
+    calc
+      Real.sqrt (2 : ℝ) * (t 0)⁻¹ ≤ 2 * (t 0)⁻¹ :=
+        mul_le_mul_of_nonneg_right hsqrtLe hinv₀
+      _ ≤ 2 * ((t 0)⁻¹ + (t 1)⁻¹) :=
+        mul_le_mul_of_nonneg_left (le_add_of_nonneg_right hinv₁) (by norm_num)
+  calc
+    |Real.sqrt 2 * deriv (gaussianRescale (t 0)) (W 1 v).1 *
+        gaussianRescale (t 1) (W 1 v).2| =
+        Real.sqrt 2 * (|deriv (gaussianRescale (t 0)) (W 1 v).1| *
+          |gaussianRescale (t 1) (W 1 v).2|) := by
+      rw [abs_mul, abs_mul, abs_of_nonneg hsqrtNonneg]
+      ring
+    _ ≤ Real.sqrt 2 *
+        (((t 0)⁻¹ * C_gaussianBumpDecay 1 2 * b₀) *
+          (C_gaussianBumpDecay 0 2 * b₁)) := by
+      exact mul_le_mul_of_nonneg_left
+        (mul_le_mul hd₀ hg₁ (abs_nonneg _) hrightNonneg) hsqrtNonneg
+    _ = (Real.sqrt 2 * (t 0)⁻¹) *
+        (C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 * b₀ * b₁) := by
+      ring
+    _ ≤ (2 * ((t 0)⁻¹ + (t 1)⁻¹)) *
+        (C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 * b₀ * b₁) :=
+      mul_le_mul_of_nonneg_right hfactor hrest
+    _ = 2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 *
+        ((t 0)⁻¹ + (t 1)⁻¹) * (b₀ * b₁) := by ring
+    _ = 2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 *
+        ((t 0)⁻¹ + (t 1)⁻¹) *
+          (scaledBracketBump 2 (t 0) (W 1 v).1 *
+            scaledBracketBump 2 (t 1) (W 1 v).2) := by
+      simp only [b₀, b₁]
+
 /-- This auxiliary abbreviation records the `\ell^1` size `|m|` of an element of
 `\mathbb N^2`, used in the displayed Gaussian series. -/
 def aux_natPairWeight (m : Fin 2 → ℕ) : ℕ := m 0 + m 1
@@ -293,8 +417,7 @@ into the derivative kernel majorant. -/
 theorem aux_C_hKernelDerivativeEstimateGaussianDomination_nonneg :
     0 ≤ C_hKernelDerivativeEstimateGaussianDomination := by
   have hgaussian (m N : ℕ) : 0 ≤ C_gaussianBumpDecay m N := by
-    unfold C_gaussianBumpDecay
-    exact Real.rpow_nonneg (by positivity) _
+    exact aux_C_gaussianBumpDecay_nonneg m N
   have hdiagonal : 0 ≤ C_diagonalSquareRoot 2 := by
     unfold C_diagonalSquareRoot
     exact mul_nonneg (Real.sqrt_nonneg _)
@@ -318,17 +441,17 @@ def C_gaussianDominationCombinedDistance : ℕ := 2
 
 /-- Constant from Proposition \ref{Gaussian domination combined}, formalized by
 `gaussianDominationCombined`. -/
-def C_gaussianDominationCombined : ℝ := (100 : ℝ) ^ (100 : ℕ)
+def C_gaussianDominationCombined : ℝ := (2 : ℝ) ^ (153 : ℕ)
 
 /-- Constant from Proposition \ref{Gauss domination case 1}, formalized by
 `gaussDominationCase1`. -/
 noncomputable def C_gaussDominationCase1 : ℝ :=
-  (2 : ℝ) ^ (7 : ℕ) * Real.pi * Real.exp (2 * Real.pi) *
+  2 * ((2 : ℝ) ^ (7 : ℕ) * Real.pi * Real.exp (2 * Real.pi) *
     C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2 *
     C_hKernelEstimateGaussianDomination *
     max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
       (4 * C_bumpTriangle (-(1 / 2)) (1 / 2) (3 / 2) (3 / 2) *
-        C_twoBumpEstimate (3 / 2) (3 / 2))
+        C_twoBumpEstimate (3 / 2) (3 / 2)))
 
 /-- Constant from Proposition \ref{Gauss domination case 2}, formalized by
 `gaussDominationCase2`. -/
@@ -544,8 +667,7 @@ theorem aux_twoDimensionalGaussian_le_gaussianBumpProduct (t : Fin 2 → ℝ)
         scaledBracketBump 2 (t 1) (W u v).2) := by
   unfold twoDimensionalGaussian
   have hC : 0 ≤ C_gaussianBumpDecay 0 2 := by
-    unfold C_gaussianBumpDecay
-    exact Real.rpow_nonneg (by positivity) _
+    exact aux_C_gaussianBumpDecay_nonneg 0 2
   rw [← abs_of_nonneg (aux_gaussianRescale_nonneg (ht 0) _),
     ← abs_of_nonneg (aux_gaussianRescale_nonneg (ht 1) _)]
   calc
@@ -574,6 +696,23 @@ theorem aux_sixTermKernelMajorant {A c d S r₀ r₁ : ℝ}
   have hdSq : 0 ≤ d ^ 2 := sq_nonneg d
   nlinarith [mul_nonneg hfourc hr₀, mul_nonneg hfourc hr₁,
     mul_nonneg hdSq hS]
+
+/-- This auxiliary arithmetic step combines the tensor derivative contribution and the two
+Gaussian derivative contributions into the six-term differentiated-kernel majorant. -/
+theorem aux_sixTermDerivativeMajorant {X c d g S r₀ r₁ : ℝ}
+    (hc : 0 ≤ c) (hd : 0 ≤ d) (hg : 0 ≤ g)
+    (hS : 0 ≤ S) (hr₀ : 0 ≤ r₀) (hr₁ : 0 ≤ r₁)
+    (hX : X ≤ 4 * c * d * S) :
+    X + g * r₀ + g * r₁ ≤ (4 * c * d + g) * (S + r₀ + r₁) := by
+  have hcd : 0 ≤ 4 * c * d := by positivity
+  have hextra : 0 ≤ 4 * c * d * r₀ + 4 * c * d * r₁ + g * S := by positivity
+  calc
+    X + g * r₀ + g * r₁ ≤ 4 * c * d * S + g * r₀ + g * r₁ := by
+      linarith
+    _ ≤ (4 * c * d * S + g * r₀ + g * r₁) +
+        (4 * c * d * r₀ + 4 * c * d * r₁ + g * S) :=
+      le_add_of_nonneg_right hextra
+    _ = (4 * c * d + g) * (S + r₀ + r₁) := by ring
 
 /-- This auxiliary comparison replaces a scale lying between `t` and `2t` by `t` in the
 second-order bracket bump.  It is the elementary scale comparison used in both orientation
@@ -729,13 +868,195 @@ theorem aux_deriv_sMultiplier_eq_diagonalSquareRoot {n : ℕ}
     rw [aux_squareRootGaussianDifference_deriv_eq_diagonalSquareRoot]
     simp [aux_sMultiplierScale, h]
 
+/-- This auxiliary identity evaluates the diagonal derivative of a difference once both
+restrictions to the diagonal line are differentiable. -/
+theorem aux_diagonalDerivative_sub
+    {f g : RealPlane → ℝ} {v : RealPlane}
+    (hf : DifferentiableAt ℝ (fun t : ℝ => f (v.1 + t, v.2 + t)) 0)
+    (hg : DifferentiableAt ℝ (fun t : ℝ => g (v.1 + t, v.2 + t)) 0) :
+    aux_diagonalDerivative (fun w : RealPlane => f w - g w) v =
+      aux_diagonalDerivative f v - aux_diagonalDerivative g v := by
+  unfold aux_diagonalDerivative
+  exact deriv_sub hf hg
+
+/-- This auxiliary supplies differentiability along the diagonal line for a tensor square. -/
+theorem aux_tensor_line_differentiable {f : ℝ → ℝ} {v : RealPlane}
+    (hf₀ : DifferentiableAt ℝ f v.1) (hf₁ : DifferentiableAt ℝ f v.2) :
+    DifferentiableAt ℝ (fun t : ℝ => f (v.1 + t) * f (v.2 + t)) 0 := by
+  have harg₀base :=
+    (hasDerivAt_const (x := (0 : ℝ)) (c := v.1)).add (hasDerivAt_id (x := (0 : ℝ)))
+  have harg₀ : HasDerivAt (fun t : ℝ => v.1 + t) 1 0 := by
+    have heq : (fun t : ℝ => v.1 + t) =ᶠ[nhds 0]
+        ((fun _ : ℝ => v.1) + id) := by
+      filter_upwards [] with t
+      rfl
+    have harg₀' : HasDerivAt (fun t : ℝ => v.1 + t) (0 + 1) 0 :=
+      harg₀base.congr_of_eventuallyEq heq
+    simpa using harg₀'
+  have harg₁base :=
+    (hasDerivAt_const (x := (0 : ℝ)) (c := v.2)).add (hasDerivAt_id (x := (0 : ℝ)))
+  have harg₁ : HasDerivAt (fun t : ℝ => v.2 + t) 1 0 := by
+    have heq : (fun t : ℝ => v.2 + t) =ᶠ[nhds 0]
+        ((fun _ : ℝ => v.2) + id) := by
+      filter_upwards [] with t
+      rfl
+    have harg₁' : HasDerivAt (fun t : ℝ => v.2 + t) (0 + 1) 0 :=
+      harg₁base.congr_of_eventuallyEq heq
+    simpa using harg₁'
+  have hleft : HasDerivAt (fun t : ℝ => f (v.1 + t)) (deriv f v.1) 0 := by
+    have hf₀' : HasDerivAt f (deriv f v.1) (v.1 + 0) := by
+      simpa using hf₀.hasDerivAt
+    have hleft₀ := hf₀'.comp 0 harg₀
+    have heq : (fun t : ℝ => f (v.1 + t)) =ᶠ[nhds 0]
+        (f ∘ fun t : ℝ => v.1 + t) := by
+      filter_upwards [] with t
+      rfl
+    have hleft₁ : HasDerivAt (fun t : ℝ => f (v.1 + t)) (deriv f v.1 * 1) 0 :=
+      hleft₀.congr_of_eventuallyEq heq
+    simpa using hleft₁
+  have hright : HasDerivAt (fun t : ℝ => f (v.2 + t)) (deriv f v.2) 0 := by
+    have hf₁' : HasDerivAt f (deriv f v.2) (v.2 + 0) := by
+      simpa using hf₁.hasDerivAt
+    have hright₀ := hf₁'.comp 0 harg₁
+    have heq : (fun t : ℝ => f (v.2 + t)) =ᶠ[nhds 0]
+        (f ∘ fun t : ℝ => v.2 + t) := by
+      filter_upwards [] with t
+      rfl
+    have hright₁ : HasDerivAt (fun t : ℝ => f (v.2 + t)) (deriv f v.2 * 1) 0 :=
+      hright₀.congr_of_eventuallyEq heq
+    simpa using hright₁
+  exact (hleft.mul hright).differentiableAt
+
+/-- The scalar multiplier is differentiable, by its diagonal-square-root representation. -/
+theorem aux_sMultiplier_differentiable {n : ℕ}
+    (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) :
+    Differentiable ℝ (sMultiplier γ i j) := by
+  rw [show sMultiplier γ i j =
+      diagonalSquareRoot (aux_sMultiplierScale γ i (j - 1))
+        (aux_sMultiplierScale γ i j) by
+    funext x
+    exact aux_sMultiplier_eq_diagonalSquareRoot γ i j x]
+  have hsp := aux_sMultiplierScale_spaced γ i (j - 1)
+  apply derivativeDiagonalSquareRoot_differentiable
+  · linarith [hsp.1]
+  · convert hsp.2 using 1 <;> ring
+
+/-- Each gamma Gaussian is differentiable along every translated diagonal line. -/
+theorem aux_gammaGaussian_diagonal_differentiable {n : ℕ}
+    (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ)
+    (v : RealPlane) :
+    DifferentiableAt ℝ (fun t : ℝ => gammaGaussian γ i j (v.1 + t, v.2 + t)) 0 := by
+  unfold gammaGaussian twoDimensionalGaussian
+  by_cases h : γ.orientation i = 0
+  · simp [W, h]
+    apply DifferentiableAt.mul
+    · apply (gaussianRescale_hasDerivAt (γ.scales i 0 j) _).differentiableAt.comp 0
+      fun_prop
+    · apply (gaussianRescale_hasDerivAt (γ.scales i 1 j) _).differentiableAt.comp 0
+      fun_prop
+  · simp [W, h]
+    apply DifferentiableAt.mul
+    · apply (gaussianRescale_hasDerivAt (γ.scales i 0 j) _).differentiableAt.comp 0
+      fun_prop
+    · apply (gaussianRescale_hasDerivAt (γ.scales i 1 j) _).differentiableAt.comp 0
+      fun_prop
+
+/-- This auxiliary identity expands the diagonal derivative of the H multiplier once its
+component restrictions to the diagonal line are differentiable. -/
+theorem aux_hMultiplier_diagonalDerivative_decomposition
+    {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) (v : RealPlane)
+    (hs₀ : DifferentiableAt ℝ (sMultiplier γ i j) v.1)
+    (hs₁ : DifferentiableAt ℝ (sMultiplier γ i j) v.2)
+    (htensor : DifferentiableAt ℝ (fun t : ℝ =>
+      sMultiplier γ i j (v.1 + t) * sMultiplier γ i j (v.2 + t)) 0)
+    (hprev : DifferentiableAt ℝ (fun t : ℝ =>
+      gammaGaussian γ i (j - 1) (v.1 + t, v.2 + t)) 0)
+    (hcurr : DifferentiableAt ℝ (fun t : ℝ =>
+      gammaGaussian γ i j (v.1 + t, v.2 + t)) 0) :
+    aux_diagonalDerivative (hMultiplier γ i j) v =
+      (deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+        sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2) -
+      (aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v -
+        aux_diagonalDerivative (gammaGaussian γ i j) v) := by
+  change aux_diagonalDerivative (fun w : RealPlane =>
+    sMultiplier γ i j w.1 * sMultiplier γ i j w.2 - gaussianDifference γ i j w) v = _
+  have hgaussianDifference : aux_diagonalDerivative (gaussianDifference γ i j) v =
+      aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v -
+        aux_diagonalDerivative (gammaGaussian γ i j) v := by
+    unfold gaussianDifference
+    exact aux_diagonalDerivative_sub hprev hcurr
+  have hgaussianDifferenceDiff : DifferentiableAt ℝ (fun t : ℝ =>
+      gaussianDifference γ i j (v.1 + t, v.2 + t)) 0 := by
+    change DifferentiableAt ℝ
+      ((fun t : ℝ => gammaGaussian γ i (j - 1) (v.1 + t, v.2 + t)) -
+        fun t : ℝ => gammaGaussian γ i j (v.1 + t, v.2 + t)) 0
+    exact hprev.sub hcurr
+  rw [aux_diagonalDerivative_sub htensor hgaussianDifferenceDiff]
+  rw [aux_diagonalDerivative_tensor hs₀ hs₁, hgaussianDifference]
+
+/-- This auxiliary triangle inequality isolates the tensor and two Gaussian derivative terms
+in the differentiated H multiplier. -/
+theorem aux_abs_hMultiplier_diagonalDerivative_triangle
+    {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) (v : RealPlane)
+    (hs₀ : DifferentiableAt ℝ (sMultiplier γ i j) v.1)
+    (hs₁ : DifferentiableAt ℝ (sMultiplier γ i j) v.2)
+    (htensor : DifferentiableAt ℝ (fun t : ℝ =>
+      sMultiplier γ i j (v.1 + t) * sMultiplier γ i j (v.2 + t)) 0)
+    (hprev : DifferentiableAt ℝ (fun t : ℝ =>
+      gammaGaussian γ i (j - 1) (v.1 + t, v.2 + t)) 0)
+    (hcurr : DifferentiableAt ℝ (fun t : ℝ =>
+      gammaGaussian γ i j (v.1 + t, v.2 + t)) 0) :
+    |aux_diagonalDerivative (hMultiplier γ i j) v| ≤
+      |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+        sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| +
+      |aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v| +
+        |aux_diagonalDerivative (gammaGaussian γ i j) v| := by
+  rw [aux_hMultiplier_diagonalDerivative_decomposition γ i j v hs₀ hs₁ htensor hprev hcurr]
+  calc
+    |(deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+        sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2) -
+        (aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v -
+          aux_diagonalDerivative (gammaGaussian γ i j) v)| ≤
+        |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+          sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| +
+          |aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v -
+          aux_diagonalDerivative (gammaGaussian γ i j) v| := by
+      calc
+        |(deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+            sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2) -
+            (aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v -
+              aux_diagonalDerivative (gammaGaussian γ i j) v)| ≤
+            |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+              sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| +
+              |0 - (aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v -
+                aux_diagonalDerivative (gammaGaussian γ i j) v)| :=
+          by simpa using (abs_sub_le
+            (deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+              sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2)
+            0
+            (aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v -
+              aux_diagonalDerivative (gammaGaussian γ i j) v))
+        _ = _ := by
+          congr 1
+          rw [← abs_neg]
+          congr 1
+          ring
+    _ ≤ |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+          sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| +
+        (|aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v| +
+          |aux_diagonalDerivative (gammaGaussian γ i j) v|) := by
+      apply add_le_add_right
+      simpa using (abs_sub_le
+        (aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v) 0
+        (aux_diagonalDerivative (gammaGaussian γ i j) v))
+    _ = _ := by ring
+
 /-- This auxiliary sign check permits the diagonal-square-root bound to be enlarged by the
 scale-comparison factor in the kernel estimate. -/
 theorem aux_C_diagonalSquareRoot_two_nonneg :
     0 ≤ C_diagonalSquareRoot 2 := by
   have hgaussian (m N : ℕ) : 0 ≤ C_gaussianBumpDecay m N := by
-    unfold C_gaussianBumpDecay
-    exact Real.rpow_nonneg (by positivity) _
+    exact aux_C_gaussianBumpDecay_nonneg m N
   unfold C_diagonalSquareRoot
   exact mul_nonneg (Real.sqrt_nonneg _)
     (le_trans (hgaussian 0 2) (le_max_left _ _))
@@ -973,8 +1294,7 @@ or transported through the scale comparisons used below. -/
 theorem aux_C_derivativeDiagonalSquareRoot_two_nonneg :
     0 ≤ C_derivativeDiagonalSquareRoot 2 := by
   have hgaussian (m N : ℕ) : 0 ≤ C_gaussianBumpDecay m N := by
-    unfold C_gaussianBumpDecay
-    exact Real.rpow_nonneg (by positivity) _
+    exact aux_C_gaussianBumpDecay_nonneg m N
   unfold C_derivativeDiagonalSquareRoot
   exact mul_nonneg (by norm_num)
     (le_trans (hgaussian 1 2) (le_max_left _ _))
@@ -1316,8 +1636,7 @@ theorem aux_hKernelGaussianBound_orientation_zero_of_sBounds {n : ℕ}
         (fun r => γ.scales i r j)
         (fun r => (γ.scales_spaced i r j).1) (γ.orientation i) v)
   have hgaussConst : 0 ≤ C_gaussianBumpDecay 0 2 := by
-    unfold C_gaussianBumpDecay
-    exact Real.rpow_nonneg (by positivity) _
+    exact aux_C_gaussianBumpDecay_nonneg 0 2
   have hmajorant :
       |sMultiplier γ i j v.1 * sMultiplier γ i j v.2| +
           C_gaussianBumpDecay 0 2 ^ 2 * r₀ +
@@ -1440,8 +1759,7 @@ theorem aux_hKernelGaussianBound_orientation_one_of_sBounds {n : ℕ}
         (fun r => γ.scales i r j)
         (fun r => (γ.scales_spaced i r j).1) (γ.orientation i) v)
   have hgaussConst : 0 ≤ C_gaussianBumpDecay 0 2 := by
-    unfold C_gaussianBumpDecay
-    exact Real.rpow_nonneg (by positivity) _
+    exact aux_C_gaussianBumpDecay_nonneg 0 2
   have hmajorant :
       |sMultiplier γ i j v.1 * sMultiplier γ i j v.2| +
           C_gaussianBumpDecay 0 2 ^ 2 * r₀ +
@@ -1471,6 +1789,656 @@ theorem aux_hKernelGaussianBound_orientation_one_of_sBounds {n : ℕ}
       rw [hsum]
       unfold C_hKernelEstimateGaussianDomination
       ring
+
+/-- Source label `\ref{H kernel estimate Gaussian domination}`. -/
+theorem hKernelEstimateGaussianDomination {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) :
+    ∃ P : Multiset (SequencePair × Fin 2), aux_HKernelGaussianBound γ i P := by
+  refine ⟨aux_hKernelGaussianMultiset γ i, ?_⟩
+  by_cases h : γ.orientation i = 0
+  · apply aux_hKernelGaussianBound_orientation_zero_of_sBounds γ i h
+    intro j x
+    apply aux_sMultiplier_bound_orientation_zero_of_diagonal γ i j h
+    intro y
+    rw [aux_sMultiplier_eq_diagonalSquareRoot]
+    have hsp := aux_sMultiplierScale_spaced γ i (j - 1)
+    apply diagonalSquareRoot_bound 2 (by norm_num)
+    · linarith [hsp.1]
+    · convert hsp.2 using 1 <;> ring
+  · apply aux_hKernelGaussianBound_orientation_one_of_sBounds γ i h
+    intro j x
+    apply aux_sMultiplier_bound_orientation_one_of_diagonal γ i j h
+    intro y
+    rw [aux_sMultiplier_eq_diagonalSquareRoot]
+    have hsp := aux_sMultiplierScale_spaced γ i (j - 1)
+    apply diagonalSquareRoot_bound 2 (by norm_num)
+    · linarith [hsp.1]
+    · convert hsp.2 using 1 <;> ring
+
+/-- Source label `\ref{constant H kernel estimate Gaussian domination}`. -/
+theorem constantHKernelEstimateGaussianDomination :
+    C_hKernelEstimateGaussianDomination = 51 ^ 2 * 2 ^ 15 + 12 ^ 2 ∧
+      C_hKernelEstimateGaussianDomination < 2 ^ 27 := by
+  have hgaussian : C_gaussianBumpDecay 0 2 = 12 := by
+    norm_num [C_gaussianBumpDecay]
+  have hsqrt : (Real.sqrt (2 : ℝ)) ^ 2 = 2 := by norm_num
+  constructor
+  · rw [C_hKernelEstimateGaussianDomination, aux_constantDiagonalSquareRoot_two, hgaussian]
+    ring_nf
+    rw [hsqrt]
+    norm_num
+  · rw [C_hKernelEstimateGaussianDomination, aux_constantDiagonalSquareRoot_two, hgaussian]
+    ring_nf
+    rw [hsqrt]
+    norm_num
+
+/-- This auxiliary theorem carries out the differentiated six-term kernel algebra in the
+identity-orientation case. -/
+theorem aux_hKernelDerivativeGaussianBound_orientation_zero_of_sBounds {n : ℕ}
+    (γ : GeometricParameters n) (i : Fin γ.k) (horientation : γ.orientation i = 0)
+    (hs : ∀ (j : ℤ) (x : ℝ), |sMultiplier γ i j x| ≤
+      2 * C_diagonalSquareRoot 2 *
+        (scaledBracketBump 2 (aux_hKernelMaxScale γ i 0 j) x +
+          scaledBracketBump 2 (aux_hKernelMaxScale γ i 1 j) x))
+    (hds : ∀ (j : ℤ) (x : ℝ), |deriv (sMultiplier γ i j) x| ≤
+      C_derivativeDiagonalSquareRoot 2 *
+        ((aux_hKernelMaxScale γ i 0 j)⁻¹ *
+            scaledBracketBump 2 (aux_hKernelMaxScale γ i 0 j) x +
+          (aux_hKernelMaxScale γ i 1 j)⁻¹ *
+            scaledBracketBump 2 (aux_hKernelMaxScale γ i 1 j) x)) :
+    aux_HKernelDerivativeGaussianBound γ i (aux_hKernelGaussianMultiset γ i) := by
+  classical
+  refine ⟨aux_hKernelGaussianMultiset_valid γ i,
+    (aux_hKernelGaussianMultiset_card γ i).le, ?_⟩
+  intro v j
+  let a₀ : ℝ := (aux_hKernelMaxScale γ i 0 j)⁻¹
+  let a₁ : ℝ := (aux_hKernelMaxScale γ i 1 j)⁻¹
+  let b₀ : ℝ := (aux_hKernelMaxScale γ i 0 j)⁻¹
+  let b₁ : ℝ := (aux_hKernelMaxScale γ i 1 j)⁻¹
+  let u₀ : ℝ := scaledBracketBump 2 (aux_hKernelMaxScale γ i 0 j) v.1
+  let u₁ : ℝ := scaledBracketBump 2 (aux_hKernelMaxScale γ i 1 j) v.1
+  let w₀ : ℝ := scaledBracketBump 2 (aux_hKernelMaxScale γ i 0 j) v.2
+  let w₁ : ℝ := scaledBracketBump 2 (aux_hKernelMaxScale γ i 1 j) v.2
+  let S : ℝ :=
+    (a₀ + b₀) * u₀ * w₀ + (a₀ + b₁) * u₀ * w₁ +
+      (a₁ + b₀) * u₁ * w₀ + (a₁ + b₁) * u₁ * w₁
+  let r₀ : ℝ :=
+    ((aux_hKernelShiftedScale γ i 0 0 j)⁻¹ +
+      (aux_hKernelShiftedScale γ i 0 1 j)⁻¹) *
+      (scaledBracketBump 2 (aux_hKernelShiftedScale γ i 0 0 j) v.1 *
+        scaledBracketBump 2 (aux_hKernelShiftedScale γ i 0 1 j) v.2)
+  let r₁ : ℝ :=
+    ((aux_hKernelShiftedScale γ i 1 0 j)⁻¹ +
+      (aux_hKernelShiftedScale γ i 1 1 j)⁻¹) *
+      (scaledBracketBump 2 (aux_hKernelShiftedScale γ i 1 0 j) v.1 *
+        scaledBracketBump 2 (aux_hKernelShiftedScale γ i 1 1 j) v.2)
+  have ha₀ : 0 ≤ a₀ := by
+    dsimp [a₀]
+    exact inv_nonneg.mpr ((aux_hKernelMaxScale_spaced γ i 0 j).1).le
+  have ha₁ : 0 ≤ a₁ := by
+    dsimp [a₁]
+    exact inv_nonneg.mpr ((aux_hKernelMaxScale_spaced γ i 1 j).1).le
+  have hb₀ : 0 ≤ b₀ := by
+    dsimp [b₀]
+    exact inv_nonneg.mpr ((aux_hKernelMaxScale_spaced γ i 0 j).1).le
+  have hb₁ : 0 ≤ b₁ := by
+    dsimp [b₁]
+    exact inv_nonneg.mpr ((aux_hKernelMaxScale_spaced γ i 1 j).1).le
+  have hu₀ : 0 ≤ u₀ := by
+    dsimp [u₀]
+    exact aux_scaledBracketBump_nonneg 2 ((aux_hKernelMaxScale_spaced γ i 0 j).1) _
+  have hu₁ : 0 ≤ u₁ := by
+    dsimp [u₁]
+    exact aux_scaledBracketBump_nonneg 2 ((aux_hKernelMaxScale_spaced γ i 1 j).1) _
+  have hw₀ : 0 ≤ w₀ := by
+    dsimp [w₀]
+    exact aux_scaledBracketBump_nonneg 2 ((aux_hKernelMaxScale_spaced γ i 0 j).1) _
+  have hw₁ : 0 ≤ w₁ := by
+    dsimp [w₁]
+    exact aux_scaledBracketBump_nonneg 2 ((aux_hKernelMaxScale_spaced γ i 1 j).1) _
+  have hS : 0 ≤ S := by
+    dsimp [S]
+    positivity
+  have hr₀ : 0 ≤ r₀ := by
+    dsimp [r₀]
+    apply mul_nonneg
+    · exact add_nonneg
+        (inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 0 0 j).1).le)
+        (inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 0 1 j).1).le)
+    · exact mul_nonneg
+        (aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 0 0 j).1) _)
+        (aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 0 1 j).1) _)
+  have hr₁ : 0 ≤ r₁ := by
+    dsimp [r₁]
+    apply mul_nonneg
+    · exact add_nonneg
+        (inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 1 0 j).1).le)
+        (inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 1 1 j).1).le)
+    · exact mul_nonneg
+        (aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 1 0 j).1) _)
+        (aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 1 1 j).1) _)
+  have hsx : |sMultiplier γ i j v.1| ≤ 2 * C_diagonalSquareRoot 2 * (u₀ + u₁) := by
+    simpa [u₀, u₁] using hs j v.1
+  have hsy : |sMultiplier γ i j v.2| ≤ 2 * C_diagonalSquareRoot 2 * (w₀ + w₁) := by
+    simpa [w₀, w₁] using hs j v.2
+  have hdsx : |deriv (sMultiplier γ i j) v.1| ≤
+      C_derivativeDiagonalSquareRoot 2 * (a₀ * u₀ + a₁ * u₁) := by
+    simpa [a₀, a₁, u₀, u₁] using hds j v.1
+  have hdsy : |deriv (sMultiplier γ i j) v.2| ≤
+      C_derivativeDiagonalSquareRoot 2 * (b₀ * w₀ + b₁ * w₁) := by
+    simpa [b₀, b₁, w₀, w₁] using hds j v.2
+  have htensor :
+      |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+          sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| ≤
+        4 * C_diagonalSquareRoot 2 * C_derivativeDiagonalSquareRoot 2 * S := by
+    simpa [S] using
+      (aux_abs_tensorDerivative_le_four_products
+        aux_C_diagonalSquareRoot_two_nonneg
+        aux_C_derivativeDiagonalSquareRoot_two_nonneg ha₀ ha₁ hb₀ hb₁ hu₀ hu₁ hw₀ hw₁
+        hsx hsy hdsx hdsy)
+  have hgammaPrev :
+      |aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v| ≤
+        (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₀ := by
+    calc
+      |aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v| ≤
+          2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 *
+            ((γ.scales i 0 (j - 1))⁻¹ + (γ.scales i 1 (j - 1))⁻¹) *
+              (scaledBracketBump 2 (γ.scales i 0 (j - 1)) v.1 *
+                scaledBracketBump 2 (γ.scales i 1 (j - 1)) v.2) := by
+        simpa [gammaGaussian, horientation, W] using
+          (aux_abs_diagonalDerivative_twoDimensionalGaussian_zero_le
+            (fun r => γ.scales i r (j - 1))
+            (fun r => (γ.scales_spaced i r (j - 1)).1) v)
+      _ = (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₀ := by
+        simp [r₀, aux_hKernelShiftedScale]
+        ring
+  have hgammaCurr :
+      |aux_diagonalDerivative (gammaGaussian γ i j) v| ≤
+        (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₁ := by
+    calc
+      |aux_diagonalDerivative (gammaGaussian γ i j) v| ≤
+          2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 *
+            ((γ.scales i 0 j)⁻¹ + (γ.scales i 1 j)⁻¹) *
+              (scaledBracketBump 2 (γ.scales i 0 j) v.1 *
+                scaledBracketBump 2 (γ.scales i 1 j) v.2) := by
+        simpa [gammaGaussian, horientation, W] using
+          (aux_abs_diagonalDerivative_twoDimensionalGaussian_zero_le
+            (fun r => γ.scales i r j)
+            (fun r => (γ.scales_spaced i r j).1) v)
+      _ = (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₁ := by
+        simp [r₁, aux_hKernelShiftedScale]
+        ring
+  have hsDiff₀ : DifferentiableAt ℝ (sMultiplier γ i j) v.1 :=
+    (aux_sMultiplier_differentiable γ i j).differentiableAt
+  have hsDiff₁ : DifferentiableAt ℝ (sMultiplier γ i j) v.2 :=
+    (aux_sMultiplier_differentiable γ i j).differentiableAt
+  have htensorDiff := aux_tensor_line_differentiable hsDiff₀ hsDiff₁
+  have htriangle := aux_abs_hMultiplier_diagonalDerivative_triangle γ i j v
+    hsDiff₀ hsDiff₁ htensorDiff
+    (aux_gammaGaussian_diagonal_differentiable γ i (j - 1) v)
+    (aux_gammaGaussian_diagonal_differentiable γ i j v)
+  have hmain :
+      |aux_diagonalDerivative (hMultiplier γ i j) v| ≤
+        |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+          sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| +
+          (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₀ +
+          (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₁ := by
+    linarith [htriangle, hgammaPrev, hgammaCurr]
+  have hG : 0 ≤ 2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 := by
+    exact mul_nonneg
+      (mul_nonneg (by norm_num) (aux_C_gaussianBumpDecay_nonneg 0 2))
+      (aux_C_gaussianBumpDecay_nonneg 1 2)
+  have hmajorant :
+      |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+          sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| +
+          (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₀ +
+          (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₁ ≤
+        (4 * C_diagonalSquareRoot 2 * C_derivativeDiagonalSquareRoot 2 +
+          2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * (S + r₀ + r₁) := by
+    exact aux_sixTermDerivativeMajorant
+      aux_C_diagonalSquareRoot_two_nonneg
+      aux_C_derivativeDiagonalSquareRoot_two_nonneg hG hS hr₀ hr₁ htensor
+  have hsum :
+      ((aux_hKernelGaussianMultiset γ i).map fun q =>
+        ((q.1 0 j)⁻¹ + (q.1 1 j)⁻¹) * aux_kernelBracketProduct q j v).sum =
+        S + r₀ + r₁ := by
+    simp [aux_hKernelGaussianMultiset, horientation, aux_kernelBracketProduct,
+      aux_sequencePairOf, W, a₀, a₁, b₀, b₁, u₀, u₁, w₀, w₁, S, r₀, r₁] <;> ring
+  calc
+    |aux_diagonalDerivative (hMultiplier γ i j) v| ≤
+      (4 * C_diagonalSquareRoot 2 * C_derivativeDiagonalSquareRoot 2 +
+        2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * (S + r₀ + r₁) :=
+      le_trans hmain hmajorant
+    _ = C_hKernelDerivativeEstimateGaussianDomination *
+        ((aux_hKernelGaussianMultiset γ i).map fun q =>
+          ((q.1 0 j)⁻¹ + (q.1 1 j)⁻¹) * aux_kernelBracketProduct q j v).sum := by
+      rw [hsum]
+      unfold C_hKernelDerivativeEstimateGaussianDomination
+      ring
+/-- This auxiliary theorem carries out the differentiated six-term kernel algebra in the
+nontrivial-orientation case. -/
+theorem aux_hKernelDerivativeGaussianBound_orientation_one_of_sBounds {n : ℕ}
+    (γ : GeometricParameters n) (i : Fin γ.k) (horientation : γ.orientation i ≠ 0)
+    (hs : ∀ (j : ℤ) (x : ℝ), |sMultiplier γ i j x| ≤
+      2 * C_diagonalSquareRoot 2 *
+        (scaledBracketBump 2 (aux_hKernelShiftedScale γ i 0 1 j) x +
+          scaledBracketBump 2 (aux_hKernelShiftedScale γ i 1 1 j) x))
+    (hds : ∀ (j : ℤ) (x : ℝ), |deriv (sMultiplier γ i j) x| ≤
+      C_derivativeDiagonalSquareRoot 2 *
+        ((aux_hKernelShiftedScale γ i 0 1 j)⁻¹ *
+            scaledBracketBump 2 (aux_hKernelShiftedScale γ i 0 1 j) x +
+          (aux_hKernelShiftedScale γ i 1 1 j)⁻¹ *
+            scaledBracketBump 2 (aux_hKernelShiftedScale γ i 1 1 j) x)) :
+    aux_HKernelDerivativeGaussianBound γ i (aux_hKernelGaussianMultiset γ i) := by
+  classical
+  refine ⟨aux_hKernelGaussianMultiset_valid γ i,
+    (aux_hKernelGaussianMultiset_card γ i).le, ?_⟩
+  intro v j
+  let a₀ : ℝ := (aux_hKernelShiftedScale γ i 0 1 j)⁻¹
+  let a₁ : ℝ := (aux_hKernelShiftedScale γ i 1 1 j)⁻¹
+  let b₀ : ℝ := (aux_hKernelShiftedScale γ i 0 1 j)⁻¹
+  let b₁ : ℝ := (aux_hKernelShiftedScale γ i 1 1 j)⁻¹
+  let u₀ : ℝ := scaledBracketBump 2 (aux_hKernelShiftedScale γ i 0 1 j) v.1
+  let u₁ : ℝ := scaledBracketBump 2 (aux_hKernelShiftedScale γ i 1 1 j) v.1
+  let w₀ : ℝ := scaledBracketBump 2 (aux_hKernelShiftedScale γ i 0 1 j) v.2
+  let w₁ : ℝ := scaledBracketBump 2 (aux_hKernelShiftedScale γ i 1 1 j) v.2
+  let S : ℝ :=
+    (a₀ + b₀) * u₀ * w₀ + (a₀ + b₁) * u₀ * w₁ +
+      (a₁ + b₀) * u₁ * w₀ + (a₁ + b₁) * u₁ * w₁
+  let r₀ : ℝ :=
+    ((aux_hKernelShiftedScale γ i 0 0 j)⁻¹ +
+      (aux_hKernelShiftedScale γ i 0 1 j)⁻¹) *
+      (scaledBracketBump 2 (aux_hKernelShiftedScale γ i 0 0 j) (W 1 v).1 *
+        scaledBracketBump 2 (aux_hKernelShiftedScale γ i 0 1 j) (W 1 v).2)
+  let r₁ : ℝ :=
+    ((aux_hKernelShiftedScale γ i 1 0 j)⁻¹ +
+      (aux_hKernelShiftedScale γ i 1 1 j)⁻¹) *
+      (scaledBracketBump 2 (aux_hKernelShiftedScale γ i 1 0 j) (W 1 v).1 *
+        scaledBracketBump 2 (aux_hKernelShiftedScale γ i 1 1 j) (W 1 v).2)
+  have ha₀ : 0 ≤ a₀ := by
+    dsimp [a₀]
+    exact inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 0 1 j).1).le
+  have ha₁ : 0 ≤ a₁ := by
+    dsimp [a₁]
+    exact inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 1 1 j).1).le
+  have hb₀ : 0 ≤ b₀ := by
+    dsimp [b₀]
+    exact inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 0 1 j).1).le
+  have hb₁ : 0 ≤ b₁ := by
+    dsimp [b₁]
+    exact inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 1 1 j).1).le
+  have hu₀ : 0 ≤ u₀ := by
+    dsimp [u₀]
+    exact aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 0 1 j).1) _
+  have hu₁ : 0 ≤ u₁ := by
+    dsimp [u₁]
+    exact aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 1 1 j).1) _
+  have hw₀ : 0 ≤ w₀ := by
+    dsimp [w₀]
+    exact aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 0 1 j).1) _
+  have hw₁ : 0 ≤ w₁ := by
+    dsimp [w₁]
+    exact aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 1 1 j).1) _
+  have hS : 0 ≤ S := by
+    dsimp [S]
+    positivity
+  have hr₀ : 0 ≤ r₀ := by
+    dsimp [r₀]
+    apply mul_nonneg
+    · exact add_nonneg
+        (inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 0 0 j).1).le)
+        (inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 0 1 j).1).le)
+    · exact mul_nonneg
+        (aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 0 0 j).1) _)
+        (aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 0 1 j).1) _)
+  have hr₁ : 0 ≤ r₁ := by
+    dsimp [r₁]
+    apply mul_nonneg
+    · exact add_nonneg
+        (inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 1 0 j).1).le)
+        (inv_nonneg.mpr ((aux_hKernelShiftedScale_spaced γ i 1 1 j).1).le)
+    · exact mul_nonneg
+        (aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 1 0 j).1) _)
+        (aux_scaledBracketBump_nonneg 2 ((aux_hKernelShiftedScale_spaced γ i 1 1 j).1) _)
+  have hsx : |sMultiplier γ i j v.1| ≤ 2 * C_diagonalSquareRoot 2 * (u₀ + u₁) := by
+    simpa [u₀, u₁] using hs j v.1
+  have hsy : |sMultiplier γ i j v.2| ≤ 2 * C_diagonalSquareRoot 2 * (w₀ + w₁) := by
+    simpa [w₀, w₁] using hs j v.2
+  have hdsx : |deriv (sMultiplier γ i j) v.1| ≤
+      C_derivativeDiagonalSquareRoot 2 * (a₀ * u₀ + a₁ * u₁) := by
+    simpa [a₀, a₁, u₀, u₁] using hds j v.1
+  have hdsy : |deriv (sMultiplier γ i j) v.2| ≤
+      C_derivativeDiagonalSquareRoot 2 * (b₀ * w₀ + b₁ * w₁) := by
+    simpa [b₀, b₁, w₀, w₁] using hds j v.2
+  have htensor :
+      |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+          sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| ≤
+        4 * C_diagonalSquareRoot 2 * C_derivativeDiagonalSquareRoot 2 * S := by
+    simpa [S] using
+      (aux_abs_tensorDerivative_le_four_products
+        aux_C_diagonalSquareRoot_two_nonneg
+        aux_C_derivativeDiagonalSquareRoot_two_nonneg ha₀ ha₁ hb₀ hb₁ hu₀ hu₁ hw₀ hw₁
+        hsx hsy hdsx hdsy)
+  have hOne : γ.orientation i = 1 := Fin.eq_one_of_ne_zero _ horientation
+  have hgammaPrev :
+      |aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v| ≤
+        (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₀ := by
+    calc
+      |aux_diagonalDerivative (gammaGaussian γ i (j - 1)) v| ≤
+          2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 *
+            ((γ.scales i 0 (j - 1))⁻¹ + (γ.scales i 1 (j - 1))⁻¹) *
+              (scaledBracketBump 2 (γ.scales i 0 (j - 1)) (W 1 v).1 *
+                scaledBracketBump 2 (γ.scales i 1 (j - 1)) (W 1 v).2) := by
+        simpa [gammaGaussian, hOne, W] using
+          (aux_abs_diagonalDerivative_twoDimensionalGaussian_one_le
+            (fun r => γ.scales i r (j - 1))
+            (fun r => (γ.scales_spaced i r (j - 1)).1) v)
+      _ = (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₀ := by
+        simp [r₀, aux_hKernelShiftedScale]
+        ring
+  have hgammaCurr :
+      |aux_diagonalDerivative (gammaGaussian γ i j) v| ≤
+        (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₁ := by
+    calc
+      |aux_diagonalDerivative (gammaGaussian γ i j) v| ≤
+          2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 *
+            ((γ.scales i 0 j)⁻¹ + (γ.scales i 1 j)⁻¹) *
+              (scaledBracketBump 2 (γ.scales i 0 j) (W 1 v).1 *
+                scaledBracketBump 2 (γ.scales i 1 j) (W 1 v).2) := by
+        simpa [gammaGaussian, hOne, W] using
+          (aux_abs_diagonalDerivative_twoDimensionalGaussian_one_le
+            (fun r => γ.scales i r j)
+            (fun r => (γ.scales_spaced i r j).1) v)
+      _ = (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₁ := by
+        simp [r₁, aux_hKernelShiftedScale]
+        ring
+  have hsDiff₀ : DifferentiableAt ℝ (sMultiplier γ i j) v.1 :=
+    (aux_sMultiplier_differentiable γ i j).differentiableAt
+  have hsDiff₁ : DifferentiableAt ℝ (sMultiplier γ i j) v.2 :=
+    (aux_sMultiplier_differentiable γ i j).differentiableAt
+  have htensorDiff := aux_tensor_line_differentiable hsDiff₀ hsDiff₁
+  have htriangle := aux_abs_hMultiplier_diagonalDerivative_triangle γ i j v
+    hsDiff₀ hsDiff₁ htensorDiff
+    (aux_gammaGaussian_diagonal_differentiable γ i (j - 1) v)
+    (aux_gammaGaussian_diagonal_differentiable γ i j v)
+  have hmain :
+      |aux_diagonalDerivative (hMultiplier γ i j) v| ≤
+        |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+          sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| +
+          (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₀ +
+          (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₁ := by
+    linarith [htriangle, hgammaPrev, hgammaCurr]
+  have hG : 0 ≤ 2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2 := by
+    exact mul_nonneg
+      (mul_nonneg (by norm_num) (aux_C_gaussianBumpDecay_nonneg 0 2))
+      (aux_C_gaussianBumpDecay_nonneg 1 2)
+  have hmajorant :
+      |deriv (sMultiplier γ i j) v.1 * sMultiplier γ i j v.2 +
+          sMultiplier γ i j v.1 * deriv (sMultiplier γ i j) v.2| +
+          (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₀ +
+          (2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * r₁ ≤
+        (4 * C_diagonalSquareRoot 2 * C_derivativeDiagonalSquareRoot 2 +
+          2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * (S + r₀ + r₁) := by
+    exact aux_sixTermDerivativeMajorant
+      aux_C_diagonalSquareRoot_two_nonneg
+      aux_C_derivativeDiagonalSquareRoot_two_nonneg hG hS hr₀ hr₁ htensor
+  have hsum :
+      ((aux_hKernelGaussianMultiset γ i).map fun q =>
+        ((q.1 0 j)⁻¹ + (q.1 1 j)⁻¹) * aux_kernelBracketProduct q j v).sum =
+        S + r₀ + r₁ := by
+    simp [aux_hKernelGaussianMultiset, horientation, aux_kernelBracketProduct,
+      aux_sequencePairOf, W, a₀, a₁, b₀, b₁, u₀, u₁, w₀, w₁, S, r₀, r₁] <;> ring
+  calc
+    |aux_diagonalDerivative (hMultiplier γ i j) v| ≤
+      (4 * C_diagonalSquareRoot 2 * C_derivativeDiagonalSquareRoot 2 +
+        2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2) * (S + r₀ + r₁) :=
+      le_trans hmain hmajorant
+    _ = C_hKernelDerivativeEstimateGaussianDomination *
+        ((aux_hKernelGaussianMultiset γ i).map fun q =>
+          ((q.1 0 j)⁻¹ + (q.1 1 j)⁻¹) * aux_kernelBracketProduct q j v).sum := by
+      rw [hsum]
+      unfold C_hKernelDerivativeEstimateGaussianDomination
+      ring
+
+/-- Source label `\ref{H kernel derivative estimate Gaussian domination}`. -/
+theorem hKernelDerivativeEstimateGaussianDomination {n : ℕ}
+    (γ : GeometricParameters n) (i : Fin γ.k) :
+    ∃ P : Multiset (SequencePair × Fin 2), aux_HKernelDerivativeGaussianBound γ i P := by
+  refine ⟨aux_hKernelGaussianMultiset γ i, ?_⟩
+  by_cases h : γ.orientation i = 0
+  · apply aux_hKernelDerivativeGaussianBound_orientation_zero_of_sBounds γ i h
+    · intro j x
+      apply aux_sMultiplier_bound_orientation_zero_of_diagonal γ i j h
+      intro y
+      rw [aux_sMultiplier_eq_diagonalSquareRoot]
+      have hsp := aux_sMultiplierScale_spaced γ i (j - 1)
+      apply diagonalSquareRoot_bound 2 (by norm_num)
+      · linarith [hsp.1]
+      · convert hsp.2 using 1 <;> ring
+    · intro j x
+      apply aux_deriv_sMultiplier_bound_orientation_zero_of_diagonal γ i j h
+      intro y
+      rw [aux_deriv_sMultiplier_eq_diagonalSquareRoot]
+      have hsp := aux_sMultiplierScale_spaced γ i (j - 1)
+      apply derivativeDiagonalSquareRoot_bound 2 (by norm_num)
+      · linarith [hsp.1]
+      · convert hsp.2 using 1 <;> ring
+  · apply aux_hKernelDerivativeGaussianBound_orientation_one_of_sBounds γ i h
+    · intro j x
+      apply aux_sMultiplier_bound_orientation_one_of_diagonal γ i j h
+      intro y
+      rw [aux_sMultiplier_eq_diagonalSquareRoot]
+      have hsp := aux_sMultiplierScale_spaced γ i (j - 1)
+      apply diagonalSquareRoot_bound 2 (by norm_num)
+      · linarith [hsp.1]
+      · convert hsp.2 using 1 <;> ring
+    · intro j x
+      apply aux_deriv_sMultiplier_bound_orientation_one_of_diagonal γ i j h
+      intro y
+      rw [aux_deriv_sMultiplier_eq_diagonalSquareRoot]
+      have hsp := aux_sMultiplierScale_spaced γ i (j - 1)
+      apply derivativeDiagonalSquareRoot_bound 2 (by norm_num)
+      · linarith [hsp.1]
+      · convert hsp.2 using 1 <;> ring
+
+/-- Source label `\ref{constant H kernel derivative estimate Gaussian domination}`. -/
+theorem constantHKernelDerivativeEstimateGaussianDomination :
+    C_hKernelDerivativeEstimateGaussianDomination < 2 ^ 30 := by
+  have hgaussian0 : C_gaussianBumpDecay 0 2 = 12 := by
+    norm_num [C_gaussianBumpDecay]
+  have hgaussian1 : C_gaussianBumpDecay 1 2 = 24 * Real.sqrt 19 := by
+    norm_num [C_gaussianBumpDecay, Real.rpow_natCast, Real.sqrt_eq_rpow]
+    rw [← Real.sqrt_eq_rpow]
+    rw [show (76 : ℝ) = 4 * 19 by norm_num, Real.sqrt_mul (by norm_num)]
+    have hsqrt19 : (19 : ℝ) ^ (1 / 2 : ℝ) = Real.sqrt 19 := by
+      rw [← Real.sqrt_eq_rpow]
+    rw [hsqrt19]
+    norm_num
+    ring
+  rw [C_hKernelDerivativeEstimateGaussianDomination,
+    aux_constantDiagonalSquareRoot_two,
+    aux_constantDerivativeDiagonalSquareRoot_two, hgaussian0, hgaussian1]
+  have hsqrt2 : Real.sqrt (2 : ℝ) < 3 / 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2),
+      Real.sqrt_nonneg (2 : ℝ)]
+  have hsqrt19 : Real.sqrt (19 : ℝ) < 5 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 19),
+      Real.sqrt_nonneg (19 : ℝ)]
+  have hproduct : Real.sqrt (2 : ℝ) * Real.sqrt 19 < 15 / 2 := by
+    calc
+      Real.sqrt (2 : ℝ) * Real.sqrt 19 < (3 / 2) * Real.sqrt 19 :=
+        mul_lt_mul_of_pos_right hsqrt2 (Real.sqrt_pos.2 (by norm_num))
+      _ < (3 / 2) * 5 := mul_lt_mul_of_pos_left hsqrt19 (by norm_num)
+      _ = 15 / 2 := by norm_num
+  nlinarith
+
+private theorem aux_gaussDominationCase1_lt_two_pow_118 :
+    C_gaussDominationCase1 < (2 : ℝ) ^ (118 : ℕ) := by
+  have hexp : Real.exp (2 * Real.pi) < 6656 := by
+    calc
+      Real.exp (2 * Real.pi) = (Real.exp Real.pi) ^ 2 := by
+        rw [← Real.exp_nat_mul]
+        ring_nf
+      _ < (81 : ℝ) ^ 2 :=
+        pow_lt_pow_left₀ aux_exp_pi_lt_81 (Real.exp_pos _).le (by norm_num)
+      _ = 6561 := by norm_num
+      _ < 6656 := by norm_num
+  have hstd : C_standardBumpPropertiesTilde 0 2 = (2 : ℝ) ^ (18 : ℕ) := by
+    norm_num [C_standardBumpPropertiesTilde]
+  have hmean : C_meanFourScaleGaussianKernel 2 < 20397963318112 :=
+    aux_C_meanFourScaleGaussianKernel_two_lt_value
+  have hmean0 : 0 ≤ C_meanFourScaleGaussianKernel 2 := by
+    have hK : 0 ≤ C_meanValueBumpEstimate 2 := by
+      unfold C_meanValueBumpEstimate
+      positivity
+    have hM : 0 ≤ aux_maxUpTo C_gaussianBumpEstimate 2 :=
+      (aux_C_gaussianBumpEstimate_nonneg 0).trans
+        (aux_le_maxUpTo C_gaussianBumpEstimate (Nat.zero_le _))
+    have hT : 0 ≤ aux_maxUpTo
+        (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l) 2 := by
+      have hzero : 0 ≤ (2 : ℝ) ^ 0 * C_secondGaussianEstimate 0 := by
+        simpa using aux_C_secondGaussianEstimate_nonneg 0
+      exact hzero.trans (aux_le_maxUpTo
+        (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l) (Nat.zero_le _))
+    unfold C_meanFourScaleGaussianKernel
+    exact add_nonneg
+      (mul_nonneg (mul_nonneg (by norm_num) hK) hM)
+      (mul_nonneg (mul_nonneg (by norm_num) hK) hT)
+  have hH_eq : C_hKernelEstimateGaussianDomination = 51 ^ 2 * 2 ^ 15 + 12 ^ 2 :=
+    constantHKernelEstimateGaussianDomination.1
+  have hH0 : 0 ≤ C_hKernelEstimateGaussianDomination :=
+    aux_C_hKernelEstimateGaussianDomination_nonneg
+  have htwoeq : C_twoBumpEstimate (3 / 2) (3 / 2) = 12 * Real.sqrt 2 := by
+    norm_num [C_twoBumpEstimate, Real.rpow_natCast, Real.sqrt_eq_rpow]
+    rw [show (5 / 2 : ℝ) = 2 + 1 / 2 by norm_num,
+      Real.rpow_add (by norm_num : (0 : ℝ) < 2)]
+    rw [← Real.sqrt_eq_rpow]
+    norm_num
+    ring
+  have hsqrt2 : Real.sqrt (2 : ℝ) < 17 / 12 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  have htwo : C_twoBumpEstimate (3 / 2) (3 / 2) < 17 := by
+    rw [htwoeq]
+    nlinarith
+  have hbump : C_bumpTriangle (-(1 / 2)) (1 / 2) (3 / 2) (3 / 2) = 1 := by
+    norm_num [C_bumpTriangle, C_bumpTriangleTilde]
+  have hmax : max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+      (4 * C_bumpTriangle (-(1 / 2)) (1 / 2) (3 / 2) (3 / 2) *
+        C_twoBumpEstimate (3 / 2) (3 / 2)) < 68 := by
+    rw [hbump]
+    apply max_lt
+    · nlinarith
+    · nlinarith
+  have hmax0 : 0 ≤ max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+      (4 * C_bumpTriangle (-(1 / 2)) (1 / 2) (3 / 2) (3 / 2) *
+        C_twoBumpEstimate (3 / 2) (3 / 2)) := by
+    rw [hbump, htwoeq]
+    positivity
+  rw [C_gaussDominationCase1, hstd, hH_eq]
+  calc
+    2 * ((2 : ℝ) ^ (7 : ℕ) * Real.pi * Real.exp (2 * Real.pi) * (2 : ℝ) ^ (18 : ℕ) *
+        C_meanFourScaleGaussianKernel 2 * (51 ^ 2 * 2 ^ 15 + 12 ^ 2) *
+        max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+          (4 * C_bumpTriangle (-(1 / 2)) (1 / 2) (3 / 2) (3 / 2) *
+            C_twoBumpEstimate (3 / 2) (3 / 2))) <
+      2 * ((2 : ℝ) ^ (7 : ℕ) * 4 * 6656 * (2 : ℝ) ^ (18 : ℕ) *
+        20397963318112 * (51 ^ 2 * 2 ^ 15 + 12 ^ 2) * 68) := by
+      gcongr
+      exact Real.pi_lt_four
+    _ < (2 : ℝ) ^ (118 : ℕ) := by norm_num
+
+private theorem aux_gaussDominationCase2_lt_two_pow_153 :
+    C_gaussDominationCase2 < (2 : ℝ) ^ (153 : ℕ) := by
+  have hexp : Real.exp (2 * Real.pi) < 6656 := by
+    calc
+      Real.exp (2 * Real.pi) = (Real.exp Real.pi) ^ 2 := by
+        rw [← Real.exp_nat_mul]
+        ring_nf
+      _ < (81 : ℝ) ^ 2 :=
+        pow_lt_pow_left₀ aux_exp_pi_lt_81 (Real.exp_pos _).le (by norm_num)
+      _ = 6561 := by norm_num
+      _ < 6656 := by norm_num
+  have hstd : C_standardBumpPropertiesTilde 0 3 = (2 : ℝ) ^ (33 : ℕ) := by
+    norm_num [C_standardBumpPropertiesTilde]
+  have hfour : C_fourScaleGaussianKernel 3 < 6136564156458101504 :=
+    aux_C_fourScaleGaussianKernel_three_lt_value
+  have hfour0 : 0 ≤ C_fourScaleGaussianKernel 3 := by
+    have hgauss : 0 ≤ max (C_gaussianBumpEstimate 0) (C_gaussianBumpEstimate 3) :=
+      (aux_C_gaussianBumpEstimate_nonneg 0).trans (le_max_left _ _)
+    have hsecond : 0 ≤ max (C_secondGaussianEstimate 0) (C_secondGaussianEstimate 3) :=
+      (aux_C_secondGaussianEstimate_nonneg 0).trans (le_max_left _ _)
+    unfold C_fourScaleGaussianKernel C_smoothDecay2
+    exact add_nonneg
+      (mul_nonneg (mul_nonneg (by positivity) (by positivity)) hgauss)
+      (mul_nonneg (by positivity) hsecond)
+  have hderiv : C_hKernelDerivativeEstimateGaussianDomination < (2 : ℝ) ^ (30 : ℕ) :=
+    constantHKernelDerivativeEstimateGaussianDomination
+  have hderiv0 : 0 ≤ C_hKernelDerivativeEstimateGaussianDomination :=
+    aux_C_hKernelDerivativeEstimateGaussianDomination_nonneg
+  have htriangle : C_bumpTriangle 1 1 2 2 = 4 := by
+    norm_num [C_bumpTriangle, C_bumpTriangleTilde, Real.rpow_natCast]
+  have htwo : C_twoBumpEstimate 2 2 = 16 := aux_twoBumpEstimate_two_two
+  rw [C_gaussDominationCase2, hstd, htriangle, htwo]
+  calc
+    3 * (2 : ℝ) ^ (7 : ℕ) * Real.exp (2 * Real.pi) * (2 : ℝ) ^ (33 : ℕ) *
+        C_fourScaleGaussianKernel 3 * C_hKernelDerivativeEstimateGaussianDomination * 4 * 16 <
+      3 * (2 : ℝ) ^ (7 : ℕ) * 6656 * (2 : ℝ) ^ (33 : ℕ) *
+        6136564156458101504 * (2 : ℝ) ^ (30 : ℕ) * 4 * 16 := by
+      gcongr
+    _ < (2 : ℝ) ^ (153 : ℕ) := by norm_num
+
+private theorem aux_gaussDominationCase3_lt_two_pow_110 :
+    C_gaussDominationCase3 < (2 : ℝ) ^ (110 : ℕ) := by
+  have hexp : Real.exp (2 * Real.pi) < 6656 := by
+    calc
+      Real.exp (2 * Real.pi) = (Real.exp Real.pi) ^ 2 := by
+        rw [← Real.exp_nat_mul]
+        ring_nf
+      _ < (81 : ℝ) ^ 2 :=
+        pow_lt_pow_left₀ aux_exp_pi_lt_81 (Real.exp_pos _).le (by norm_num)
+      _ = 6561 := by norm_num
+      _ < 6656 := by norm_num
+  have hstd : C_standardBumpPropertiesTilde 0 2 = (2 : ℝ) ^ (18 : ℕ) := by
+    norm_num [C_standardBumpPropertiesTilde]
+  have hfour : C_fourScaleGaussianKernel 2 < 637436354528 :=
+    aux_C_fourScaleGaussianKernel_two_lt_value
+  have hfour0 : 0 ≤ C_fourScaleGaussianKernel 2 := by
+    have hgauss : 0 ≤ max (C_gaussianBumpEstimate 0) (C_gaussianBumpEstimate 2) :=
+      (aux_C_gaussianBumpEstimate_nonneg 0).trans (le_max_left _ _)
+    have hsecond : 0 ≤ max (C_secondGaussianEstimate 0) (C_secondGaussianEstimate 2) :=
+      (aux_C_secondGaussianEstimate_nonneg 0).trans (le_max_left _ _)
+    unfold C_fourScaleGaussianKernel C_smoothDecay2
+    exact add_nonneg
+      (mul_nonneg (mul_nonneg (by positivity) (by positivity)) hgauss)
+      (mul_nonneg (by positivity) hsecond)
+  have hH : C_hKernelEstimateGaussianDomination < (2 : ℝ) ^ (27 : ℕ) :=
+    constantHKernelEstimateGaussianDomination.2
+  have hH0 : 0 ≤ C_hKernelEstimateGaussianDomination :=
+    aux_C_hKernelEstimateGaussianDomination_nonneg
+  have htriangle : C_bumpTriangle 1 1 2 2 = 4 := by
+    norm_num [C_bumpTriangle, C_bumpTriangleTilde, Real.rpow_natCast]
+  have htwo : C_twoBumpEstimate 2 2 = 16 := aux_twoBumpEstimate_two_two
+  rw [C_gaussDominationCase3, hstd, htriangle, htwo]
+  calc
+    (2 : ℝ) ^ (7 : ℕ) * Real.exp (2 * Real.pi) * (2 : ℝ) ^ (18 : ℕ) *
+        C_fourScaleGaussianKernel 2 * C_hKernelEstimateGaussianDomination * 4 * 16 <
+      (2 : ℝ) ^ (7 : ℕ) * 6656 * (2 : ℝ) ^ (18 : ℕ) *
+        637436354528 * (2 : ℝ) ^ (27 : ℕ) * 4 * 16 := by
+      gcongr
+    _ < (2 : ℝ) ^ (110 : ℕ) := by norm_num
+
+/-- The three case constants are all bounded by the common domination constant. -/
+private theorem aux_gaussDominationCaseConstants_le_combined :
+    max C_gaussDominationCase1 (max C_gaussDominationCase2 C_gaussDominationCase3) ≤
+      C_gaussianDominationCombined := by
+  unfold C_gaussianDominationCombined
+  apply max_le
+  · exact aux_gaussDominationCase1_lt_two_pow_118.le.trans
+      (pow_le_pow_right₀ (by norm_num) (by norm_num))
+  · apply max_le
+    · exact aux_gaussDominationCase2_lt_two_pow_153.le
+    · exact aux_gaussDominationCase3_lt_two_pow_110.le.trans
+        (pow_le_pow_right₀ (by norm_num) (by norm_num))
 
 /-- This auxiliary structure is a direct finite-set encoding of the data in the conclusion of
 Gaussian domination.  Its fields are exactly the set `\mathcal B`, orientations `u_b`, and
@@ -1504,6 +2472,4837 @@ structure aux_GaussianDominationWitness {n : ℕ} (γ : GeometricParameters n)
 def aux_GaussianDominationConclusion {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ) (C : ℝ) : Prop :=
   Nonempty (aux_GaussianDominationWitness γ hkn i ι C)
+
+/-- A Gaussian-domination witness remains valid after increasing its majorant constant. -/
+theorem aux_GaussianDominationConclusion_mono {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (i : Fin γ.k)
+    (ι : MultiplierIndex γ) {C C' : ℝ} (hCC' : C ≤ C') :
+    aux_GaussianDominationConclusion γ hkn i ι C →
+      aux_GaussianDominationConclusion γ hkn i ι C' := by
+  rintro ⟨w⟩
+  refine ⟨{
+    B := w.B
+    card_le := w.card_le
+    orientation := w.orientation
+    scales := w.scales
+    scales_in_A := w.scales_in_A
+    distance_bound := w.distance_bound
+    estimate := ?_
+    series_summable := w.series_summable
+    series_integrable := w.series_integrable
+  }⟩
+  intro j v
+  have hseries : 0 ≤ ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+      ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v := by
+    apply tsum_nonneg
+    intro m
+    apply mul_nonneg (aux_gaussianDominationWeight_nonneg m)
+    apply Finset.sum_nonneg
+    intro b hb
+    exact aux_dominatingGaussianTerm_nonneg (w.scales b m)
+      (w.scales_in_A b hb m) (w.orientation b) j v
+  have hfactor : 0 ≤ Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+      ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+        ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v :=
+    mul_nonneg (Real.rpow_nonneg (by norm_num) _) hseries
+  calc
+    |nMultiplier γ hkn ι i j v| ≤
+        C * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+            ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v :=
+      w.estimate j v
+    _ = C * (Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+            ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v) := by
+      ring
+    _ ≤ C' * (Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+            ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v) :=
+      mul_le_mul_of_nonneg_right hCC' hfactor
+    _ = C' * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+            ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v := by
+      ring
+
+/-- The multiplier-index definition has exactly the three analytic cases used in the
+Gaussian-domination argument. -/
+theorem aux_multiplierIndex_cases {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) :
+    (0 < ι.1.1 ∧ ι.1.2 = 0) ∨ (ι.1.1 < 0 ∧ ι.1.2 = 0) ∨
+      (ι.1.1 = 0 ∧ ι.1.2.natAbs ≤ geometricDelta γ) := by
+  rcases ι.property with hhorizontal | hvertical
+  · rcases hhorizontal with ⟨hne, hsecond⟩
+    rcases lt_trichotomy ι.1.1 0 with hneg | hzero | hpos
+    · exact Or.inr (Or.inl ⟨hneg, hsecond⟩)
+    · exact False.elim (hne hzero)
+    · exact Or.inl ⟨hpos, hsecond⟩
+  · exact Or.inr (Or.inr hvertical)
+
+/-- Combines the three multiplier-index cases once each has been established at the
+common Gaussian-domination constant. -/
+private theorem aux_gaussianDominationCombined_of_cases {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (i : Fin γ.k)
+    (hpositive : ∀ ι : MultiplierIndex γ,
+      0 < ι.1.1 → ι.1.2 = 0 →
+        aux_GaussianDominationConclusion γ hkn i ι C_gaussianDominationCombined)
+    (hnegative : ∀ ι : MultiplierIndex γ,
+      ι.1.1 < 0 → ι.1.2 = 0 →
+        aux_GaussianDominationConclusion γ hkn i ι C_gaussianDominationCombined)
+    (hzero : ∀ ι : MultiplierIndex γ,
+      ι.1.1 = 0 → ι.1.2.natAbs ≤ geometricDelta γ →
+        aux_GaussianDominationConclusion γ hkn i ι C_gaussianDominationCombined) :
+    ∀ ι : MultiplierIndex γ,
+      aux_GaussianDominationConclusion γ hkn i ι C_gaussianDominationCombined := by
+  intro ι
+  rcases aux_multiplierIndex_cases γ ι with hι | hι | hι
+  · exact hpositive ι hι.1 hι.2
+  · exact hnegative ι hι.1 hι.2
+  · exact hzero ι hι.1 hι.2
+
+/-- Diagonal cancellation converts a convolution into a difference of its one-dimensional
+kernel. This is the pointwise bridge used in the Gaussian-domination cases. -/
+theorem aux_diagonal_convolution_eq_difference
+    {F : RealPlane → ℝ} (hF : MemW0 F)
+    (hzero : ∀ x : ℝ, (∫ q : ℝ, F (x, q)) = 0)
+    {rho : ℝ → ℝ} (x y : ℝ)
+    (hA : Integrable (fun q : ℝ => F (x, q) * rho (y - q))) :
+    (∫ q : ℝ, F (x, q) * rho (y - q)) =
+      ∫ q : ℝ, F (x, q) * (rho (y - q) - rho y) := by
+  have hFslice_mem : MemW0 (fun q : ℝ => F (x, q)) :=
+    hF.aux_memW0_slice_of_addHaar x
+  have hFslice : Integrable (fun q : ℝ => F (x, q)) :=
+    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hFslice_mem
+  have hB : Integrable (fun q : ℝ => F (x, q) * rho y) := hFslice.mul_const _
+  have hBzero : (∫ q : ℝ, F (x, q) * rho y) = 0 := by
+    rw [integral_mul_const, hzero x, zero_mul]
+  calc
+    (∫ q : ℝ, F (x, q) * rho (y - q)) =
+        (∫ q : ℝ, F (x, q) * rho (y - q)) -
+          ∫ q : ℝ, F (x, q) * rho y := by rw [hBzero, sub_zero]
+    _ = ∫ q : ℝ, F (x, q) * rho (y - q) - F (x, q) * rho y :=
+      (integral_sub hA hB).symm
+    _ = ∫ q : ℝ, F (x, q) * (rho (y - q) - rho y) := by
+      apply integral_congr_ae
+      filter_upwards [] with q
+      ring
+
+/-- The positive horizontal band of the four-scale N-kernel has the mean-difference estimate
+needed for Gaussian domination. -/
+theorem aux_nMultiplierRho_positive_difference_bound {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1)
+    (x y : ℝ) :
+    |nMultiplierRho γ hkn ι i j (x + y) - nMultiplierRho γ hkn ι i j x| ≤
+      C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2 *
+        min 1 (2 * Real.pi *
+          (((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ)))⁻¹) * |y|) *
+          (scaledBracketBump 2
+            ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ))) (x + y) +
+            scaledBracketBump 2
+              ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ))) x) := by
+  let r : ℤ := j + (geometricDelta γ : ℤ)
+  let h : ℤ := ι.1.1
+  let a : ℤ → ℝ := γ.scales i 1
+  let muMinus : ℝ := (2 : ℝ) ^ h * a (r - 1)
+  let muPlus : ℝ := (2 : ℝ) ^ h * a r
+  let lamMinus : ℝ := (2 : ℝ) ^ (h - 1) * a r
+  let lamPlus : ℝ := (2 : ℝ) ^ h * a r
+  have hnu : nMultiplierFourScaleExponent γ ∈ Set.Ico (-1 : ℝ) 0 :=
+    nMultiplierFourScaleExponent_memIco γ
+  have hpow : (2 : ℝ) ^ h = 2 * (2 : ℝ) ^ (h - 1) := by
+    rw [show h = (h - 1) + 1 by omega, zpow_add₀ (by norm_num), zpow_one]
+    ring
+  have hmuMinus : 0 < muMinus := by
+    dsimp [muMinus]
+    exact mul_pos (zpow_pos (by norm_num) _) ((γ.scales_spaced i 1) _).1
+  have hmuPlus : 0 < muPlus := by
+    dsimp [muPlus]
+    exact mul_pos (zpow_pos (by norm_num) _) ((γ.scales_spaced i 1) _).1
+  have hlamMinus : 0 < lamMinus := by
+    dsimp [lamMinus]
+    exact mul_pos (zpow_pos (by norm_num) _) ((γ.scales_spaced i 1) _).1
+  have hlamPlus : 0 < lamPlus := by
+    dsimp [lamPlus]
+    exact mul_pos (zpow_pos (by norm_num) _) ((γ.scales_spaced i 1) _).1
+  have hscales : 2 * muMinus ≤ 2 * lamMinus ∧ 2 * lamMinus ≤ lamPlus ∧ lamPlus ≤ muPlus := by
+    refine ⟨?_, ?_, le_rfl⟩
+    · dsimp [muMinus, lamMinus, a]
+      calc
+        2 * ((2 : ℝ) ^ h * γ.scales i 1 (r - 1)) =
+            (2 * (2 : ℝ) ^ (h - 1)) * (2 * γ.scales i 1 (r - 1)) := by
+              rw [hpow]
+              ring
+        _ ≤ (2 * (2 : ℝ) ^ (h - 1)) * γ.scales i 1 r :=
+          mul_le_mul_of_nonneg_left (by
+            simpa only [sub_add_cancel] using (γ.scales_spaced i 1 (r - 1)).2) (by positivity)
+        _ = 2 * ((2 : ℝ) ^ (h - 1) * γ.scales i 1 r) := by ring
+    · dsimp [lamMinus, lamPlus]
+      apply le_of_eq
+      calc
+        2 * ((2 : ℝ) ^ (h - 1) * γ.scales i 1 r) =
+            (2 * (2 : ℝ) ^ (h - 1)) * γ.scales i 1 r := by ring
+        _ = (2 : ℝ) ^ h * γ.scales i 1 r := by rw [hpow]
+  have hlamEq : lamPlus = 2 * lamMinus := by
+    dsimp [lamPlus, lamMinus]
+    rw [hpow]
+    ring
+  have hmean := meanFourScaleGaussianKernel ((2 : ℝ) ^ 18) 2 (by norm_num)
+    (fun z : ℝ => (standardBump z : ℂ))
+    (FourierTransform.fourier (fun z : ℝ => (standardBump z : ℂ)))
+    aux_standardBumpComplex_memW0 rfl (by positivity)
+    (closure_minimal (standardBumpProperties_fourierShape).2.1 isClosed_Icc)
+    (standardBumpProperties_fourierShape).2.2
+    (aux_standardBumpComplex_fourier_contDiff.of_le (WithTop.coe_le_coe.mpr le_top))
+    (by
+      intro m hm z
+      interval_cases m
+      · exact (aux_standardBump_fourier_iteratedDeriv_le_zero z).trans (by norm_num)
+      · exact (aux_standardBump_fourier_iteratedDeriv_le_one z).trans (by norm_num)
+      · exact aux_standardBump_fourier_iteratedDeriv_le_two z)
+    muMinus muPlus lamMinus lamPlus (nMultiplierFourScaleExponent γ)
+    hmuMinus hmuPlus hlamMinus hlamPlus hscales hlamEq hnu
+  have hcomplex := hmean.2 x y
+  have hreal :
+      |(fourScaleGaussianRho
+          (FourierTransform.fourier (fun z : ℝ => (standardBump z : ℂ)))
+          muMinus muPlus lamMinus lamPlus (nMultiplierFourScaleExponent γ) (x + y)).re -
+        (fourScaleGaussianRho
+          (FourierTransform.fourier (fun z : ℝ => (standardBump z : ℂ)))
+          muMinus muPlus lamMinus lamPlus (nMultiplierFourScaleExponent γ) x).re| ≤
+        (2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2 *
+          min 1 (2 * Real.pi * lamPlus⁻¹ * |y|) *
+            (scaledBracketBump 2 lamPlus (x + y) + scaledBracketBump 2 lamPlus x) := by
+    calc
+      |(fourScaleGaussianRho
+          (FourierTransform.fourier (fun z : ℝ => (standardBump z : ℂ)))
+          muMinus muPlus lamMinus lamPlus (nMultiplierFourScaleExponent γ) (x + y)).re -
+        (fourScaleGaussianRho
+          (FourierTransform.fourier (fun z : ℝ => (standardBump z : ℂ)))
+          muMinus muPlus lamMinus lamPlus (nMultiplierFourScaleExponent γ) x).re| =
+          |(fourScaleGaussianRho
+            (FourierTransform.fourier (fun z : ℝ => (standardBump z : ℂ)))
+            muMinus muPlus lamMinus lamPlus (nMultiplierFourScaleExponent γ) (x + y) -
+            fourScaleGaussianRho
+              (FourierTransform.fourier (fun z : ℝ => (standardBump z : ℂ)))
+              muMinus muPlus lamMinus lamPlus (nMultiplierFourScaleExponent γ) x).re| := by
+          simp
+      _ ≤ ‖fourScaleGaussianRho
+          (FourierTransform.fourier (fun z : ℝ => (standardBump z : ℂ)))
+          muMinus muPlus lamMinus lamPlus (nMultiplierFourScaleExponent γ) (x + y) -
+          fourScaleGaussianRho
+            (FourierTransform.fourier (fun z : ℝ => (standardBump z : ℂ)))
+            muMinus muPlus lamMinus lamPlus (nMultiplierFourScaleExponent γ) x‖ :=
+        Complex.abs_re_le_norm _
+      _ ≤ _ := hcomplex
+  have hC : (2 : ℝ) ^ 18 = C_standardBumpPropertiesTilde 0 2 := by
+    norm_num [C_standardBumpPropertiesTilde]
+  rw [← hC]
+  simpa [r, h, a, muMinus, muPlus, lamMinus, lamPlus,
+    nMultiplierRho, nMultiplierRhoComplex, hzero, hpositive]
+    using hreal
+
+
+/-! ## Gauss domination case 1 -/
+
+private theorem aux_caseOne_move_twoPi_out {A lambda y B : ℝ}
+    (hA : 0 ≤ A) (hlambda : 0 < lambda) (hB : 0 ≤ B) :
+    A * min 1 (2 * Real.pi * lambda⁻¹ * |y|) * B ≤
+      (2 * Real.pi * A) * min 1 (lambda⁻¹ * |y|) * B := by
+  have hmin : min 1 (2 * Real.pi * (lambda⁻¹ * |y|)) ≤
+      2 * Real.pi * min 1 (lambda⁻¹ * |y|) := by
+    exact (by
+      have hpi : 1 ≤ 2 * Real.pi := by nlinarith [Real.pi_gt_three]
+      by_cases h : 1 ≤ lambda⁻¹ * |y|
+      · rw [min_eq_left h]
+        exact (min_le_left _ _).trans (by nlinarith)
+      · have h' : lambda⁻¹ * |y| ≤ 1 := le_of_not_ge h
+        rw [min_eq_right h']
+        exact min_le_right _ _)
+  calc
+    A * min 1 (2 * Real.pi * lambda⁻¹ * |y|) * B =
+        A * min 1 (2 * Real.pi * (lambda⁻¹ * |y|)) * B := by ring
+    _ ≤ A * (2 * Real.pi * min 1 (lambda⁻¹ * |y|)) * B :=
+      mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hmin hA) hB
+    _ = (2 * Real.pi * A) * min 1 (lambda⁻¹ * |y|) * B := by ring
+
+/-- Scratch: any scale in the H-kernel distance ball is smaller than a positive-band
+N scale by the required factor. -/
+private theorem aux_caseOne_distanceBall_scale_ratio_le {a b : ℤ → ℝ} (ha : SpacedSequence a)
+    {d : ℕ} (hb : b ∈ sequenceDistanceBall a (d : WithTop ℕ))
+    (h j : ℤ) :
+    b j / ((2 : ℝ) ^ h * a (j + (d : ℤ))) ≤ (2 : ℝ) ^ (-h) := by
+  rcases hb with ⟨_, hdist⟩
+  have hwithin : WithinSequenceDistance a b d :=
+    aux_withinSequenceDistance_of_sequenceDistance_le ha hdist
+  have hbj : b j ≤ a (j + (d : ℤ)) := by
+    simpa using (hwithin j).2
+  have hden : 0 < (2 : ℝ) ^ h * a (j + (d : ℤ)) :=
+    mul_pos (zpow_pos (by norm_num) _) (ha _).1
+  apply (div_le_iff₀ hden).2
+  calc
+    b j ≤ a (j + (d : ℤ)) := hbj
+    _ = ((2 : ℝ) ^ (-h) * (2 : ℝ) ^ h) * a (j + (d : ℤ)) := by
+      rw [← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0), neg_add_cancel, zpow_zero, one_mul]
+    _ = (2 : ℝ) ^ (-h) * ((2 : ℝ) ^ h * a (j + (d : ℤ))) := by ring
+
+/-- Scratch: multiplying a second-order bracket bump by the square-root loss converts it
+exactly to the real exponent `3/2` used by the two-bump estimate. -/
+private theorem aux_caseOne_scaledBracketBump_two_sqrt_eq_threeHalves (t x : ℝ) (ht : 0 < t) :
+    Real.rpow (1 + t⁻¹ * |x|) (1 / 2 : ℝ) * scaledBracketBump 2 t x =
+      scaledBracketBumpReal (3 / 2 : ℝ) t x := by
+  let z : ℝ := 1 + t⁻¹ * |x|
+  have hz : 0 < z := by
+    dsimp [z]
+    positivity
+  have habs : |t⁻¹ * x| = t⁻¹ * |x| := by
+    rw [abs_mul, abs_inv, abs_of_pos ht]
+  have hnegTwo : z⁻¹ ^ (2 : ℕ) = Real.rpow z (-2 : ℝ) := by
+    calc
+      z⁻¹ ^ (2 : ℕ) = (z ^ (2 : ℕ))⁻¹ := by rw [inv_pow]
+      _ = (Real.rpow z (2 : ℝ))⁻¹ := by
+        congr 1
+        exact (Real.rpow_natCast z 2).symm
+      _ = Real.rpow z (-2 : ℝ) := (Real.rpow_neg hz.le 2).symm
+  unfold scaledBracketBump scaledBracketBumpReal
+  rw [habs]
+  change Real.rpow z (1 / 2 : ℝ) * (t⁻¹ * z⁻¹ ^ (2 : ℕ)) =
+    t⁻¹ * Real.rpow z (-(3 / 2 : ℝ))
+  rw [hnegTwo]
+  calc
+    Real.rpow z (1 / 2 : ℝ) * (t⁻¹ * Real.rpow z (-2 : ℝ)) =
+        t⁻¹ * (Real.rpow z (1 / 2 : ℝ) * Real.rpow z (-2 : ℝ)) := by ring
+    _ = t⁻¹ * Real.rpow z ((1 / 2 : ℝ) + (-2 : ℝ)) := by
+      have hsum : Real.rpow z ((1 / 2 : ℝ) + (-2 : ℝ)) =
+          Real.rpow z (1 / 2 : ℝ) * Real.rpow z (-2 : ℝ) :=
+        Real.rpow_add hz _ _
+      exact congrArg (fun r : ℝ => t⁻¹ * r) hsum.symm
+    _ = t⁻¹ * Real.rpow z (-(3 / 2 : ℝ)) := by ring_nf
+
+private theorem aux_caseOne_min_scale_half_le {t lam : ℝ} {h : ℕ} (ht : 0 < t) (hlam : 0 < lam)
+    (hscale : t / lam ≤ Real.rpow 2 (-(h : ℝ))) (p : ℝ) :
+    min 1 (lam⁻¹ * |p|) ≤ Real.rpow 2 (-((h : ℝ) / 2)) *
+      Real.sqrt (1 + t⁻¹ * |p|) := by
+  let a : ℝ := lam⁻¹ * |p|
+  let b : ℝ := t⁻¹ * |p|
+  let c : ℝ := Real.rpow 2 (-(h : ℝ))
+  have ha : 0 ≤ a := by
+    dsimp [a]
+    positivity
+  have hb : 0 ≤ b := by
+    dsimp [b]
+    positivity
+  have hc : 0 ≤ c := by
+    dsimp [c]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hab : a ≤ c * b := by
+    have hid : a = (t / lam) * b := by
+      dsimp [a, b]
+      field_simp [ne_of_gt ht, ne_of_gt hlam]
+    rw [hid]
+    exact mul_le_mul_of_nonneg_right hscale hb
+  have hmin : min 1 a ≤ Real.sqrt a := by
+    by_cases haone : a ≤ 1
+    · rw [min_eq_right haone]
+      exact (Real.le_sqrt_self_iff).2 haone
+    · rw [min_eq_left (le_of_not_ge haone)]
+      exact (Real.one_le_sqrt).2 (le_of_not_ge haone)
+  have hsqrt : Real.sqrt a ≤ Real.sqrt c * Real.sqrt (1 + b) := by
+    calc
+      Real.sqrt a ≤ Real.sqrt (c * b) := Real.sqrt_le_sqrt hab
+      _ = Real.sqrt c * Real.sqrt b := Real.sqrt_mul hc _
+      _ ≤ Real.sqrt c * Real.sqrt (1 + b) :=
+        mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by linarith)) (Real.sqrt_nonneg _)
+  have hroot : Real.sqrt c = Real.rpow 2 (-((h : ℝ) / 2)) := by
+    dsimp [c]
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2)]
+    congr 1
+    ring
+  simpa [a, b, hroot] using hmin.trans hsqrt
+
+/-- A two-bump integral with the larger of the two scales chosen as output scale. -/
+private theorem aux_caseOne_twoBumpIntegral_max (x₀ x₁ t₀ t₁ : ℝ)
+    (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
+    (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t₀ (x₀ - p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₁ (x₁ - p)) ≤
+      C_twoBumpEstimate (3 / 2) (3 / 2) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (max t₀ t₁) (x₀ - x₁) := by
+  have hnonneg (p : ℝ) : 0 ≤
+      scaledBracketBumpReal (3 / 2 : ℝ) t₀ (x₀ - p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₁ (x₁ - p) :=
+    mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht₀)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht₁)
+  rw [← abs_of_nonneg (integral_nonneg hnonneg)]
+  by_cases h : t₀ ≤ t₁
+  · have htwo := twoBumpEstimate x₁ x₀ t₁ t₀ (3 / 2 : ℝ) (3 / 2 : ℝ)
+      ht₁ ht₀ h (by norm_num) (by norm_num)
+    calc
+      |∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t₀ (x₀ - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₁ (x₁ - p)| =
+          |∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t₁ (x₁ - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₀ (x₀ - p)| := by
+            congr 1
+            apply integral_congr_ae
+            filter_upwards [] with p
+            ring
+      _ ≤ C_twoBumpEstimate (3 / 2) (3 / 2) *
+          scaledBracketBumpReal (min (3 / 2 : ℝ) (3 / 2 : ℝ)) t₁ (x₁ - x₀) := htwo
+      _ = C_twoBumpEstimate (3 / 2) (3 / 2) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (max t₀ t₁) (x₀ - x₁) := by
+            rw [min_self, max_eq_right h, show x₁ - x₀ = -(x₀ - x₁) by ring,
+              aux_scaledBracketBumpReal_neg]
+  · have h' : t₁ ≤ t₀ := le_of_not_ge h
+    have htwo := twoBumpEstimate x₀ x₁ t₀ t₁ (3 / 2 : ℝ) (3 / 2 : ℝ)
+      ht₀ ht₁ h' (by norm_num) (by norm_num)
+    simpa [max_eq_left h'] using htwo
+
+/-- Exact simultaneous rescaling of a real-exponent bracket bump. -/
+private theorem aux_caseOne_scaledBracketBumpReal_simul_rescale (N c s x : ℝ) (hc : 0 < c) :
+    c * scaledBracketBumpReal N (c * s) (c * x) = scaledBracketBumpReal N s x := by
+  unfold scaledBracketBumpReal
+  have hcne : c ≠ 0 := ne_of_gt hc
+  have harg : (c * s)⁻¹ * (c * x) = s⁻¹ * x := by
+    field_simp [hcne]
+  have hinv : c * (c * s)⁻¹ = s⁻¹ := by
+    field_simp [hcne]
+  rw [harg]
+  calc
+    c * ((c * s)⁻¹ * (1 + |s⁻¹ * x|).rpow (-N)) =
+        (c * (c * s)⁻¹) * (1 + |s⁻¹ * x|).rpow (-N) := by ring
+    _ = s⁻¹ * (1 + |s⁻¹ * x|).rpow (-N) := by rw [hinv]
+
+/-- A concrete scalar form of the orthogonal-coordinate dichotomy needed in case one.
+It is deliberately stated directly in the `W₁` coordinates, avoiding an auxiliary
+identification of `ℝ × ℝ` with Euclidean space. -/
+private theorem aux_caseOne_orthogonal_dichotomy (x y : ℝ) :
+    |x| ≤ 3 * |(-x + y) / Real.sqrt 2| ∨
+      |(x + y) / Real.sqrt 2| ≤ 3 * |y| := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqrt_sq : (Real.sqrt (2 : ℝ)) ^ 2 = 2 := by norm_num
+  have hsqrt_le : Real.sqrt (2 : ℝ) ≤ 3 / 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  let a : ℝ := (x + y) / Real.sqrt 2
+  let b : ℝ := (-x + y) / Real.sqrt 2
+  have hx : x = y - Real.sqrt 2 * b := by
+    dsimp [b]
+    field_simp [ne_of_gt hsqrt]
+    ring
+  have ha : a = Real.sqrt 2 * y - b := by
+    dsimp [a, b]
+    field_simp [ne_of_gt hsqrt]
+    rw [hsqrt_sq]
+    ring
+  by_cases hleft : |x| ≤ 3 * |b|
+  · exact Or.inl (by simpa [b] using hleft)
+  · right
+    have hleft' : 3 * |b| < |x| := lt_of_not_ge hleft
+    have hboundx : |x| ≤ |y| + Real.sqrt 2 * |b| := by
+      rw [hx]
+      calc
+        |y - Real.sqrt 2 * b| ≤ |y| + |Real.sqrt 2 * b| := by
+          simpa using (abs_sub_le y 0 (Real.sqrt 2 * b))
+        _ = |y| + Real.sqrt 2 * |b| := by
+          rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)]
+    have hsqrtb : Real.sqrt 2 * |b| ≤ (3 / 2 : ℝ) * |b| :=
+      mul_le_mul_of_nonneg_right hsqrt_le (abs_nonneg _)
+    have hbsmall : (3 / 2 : ℝ) * |b| < |y| := by
+      nlinarith [hboundx, hsqrtb]
+    have habound : |a| ≤ Real.sqrt 2 * |y| + |b| := by
+      rw [ha]
+      calc
+        |Real.sqrt 2 * y - b| ≤ |Real.sqrt 2 * y| + |b| := by
+          simpa using (abs_sub_le (Real.sqrt 2 * y) 0 b)
+        _ = Real.sqrt 2 * |y| + |b| := by
+          rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)]
+    have hsqrty : Real.sqrt 2 * |y| ≤ (3 / 2 : ℝ) * |y| :=
+      mul_le_mul_of_nonneg_right hsqrt_le (abs_nonneg _)
+    have hbsmall' : |b| ≤ (2 / 3 : ℝ) * |y| := by
+      nlinarith [hbsmall]
+    have hfinal : |a| ≤ 3 * |y| := by
+      nlinarith [habound, hsqrty, hbsmall']
+    simpa [a] using hfinal
+
+/-- The two-term real-exponent orthogonal decay used to turn the remaining case-one
+three-bump integral into its two `M₂` products. -/
+private theorem aux_caseOne_orthogonal_decay (x y lam t : ℝ)
+    (hlam : 0 < lam) (ht : 0 < t) :
+    scaledBracketBumpReal (3 / 2 : ℝ) lam y *
+      scaledBracketBumpReal (3 / 2 : ℝ) t ((-x + y) / Real.sqrt 2) ≤
+      8 *
+        (scaledBracketBumpReal (3 / 2 : ℝ) lam y *
+            scaledBracketBumpReal (3 / 2 : ℝ) t x +
+          scaledBracketBumpReal (3 / 2 : ℝ) lam ((x + y) / Real.sqrt 2) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t ((-x + y) / Real.sqrt 2)) := by
+  have hraw := aux_orthogonalDecay_from_domination
+    (A := (3 : ℝ)) (n₀ := (3 / 2 : ℝ)) (n₁ := (3 / 2 : ℝ))
+    (s₀ := lam) (s₁ := t) (u₀ := y) (u₁ := (-x + y) / Real.sqrt 2)
+    (p₀ := x) (p₁ := (x + y) / Real.sqrt 2)
+    (by norm_num) (by norm_num) (by norm_num) (by norm_num) hlam ht
+    (aux_caseOne_orthogonal_dichotomy x y)
+  have hcoef : max (Real.rpow 3 (3 / 2 : ℝ)) (Real.rpow 3 (3 / 2 : ℝ)) ≤ 8 := by
+    rw [max_self]
+    have hthree : Real.rpow 3 (3 / 2 : ℝ) = 3 * Real.sqrt 3 := by
+      calc
+        Real.rpow 3 (3 / 2 : ℝ) = Real.rpow 3 (1 + 1 / 2 : ℝ) := by congr 1 <;> ring
+        _ = Real.rpow 3 1 * Real.rpow 3 (1 / 2 : ℝ) :=
+          Real.rpow_add (by norm_num) _ _
+        _ = 3 * Real.sqrt 3 := by
+          have hone : Real.rpow 3 (1 : ℝ) = 3 := by norm_num
+          have hhalf : Real.rpow 3 (1 / 2 : ℝ) = Real.sqrt 3 :=
+            (Real.sqrt_eq_rpow 3).symm
+          rw [hone, hhalf]
+    rw [hthree]
+    have hsqrt3 : Real.sqrt (3 : ℝ) ≤ 2 := by
+      nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 3), Real.sqrt_nonneg (3 : ℝ)]
+    nlinarith
+  have hnonneg : 0 ≤
+      scaledBracketBumpReal (3 / 2 : ℝ) lam y *
+          scaledBracketBumpReal (3 / 2 : ℝ) t x +
+        scaledBracketBumpReal (3 / 2 : ℝ) lam ((x + y) / Real.sqrt 2) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t ((-x + y) / Real.sqrt 2) := by
+    apply add_nonneg <;> apply mul_nonneg <;>
+      apply aux_scaledBracketBumpReal_nonneg <;> assumption
+  exact hraw.trans (mul_le_mul_of_nonneg_right hcoef hnonneg)
+
+private theorem aux_caseOne_orthogonal_decay_swap (x y lam t : ℝ)
+    (hlam : 0 < lam) (ht : 0 < t) :
+    scaledBracketBumpReal (3 / 2 : ℝ) lam x *
+      scaledBracketBumpReal (3 / 2 : ℝ) t ((-x + y) / Real.sqrt 2) ≤
+      8 *
+        (scaledBracketBumpReal (3 / 2 : ℝ) lam x *
+            scaledBracketBumpReal (3 / 2 : ℝ) t y +
+          scaledBracketBumpReal (3 / 2 : ℝ) lam ((x + y) / Real.sqrt 2) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t ((-x + y) / Real.sqrt 2)) := by
+  have h := aux_caseOne_orthogonal_decay y x lam t hlam ht
+  have hneg : scaledBracketBumpReal (3 / 2 : ℝ) t ((x - y) / Real.sqrt 2) =
+      scaledBracketBumpReal (3 / 2 : ℝ) t ((-x + y) / Real.sqrt 2) := by
+    rw [show (x - y) / Real.sqrt 2 = -((-x + y) / Real.sqrt 2) by ring,
+      aux_scaledBracketBumpReal_neg]
+  rw [show -y + x = x - y by ring, hneg] at h
+  simpa [add_comm] using h
+
+/-- Every nonnegative-exponent real bracket bump is bounded by the reciprocal scale. -/
+private theorem aux_caseOne_scaledBracketBumpReal_le_inv (N s x : ℝ) (hN : 0 ≤ N) (hs : 0 < s) :
+    scaledBracketBumpReal N s x ≤ s⁻¹ := by
+  unfold scaledBracketBumpReal
+  have hbase : 1 ≤ 1 + |s⁻¹ * x| := by linarith [abs_nonneg (s⁻¹ * x)]
+  have hpow : Real.rpow (1 + |s⁻¹ * x|) (-N) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos hbase (by linarith)
+  calc
+    s⁻¹ * Real.rpow (1 + |s⁻¹ * x|) (-N) ≤ s⁻¹ * 1 :=
+      mul_le_mul_of_nonneg_left hpow (inv_nonneg.mpr hs.le)
+    _ = s⁻¹ := by ring
+
+/-- Integrability of a product of translated real-exponent bracket bumps. -/
+private theorem aux_caseOne_scaledBracketBumpReal_product_integrable
+    (n₀ n₁ s₀ s₁ x₀ x₁ : ℝ) (hn₀ : 1 < n₀) (hn₁ : 0 ≤ n₁)
+    (hs₀ : 0 < s₀) (hs₁ : 0 < s₁) :
+    Integrable (fun p : ℝ => scaledBracketBumpReal n₀ s₀ (x₀ - p) *
+      scaledBracketBumpReal n₁ s₁ (x₁ - p)) := by
+  have hbase : Integrable (fun p : ℝ => scaledBracketBumpReal n₀ s₀ (x₀ - p)) :=
+    aux_integrable_scaledBracketBumpReal_translate n₀ s₀ x₀ hn₀ hs₀
+  refine (hbase.const_mul s₁⁻¹).mono' ?_ ?_
+  · apply Continuous.aestronglyMeasurable
+    have hleftBase : Continuous (fun p : ℝ => 1 + |s₀⁻¹ * (x₀ - p)|) := by fun_prop
+    have hrightBase : Continuous (fun p : ℝ => 1 + |s₁⁻¹ * (x₁ - p)|) := by fun_prop
+    have hleft : Continuous (fun p : ℝ => scaledBracketBumpReal n₀ s₀ (x₀ - p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hleftBase.continuousAt.rpow_const (Or.inl (by positivity))
+    have hright : Continuous (fun p : ℝ => scaledBracketBumpReal n₁ s₁ (x₁ - p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hrightBase.continuousAt.rpow_const (Or.inl (by positivity))
+    exact hleft.mul hright
+  · filter_upwards [] with p
+    have hleft : 0 ≤ scaledBracketBumpReal n₀ s₀ (x₀ - p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs₀
+    have hright : 0 ≤ scaledBracketBumpReal n₁ s₁ (x₁ - p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs₁
+    have hle := aux_caseOne_scaledBracketBumpReal_le_inv n₁ s₁ (x₁ - p) hn₁ hs₁
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hleft hright)]
+    calc
+      scaledBracketBumpReal n₀ s₀ (x₀ - p) *
+          scaledBracketBumpReal n₁ s₁ (x₁ - p) ≤
+        scaledBracketBumpReal n₀ s₀ (x₀ - p) * s₁⁻¹ :=
+          mul_le_mul_of_nonneg_left hle hleft
+      _ = s₁⁻¹ * scaledBracketBumpReal n₀ s₀ (x₀ - p) := by ring
+
+/-- The three-bump integral in the orientation-zero H-kernel case, before the final
+orthogonal-coordinate splitting. -/
+private theorem aux_caseOne_threeBumpIntegral_bound (w₀ w₁ lam t₀ t₁ : ℝ)
+    (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁)
+    (ht₀lam : t₀ ≤ lam) (ht₁lam : t₁ ≤ lam) :
+    (∫ p : ℝ, scaledBracketBumpReal 2 lam (w₀ + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)) ≤
+      C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+        C_twoBumpEstimate (3 / 2) (3 / 2) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + w₁) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t₀ w₁ +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ - w₁) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t₁ w₁) := by
+  let C : ℝ := C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2)
+  let B : ℝ := C_twoBumpEstimate (3 / 2) (3 / 2)
+  let f : ℝ → ℝ := fun p => scaledBracketBumpReal 2 lam (w₀ + p) *
+    scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p) *
+    scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)
+  let g₀ : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal 2 lam (w₀ + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p)) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₁ w₁
+  let g₁ : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal 2 lam (w₀ + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₀ w₁
+  have hC : 0 ≤ C := by
+    have htilde : 0 ≤ C_bumpTriangleTilde (-(1 / 2 : ℝ)) (1 / 2) := by
+      unfold C_bumpTriangleTilde
+      positivity
+    dsimp [C, C_bumpTriangle]
+    exact (Real.rpow_nonneg htilde _).trans (le_max_left _ _)
+  have hB : 0 ≤ B := by
+    dsimp [B, C_twoBumpEstimate]
+    norm_num
+    positivity
+  have hfnon (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    apply mul_nonneg
+    · apply mul_nonneg
+      · exact aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+      · exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₀
+    · exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  have hprod₀ : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal 2 lam (w₀ + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p)) := by
+    have h := aux_caseOne_scaledBracketBumpReal_product_integrable
+      2 (3 / 2 : ℝ) lam t₀ (-w₀) (-w₁) (by norm_num) (by norm_num) hlam ht₀
+    convert h using 1
+    funext p
+    rw [show (-w₀) - p = -(w₀ + p) by ring, aux_scaledBracketBumpReal_neg]
+  have hprod₁ : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal 2 lam (w₀ + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)) := by
+    have h := aux_caseOne_scaledBracketBumpReal_product_integrable
+      2 (3 / 2 : ℝ) lam t₁ (-w₀) w₁ (by norm_num) (by norm_num) hlam ht₁
+    convert h using 1
+    funext p
+    rw [show (-w₀) - p = -(w₀ + p) by ring, aux_scaledBracketBumpReal_neg]
+  have hg₀ : Integrable g₀ := by
+    convert hprod₀.const_mul (scaledBracketBumpReal (3 / 2 : ℝ) t₁ w₁) using 1
+    funext p
+    dsimp [g₀]
+    ring
+  have hg₁ : Integrable g₁ := by
+    convert hprod₁.const_mul (scaledBracketBumpReal (3 / 2 : ℝ) t₀ w₁) using 1
+    funext p
+    dsimp [g₁]
+    ring
+  have hmajor : Integrable (fun p : ℝ => C * (g₀ p + g₁ p)) :=
+    (hg₀.add hg₁).const_mul C
+  have hpoint (p : ℝ) : f p ≤ C * (g₀ p + g₁ p) := by
+    have htri := aux_bumpTriangleReal
+      (n₀ := (3 / 2 : ℝ)) (n₁ := (3 / 2 : ℝ))
+      (c₀ := -(1 / 2 : ℝ)) (c₁ := (1 / 2 : ℝ))
+      (u := -w₁ - p) (v := w₁ - p) (w := w₁) (s₀ := t₀) (s₁ := t₁)
+      (by norm_num) (by norm_num) (by norm_num) (by norm_num) ht₀ ht₁
+      (by ring)
+    have hlamB : 0 ≤ scaledBracketBumpReal 2 lam (w₀ + p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+    dsimp [f, g₀, g₁]
+    calc
+      scaledBracketBumpReal 2 lam (w₀ + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p) =
+          scaledBracketBumpReal 2 lam (w₀ + p) *
+            (scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)) := by ring
+      _ ≤ scaledBracketBumpReal 2 lam (w₀ + p) *
+          (C * (scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₁ w₁ +
+            scaledBracketBumpReal (3 / 2 : ℝ) t₀ w₁ *
+              scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p))) :=
+          mul_le_mul_of_nonneg_left htri hlamB
+      _ = C * (((scaledBracketBumpReal 2 lam (w₀ + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₁ w₁) +
+          ((scaledBracketBumpReal 2 lam (w₀ + p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t₀ w₁)) := by ring
+  have hint : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, C * (g₀ p + g₁ p) :=
+    integral_mono_of_nonneg (ae_of_all _ hfnon) hmajor (ae_of_all _ hpoint)
+  have hnon₀ (p : ℝ) : 0 ≤
+      scaledBracketBumpReal 2 lam (w₀ + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p) := by
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht₀)
+  have hnon₁ (p : ℝ) : 0 ≤
+      scaledBracketBumpReal 2 lam (w₀ + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p) := by
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht₁)
+  have htwo₀raw := twoBumpEstimate (-w₀) (-w₁) lam t₀ 2 (3 / 2 : ℝ)
+    hlam ht₀ ht₀lam (by norm_num) (by norm_num)
+  have htwo₁raw := twoBumpEstimate (-w₀) w₁ lam t₁ 2 (3 / 2 : ℝ)
+    hlam ht₁ ht₁lam (by norm_num) (by norm_num)
+  have htwo₀ : (∫ p : ℝ,
+      scaledBracketBumpReal 2 lam (w₀ + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p)) ≤
+      B * scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ - w₁) := by
+    rw [← abs_of_nonneg (integral_nonneg hnon₀)]
+    calc
+      |∫ p : ℝ, scaledBracketBumpReal 2 lam (w₀ + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p)| =
+          |∫ p : ℝ, scaledBracketBumpReal 2 lam ((-w₀) - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₀ ((-w₁) - p)| := by
+            congr 1
+            apply integral_congr_ae
+            filter_upwards [] with p
+            rw [show w₀ + p = -((-w₀) - p) by ring, aux_scaledBracketBumpReal_neg]
+      _ ≤ C_twoBumpEstimate 2 (3 / 2 : ℝ) *
+          scaledBracketBumpReal (min 2 (3 / 2 : ℝ)) lam ((-w₀) - (-w₁)) := htwo₀raw
+      _ = B * scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ - w₁) := by
+        dsimp [B, C_twoBumpEstimate]
+        rw [show -w₀ - -w₁ = -(w₀ - w₁) by ring, aux_scaledBracketBumpReal_neg]
+        norm_num
+  have htwo₁ : (∫ p : ℝ,
+      scaledBracketBumpReal 2 lam (w₀ + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)) ≤
+      B * scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + w₁) := by
+    rw [← abs_of_nonneg (integral_nonneg hnon₁)]
+    calc
+      |∫ p : ℝ, scaledBracketBumpReal 2 lam (w₀ + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)| =
+          |∫ p : ℝ, scaledBracketBumpReal 2 lam ((-w₀) - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)| := by
+            congr 1
+            apply integral_congr_ae
+            filter_upwards [] with p
+            rw [show w₀ + p = -((-w₀) - p) by ring, aux_scaledBracketBumpReal_neg]
+      _ ≤ C_twoBumpEstimate 2 (3 / 2 : ℝ) *
+          scaledBracketBumpReal (min 2 (3 / 2 : ℝ)) lam ((-w₀) - w₁) := htwo₁raw
+      _ = B * scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + w₁) := by
+        dsimp [B, C_twoBumpEstimate]
+        rw [show -w₀ - w₁ = -(w₀ + w₁) by ring, aux_scaledBracketBumpReal_neg]
+        norm_num
+  have hg₀bound : (∫ p : ℝ, g₀ p) ≤
+      B * scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ - w₁) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₁ w₁ := by
+    rw [show (∫ p : ℝ, g₀ p) =
+      (∫ p : ℝ, scaledBracketBumpReal 2 lam (w₀ + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₁ w₁ by
+      rw [integral_mul_const]
+      ]
+    exact mul_le_mul_of_nonneg_right htwo₀
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht₁)
+  have hg₁bound : (∫ p : ℝ, g₁ p) ≤
+      B * scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + w₁) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ w₁ := by
+    rw [show (∫ p : ℝ, g₁ p) =
+      (∫ p : ℝ, scaledBracketBumpReal 2 lam (w₀ + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ w₁ by
+      rw [integral_mul_const]
+      ]
+    exact mul_le_mul_of_nonneg_right htwo₁
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht₀)
+  dsimp [f] at hint
+  calc
+    (∫ p : ℝ, scaledBracketBumpReal 2 lam (w₀ + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₀ (-w₁ - p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₁ (w₁ - p)) = ∫ p : ℝ, f p := by rfl
+    _ ≤ ∫ p : ℝ, C * (g₀ p + g₁ p) := hint
+    _ = C * ((∫ p : ℝ, g₀ p) + ∫ p : ℝ, g₁ p) := by
+      rw [integral_const_mul, integral_add hg₀ hg₁]
+    _ ≤ C * ((B * scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ - w₁) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₁ w₁) +
+      (B * scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + w₁) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ w₁)) :=
+      mul_le_mul_of_nonneg_left (add_le_add hg₀bound hg₁bound) hC
+    _ = C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+        C_twoBumpEstimate (3 / 2) (3 / 2) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + w₁) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t₀ w₁ +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ - w₁) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t₁ w₁) := by
+      dsimp [C, B]
+      ring
+
+/-- The orientation-zero three-bump contribution is controlled by the four `M₂` terms
+arising from the orthogonal-coordinate split.  The harmless `√2` rescalings make the
+coordinate identities exact in the formal `W 1` convention. -/
+private theorem aux_caseOne_threeBump_to_fourM2 (w0 w1 lam t0 t1 : ℝ)
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1)
+    (ht0lam : t0 ≤ lam) (ht1lam : t1 ≤ lam) :
+    (∫ p : ℝ, scaledBracketBumpReal 2 lam (w0 + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) ≤
+      16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+        C_twoBumpEstimate (3 / 2) (3 / 2) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0)
+                (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1)
+                (Real.sqrt 2 * w1)) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqrt_le_two : Real.sqrt (2 : ℝ) ≤ 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  have ht0' : 0 < Real.sqrt 2 * t0 := mul_pos hsqrt ht0
+  have ht1' : 0 < Real.sqrt 2 * t1 := mul_pos hsqrt ht1
+  have htriangle : 0 ≤ C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) := by
+    have htilde : 0 ≤ C_bumpTriangleTilde (-(1 / 2 : ℝ)) (1 / 2) := by
+      unfold C_bumpTriangleTilde
+      positivity
+    unfold C_bumpTriangle
+    exact (Real.rpow_nonneg htilde _).trans (le_max_left _ _)
+  have htwo : 0 ≤ C_twoBumpEstimate (3 / 2) (3 / 2) := by
+    unfold C_twoBumpEstimate
+    norm_num
+    positivity
+  have hC : 0 ≤ C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+      C_twoBumpEstimate (3 / 2) (3 / 2) :=
+    mul_nonneg htriangle htwo
+  have hres0 := aux_caseOne_scaledBracketBumpReal_simul_rescale
+    (3 / 2 : ℝ) (Real.sqrt 2) t0 w1 hsqrt
+  have hres1 := aux_caseOne_scaledBracketBumpReal_simul_rescale
+    (3 / 2 : ℝ) (Real.sqrt 2) t1 w1 hsqrt
+  have hcoord0 : (-(w0 - w1) + (w0 + w1)) / Real.sqrt 2 =
+      Real.sqrt 2 * w1 := by
+    apply (div_eq_iff (ne_of_gt hsqrt)).2
+    calc
+      -(w0 - w1) + (w0 + w1) = 2 * w1 := by ring
+      _ = (Real.sqrt 2)^2 * w1 := by
+        rw [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+      _ = Real.sqrt 2 * w1 * Real.sqrt 2 := by ring
+  have hcoord1 : ((w0 - w1) + (w0 + w1)) / Real.sqrt 2 =
+      Real.sqrt 2 * w0 := by
+    apply (div_eq_iff (ne_of_gt hsqrt)).2
+    calc
+      (w0 - w1) + (w0 + w1) = 2 * w0 := by ring
+      _ = (Real.sqrt 2)^2 * w0 := by
+        rw [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+      _ = Real.sqrt 2 * w0 * Real.sqrt 2 := by ring
+  have hdecay0 := aux_caseOne_orthogonal_decay (w0 - w1) (w0 + w1) lam
+    (Real.sqrt 2 * t0) hlam ht0'
+  have hdecay1 := aux_caseOne_orthogonal_decay_swap (w0 - w1) (w0 + w1) lam
+    (Real.sqrt 2 * t1) hlam ht1'
+  rw [hcoord0, hcoord1] at hdecay0 hdecay1
+  have hsumNonneg : 0 ≤
+      scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) +
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (Real.sqrt 2 * w1) +
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (Real.sqrt 2 * w1) := by
+    refine add_nonneg (add_nonneg (add_nonneg ?_ ?_) ?_) ?_
+    · exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht0')
+        (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+    · exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht1')
+    · exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht0')
+    · exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht1')
+  have hsum :
+      scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t0 w1 +
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 w1 ≤
+      8 * Real.sqrt 2 *
+        (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) +
+          scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+          scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (Real.sqrt 2 * w1)) := by
+    calc
+      scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t0 w1 +
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 w1 =
+          Real.sqrt 2 *
+            (scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0)
+                  (Real.sqrt 2 * w1) +
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1)
+                  (Real.sqrt 2 * w1)) := by
+            rw [← hres0, ← hres1]
+            ring
+      _ ≤ Real.sqrt 2 *
+          (8 * (scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) +
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0)
+                  (Real.sqrt 2 * w1)) +
+            8 * (scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1)
+                  (Real.sqrt 2 * w1))) :=
+            mul_le_mul_of_nonneg_left (add_le_add hdecay0 hdecay1) (le_of_lt hsqrt)
+      _ = 8 * Real.sqrt 2 *
+          (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (Real.sqrt 2 * w1)) := by
+            ring
+  have hcoeff : 8 * Real.sqrt 2 ≤ (16 : ℝ) := by
+    nlinarith
+  have hscale :
+      8 * Real.sqrt 2 *
+          (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (Real.sqrt 2 * w1)) ≤
+      16 *
+          (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (Real.sqrt 2 * w1)) :=
+    mul_le_mul_of_nonneg_right hcoeff hsumNonneg
+  calc
+    (∫ p : ℝ, scaledBracketBumpReal 2 lam (w0 + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) ≤
+        C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2) *
+            (scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) *
+                scaledBracketBumpReal (3 / 2 : ℝ) t0 w1 +
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+                scaledBracketBumpReal (3 / 2 : ℝ) t1 w1) :=
+      aux_caseOne_threeBumpIntegral_bound w0 w1 lam t0 t1 hlam ht0 ht1 ht0lam ht1lam
+    _ ≤ C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2) *
+            (8 * Real.sqrt 2 *
+              (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) +
+                scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+                scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (Real.sqrt 2 * w1) +
+                scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (Real.sqrt 2 * w1))) :=
+      mul_le_mul_of_nonneg_left hsum hC
+    _ ≤ C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2) *
+            (16 *
+              (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) +
+                scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+                scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (Real.sqrt 2 * w1) +
+                scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (Real.sqrt 2 * w1))) :=
+      mul_le_mul_of_nonneg_left hscale hC
+    _ = 16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+        C_twoBumpEstimate (3 / 2) (3 / 2) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 - w1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (w0 + w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t0) (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (Real.sqrt 2 * w1)) := by
+      ring
+
+/-- Exact rescaling of the orientation-one M₁ term coming from an orientation-zero
+H occurrence. -/
+private theorem aux_caseOne_M1_zero_rescale (w0 w1 lam t0 t1 : ℝ) :
+    scaledBracketBumpReal (3 / 2 : ℝ) lam w0 *
+        scaledBracketBumpReal (3 / 2 : ℝ) (max t0 t1) (2 * w1) =
+      scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w0) *
+        scaledBracketBumpReal (3 / 2 : ℝ) ((max t0 t1) / Real.sqrt 2)
+          (Real.sqrt 2 * w1) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hfirst := aux_caseOne_scaledBracketBumpReal_simul_rescale
+    (3 / 2 : ℝ) (Real.sqrt 2) lam w0 hsqrt
+  have hsecond := aux_caseOne_scaledBracketBumpReal_simul_rescale
+    (3 / 2 : ℝ) (Real.sqrt 2) ((max t0 t1) / Real.sqrt 2)
+      (Real.sqrt 2 * w1) hsqrt
+  have hfirst' :
+      Real.sqrt 2 * scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam)
+        (Real.sqrt 2 * w0) = scaledBracketBumpReal (3 / 2 : ℝ) lam w0 := by
+    exact hfirst
+  have hsecond' :
+      Real.sqrt 2 * scaledBracketBumpReal (3 / 2 : ℝ) (max t0 t1) (2 * w1) =
+        scaledBracketBumpReal (3 / 2 : ℝ) ((max t0 t1) / Real.sqrt 2)
+          (Real.sqrt 2 * w1) := by
+    have hscale : Real.sqrt 2 * ((max t0 t1) / Real.sqrt 2) = max t0 t1 := by
+      field_simp [ne_of_gt hsqrt]
+    have harg : Real.sqrt 2 * (Real.sqrt 2 * w1) = 2 * w1 := by
+      calc
+        Real.sqrt 2 * (Real.sqrt 2 * w1) = (Real.sqrt 2)^2 * w1 := by ring
+        _ = 2 * w1 := by rw [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+    rw [hscale, harg] at hsecond
+    exact hsecond
+  rw [← hfirst', ← hsecond']
+  ring
+
+/-- The exact orientation-one M₁ second scale.  In the orientation-zero branch the
+normalization of `W 1` contributes a reciprocal square-root factor. -/
+private def aux_caseOneExactM1Scale (q : SequencePair × Fin 2) : ℤ → ℝ :=
+  if q.2 = 0 then
+    fun j => (Real.sqrt 2)⁻¹ * max (q.1 0 j) (q.1 1 j)
+  else q.1 1
+
+/-- The five exact real-exponent slots reserved for one occurrence of the six-term H
+majorant: one M₁ term and four M₂ terms.  Orientation-one occurrences use M₁ as
+nonnegative padding in the remaining four slots. -/
+private def aux_caseOneExactSlotOf (lam : ℤ → ℝ) (q : SequencePair × Fin 2) (r : Fin 5) :
+    SequencePair × Fin 2 :=
+  if r = 0 then
+    (aux_sequencePairOf (fun j => Real.sqrt 2 * lam j) (aux_caseOneExactM1Scale q),
+      (1 : Fin 2))
+  else if q.2 = 0 then
+    if r = 1 then (aux_sequencePairOf (fun j => Real.sqrt 2 * q.1 0 j) lam, (0 : Fin 2))
+    else if r = 2 then (aux_sequencePairOf lam (fun j => Real.sqrt 2 * q.1 1 j), (0 : Fin 2))
+    else if r = 3 then (aux_sequencePairOf lam (fun j => Real.sqrt 2 * q.1 0 j), (1 : Fin 2))
+    else (aux_sequencePairOf lam (fun j => Real.sqrt 2 * q.1 1 j), (1 : Fin 2))
+  else
+    (aux_sequencePairOf (fun j => Real.sqrt 2 * lam j) (aux_caseOneExactM1Scale q),
+      (1 : Fin 2))
+
+private theorem aux_caseOneExactM1Scale_spaced (q : SequencePair × Fin 2)
+    (hq : ∀ r : Fin 2, SpacedSequence (q.1 r)) :
+    SpacedSequence (aux_caseOneExactM1Scale q) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  by_cases hu : q.2 = 0
+  · simp [aux_caseOneExactM1Scale, hu]
+    exact smul_mem_A (max_mem_A (hq 0) (hq 1)) (inv_pos.mpr hsqrt)
+  · simpa [aux_caseOneExactM1Scale, hu] using hq 1
+
+private theorem aux_caseOneExactSlotOf_spaced (lam : ℤ → ℝ) (hlam : SpacedSequence lam)
+    (q : SequencePair × Fin 2) (hq : ∀ r : Fin 2, SpacedSequence (q.1 r)) (r : Fin 5) :
+    ∀ s : Fin 2, SpacedSequence ((aux_caseOneExactSlotOf lam q r).1 s) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  by_cases hr0 : r = 0
+  · intro s
+    fin_cases s
+    · simpa [aux_caseOneExactSlotOf, hr0, aux_sequencePairOf] using
+        smul_mem_A hlam hsqrt
+    · simpa [aux_caseOneExactSlotOf, hr0, aux_sequencePairOf] using
+        aux_caseOneExactM1Scale_spaced q hq
+  by_cases hu : q.2 = 0
+  · simp only [aux_caseOneExactSlotOf, if_neg hr0, if_pos hu]
+    by_cases hr1 : r = 1
+    · intro s
+      fin_cases s
+      · simpa [hr1, aux_sequencePairOf] using smul_mem_A (hq 0) hsqrt
+      · simpa [hr1, aux_sequencePairOf] using hlam
+    by_cases hr2 : r = 2
+    · intro s
+      fin_cases s
+      · simpa [hr1, hr2, aux_sequencePairOf] using hlam
+      · simpa [hr1, hr2, aux_sequencePairOf] using smul_mem_A (hq 1) hsqrt
+    by_cases hr3 : r = 3
+    · intro s
+      fin_cases s
+      · simpa [hr1, hr2, hr3, aux_sequencePairOf] using hlam
+      · simpa [hr1, hr2, hr3, aux_sequencePairOf] using smul_mem_A (hq 0) hsqrt
+    · intro s
+      fin_cases s
+      · simpa [hr1, hr2, hr3, aux_sequencePairOf] using hlam
+      · simpa [hr1, hr2, hr3, aux_sequencePairOf] using smul_mem_A (hq 1) hsqrt
+  · intro s
+    fin_cases s
+    · simpa [aux_caseOneExactSlotOf, hr0, hu, aux_sequencePairOf] using
+        smul_mem_A hlam hsqrt
+    · simpa [aux_caseOneExactSlotOf, hr0, hu, aux_sequencePairOf] using
+        aux_caseOneExactM1Scale_spaced q hq
+
+private theorem aux_caseOne_sum_fin5 (f : Fin 5 → ℝ) :
+    (∑ r : Fin 5, f r) = f 0 + f 1 + f 2 + f 3 + f 4 := by
+  simp [Fin.sum_univ_succ]
+  ring
+
+/-- Coordinates of the first orthogonal transform at the case-one parametrization. -/
+private theorem aux_caseOne_Wone (w0 w1 : ℝ) :
+    W (1 : Fin 2) (w0 - w1, w0 + w1) =
+      (Real.sqrt 2 * w0, Real.sqrt 2 * w1) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  ext
+  · apply (div_eq_iff (ne_of_gt hsqrt)).2
+    change ((w0 - w1) + (w0 + w1)) = Real.sqrt 2 * w0 * Real.sqrt 2
+    calc
+      (w0 - w1) + (w0 + w1) = 2 * w0 := by ring
+      _ = (Real.sqrt 2)^2 * w0 := by
+        rw [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+      _ = Real.sqrt 2 * w0 * Real.sqrt 2 := by ring
+  · apply (div_eq_iff (ne_of_gt hsqrt)).2
+    change (-(w0 - w1) + (w0 + w1)) = Real.sqrt 2 * w1 * Real.sqrt 2
+    calc
+      -(w0 - w1) + (w0 + w1) = 2 * w1 := by ring
+      _ = (Real.sqrt 2)^2 * w1 := by
+        rw [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+      _ = Real.sqrt 2 * w1 * Real.sqrt 2 := by ring
+
+/-- The real-exponent bracket product associated to one exact case-one slot. -/
+private def aux_caseOneExactSlotTerm (lam : ℤ → ℝ) (q : SequencePair × Fin 2)
+    (j : ℤ) (v : RealPlane) (r : Fin 5) : ℝ :=
+  scaledBracketBumpReal (3 / 2 : ℝ) ((aux_caseOneExactSlotOf lam q r).1 0 j)
+      (W (aux_caseOneExactSlotOf lam q r).2 v).1 *
+    scaledBracketBumpReal (3 / 2 : ℝ) ((aux_caseOneExactSlotOf lam q r).1 1 j)
+      (W (aux_caseOneExactSlotOf lam q r).2 v).2
+
+private theorem aux_caseOneExactSlotTerm_nonneg (lam : ℤ → ℝ) (hlam : SpacedSequence lam)
+    (q : SequencePair × Fin 2) (hq : ∀ s : Fin 2, SpacedSequence (q.1 s))
+    (j : ℤ) (v : RealPlane) (r : Fin 5) :
+    0 ≤ aux_caseOneExactSlotTerm lam q j v r := by
+  have hslot := aux_caseOneExactSlotOf_spaced lam hlam q hq r
+  unfold aux_caseOneExactSlotTerm
+  exact mul_nonneg
+    (aux_scaledBracketBumpReal_nonneg _ _ _ ((hslot 0 j).1))
+    (aux_scaledBracketBumpReal_nonneg _ _ _ ((hslot 1 j).1))
+
+/-- The four non-padding slots of an orientation-zero occurrence are exactly the four
+real-exponent products output by `aux_caseOne_threeBump_to_fourM2`. -/
+private theorem aux_caseOneExactSlotTerms_M2 (lam : ℤ → ℝ) (q : SequencePair × Fin 2)
+    (j : ℤ) (w0 w1 : ℝ) (hu : q.2 = 0) :
+    scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * q.1 0 j) (w0 - w1) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (lam j) (w0 + w1) +
+      scaledBracketBumpReal (3 / 2 : ℝ) (lam j) (w0 - w1) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * q.1 1 j) (w0 + w1) +
+      scaledBracketBumpReal (3 / 2 : ℝ) (lam j) (Real.sqrt 2 * w0) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * q.1 0 j)
+          (Real.sqrt 2 * w1) +
+      scaledBracketBumpReal (3 / 2 : ℝ) (lam j) (Real.sqrt 2 * w0) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * q.1 1 j)
+          (Real.sqrt 2 * w1) =
+      aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 1 +
+        aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 2 +
+        aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 3 +
+        aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 4 := by
+  have hWzero : W (0 : Fin 2) (w0 - w1, w0 + w1) = (w0 - w1, w0 + w1) := by
+    simp [W]
+  have hWone := aux_caseOne_Wone w0 w1
+  simp [aux_caseOneExactSlotTerm, aux_caseOneExactSlotOf, hu,
+    aux_sequencePairOf, hWzero, hWone]
+
+/-- The orientation-zero three-bump contribution is bounded by the same five-slot
+occurrence package used for the final thirty-slot witness. -/
+private theorem aux_caseOne_threeBump_to_exactSlots (lam : ℤ → ℝ)
+    (hlam : SpacedSequence lam) (q : SequencePair × Fin 2)
+    (hq : ∀ s : Fin 2, SpacedSequence (q.1 s)) (j : ℤ) (w0 w1 : ℝ)
+    (hu : q.2 = 0) (ht0lam : q.1 0 j ≤ lam j) (ht1lam : q.1 1 j ≤ lam j) :
+    (∫ p : ℝ, scaledBracketBumpReal 2 (lam j) (w0 + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.1 0 j) (-w1 - p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (w1 - p)) ≤
+      16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+        C_twoBumpEstimate (3 / 2) (3 / 2) *
+          ∑ r : Fin 5,
+            aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r := by
+  have hraw := aux_caseOne_threeBump_to_fourM2 w0 w1 (lam j) (q.1 0 j) (q.1 1 j)
+    (hlam j).1 (hq 0 j).1 (hq 1 j).1 ht0lam ht1lam
+  have hterms := aux_caseOneExactSlotTerms_M2 lam q j w0 w1 hu
+  have hzero : 0 ≤ aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 0 :=
+    aux_caseOneExactSlotTerm_nonneg lam hlam q hq j (w0 - w1, w0 + w1) 0
+  have htriangle : 0 ≤ C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) := by
+    have htilde : 0 ≤ C_bumpTriangleTilde (-(1 / 2 : ℝ)) (1 / 2) := by
+      unfold C_bumpTriangleTilde
+      positivity
+    unfold C_bumpTriangle
+    exact (Real.rpow_nonneg htilde _).trans (le_max_left _ _)
+  have htwo : 0 ≤ C_twoBumpEstimate (3 / 2) (3 / 2) := by
+    unfold C_twoBumpEstimate
+    norm_num
+    positivity
+  have hC : 0 ≤ 16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+      C_twoBumpEstimate (3 / 2) (3 / 2) :=
+    mul_nonneg (mul_nonneg (by norm_num) htriangle) htwo
+  have hsum := aux_caseOne_sum_fin5
+    (fun r : Fin 5 => aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r)
+  have hpad :
+      aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 1 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 2 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 3 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 4 ≤
+        aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 0 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 1 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 2 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 3 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 4 := by
+    calc
+      aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 1 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 2 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 3 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 4 =
+          0 + (aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 1 +
+            aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 2 +
+            aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 3 +
+            aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 4) := by ring
+      _ ≤ aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 0 +
+          (aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 1 +
+            aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 2 +
+            aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 3 +
+            aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 4) :=
+          by nlinarith [hzero]
+      _ = aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 0 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 1 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 2 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 3 +
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 4 := by ring
+  calc
+    (∫ p : ℝ, scaledBracketBumpReal 2 (lam j) (w0 + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.1 0 j) (-w1 - p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (w1 - p)) ≤
+        16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2) *
+            (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * q.1 0 j) (w0 - w1) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (lam j) (w0 + w1) +
+              scaledBracketBumpReal (3 / 2 : ℝ) (lam j) (w0 - w1) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * q.1 1 j) (w0 + w1) +
+              scaledBracketBumpReal (3 / 2 : ℝ) (lam j) (Real.sqrt 2 * w0) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * q.1 0 j)
+                  (Real.sqrt 2 * w1) +
+              scaledBracketBumpReal (3 / 2 : ℝ) (lam j) (Real.sqrt 2 * w0) *
+                scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * q.1 1 j)
+                  (Real.sqrt 2 * w1)) := hraw
+    _ = 16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2) *
+            (aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 1 +
+              aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 2 +
+              aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 3 +
+              aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 4) := by
+          rw [hterms]
+    _ ≤ 16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2) *
+            (aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 0 +
+              aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 1 +
+              aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 2 +
+              aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 3 +
+              aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 4) :=
+          mul_le_mul_of_nonneg_left hpad hC
+    _ = 16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2) *
+            ∑ r : Fin 5,
+              aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r := by
+          rw [hsum]
+
+/-- The M₁ contribution of an orientation-zero H occurrence.  The two-bump integral is
+placed in exact `W 1` coordinates using the max-scale output. -/
+private theorem aux_caseOne_m1_orientation_zero (w0 w1 lam t0 t1 : ℝ)
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    scaledBracketBumpReal 2 lam w0 *
+        (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) ≤
+      C_twoBumpEstimate (3 / 2) (3 / 2) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (3 / 2 : ℝ) ((max t0 t1) / Real.sqrt 2)
+            (Real.sqrt 2 * w1) := by
+  have hJnonneg : 0 ≤
+      ∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+    apply integral_nonneg
+    intro p
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  have hreduce : scaledBracketBumpReal 2 lam w0 ≤
+      scaledBracketBumpReal (3 / 2 : ℝ) lam w0 :=
+    aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2 lam w0 hlam (by norm_num)
+  have htwo := aux_caseOne_twoBumpIntegral_max (-w1) w1 t0 t1 ht0 ht1
+  have htwo' :
+      (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) ≤
+        C_twoBumpEstimate (3 / 2) (3 / 2) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (max t0 t1) (2 * w1) := by
+    simpa [show -w1 - w1 = -(2 * w1) by ring, aux_scaledBracketBumpReal_neg] using htwo
+  have hbase :
+      scaledBracketBumpReal 2 lam w0 *
+          (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) ≤
+        C_twoBumpEstimate (3 / 2) (3 / 2) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 *
+            scaledBracketBumpReal (3 / 2 : ℝ) (max t0 t1) (2 * w1)) := by
+    calc
+      scaledBracketBumpReal 2 lam w0 *
+          (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) ≤
+          scaledBracketBumpReal (3 / 2 : ℝ) lam w0 *
+            (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) :=
+        mul_le_mul_of_nonneg_right hreduce hJnonneg
+      _ ≤ scaledBracketBumpReal (3 / 2 : ℝ) lam w0 *
+            (C_twoBumpEstimate (3 / 2) (3 / 2) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (max t0 t1) (2 * w1)) :=
+        mul_le_mul_of_nonneg_left htwo' (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      _ = C_twoBumpEstimate (3 / 2) (3 / 2) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 *
+            scaledBracketBumpReal (3 / 2 : ℝ) (max t0 t1) (2 * w1)) := by ring
+  calc
+    scaledBracketBumpReal 2 lam w0 *
+        (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) ≤
+        C_twoBumpEstimate (3 / 2) (3 / 2) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 *
+            scaledBracketBumpReal (3 / 2 : ℝ) (max t0 t1) (2 * w1)) := hbase
+    _ = C_twoBumpEstimate (3 / 2) (3 / 2) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (3 / 2 : ℝ) ((max t0 t1) / Real.sqrt 2)
+            (Real.sqrt 2 * w1) := by
+      rw [aux_caseOne_M1_zero_rescale]
+      ring
+
+/-- The orientation-zero M₁ contribution is absorbed by the same five exact slots as
+the M₂ contribution. -/
+private theorem aux_caseOne_m1_zero_to_exactSlots (lam : ℤ → ℝ)
+    (hlam : SpacedSequence lam) (q : SequencePair × Fin 2)
+    (hq : ∀ s : Fin 2, SpacedSequence (q.1 s)) (j : ℤ) (w0 w1 : ℝ)
+    (hu : q.2 = 0) :
+    scaledBracketBumpReal 2 (lam j) w0 *
+        (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) (q.1 0 j) (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (w1 - p)) ≤
+      C_twoBumpEstimate (3 / 2) (3 / 2) *
+        ∑ r : Fin 5,
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r := by
+  have hraw := aux_caseOne_m1_orientation_zero w0 w1 (lam j) (q.1 0 j) (q.1 1 j)
+    (hlam j).1 (hq 0 j).1 (hq 1 j).1
+  have hterm0 :
+      aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 0 =
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam j) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (3 / 2 : ℝ) ((max (q.1 0 j) (q.1 1 j)) / Real.sqrt 2)
+            (Real.sqrt 2 * w1) := by
+    have hWone := aux_caseOne_Wone w0 w1
+    have hscale : (Real.sqrt 2)⁻¹ * max (q.1 0 j) (q.1 1 j) =
+        max (q.1 0 j) (q.1 1 j) / Real.sqrt 2 := by
+      rw [div_eq_mul_inv]
+      ring
+    simp [aux_caseOneExactSlotTerm, aux_caseOneExactSlotOf, hu,
+      aux_caseOneExactM1Scale, aux_sequencePairOf, hWone, hscale]
+  have hsum := aux_caseOne_sum_fin5
+    (fun r : Fin 5 => aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r)
+  have hnon1 := aux_caseOneExactSlotTerm_nonneg lam hlam q hq j (w0 - w1, w0 + w1) 1
+  have hnon2 := aux_caseOneExactSlotTerm_nonneg lam hlam q hq j (w0 - w1, w0 + w1) 2
+  have hnon3 := aux_caseOneExactSlotTerm_nonneg lam hlam q hq j (w0 - w1, w0 + w1) 3
+  have hnon4 := aux_caseOneExactSlotTerm_nonneg lam hlam q hq j (w0 - w1, w0 + w1) 4
+  have hsumle : aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 0 ≤
+      ∑ r : Fin 5, aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r := by
+    rw [hsum]
+    nlinarith
+  have hCtwo : 0 ≤ C_twoBumpEstimate (3 / 2) (3 / 2) := by
+    unfold C_twoBumpEstimate
+    norm_num
+    positivity
+  calc
+    scaledBracketBumpReal 2 (lam j) w0 *
+        (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) (q.1 0 j) (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (w1 - p)) ≤
+        C_twoBumpEstimate (3 / 2) (3 / 2) *
+          aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) 0 := by
+      rw [hterm0]
+      simpa only [mul_assoc] using hraw
+    _ ≤ C_twoBumpEstimate (3 / 2) (3 / 2) *
+        ∑ r : Fin 5, aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r :=
+      mul_le_mul_of_nonneg_left hsumle hCtwo
+
+/-- Uniformly absorbs the M₁ and M₂ coefficients of one orientation-zero occurrence
+into the case-one max constant.  The slack is deliberately kept explicit for the outer
+multiset summation. -/
+private theorem aux_caseOne_zero_coefficients_absorb (S X Y : ℝ) (hS : 0 ≤ S)
+    (hX : X ≤ C_twoBumpEstimate (3 / 2) (3 / 2) * S)
+    (hY : Y ≤ 16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+      C_twoBumpEstimate (3 / 2) (3 / 2) * S) :
+    X + Y ≤ 8 *
+      max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+        (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2)) * S := by
+  let Ctwo : ℝ := C_twoBumpEstimate (3 / 2) (3 / 2)
+  let Ctri : ℝ := C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2)
+  let K : ℝ := max (Ctwo + 4) (4 * Ctri * Ctwo)
+  have htwo : 0 ≤ Ctwo := by
+    dsimp [Ctwo, C_twoBumpEstimate]
+    norm_num
+    positivity
+  have htri : 0 ≤ Ctri := by
+    dsimp [Ctri]
+    have htilde : 0 ≤ C_bumpTriangleTilde (-(1 / 2 : ℝ)) (1 / 2) := by
+      unfold C_bumpTriangleTilde
+      positivity
+    unfold C_bumpTriangle
+    exact (Real.rpow_nonneg htilde _).trans (le_max_left _ _)
+  have hK : 0 ≤ K := by
+    dsimp [K]
+    exact le_trans (by positivity : 0 ≤ Ctwo + 4) (le_max_left _ _)
+  have hCtwo : Ctwo ≤ K := by
+    calc
+      Ctwo ≤ Ctwo + 4 := by linarith
+      _ ≤ K := le_max_left _ _
+  have hCtri : 4 * Ctri * Ctwo ≤ K := le_max_right _ _
+  have hYcoef : 16 * Ctri * Ctwo ≤ 4 * K := by
+    calc
+      16 * Ctri * Ctwo = 4 * (4 * Ctri * Ctwo) := by ring
+      _ ≤ 4 * K := mul_le_mul_of_nonneg_left hCtri (by norm_num)
+  have hX' : X ≤ K * S := by
+    calc
+      X ≤ Ctwo * S := by simpa [Ctwo] using hX
+      _ ≤ K * S := mul_le_mul_of_nonneg_right hCtwo hS
+  have hY' : Y ≤ (4 * K) * S := by
+    calc
+      Y ≤ 16 * Ctri * Ctwo * S := by simpa [Ctri, Ctwo] using hY
+      _ ≤ (4 * K) * S := mul_le_mul_of_nonneg_right hYcoef hS
+  have hsum : X + Y ≤ 5 * K * S := by
+    calc
+      X + Y ≤ K * S + (4 * K) * S := add_le_add hX' hY'
+      _ = 5 * K * S := by ring
+  have hfive : 5 * K * S ≤ 8 * K * S := by
+    have hKS : 0 ≤ K * S := mul_nonneg hK hS
+    nlinarith
+  exact hsum.trans (by simpa [Ctwo, Ctri, K] using hfive)
+
+/-- Subadditivity of the clipped linear factor used to split the cancellation gain
+between the two orientation-zero H coordinates. -/
+private theorem aux_caseOne_min_one_subadd (a b : ℝ) (ha0 : 0 ≤ a) (hb0 : 0 ≤ b) :
+    min 1 (a + b) ≤ min 1 a + min 1 b := by
+  by_cases ha : 1 ≤ a
+  · calc
+      min 1 (a + b) ≤ 1 := min_le_left _ _
+      _ ≤ min 1 a + min 1 b := by
+        rw [min_eq_left ha]
+        linarith [le_min (by norm_num : (0 : ℝ) ≤ 1) hb0]
+  by_cases hb : 1 ≤ b
+  · calc
+      min 1 (a + b) ≤ 1 := min_le_left _ _
+      _ ≤ min 1 a + min 1 b := by
+        rw [min_eq_left hb]
+        linarith [le_min (by norm_num : (0 : ℝ) ≤ 1) ha0]
+  · have ha' : a ≤ 1 := le_of_not_ge ha
+    have hb' : b ≤ 1 := le_of_not_ge hb
+    rw [min_eq_right ha', min_eq_right hb']
+    exact min_le_right _ _
+
+/-- Splits the cancellation factor between the two translated horizontal coordinates. -/
+private theorem aux_caseOne_min_split (lam p w1 : ℝ) (hlam : 0 < lam) :
+    min 1 (lam⁻¹ * |p|) ≤
+      min 1 ((2 * lam)⁻¹ * |-w1 - p|) +
+        min 1 ((2 * lam)⁻¹ * |w1 - p|) := by
+  let a : ℝ := (2 * lam)⁻¹ * |-w1 - p|
+  let b : ℝ := (2 * lam)⁻¹ * |w1 - p|
+  have hfactor : 0 ≤ (2 * lam)⁻¹ := inv_nonneg.mpr (by positivity)
+  have ha : 0 ≤ a := mul_nonneg hfactor (abs_nonneg _)
+  have hb : 0 ≤ b := mul_nonneg hfactor (abs_nonneg _)
+  have habs : 2 * |p| ≤ |-w1 - p| + |w1 - p| := by
+    calc
+      2 * |p| = |(-2 : ℝ) * p| := by rw [abs_mul]; norm_num
+      _ = |(-w1 - p) + (w1 - p)| := by congr 1 <;> ring
+      _ ≤ |-w1 - p| + |w1 - p| := abs_add_le _ _
+  have hlin := mul_le_mul_of_nonneg_left habs hfactor
+  have hlin' : lam⁻¹ * |p| ≤ a + b := by
+    dsimp [a, b]
+    calc
+      lam⁻¹ * |p| = (2 * lam)⁻¹ * (2 * |p|) := by
+        field_simp [ne_of_gt hlam]
+      _ ≤ (2 * lam)⁻¹ * (|-w1 - p| + |w1 - p|) := hlin
+      _ = (2 * lam)⁻¹ * |-w1 - p| + (2 * lam)⁻¹ * |w1 - p| := by ring
+  calc
+    min 1 (lam⁻¹ * |p|) ≤ min 1 (a + b) := min_le_min_left _ hlin'
+    _ ≤ min 1 a + min 1 b := aux_caseOne_min_one_subadd a b ha hb
+    _ = min 1 ((2 * lam)⁻¹ * |-w1 - p|) +
+        min 1 ((2 * lam)⁻¹ * |w1 - p|) := by rfl
+
+/-- The square-root cancellation gain turns the two orientation-zero second-order
+bracket factors into real exponent `3/2` factors. -/
+private theorem aux_caseOne_u0_min_product (d : ℕ) (lam t0 t1 p w1 : ℝ)
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1)
+    (hscale0 : t0 / (2 * lam) ≤ Real.rpow 2 (-(d : ℝ)))
+    (hscale1 : t1 / (2 * lam) ≤ Real.rpow 2 (-(d : ℝ))) :
+    min 1 (lam⁻¹ * |p|) *
+        scaledBracketBump 2 t0 (-w1 - p) * scaledBracketBump 2 t1 (w1 - p) ≤
+      2 * Real.rpow 2 (-((d : ℝ) / 2)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+  let r : ℝ := Real.rpow 2 (-((d : ℝ) / 2))
+  let z0 : ℝ := 1 + t0⁻¹ * |-w1 - p|
+  let z1 : ℝ := 1 + t1⁻¹ * |w1 - p|
+  have hlam2 : 0 < 2 * lam := by positivity
+  have hsplit := aux_caseOne_min_split lam p w1 hlam
+  have hmin0 := aux_caseOne_min_scale_half_le ht0 hlam2 hscale0 (-w1 - p)
+  have hmin1 := aux_caseOne_min_scale_half_le ht1 hlam2 hscale1 (w1 - p)
+  have hmin : min 1 (lam⁻¹ * |p|) ≤ r * Real.sqrt z0 + r * Real.sqrt z1 := by
+    calc
+      min 1 (lam⁻¹ * |p|) ≤
+          min 1 ((2 * lam)⁻¹ * |-w1 - p|) +
+            min 1 ((2 * lam)⁻¹ * |w1 - p|) := hsplit
+      _ ≤ r * Real.sqrt z0 + r * Real.sqrt z1 := by
+        dsimp [r, z0, z1]
+        exact add_le_add hmin0 hmin1
+  have hB0 : 0 ≤ scaledBracketBump 2 t0 (-w1 - p) :=
+    aux_scaledBracketBump_nonneg 2 ht0 _
+  have hB1 : 0 ≤ scaledBracketBump 2 t1 (w1 - p) :=
+    aux_scaledBracketBump_nonneg 2 ht1 _
+  have hprod : 0 ≤ scaledBracketBump 2 t0 (-w1 - p) *
+      scaledBracketBump 2 t1 (w1 - p) := mul_nonneg hB0 hB1
+  have hfirst := mul_le_mul_of_nonneg_right hmin hprod
+  have hred0 : scaledBracketBump 2 t0 (-w1 - p) ≤
+      scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) := by
+    rw [← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq]
+    exact aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2 t0 (-w1 - p)
+      ht0 (by norm_num)
+  have hred1 : scaledBracketBump 2 t1 (w1 - p) ≤
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+    rw [← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq]
+    exact aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2 t1 (w1 - p)
+      ht1 (by norm_num)
+  have hreal0 := aux_caseOne_scaledBracketBump_two_sqrt_eq_threeHalves t0 (-w1 - p) ht0
+  have hreal1 := aux_caseOne_scaledBracketBump_two_sqrt_eq_threeHalves t1 (w1 - p) ht1
+  have hreal0' : Real.sqrt z0 * scaledBracketBump 2 t0 (-w1 - p) =
+      scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) := by
+    dsimp [z0]
+    rw [Real.sqrt_eq_rpow]
+    exact hreal0
+  have hreal1' : Real.sqrt z1 * scaledBracketBump 2 t1 (w1 - p) =
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+    dsimp [z1]
+    rw [Real.sqrt_eq_rpow]
+    exact hreal1
+  have hr : 0 ≤ r := by
+    dsimp [r]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hR0 : r * Real.sqrt z0 * scaledBracketBump 2 t0 (-w1 - p) *
+      scaledBracketBump 2 t1 (w1 - p) ≤
+        r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+    calc
+      r * Real.sqrt z0 * scaledBracketBump 2 t0 (-w1 - p) *
+          scaledBracketBump 2 t1 (w1 - p) =
+          r * (Real.sqrt z0 * scaledBracketBump 2 t0 (-w1 - p)) *
+            scaledBracketBump 2 t1 (w1 - p) := by ring
+      _ = r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+            scaledBracketBump 2 t1 (w1 - p) := by
+          rw [hreal0']
+      _ ≤ r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+          exact mul_le_mul_of_nonneg_left hred1
+            (mul_nonneg hr (aux_scaledBracketBumpReal_nonneg _ _ _ ht0))
+  have hR1 : r * Real.sqrt z1 * scaledBracketBump 2 t0 (-w1 - p) *
+      scaledBracketBump 2 t1 (w1 - p) ≤
+        r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+    calc
+      r * Real.sqrt z1 * scaledBracketBump 2 t0 (-w1 - p) *
+          scaledBracketBump 2 t1 (w1 - p) =
+          r * scaledBracketBump 2 t0 (-w1 - p) *
+            (Real.sqrt z1 * scaledBracketBump 2 t1 (w1 - p)) := by ring
+      _ = r * scaledBracketBump 2 t0 (-w1 - p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+          rw [hreal1']
+      _ ≤ r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+          calc
+            r * scaledBracketBump 2 t0 (-w1 - p) *
+                scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) =
+                (r * scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) *
+                  scaledBracketBump 2 t0 (-w1 - p) := by ring
+            _ ≤ (r * scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) :=
+              mul_le_mul_of_nonneg_left hred0
+                (mul_nonneg hr (aux_scaledBracketBumpReal_nonneg _ _ _ ht1))
+            _ = r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by ring
+  calc
+    min 1 (lam⁻¹ * |p|) * scaledBracketBump 2 t0 (-w1 - p) *
+        scaledBracketBump 2 t1 (w1 - p) ≤
+        (r * Real.sqrt z0 + r * Real.sqrt z1) *
+          (scaledBracketBump 2 t0 (-w1 - p) * scaledBracketBump 2 t1 (w1 - p)) := by
+      simpa only [mul_assoc] using hfirst
+    _ = r * Real.sqrt z0 * scaledBracketBump 2 t0 (-w1 - p) *
+          scaledBracketBump 2 t1 (w1 - p) +
+        r * Real.sqrt z1 * scaledBracketBump 2 t0 (-w1 - p) *
+          scaledBracketBump 2 t1 (w1 - p) := by ring
+    _ ≤ r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) +
+        r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) :=
+      add_le_add hR0 hR1
+    _ = 2 * r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by ring
+    _ = 2 * Real.rpow 2 (-((d : ℝ) / 2)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by rfl
+
+/-- Full orientation-zero occurrence estimate in the common five-slot case-one package.
+This is the analytic input used before summing the six H-kernel occurrences. -/
+private theorem aux_caseOne_u0_occurrence (d : ℕ) (lam : ℤ → ℝ)
+    (hlam : SpacedSequence lam) (q : SequencePair × Fin 2)
+    (hq : ∀ s : Fin 2, SpacedSequence (q.1 s)) (j : ℤ) (w0 w1 : ℝ)
+    (hu : q.2 = 0)
+    (hscale0 : q.1 0 j / lam j ≤ Real.rpow 2 (-(d : ℝ)))
+    (hscale1 : q.1 1 j / lam j ≤ Real.rpow 2 (-(d : ℝ))) :
+    (∫ p : ℝ, min 1 ((lam j)⁻¹ * |p|) *
+      (scaledBracketBumpReal 2 (lam j) w0 +
+        scaledBracketBumpReal 2 (lam j) (w0 + p)) *
+      scaledBracketBump 2 (q.1 0 j) (-w1 - p) *
+      scaledBracketBump 2 (q.1 1 j) (w1 - p)) ≤
+      16 * Real.rpow 2 (-((d : ℝ) / 2)) *
+        max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+          (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+            C_twoBumpEstimate (3 / 2) (3 / 2)) *
+          ∑ r : Fin 5, aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r := by
+  let t0 : ℝ := q.1 0 j
+  let t1 : ℝ := q.1 1 j
+  let L : ℝ := lam j
+  let r : ℝ := Real.rpow 2 (-((d : ℝ) / 2))
+  let T : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)
+  let A : ℝ := scaledBracketBumpReal 2 L w0
+  let B : ℝ → ℝ := fun p => scaledBracketBumpReal 2 L (w0 + p)
+  let X : ℝ := A * ∫ p : ℝ, T p
+  let Y : ℝ := ∫ p : ℝ, B p * T p
+  let S : ℝ := ∑ r : Fin 5, aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r
+  let f : ℝ → ℝ := fun p => min 1 (L⁻¹ * |p|) * (A + B p) *
+    scaledBracketBump 2 t0 (-w1 - p) * scaledBracketBump 2 t1 (w1 - p)
+  let g0 : ℝ → ℝ := fun p => A * T p
+  let g1 : ℝ → ℝ := fun p => B p * T p
+  have hL : 0 < L := by exact (hlam j).1
+  have ht0 : 0 < t0 := by exact (hq 0 j).1
+  have ht1 : 0 < t1 := by exact (hq 1 j).1
+  have hpowle : Real.rpow 2 (-(d : ℝ)) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos (by norm_num) (by linarith)
+  have ht0L : t0 ≤ L := by
+    have hquot : t0 / L ≤ 1 := by simpa [t0, L] using hscale0.trans hpowle
+    calc
+      t0 = (t0 / L) * L := by field_simp [ne_of_gt hL]
+      _ ≤ 1 * L := mul_le_mul_of_nonneg_right hquot hL.le
+      _ = L := by ring
+  have ht1L : t1 ≤ L := by
+    have hquot : t1 / L ≤ 1 := by simpa [t1, L] using hscale1.trans hpowle
+    calc
+      t1 = (t1 / L) * L := by field_simp [ne_of_gt hL]
+      _ ≤ 1 * L := mul_le_mul_of_nonneg_right hquot hL.le
+      _ = L := by ring
+  have ht0half : t0 / (2 * L) ≤ Real.rpow 2 (-(d : ℝ)) := by
+    calc
+      t0 / (2 * L) = (1 / 2 : ℝ) * (t0 / L) := by
+        field_simp [ne_of_gt hL]
+      _ ≤ t0 / L := by
+        have hnon : 0 ≤ t0 / L := div_nonneg ht0.le hL.le
+        nlinarith
+      _ ≤ Real.rpow 2 (-(d : ℝ)) := by simpa [t0, L] using hscale0
+  have ht1half : t1 / (2 * L) ≤ Real.rpow 2 (-(d : ℝ)) := by
+    calc
+      t1 / (2 * L) = (1 / 2 : ℝ) * (t1 / L) := by
+        field_simp [ne_of_gt hL]
+      _ ≤ t1 / L := by
+        have hnon : 0 ≤ t1 / L := div_nonneg ht1.le hL.le
+        nlinarith
+      _ ≤ Real.rpow 2 (-(d : ℝ)) := by simpa [t1, L] using hscale1
+  have hTnon (p : ℝ) : 0 ≤ T p := by
+    dsimp [T]
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  have hA : 0 ≤ A := by
+    dsimp [A]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ hL
+  have hB (p : ℝ) : 0 ≤ B p := by
+    dsimp [B]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ hL
+  have hT : Integrable T := by
+    have hbase := aux_caseOne_scaledBracketBumpReal_product_integrable
+      (3 / 2 : ℝ) (3 / 2 : ℝ) t0 t1 (-w1) w1 (by norm_num) (by norm_num) ht0 ht1
+    simpa [T] using hbase
+  have hg0 : Integrable g0 := by
+    simpa [g0] using hT.const_mul A
+  have hg1 : Integrable g1 := by
+    have hmajor : Integrable (fun p : ℝ => L⁻¹ * T p) := hT.const_mul L⁻¹
+    refine hmajor.mono' ?_ ?_
+    · apply Continuous.aestronglyMeasurable
+      have hBbase : Continuous (fun p : ℝ => 1 + |L⁻¹ * (w0 + p)|) := by fun_prop
+      have ht0base : Continuous (fun p : ℝ => 1 + |t0⁻¹ * (-w1 - p)|) := by fun_prop
+      have ht1base : Continuous (fun p : ℝ => 1 + |t1⁻¹ * (w1 - p)|) := by fun_prop
+      have hBcont : Continuous (fun p : ℝ => scaledBracketBumpReal 2 L (w0 + p)) := by
+        unfold scaledBracketBumpReal
+        apply continuous_const.mul
+        rw [continuous_iff_continuousAt]
+        intro p
+        exact hBbase.continuousAt.rpow_const (Or.inl (by positivity))
+      have ht0cont : Continuous (fun p : ℝ =>
+          scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p)) := by
+        unfold scaledBracketBumpReal
+        apply continuous_const.mul
+        rw [continuous_iff_continuousAt]
+        intro p
+        exact ht0base.continuousAt.rpow_const (Or.inl (by positivity))
+      have ht1cont : Continuous (fun p : ℝ =>
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) := by
+        unfold scaledBracketBumpReal
+        apply continuous_const.mul
+        rw [continuous_iff_continuousAt]
+        intro p
+        exact ht1base.continuousAt.rpow_const (Or.inl (by positivity))
+      change Continuous (fun p : ℝ => B p * T p)
+      dsimp [B, T]
+      convert hBcont.mul (ht0cont.mul ht1cont) using 1
+      ext p
+      rfl
+    · filter_upwards [] with p
+      have hle := aux_caseOne_scaledBracketBumpReal_le_inv 2 L (w0 + p) (by norm_num) hL
+      have hmajorNonneg : 0 ≤ L⁻¹ * T p := mul_nonneg (inv_nonneg.mpr hL.le) (hTnon p)
+      have hg1Nonneg : 0 ≤ g1 p := mul_nonneg (hB p) (hTnon p)
+      simpa only [Real.norm_eq_abs, abs_of_nonneg hg1Nonneg, abs_of_nonneg hmajorNonneg] using
+        mul_le_mul_of_nonneg_right hle (hTnon p)
+  have hr : 0 ≤ r := by
+    dsimp [r]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hmajor : Integrable (fun p : ℝ => 2 * r * (g0 p + g1 p)) :=
+    (hg0.add hg1).const_mul (2 * r)
+  have hfn (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    have hmin : 0 ≤ min 1 (L⁻¹ * |p|) :=
+      le_min (by norm_num) (mul_nonneg (inv_nonneg.mpr hL.le) (abs_nonneg _))
+    exact mul_nonneg
+      (mul_nonneg
+        (mul_nonneg hmin (add_nonneg hA (hB p)))
+        (aux_scaledBracketBump_nonneg 2 ht0 _))
+      (aux_scaledBracketBump_nonneg 2 ht1 _)
+  have hpoint (p : ℝ) : f p ≤ 2 * r * (g0 p + g1 p) := by
+    have hmin := aux_caseOne_u0_min_product d L t0 t1 p w1 hL ht0 ht1 ht0half ht1half
+    have hAB : 0 ≤ A + B p := add_nonneg hA (hB p)
+    dsimp [f, g0, g1, T]
+    calc
+      min 1 (L⁻¹ * |p|) * (A + B p) *
+          scaledBracketBump 2 t0 (-w1 - p) * scaledBracketBump 2 t1 (w1 - p) =
+          (A + B p) *
+            (min 1 (L⁻¹ * |p|) * scaledBracketBump 2 t0 (-w1 - p) *
+              scaledBracketBump 2 t1 (w1 - p)) := by ring
+      _ ≤ (A + B p) *
+          (2 * r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) :=
+        mul_le_mul_of_nonneg_left hmin hAB
+      _ = 2 * r *
+          (A * (scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) +
+            B p * (scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p))) := by ring
+  have hint : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, 2 * r * (g0 p + g1 p) :=
+    integral_mono_of_nonneg (ae_of_all _ hfn) hmajor (ae_of_all _ hpoint)
+  have hS : 0 ≤ S := by
+    dsimp [S]
+    exact Finset.sum_nonneg fun r _ =>
+      aux_caseOneExactSlotTerm_nonneg lam hlam q hq j (w0 - w1, w0 + w1) r
+  have hX : X ≤ C_twoBumpEstimate (3 / 2) (3 / 2) * S := by
+    dsimp [X, A, T, S]
+    simpa [t0, t1, L] using aux_caseOne_m1_zero_to_exactSlots lam hlam q hq j w0 w1 hu
+  have hY : Y ≤ 16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+      C_twoBumpEstimate (3 / 2) (3 / 2) * S := by
+    dsimp [Y, B, T, S]
+    simpa [t0, t1, L, mul_assoc] using
+      aux_caseOne_threeBump_to_exactSlots lam hlam q hq j w0 w1 hu ht0L ht1L
+  have habsorb := aux_caseOne_zero_coefficients_absorb S X Y hS hX hY
+  calc
+    (∫ p : ℝ, min 1 ((lam j)⁻¹ * |p|) *
+      (scaledBracketBumpReal 2 (lam j) w0 + scaledBracketBumpReal 2 (lam j) (w0 + p)) *
+      scaledBracketBump 2 (q.1 0 j) (-w1 - p) *
+      scaledBracketBump 2 (q.1 1 j) (w1 - p)) = ∫ p : ℝ, f p := by rfl
+    _ ≤ ∫ p : ℝ, 2 * r * (g0 p + g1 p) := hint
+    _ = 2 * r * (X + Y) := by
+      rw [integral_const_mul, integral_add hg0 hg1]
+      dsimp only [g0, g1, X, Y]
+      rw [integral_const_mul]
+    _ ≤ 2 * r *
+        (8 * max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+          (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+            C_twoBumpEstimate (3 / 2) (3 / 2)) * S) :=
+      mul_le_mul_of_nonneg_left habsorb (mul_nonneg (by norm_num) hr)
+    _ = 16 * Real.rpow 2 (-((d : ℝ) / 2)) *
+        max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+          (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+            C_twoBumpEstimate (3 / 2) (3 / 2)) *
+          ∑ r : Fin 5, aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r := by
+      dsimp [r, S]
+      ring
+
+/-- The orientation-zero five-slot occurrence estimate with its dyadic loss obtained
+directly from a member of an H-kernel Gaussian package. -/
+private theorem aux_caseOne_u0_occurrence_of_package {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
+    (P : Multiset (SequencePair × Fin 2)) (hP : aux_HKernelGaussianBound γ i P)
+    (q : SequencePair × Fin 2) (hqmem : q ∈ P) (hqu : q.2 = 0)
+    (lambda : ℝ)
+    (hlambda : lambda = (2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ))) (w0 w1 : ℝ) :
+    (∫ p : ℝ, min 1 (lambda⁻¹ * |p|) *
+      (scaledBracketBumpReal 2 lambda w0 +
+        scaledBracketBumpReal 2 lambda (w0 + p)) *
+      scaledBracketBump 2 (q.1 0 j) (-w1 - p) *
+      scaledBracketBump 2 (q.1 1 j) (w1 - p)) ≤
+      16 * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+        max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+          (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+            C_twoBumpEstimate (3 / 2) (3 / 2)) *
+          ∑ r : Fin 5,
+            aux_caseOneExactSlotTerm
+              (fun k => (2 : ℝ) ^ ι.1.1 *
+                γ.scales i 1 (k + (geometricDelta γ : ℤ))) q j
+              (w0 - w1, w0 + w1) r := by
+  let lamSeq : ℤ → ℝ := fun k => (2 : ℝ) ^ ι.1.1 *
+    γ.scales i 1 (k + (geometricDelta γ : ℤ))
+  have hlam : SpacedSequence lamSeq := by
+    intro k
+    refine ⟨?_, ?_⟩
+    · dsimp [lamSeq]
+      exact mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 _).1
+    · dsimp [lamSeq]
+      calc
+        2 * ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (k + (geometricDelta γ : ℤ))) =
+            (2 : ℝ) ^ ι.1.1 *
+              (2 * γ.scales i 1 (k + (geometricDelta γ : ℤ))) := by ring
+        _ ≤ (2 : ℝ) ^ ι.1.1 *
+              γ.scales i 1 ((k + (geometricDelta γ : ℤ)) + 1) :=
+            mul_le_mul_of_nonneg_left
+              (γ.scales_spaced i 1 (k + (geometricDelta γ : ℤ))).2 (by positivity)
+        _ = (2 : ℝ) ^ ι.1.1 *
+              γ.scales i 1 ((k + 1) + (geometricDelta γ : ℤ)) := by
+            congr 1
+            ring
+  rcases hP.1 q hqmem with ⟨hqball0, hqball1⟩
+  have hq : ∀ s : Fin 2, SpacedSequence (q.1 s) := by
+    intro s
+    fin_cases s
+    · exact hqball0.1
+    · exact hqball1.1
+  have hpow : (2 : ℝ) ^ (-ι.1.1) =
+      Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ)) := by
+    have hnat : (ι.1.1.natAbs : ℤ) = ι.1.1 :=
+      Int.natAbs_of_nonneg hpositive.le
+    have hnatR : ((ι.1.1.natAbs : ℕ) : ℝ) = (ι.1.1 : ℝ) := by
+      calc
+        ((ι.1.1.natAbs : ℕ) : ℝ) = ((ι.1.1.natAbs : ℤ) : ℝ) := by norm_num
+        _ = (ι.1.1 : ℝ) := congrArg (fun z : ℤ => (z : ℝ)) hnat
+    calc
+      (2 : ℝ) ^ (-ι.1.1) = Real.rpow 2 ((-ι.1.1 : ℤ) : ℝ) :=
+        (Real.rpow_intCast _ _).symm
+      _ = Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ)) := by
+        congr 1
+        rw [Int.cast_neg, ← hnatR]
+  have hratio0 := aux_caseOne_distanceBall_scale_ratio_le
+    (γ.scales_spaced i 1) hqball0 ι.1.1 j
+  have hratio1 := aux_caseOne_distanceBall_scale_ratio_le
+    (γ.scales_spaced i 1) hqball1 ι.1.1 j
+  have hscale0 : q.1 0 j / lamSeq j ≤
+      Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ)) := by
+    change q.1 0 j / ((2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ))) ≤ _
+    exact hratio0.trans_eq hpow
+  have hscale1 : q.1 1 j / lamSeq j ≤
+      Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ)) := by
+    change q.1 1 j / ((2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ))) ≤ _
+    exact hratio1.trans_eq hpow
+  have hmain := aux_caseOne_u0_occurrence (ι.1.1.natAbs) lamSeq hlam q hq j w0 w1
+    hqu hscale0 hscale1
+  have hExponent : -(((ι.1.1.natAbs : ℕ) : ℝ) / 2) =
+      -((ι.1.1.natAbs : ℕ) : ℝ) / 2 := by ring
+  rw [hExponent] at hmain
+  simpa [lamSeq, hlambda] using hmain
+
+private theorem aux_caseOne_u0_real_integrand_integrable
+    (w0 w1 lambda t0 t1 : ℝ) (hlambda : 0 < lambda)
+    (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    Integrable (fun p : ℝ =>
+      min 1 (lambda⁻¹ * |p|) *
+        (scaledBracketBumpReal 2 lambda w0 +
+          scaledBracketBumpReal 2 lambda (w0 + p)) *
+        scaledBracketBumpReal 2 t0 (-w1 - p) *
+        scaledBracketBumpReal 2 t1 (w1 - p)) := by
+  let T : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal 2 t0 (-w1 - p) *
+      scaledBracketBumpReal 2 t1 (w1 - p)
+  let f : ℝ → ℝ := fun p =>
+    min 1 (lambda⁻¹ * |p|) *
+      (scaledBracketBumpReal 2 lambda w0 +
+        scaledBracketBumpReal 2 lambda (w0 + p)) *
+      scaledBracketBumpReal 2 t0 (-w1 - p) *
+      scaledBracketBumpReal 2 t1 (w1 - p)
+  let g : ℝ → ℝ := fun p => 2 * lambda⁻¹ * T p
+  change Integrable f
+  have hT : Integrable T := by
+    have hbase := aux_caseOne_scaledBracketBumpReal_product_integrable
+      2 2 t0 t1 (-w1) w1 (by norm_num) (by norm_num) ht0 ht1
+    simpa [T] using hbase
+  have hmajor : Integrable g := by
+    simpa [g] using hT.const_mul (2 * lambda⁻¹)
+  refine hmajor.mono' ?_ ?_
+  · apply Continuous.aestronglyMeasurable
+    have hmin : Continuous (fun p : ℝ => min 1 (lambda⁻¹ * |p|)) := by fun_prop
+    have hlambdaBase : Continuous (fun p : ℝ => 1 + |lambda⁻¹ * (w0 + p)|) := by
+      fun_prop
+    have ht0Base : Continuous (fun p : ℝ => 1 + |t0⁻¹ * (-w1 - p)|) := by
+      fun_prop
+    have ht1Base : Continuous (fun p : ℝ => 1 + |t1⁻¹ * (w1 - p)|) := by
+      fun_prop
+    have hsum : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal 2 lambda w0 +
+          scaledBracketBumpReal 2 lambda (w0 + p)) := by
+      have hconst : Continuous (fun _ : ℝ => scaledBracketBumpReal 2 lambda w0) :=
+        continuous_const
+      have hvar : Continuous (fun p : ℝ => scaledBracketBumpReal 2 lambda (w0 + p)) := by
+        unfold scaledBracketBumpReal
+        apply continuous_const.mul
+        rw [continuous_iff_continuousAt]
+        intro p
+        exact hlambdaBase.continuousAt.rpow_const (Or.inl (by positivity))
+      exact hconst.add hvar
+    have hT0 : Continuous (fun p : ℝ => scaledBracketBumpReal 2 t0 (-w1 - p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact ht0Base.continuousAt.rpow_const (Or.inl (by positivity))
+    have hT1 : Continuous (fun p : ℝ => scaledBracketBumpReal 2 t1 (w1 - p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact ht1Base.continuousAt.rpow_const (Or.inl (by positivity))
+    dsimp [f]
+    convert (hmin.mul hsum).mul (hT0.mul hT1) using 1
+    ext p
+    change min 1 (lambda⁻¹ * |p|) *
+        (scaledBracketBumpReal 2 lambda w0 + scaledBracketBumpReal 2 lambda (w0 + p)) *
+        scaledBracketBumpReal 2 t0 (-w1 - p) *
+        scaledBracketBumpReal 2 t1 (w1 - p) =
+      (min 1 (lambda⁻¹ * |p|) *
+        (scaledBracketBumpReal 2 lambda w0 + scaledBracketBumpReal 2 lambda (w0 + p))) *
+        (scaledBracketBumpReal 2 t0 (-w1 - p) *
+          scaledBracketBumpReal 2 t1 (w1 - p))
+    ring
+  · filter_upwards [] with p
+    have hTnon : 0 ≤ T p := by
+      dsimp [T]
+      exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+    have hminnon : 0 ≤ min 1 (lambda⁻¹ * |p|) :=
+      le_min (by norm_num) (mul_nonneg (inv_nonneg.mpr hlambda.le) (abs_nonneg _))
+    have hsumNonneg : 0 ≤ scaledBracketBumpReal 2 lambda w0 +
+        scaledBracketBumpReal 2 lambda (w0 + p) :=
+      add_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlambda)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ hlambda)
+    have hsumle : scaledBracketBumpReal 2 lambda w0 +
+        scaledBracketBumpReal 2 lambda (w0 + p) ≤ 2 * lambda⁻¹ := by
+      calc
+        scaledBracketBumpReal 2 lambda w0 + scaledBracketBumpReal 2 lambda (w0 + p) ≤
+            lambda⁻¹ + lambda⁻¹ :=
+          add_le_add
+            (aux_caseOne_scaledBracketBumpReal_le_inv 2 lambda w0 (by norm_num) hlambda)
+            (aux_caseOne_scaledBracketBumpReal_le_inv 2 lambda (w0 + p) (by norm_num) hlambda)
+        _ = 2 * lambda⁻¹ := by ring
+    have hminsum : min 1 (lambda⁻¹ * |p|) *
+        (scaledBracketBumpReal 2 lambda w0 +
+          scaledBracketBumpReal 2 lambda (w0 + p)) ≤ 2 * lambda⁻¹ := by
+      calc
+        min 1 (lambda⁻¹ * |p|) *
+            (scaledBracketBumpReal 2 lambda w0 +
+              scaledBracketBumpReal 2 lambda (w0 + p)) ≤
+            1 * (scaledBracketBumpReal 2 lambda w0 +
+              scaledBracketBumpReal 2 lambda (w0 + p)) :=
+          mul_le_mul_of_nonneg_right (min_le_left _ _) hsumNonneg
+        _ = scaledBracketBumpReal 2 lambda w0 +
+              scaledBracketBumpReal 2 lambda (w0 + p) := by ring
+        _ ≤ 2 * lambda⁻¹ := hsumle
+    have hfnon : 0 ≤ f p := by
+      dsimp [f]
+      exact mul_nonneg
+        (mul_nonneg
+          (mul_nonneg hminnon hsumNonneg)
+          (aux_scaledBracketBumpReal_nonneg _ _ _ ht0))
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+    have hgnon : 0 ≤ g p := by
+      dsimp [g]
+      exact mul_nonneg (mul_nonneg (by norm_num) (inv_nonneg.mpr hlambda.le)) hTnon
+    have hfg : f p ≤ g p := by
+      dsimp [f, g, T]
+      calc
+        min 1 (lambda⁻¹ * |p|) *
+            (scaledBracketBumpReal 2 lambda w0 +
+              scaledBracketBumpReal 2 lambda (w0 + p)) *
+            scaledBracketBumpReal 2 t0 (-w1 - p) *
+            scaledBracketBumpReal 2 t1 (w1 - p) =
+            (min 1 (lambda⁻¹ * |p|) *
+              (scaledBracketBumpReal 2 lambda w0 +
+                scaledBracketBumpReal 2 lambda (w0 + p))) *
+              (scaledBracketBumpReal 2 t0 (-w1 - p) *
+                scaledBracketBumpReal 2 t1 (w1 - p)) := by ring
+        _ ≤ (2 * lambda⁻¹) *
+              (scaledBracketBumpReal 2 t0 (-w1 - p) *
+                scaledBracketBumpReal 2 t1 (w1 - p)) :=
+          mul_le_mul_of_nonneg_right hminsum hTnon
+    simpa only [Real.norm_eq_abs, abs_of_nonneg hfnon, abs_of_nonneg hgnon] using hfg
+
+/-- The rho-difference estimate lifted through one orientation-zero occurrence of an
+H-kernel Gaussian package, in the common exact five-slot majorant. -/
+private theorem aux_caseOne_u0_rho_occurrence_of_package {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
+    (P : Multiset (SequencePair × Fin 2)) (hP : aux_HKernelGaussianBound γ i P)
+    (q : SequencePair × Fin 2) (hqmem : q ∈ P) (hqu : q.2 = 0)
+    (lambda : ℝ)
+    (hlambda : lambda = (2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ))) (w0 w1 : ℝ) :
+    (∫ p : ℝ,
+      |nMultiplierRho γ hkn ι i j (w0 + p) - nMultiplierRho γ hkn ι i j w0| *
+        aux_kernelBracketProduct q j (-w1 - p, w1 - p)) ≤
+      (32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+        C_meanFourScaleGaussianKernel 2) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2)) *
+          ∑ r : Fin 5,
+            aux_caseOneExactSlotTerm
+              (fun k => (2 : ℝ) ^ ι.1.1 *
+                γ.scales i 1 (k + (geometricDelta γ : ℤ))) q j
+              (w0 - w1, w0 + w1) r := by
+  let A : ℝ := C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2
+  let t0 : ℝ := q.1 0 j
+  let t1 : ℝ := q.1 1 j
+  let f : ℝ → ℝ := fun p =>
+    |nMultiplierRho γ hkn ι i j (w0 + p) - nMultiplierRho γ hkn ι i j w0| *
+      aux_kernelBracketProduct q j (-w1 - p, w1 - p)
+  let g : ℝ → ℝ := fun p =>
+    min 1 (lambda⁻¹ * |p|) *
+      (scaledBracketBumpReal 2 lambda w0 +
+        scaledBracketBumpReal 2 lambda (w0 + p)) *
+      scaledBracketBumpReal 2 t0 (-w1 - p) *
+      scaledBracketBumpReal 2 t1 (w1 - p)
+  rcases hP.1 q hqmem with ⟨hqball0, hqball1⟩
+  have ht0 : 0 < t0 := by simpa [t0] using hqball0.1 j |>.1
+  have ht1 : 0 < t1 := by simpa [t1] using hqball1.1 j |>.1
+  have hlambda_pos : 0 < lambda := by
+    rw [hlambda]
+    exact mul_pos (zpow_pos (by norm_num) _) ((γ.scales_spaced i 1) _).1
+  have hA : 0 ≤ A := by
+    have hK : 0 ≤ C_meanValueBumpEstimate 2 := by
+      unfold C_meanValueBumpEstimate
+      positivity
+    have hM : 0 ≤ aux_maxUpTo C_gaussianBumpEstimate 2 :=
+      (aux_C_gaussianBumpEstimate_nonneg 0).trans
+        (aux_le_maxUpTo C_gaussianBumpEstimate (Nat.zero_le _))
+    have hT : 0 ≤ aux_maxUpTo
+        (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l) 2 := by
+      have hzero : 0 ≤ (2 : ℝ) ^ 0 * C_secondGaussianEstimate 0 := by
+        simpa using aux_C_secondGaussianEstimate_nonneg 0
+      exact hzero.trans
+        (aux_le_maxUpTo (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l)
+          (Nat.zero_le _))
+    have hmean : 0 ≤ C_meanFourScaleGaussianKernel 2 := by
+      unfold C_meanFourScaleGaussianKernel
+      exact add_nonneg
+        (mul_nonneg (mul_nonneg (by norm_num) hK) hM)
+        (mul_nonneg (mul_nonneg (by norm_num) hK) hT)
+    dsimp [A]
+    rw [show C_standardBumpPropertiesTilde 0 2 = (2 : ℝ) ^ (18 : ℕ) by
+      norm_num [C_standardBumpPropertiesTilde]]
+    positivity
+  have hqterm (p : ℝ) :
+      aux_kernelBracketProduct q j (-w1 - p, w1 - p) =
+        scaledBracketBump 2 t0 (-w1 - p) *
+          scaledBracketBump 2 t1 (w1 - p) := by
+    dsimp [t0, t1]
+    simp [aux_kernelBracketProduct, hqu, W]
+  have hfnon (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    rw [hqterm]
+    exact mul_nonneg (abs_nonneg _)
+      (mul_nonneg (aux_scaledBracketBump_nonneg 2 ht0 _)
+        (aux_scaledBracketBump_nonneg 2 ht1 _))
+  have hpoint (p : ℝ) : f p ≤ (2 * Real.pi * A) * g p := by
+    have hrho := aux_nMultiplierRho_positive_difference_bound γ hkn ι i j
+      (ne_of_gt hpositive) hpositive w0 p
+    rw [← hlambda] at hrho
+    have hqnon : 0 ≤ aux_kernelBracketProduct q j (-w1 - p, w1 - p) := by
+      rw [hqterm]
+      exact mul_nonneg (aux_scaledBracketBump_nonneg 2 ht0 _)
+        (aux_scaledBracketBump_nonneg 2 ht1 _)
+    have hmul := mul_le_mul_of_nonneg_right hrho hqnon
+    have hB : 0 ≤
+        (scaledBracketBump 2 lambda (w0 + p) + scaledBracketBump 2 lambda w0) *
+          aux_kernelBracketProduct q j (-w1 - p, w1 - p) := by
+      apply mul_nonneg
+      · exact add_nonneg (aux_scaledBracketBump_nonneg 2 hlambda_pos _)
+          (aux_scaledBracketBump_nonneg 2 hlambda_pos _)
+      · exact hqnon
+    have hpi := aux_caseOne_move_twoPi_out (A := A) (lambda := lambda) (y := p)
+      (B := (scaledBracketBump 2 lambda (w0 + p) + scaledBracketBump 2 lambda w0) *
+        aux_kernelBracketProduct q j (-w1 - p, w1 - p)) hA hlambda_pos hB
+    have hconvert :
+        (scaledBracketBump 2 lambda (w0 + p) + scaledBracketBump 2 lambda w0) *
+            aux_kernelBracketProduct q j (-w1 - p, w1 - p) =
+          (scaledBracketBumpReal 2 lambda w0 +
+            scaledBracketBumpReal 2 lambda (w0 + p)) *
+              scaledBracketBumpReal 2 t0 (-w1 - p) *
+                scaledBracketBumpReal 2 t1 (w1 - p) := by
+      rw [hqterm]
+      rw [← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq,
+        ← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq,
+        ← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq,
+        ← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq]
+      ring
+    dsimp [f, g]
+    have hmul' :
+        |nMultiplierRho γ hkn ι i j (w0 + p) - nMultiplierRho γ hkn ι i j w0| *
+            aux_kernelBracketProduct q j (-w1 - p, w1 - p) ≤
+          (C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2 *
+            min 1 (2 * Real.pi * lambda⁻¹ * |p|)) *
+              ((scaledBracketBump 2 lambda (w0 + p) + scaledBracketBump 2 lambda w0) *
+                aux_kernelBracketProduct q j (-w1 - p, w1 - p)) := by
+      calc
+        _ ≤ C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2 *
+            min 1 (2 * Real.pi * lambda⁻¹ * |p|) *
+              (scaledBracketBump 2 lambda (w0 + p) + scaledBracketBump 2 lambda w0) *
+                aux_kernelBracketProduct q j (-w1 - p, w1 - p) := hmul
+        _ = _ := by ring
+    calc
+      |nMultiplierRho γ hkn ι i j (w0 + p) - nMultiplierRho γ hkn ι i j w0| *
+          aux_kernelBracketProduct q j (-w1 - p, w1 - p) ≤
+          A * min 1 (2 * Real.pi * lambda⁻¹ * |p|) *
+            ((scaledBracketBump 2 lambda (w0 + p) + scaledBracketBump 2 lambda w0) *
+              aux_kernelBracketProduct q j (-w1 - p, w1 - p)) := by
+            dsimp [A]
+            exact hmul'
+      _ ≤ (2 * Real.pi * A) * min 1 (lambda⁻¹ * |p|) *
+            ((scaledBracketBump 2 lambda (w0 + p) + scaledBracketBump 2 lambda w0) *
+              aux_kernelBracketProduct q j (-w1 - p, w1 - p)) := hpi
+      _ = (2 * Real.pi * A) *
+            (min 1 (lambda⁻¹ * |p|) *
+              ((scaledBracketBump 2 lambda (w0 + p) + scaledBracketBump 2 lambda w0) *
+                aux_kernelBracketProduct q j (-w1 - p, w1 - p))) := by ring
+      _ = (2 * Real.pi * A) *
+            (min 1 (lambda⁻¹ * |p|) *
+              ((scaledBracketBumpReal 2 lambda w0 +
+                scaledBracketBumpReal 2 lambda (w0 + p)) *
+                  scaledBracketBumpReal 2 t0 (-w1 - p) *
+                    scaledBracketBumpReal 2 t1 (w1 - p))) := by rw [hconvert]
+      _ = (2 * Real.pi * A) *
+            (min 1 (lambda⁻¹ * |p|) *
+              (scaledBracketBumpReal 2 lambda w0 +
+                scaledBracketBumpReal 2 lambda (w0 + p)) *
+                scaledBracketBumpReal 2 t0 (-w1 - p) *
+                  scaledBracketBumpReal 2 t1 (w1 - p)) := by ring
+  have hg : Integrable g := by
+    simpa [g] using aux_caseOne_u0_real_integrand_integrable
+      w0 w1 lambda t0 t1 hlambda_pos ht0 ht1
+  have hmajor : Integrable (fun p : ℝ => (2 * Real.pi * A) * g p) :=
+    hg.const_mul (2 * Real.pi * A)
+  have hint : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, (2 * Real.pi * A) * g p :=
+    integral_mono_of_nonneg (ae_of_all _ hfnon) hmajor (ae_of_all _ hpoint)
+  have hgeq : (∫ p : ℝ, g p) =
+      ∫ p : ℝ, min 1 (lambda⁻¹ * |p|) *
+        (scaledBracketBumpReal 2 lambda w0 +
+          scaledBracketBumpReal 2 lambda (w0 + p)) *
+        scaledBracketBump 2 (q.1 0 j) (-w1 - p) *
+        scaledBracketBump 2 (q.1 1 j) (w1 - p) := by
+    apply integral_congr_ae
+    filter_upwards [] with p
+    dsimp [g, t0, t1]
+    rw [aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq (q.1 0 j) (-w1 - p),
+      aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq (q.1 1 j) (w1 - p)]
+  have hnorm := aux_caseOne_u0_occurrence_of_package γ hkn ι i j hpositive
+    P hP q hqmem hqu lambda hlambda w0 w1
+  have hfactor : 0 ≤ 2 * Real.pi * A :=
+    mul_nonneg (mul_nonneg (by positivity) (by positivity)) hA
+  change (∫ p : ℝ, f p) ≤ _
+  calc
+    (∫ p : ℝ, f p) ≤ ∫ p : ℝ, (2 * Real.pi * A) * g p := hint
+    _ = (2 * Real.pi * A) * ∫ p : ℝ, g p := by rw [integral_const_mul]
+    _ = (2 * Real.pi * A) *
+        (∫ p : ℝ, min 1 (lambda⁻¹ * |p|) *
+          (scaledBracketBumpReal 2 lambda w0 +
+            scaledBracketBumpReal 2 lambda (w0 + p)) *
+          scaledBracketBump 2 (q.1 0 j) (-w1 - p) *
+          scaledBracketBump 2 (q.1 1 j) (w1 - p)) := by rw [hgeq]
+    _ ≤ (2 * Real.pi * A) *
+        (16 * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2)) *
+          ∑ r : Fin 5,
+            aux_caseOneExactSlotTerm
+              (fun k => (2 : ℝ) ^ ι.1.1 *
+                γ.scales i 1 (k + (geometricDelta γ : ℤ))) q j
+              (w0 - w1, w0 + w1) r) :=
+      mul_le_mul_of_nonneg_left hnorm hfactor
+    _ = (32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+        C_meanFourScaleGaussianKernel 2) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2)) *
+          ∑ r : Fin 5,
+            aux_caseOneExactSlotTerm
+              (fun k => (2 : ℝ) ^ ι.1.1 *
+                γ.scales i 1 (k + (geometricDelta γ : ℤ))) q j
+              (w0 - w1, w0 + w1) r := by
+      dsimp [A]
+      ring
+
+/-- Scratch-only occurrence enumerator retaining the multiplicities of `P`. -/
+private noncomputable def caseOneOccurrence (P : Multiset (SequencePair × Fin 2))
+    (k : Fin P.card) : SequencePair × Fin 2 :=
+  P.toList.get (Fin.cast (Multiset.length_toList P).symm k)
+
+private theorem caseOneOccurrence_mem (P : Multiset (SequencePair × Fin 2))
+    (k : Fin P.card) : caseOneOccurrence P k ∈ P := by
+  unfold caseOneOccurrence
+  rw [← Multiset.mem_toList]
+  exact List.get_mem _ _
+
+/-- The exact orientation-one M₁ second scale. -/
+private def caseOneExactM1Scale (q : SequencePair × Fin 2) : ℤ → ℝ :=
+  if q.2 = 0 then
+    fun j => (Real.sqrt 2)⁻¹ * max (q.1 0 j) (q.1 1 j)
+  else q.1 1
+
+/-- One M₁ and four M₂ slots per occurrence of the six-term H package. -/
+private def caseOneExactSlotOf (lam : ℤ → ℝ) (q : SequencePair × Fin 2) (r : Fin 5) :
+    SequencePair × Fin 2 :=
+  if r = 0 then
+    (aux_sequencePairOf (fun j => Real.sqrt 2 * lam j) (caseOneExactM1Scale q),
+      (1 : Fin 2))
+  else if q.2 = 0 then
+    if r = 1 then (aux_sequencePairOf (fun j => Real.sqrt 2 * q.1 0 j) lam, (0 : Fin 2))
+    else if r = 2 then (aux_sequencePairOf lam (fun j => Real.sqrt 2 * q.1 1 j), (0 : Fin 2))
+    else if r = 3 then (aux_sequencePairOf lam (fun j => Real.sqrt 2 * q.1 0 j), (1 : Fin 2))
+    else (aux_sequencePairOf lam (fun j => Real.sqrt 2 * q.1 1 j), (1 : Fin 2))
+  else
+    (aux_sequencePairOf (fun j => Real.sqrt 2 * lam j) (caseOneExactM1Scale q),
+      (1 : Fin 2))
+
+private theorem caseOneExactM1Scale_spaced (q : SequencePair × Fin 2)
+    (hq : ∀ r : Fin 2, SpacedSequence (q.1 r)) :
+    SpacedSequence (caseOneExactM1Scale q) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  by_cases hu : q.2 = 0
+  · simp [caseOneExactM1Scale, hu]
+    exact smul_mem_A (max_mem_A (hq 0) (hq 1)) (inv_pos.mpr hsqrt)
+  · simpa [caseOneExactM1Scale, hu] using hq 1
+
+private theorem caseOneExactSlotOf_spaced (lam : ℤ → ℝ) (hlam : SpacedSequence lam)
+    (q : SequencePair × Fin 2) (hq : ∀ r : Fin 2, SpacedSequence (q.1 r)) (r : Fin 5) :
+    ∀ s : Fin 2, SpacedSequence ((caseOneExactSlotOf lam q r).1 s) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  by_cases hr0 : r = 0
+  · intro s
+    fin_cases s
+    · simpa [caseOneExactSlotOf, hr0, aux_sequencePairOf] using
+        smul_mem_A hlam hsqrt
+    · simpa [caseOneExactSlotOf, hr0, aux_sequencePairOf] using
+        caseOneExactM1Scale_spaced q hq
+  by_cases hu : q.2 = 0
+  · simp only [caseOneExactSlotOf, if_neg hr0, if_pos hu]
+    by_cases hr1 : r = 1
+    · intro s
+      fin_cases s
+      · simpa [hr1, aux_sequencePairOf] using smul_mem_A (hq 0) hsqrt
+      · simpa [hr1, aux_sequencePairOf] using hlam
+    by_cases hr2 : r = 2
+    · intro s
+      fin_cases s
+      · simpa [hr1, hr2, aux_sequencePairOf] using hlam
+      · simpa [hr1, hr2, aux_sequencePairOf] using smul_mem_A (hq 1) hsqrt
+    by_cases hr3 : r = 3
+    · intro s
+      fin_cases s
+      · simpa [hr1, hr2, hr3, aux_sequencePairOf] using hlam
+      · simpa [hr1, hr2, hr3, aux_sequencePairOf] using smul_mem_A (hq 0) hsqrt
+    · intro s
+      fin_cases s
+      · simpa [hr1, hr2, hr3, aux_sequencePairOf] using hlam
+      · simpa [hr1, hr2, hr3, aux_sequencePairOf] using smul_mem_A (hq 1) hsqrt
+  · intro s
+    fin_cases s
+    · simpa [caseOneExactSlotOf, hr0, hu, aux_sequencePairOf] using smul_mem_A hlam hsqrt
+    · simpa [caseOneExactSlotOf, hr0, hu, aux_sequencePairOf] using
+        caseOneExactM1Scale_spaced q hq
+
+/-- The scale sequence `λ(j)=2^h a(j+Δ)` used in the positive horizontal case. -/
+private def caseOneLambda {n : ℕ} (γ : GeometricParameters n) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) : ℤ → ℝ :=
+  fun j => (2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ))
+
+private theorem caseOneLambda_spaced {n : ℕ} (γ : GeometricParameters n) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) : SpacedSequence (caseOneLambda γ ι i) := by
+  unfold caseOneLambda
+  exact smul_mem_A (shift_mem_A (γ.scales_spaced i 1) _) (zpow_pos (by norm_num) _)
+
+/-- A scale and its `√2` rescaling are at sequence distance at most one. -/
+private theorem caseOne_within_sqrt_two_smul (a : ℤ → ℝ) (ha : SpacedSequence a) :
+    WithinSequenceDistance a (fun j => Real.sqrt 2 * a j) 1 := by
+  have hsqrt_pos : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqrt_one : (1 : ℝ) ≤ Real.sqrt 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  have hsqrt_two : Real.sqrt 2 ≤ 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  intro j
+  constructor
+  · calc
+      a (j - 1) ≤ a j := aux_spacedSequence_monotone ha (by omega)
+      _ ≤ Real.sqrt 2 * a j := by
+        exact le_mul_of_one_le_left (le_of_lt (ha j).1) hsqrt_one
+  · calc
+      Real.sqrt 2 * a j ≤ 2 * a j :=
+        mul_le_mul_of_nonneg_right hsqrt_two (le_of_lt (ha j).1)
+      _ ≤ a (j + 1) := (ha j).2
+
+/-- A scale and its reciprocal-`√2` rescaling are at sequence distance at most one. -/
+private theorem caseOne_within_inv_sqrt_two_smul (a : ℤ → ℝ) (ha : SpacedSequence a) :
+    WithinSequenceDistance a (fun j => (Real.sqrt 2)⁻¹ * a j) 1 := by
+  have hsqrt_pos : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqrt_two : Real.sqrt 2 ≤ 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  have hsqrt_one : (1 : ℝ) ≤ Real.sqrt 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  have hinv_one : (Real.sqrt 2)⁻¹ ≤ 1 := by
+    exact (inv_le_one₀ hsqrt_pos).2 hsqrt_one
+  intro j
+  constructor
+  · have hmul : Real.sqrt 2 * a (j - 1) ≤ a j := by
+      calc
+        Real.sqrt 2 * a (j - 1) ≤ 2 * a (j - 1) :=
+          mul_le_mul_of_nonneg_right hsqrt_two (le_of_lt (ha (j - 1)).1)
+        _ ≤ a ((j - 1) + 1) := (ha (j - 1)).2
+        _ = a j := by congr 1; ring
+    have hdiv : a (j - 1) ≤ a j / Real.sqrt 2 :=
+      (le_div_iff₀ hsqrt_pos).2 (by simpa [mul_comm] using hmul)
+    simpa [div_eq_mul_inv, mul_comm] using hdiv
+  · calc
+      (Real.sqrt 2)⁻¹ * a j ≤ a j := by
+        rw [← one_mul (a j)]
+        simpa only [one_mul] using
+          mul_le_mul_of_nonneg_right hinv_one (le_of_lt (ha j).1)
+      _ ≤ a (j + 1) := aux_spacedSequence_le_succ ha j
+
+private theorem caseOne_within_shift (a : ℤ → ℝ) (ha : SpacedSequence a) (d : ℕ) :
+    WithinSequenceDistance a (fun j => a (j + d)) d := by
+  intro j
+  constructor
+  · exact aux_spacedSequence_monotone ha (by omega)
+  · exact le_rfl
+
+private theorem caseOne_within_max {a q₀ q₁ : ℤ → ℝ} {d : ℕ}
+    (hq₀ : WithinSequenceDistance a q₀ d) (hq₁ : WithinSequenceDistance a q₁ d) :
+    WithinSequenceDistance a (fun j => max (q₀ j) (q₁ j)) d := by
+  intro j
+  constructor
+  · exact (hq₀ j).1.trans (le_max_left _ _)
+  · exact max_le (hq₀ j).2 (hq₁ j).2
+
+/-- The `λ` scale lies within `Δ+h` of the original scale sequence. -/
+private theorem caseOneLambda_within {n : ℕ} (γ : GeometricParameters n) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) :
+    WithinSequenceDistance (γ.scales i 1) (caseOneLambda γ ι i)
+      (geometricDelta γ + ι.1.1.natAbs) := by
+  let a : ℤ → ℝ := γ.scales i 1
+  let d : ℕ := geometricDelta γ
+  let h : ℤ := ι.1.1
+  let ashift : ℤ → ℝ := fun j => a (j + (d : ℤ))
+  have ha : SpacedSequence a := γ.scales_spaced i 1
+  have hashift : SpacedSequence ashift := shift_mem_A ha _
+  have hshift : WithinSequenceDistance a ashift d := caseOne_within_shift a ha d
+  have hpow_dist : SequenceDistance ashift (fun j => (2 : ℝ) ^ h * ashift j) ≤
+      (h.natAbs : WithTop ℕ) := sequenceDistance_pow_two_smul_le hashift h
+  have hpow : WithinSequenceDistance ashift (fun j => (2 : ℝ) ^ h * ashift j) h.natAbs :=
+    aux_withinSequenceDistance_of_sequenceDistance_le hashift hpow_dist
+  change WithinSequenceDistance (γ.scales i 1)
+    (fun j => (2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ)))
+    (geometricDelta γ + ι.1.1.natAbs)
+  simpa [a, d, h, ashift] using aux_withinSequenceDistance_trans hshift hpow
+
+/-- A `√2`-rescaled H scale is within the uniform case-one distance budget of `λ`. -/
+private theorem caseOne_distance_sqrt_q_lam {a q lam : ℤ → ℝ} {d h : ℕ}
+    (hq : WithinSequenceDistance a q d)
+    (hlam : WithinSequenceDistance a lam (d + h)) (hlam_mem : SpacedSequence lam)
+    (hone : 1 ≤ h) :
+    SequenceDistance (fun j => Real.sqrt 2 * q j) lam ≤
+      ((2 * (d + h) : ℕ) : WithTop ℕ) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hqa : SequenceDistance q a ≤ (d : WithTop ℕ) := by
+    rw [sequenceDistance_comm]
+    exact aux_sequenceDistance_le_of_within hq
+  have hsqrtqa : SequenceDistance (fun j => Real.sqrt 2 * q j)
+      (fun j => Real.sqrt 2 * a j) ≤ (d : WithTop ℕ) := by
+    rw [sequenceDistance_smul q a hsqrt]
+    exact hqa
+  have halam : SequenceDistance a lam ≤ ((d + h : ℕ) : WithTop ℕ) :=
+    aux_sequenceDistance_le_of_within hlam
+  have hsq : SequenceDistance (fun j => Real.sqrt 2 * lam j) lam ≤ (1 : WithTop ℕ) := by
+    rw [sequenceDistance_comm]
+    exact aux_sequenceDistance_le_of_within (caseOne_within_sqrt_two_smul lam hlam_mem)
+  have hmiddle : SequenceDistance (fun j => Real.sqrt 2 * a j)
+      (fun j => Real.sqrt 2 * lam j) ≤ ((d + h : ℕ) : WithTop ℕ) := by
+    rw [sequenceDistance_smul a lam hsqrt]
+    exact halam
+  have htail : SequenceDistance (fun j => Real.sqrt 2 * a j)
+      (fun j => Real.sqrt 2 * lam j) +
+        SequenceDistance (fun j => Real.sqrt 2 * lam j) lam ≤
+      ((d + h : ℕ) : WithTop ℕ) + 1 :=
+    add_le_add hmiddle hsq
+  calc
+    SequenceDistance (fun j => Real.sqrt 2 * q j) lam ≤
+        SequenceDistance (fun j => Real.sqrt 2 * q j) (fun j => Real.sqrt 2 * a j) +
+          SequenceDistance (fun j => Real.sqrt 2 * a j) lam :=
+      sequenceDistance_triangle _ _ _
+    _ ≤ (d : WithTop ℕ) +
+          (SequenceDistance (fun j => Real.sqrt 2 * a j) (fun j => Real.sqrt 2 * lam j) +
+            SequenceDistance (fun j => Real.sqrt 2 * lam j) lam) := by
+      gcongr
+      exact sequenceDistance_triangle _ _ _
+    _ ≤ (d : WithTop ℕ) + ((d + h : ℕ) : WithTop ℕ) + 1 := by
+      simpa [add_assoc] using htail
+    _ ≤ ((2 * (d + h) : ℕ) : WithTop ℕ) := by
+      norm_cast
+      omega
+
+/-- The M₁ slot made from `λ` and the maximum of two H scales obeys the same budget. -/
+private theorem caseOne_distance_sqrt_lam_inv_sqrt_max {a q₀ q₁ lam : ℤ → ℝ} {d h : ℕ}
+    (hq₀ : WithinSequenceDistance a q₀ d) (hq₁ : WithinSequenceDistance a q₁ d)
+    (hlam : WithinSequenceDistance a lam (d + h)) (hlam_mem : SpacedSequence lam)
+    (hone : 1 ≤ h) :
+    SequenceDistance (fun j => Real.sqrt 2 * lam j)
+      (fun j => (Real.sqrt 2)⁻¹ * max (q₀ j) (q₁ j)) ≤
+      ((2 * (d + h) : ℕ) : WithTop ℕ) := by
+  let qmax : ℤ → ℝ := fun j => max (q₀ j) (q₁ j)
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqrt_sq : Real.sqrt (2 : ℝ) * Real.sqrt 2 = 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+  have hmax : WithinSequenceDistance a qmax d := caseOne_within_max hq₀ hq₁
+  have hmaxdist : SequenceDistance a qmax ≤ (d : WithTop ℕ) :=
+    aux_sequenceDistance_le_of_within hmax
+  have hlamdist : SequenceDistance a lam ≤ ((d + h : ℕ) : WithTop ℕ) :=
+    aux_sequenceDistance_le_of_within hlam
+  have htwo : SequenceDistance lam (fun j => (2 : ℝ) * lam j) ≤ (1 : WithTop ℕ) := by
+    have h := sequenceDistance_pow_two_smul_le hlam_mem (1 : ℤ)
+    norm_num at h ⊢
+    simpa using h
+  have htworev : SequenceDistance (fun j => (2 : ℝ) * lam j) lam ≤ (1 : WithTop ℕ) := by
+    rw [sequenceDistance_comm]
+    exact htwo
+  have hlammax : SequenceDistance lam qmax ≤ ((d + h : ℕ) : WithTop ℕ) + d := by
+    calc
+      SequenceDistance lam qmax ≤ SequenceDistance lam a + SequenceDistance a qmax :=
+        sequenceDistance_triangle _ _ _
+      _ ≤ ((d + h : ℕ) : WithTop ℕ) + d := by
+        apply add_le_add
+        · rw [sequenceDistance_comm]
+          exact hlamdist
+        · exact hmaxdist
+  have hscaled : SequenceDistance (fun j => Real.sqrt 2 * lam j)
+      (fun j => (Real.sqrt 2)⁻¹ * qmax j) =
+      SequenceDistance (fun j => (2 : ℝ) * lam j) qmax := by
+    calc
+      SequenceDistance (fun j => Real.sqrt 2 * lam j)
+          (fun j => (Real.sqrt 2)⁻¹ * qmax j) =
+          SequenceDistance
+            (fun j => Real.sqrt 2 * (Real.sqrt 2 * lam j))
+            (fun j => Real.sqrt 2 * ((Real.sqrt 2)⁻¹ * qmax j)) :=
+        (sequenceDistance_smul _ _ hsqrt).symm
+      _ = SequenceDistance (fun j => (2 : ℝ) * lam j) qmax := by
+        congr 2
+        · funext j
+          rw [← mul_assoc, hsqrt_sq]
+        · funext j
+          rw [← mul_assoc, mul_inv_cancel₀ (ne_of_gt hsqrt), one_mul]
+  change SequenceDistance (fun j => Real.sqrt 2 * lam j)
+      (fun j => (Real.sqrt 2)⁻¹ * qmax j) ≤ _
+  rw [hscaled]
+  calc
+    SequenceDistance (fun j => (2 : ℝ) * lam j) qmax ≤
+        SequenceDistance (fun j => (2 : ℝ) * lam j) lam + SequenceDistance lam qmax :=
+      sequenceDistance_triangle _ _ _
+    _ ≤ (1 : WithTop ℕ) + (((d + h : ℕ) : WithTop ℕ) + d) := by
+      exact add_le_add htworev hlammax
+    _ ≤ (1 : WithTop ℕ) + ((d + h : ℕ) : WithTop ℕ) + d := by
+      simp [add_assoc]
+    _ ≤ ((2 * (d + h) : ℕ) : WithTop ℕ) := by
+      norm_cast
+      omega
+
+/-- The orientation-one M₁ slot has the same uniform distance budget. -/
+private theorem caseOne_distance_sqrt_lam_q {a q lam : ℤ → ℝ} {d h : ℕ}
+    (hq : WithinSequenceDistance a q d)
+    (hlam : WithinSequenceDistance a lam (d + h)) (hlam_mem : SpacedSequence lam)
+    (hone : 1 ≤ h) :
+    SequenceDistance (fun j => Real.sqrt 2 * lam j) q ≤
+      ((2 * (d + h) : ℕ) : WithTop ℕ) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsq : SequenceDistance (fun j => Real.sqrt 2 * lam j) lam ≤ (1 : WithTop ℕ) := by
+    rw [sequenceDistance_comm]
+    exact aux_sequenceDistance_le_of_within (caseOne_within_sqrt_two_smul lam hlam_mem)
+  have hlamdist : SequenceDistance lam a ≤ ((d + h : ℕ) : WithTop ℕ) := by
+    rw [sequenceDistance_comm]
+    exact aux_sequenceDistance_le_of_within hlam
+  have haq : SequenceDistance a q ≤ (d : WithTop ℕ) :=
+    aux_sequenceDistance_le_of_within hq
+  have htail : SequenceDistance lam a + SequenceDistance a q ≤
+      ((d + h : ℕ) : WithTop ℕ) + d :=
+    add_le_add hlamdist haq
+  calc
+    SequenceDistance (fun j => Real.sqrt 2 * lam j) q ≤
+        SequenceDistance (fun j => Real.sqrt 2 * lam j) lam + SequenceDistance lam q :=
+      sequenceDistance_triangle _ _ _
+    _ ≤ (1 : WithTop ℕ) + (SequenceDistance lam a + SequenceDistance a q) := by
+      gcongr
+      exact sequenceDistance_triangle _ _ _
+    _ ≤ (1 : WithTop ℕ) + ((d + h : ℕ) : WithTop ℕ) + d := by
+      simpa [add_assoc] using htail
+    _ ≤ ((2 * (d + h) : ℕ) : WithTop ℕ) := by
+      norm_cast
+      omega
+
+/-- Each of the five exact slots has base-pair distance at most `2(Δ+h)`. -/
+private theorem caseOneExactSlotOf_distance_bound {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (hpositive : 0 < ι.1.1)
+    (q : SequencePair × Fin 2) (hq : q ∈ aux_hKernelGaussianMultiset γ i) (r : Fin 5) :
+    sequencePairDistance (caseOneExactSlotOf (caseOneLambda γ ι i) q r).1 ≤
+      ((2 * (geometricDelta γ + ι.1.1.natAbs) : ℕ) : WithTop ℕ) := by
+  let a : ℤ → ℝ := γ.scales i 1
+  let d : ℕ := geometricDelta γ
+  let h : ℕ := ι.1.1.natAbs
+  let lam : ℤ → ℝ := caseOneLambda γ ι i
+  have ha : SpacedSequence a := γ.scales_spaced i 1
+  have hlam : WithinSequenceDistance a lam (d + h) := by
+    simpa [a, d, h, lam] using caseOneLambda_within γ ι i
+  have hlam_mem : SpacedSequence lam := by
+    simpa [lam] using caseOneLambda_spaced γ ι i
+  have hh : 1 ≤ h := by
+    dsimp [h]
+    have hnatpos : 0 < ι.1.1.natAbs := Int.natAbs_pos.mpr (ne_of_gt hpositive)
+    omega
+  have hvalid := aux_hKernelGaussianMultiset_valid γ i q hq
+  have hq₀ : WithinSequenceDistance a (q.1 0) d := by
+    apply aux_withinSequenceDistance_of_sequenceDistance_le ha
+    simpa [a, d] using hvalid.1.2
+  have hq₁ : WithinSequenceDistance a (q.1 1) d := by
+    apply aux_withinSequenceDistance_of_sequenceDistance_le ha
+    simpa [a, d] using hvalid.2.2
+  have hM1zero := caseOne_distance_sqrt_lam_inv_sqrt_max hq₀ hq₁ hlam hlam_mem hh
+  have hM1one := caseOne_distance_sqrt_lam_q hq₁ hlam hlam_mem hh
+  have hM2zero := caseOne_distance_sqrt_q_lam hq₀ hlam hlam_mem hh
+  have hM2one := caseOne_distance_sqrt_q_lam hq₁ hlam hlam_mem hh
+  change sequencePairDistance (caseOneExactSlotOf lam q r).1 ≤ ((2 * (d + h) : ℕ) : WithTop ℕ)
+  unfold sequencePairDistance
+  by_cases hr0 : r = 0
+  · by_cases hu : q.2 = 0
+    · simpa [caseOneExactSlotOf, hr0, hu, caseOneExactM1Scale, aux_sequencePairOf] using hM1zero
+    · simpa [caseOneExactSlotOf, hr0, hu, caseOneExactM1Scale, aux_sequencePairOf] using hM1one
+  by_cases hu : q.2 = 0
+  · by_cases hr1 : r = 1
+    · simpa [caseOneExactSlotOf, hr0, hu, hr1, aux_sequencePairOf] using hM2zero
+    by_cases hr2 : r = 2
+    · rw [sequenceDistance_comm]
+      simpa [caseOneExactSlotOf, hr0, hu, hr1, hr2, aux_sequencePairOf] using hM2one
+    by_cases hr3 : r = 3
+    · rw [sequenceDistance_comm]
+      simpa [caseOneExactSlotOf, hr0, hu, hr1, hr2, hr3, aux_sequencePairOf] using hM2zero
+    · rw [sequenceDistance_comm]
+      simpa [caseOneExactSlotOf, hr0, hu, hr1, hr2, hr3, aux_sequencePairOf] using hM2one
+  · simpa [caseOneExactSlotOf, hr0, hu, caseOneExactM1Scale, aux_sequencePairOf] using hM1one
+
+/-- The `Nat` carrier used by the public witness: six occurrence rows and five slots each. -/
+private def caseOneSlotIndex (b : ℕ) : Fin 6 × Fin 5 :=
+  (⟨(b / 5) % 6, Nat.mod_lt _ (by norm_num)⟩,
+    ⟨b % 5, Nat.mod_lt _ (by norm_num)⟩)
+
+/-- The exact slot selected by a natural-number carrier index. -/
+private noncomputable def caseOneSlotNat {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (b : ℕ) : SequencePair × Fin 2 :=
+  caseOneExactSlotOf (caseOneLambda γ ι i)
+    (caseOneOccurrence (aux_hKernelGaussianMultiset γ i)
+      (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm (caseOneSlotIndex b).1))
+    (caseOneSlotIndex b).2
+
+private def caseOneB : Finset ℕ := Finset.range 30
+
+private def caseOneOrientation {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (b : ℕ) : Fin 2 :=
+  (caseOneSlotNat γ ι i b).2
+
+private def caseOneScales {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (b : ℕ) (m : Fin 2 → ℕ) : SequencePair :=
+  fun r j => (2 : ℝ) ^ (m r) * (caseOneSlotNat γ ι i b).1 r j
+
+private theorem caseOneB_card : caseOneB.card ≤ C_gaussianDominationCombinedCard := by
+  norm_num [caseOneB, C_gaussianDominationCombinedCard]
+
+private theorem caseOneSlotNat_spaced {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (b : ℕ) :
+    ∀ r : Fin 2, SpacedSequence ((caseOneSlotNat γ ι i b).1 r) := by
+  let P : Multiset (SequencePair × Fin 2) := aux_hKernelGaussianMultiset γ i
+  let k : Fin P.card := Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm
+    (caseOneSlotIndex b).1
+  let q : SequencePair × Fin 2 := caseOneOccurrence P k
+  have hqmem : q ∈ P := by
+    exact caseOneOccurrence_mem P k
+  have hvalid := aux_hKernelGaussianMultiset_valid γ i q hqmem
+  have hq : ∀ r : Fin 2, SpacedSequence (q.1 r) := by
+    intro r
+    fin_cases r
+    · exact hvalid.1.1
+    · exact hvalid.2.1
+  have hslot := caseOneExactSlotOf_spaced (caseOneLambda γ ι i)
+    (caseOneLambda_spaced γ ι i) q hq (caseOneSlotIndex b).2
+  simpa [caseOneSlotNat, P, k, q] using hslot
+
+private theorem caseOneScales_spaced {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (b : ℕ) (m : Fin 2 → ℕ) (r : Fin 2) :
+    SpacedSequence (caseOneScales γ ι i b m r) := by
+  unfold caseOneScales
+  exact smul_mem_A (caseOneSlotNat_spaced γ ι i b r) (pow_pos (by norm_num) _)
+
+private theorem caseOneSlotNat_distance_bound {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (hpositive : 0 < ι.1.1) (b : ℕ) :
+    sequencePairDistance (caseOneSlotNat γ ι i b).1 ≤
+      ((2 * (geometricDelta γ + ι.1.1.natAbs) : ℕ) : WithTop ℕ) := by
+  let P : Multiset (SequencePair × Fin 2) := aux_hKernelGaussianMultiset γ i
+  let k : Fin P.card := Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm
+    (caseOneSlotIndex b).1
+  let q : SequencePair × Fin 2 := caseOneOccurrence P k
+  have hqmem : q ∈ P := caseOneOccurrence_mem P k
+  have hslot := caseOneExactSlotOf_distance_bound γ ι i hpositive q (by
+    simpa [P] using hqmem) (caseOneSlotIndex b).2
+  simpa [caseOneSlotNat, P, k, q] using hslot
+
+/-- The dyadically rescaled slot data satisfies exactly the witness distance field. -/
+private theorem caseOneScales_distance_bound {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (hpositive : 0 < ι.1.1)
+    (b : ℕ) (m : Fin 2 → ℕ) :
+    sequencePairDistance (caseOneScales γ ι i b m) ≤
+      (C_gaussianDominationCombinedDistance : WithTop ℕ) *
+        ((geometricDelta γ + ι.1.1.natAbs + aux_natPairWeight m : ℕ) : WithTop ℕ) := by
+  let p : SequencePair := (caseOneSlotNat γ ι i b).1
+  let d : ℕ := geometricDelta γ
+  let h : ℕ := ι.1.1.natAbs
+  have hp₀ : SpacedSequence (p 0) := by
+    simpa [p] using caseOneSlotNat_spaced γ ι i b 0
+  have hp₁ : SpacedSequence (p 1) := by
+    simpa [p] using caseOneSlotNat_spaced γ ι i b 1
+  have hbase : SequenceDistance (p 0) (p 1) ≤ ((2 * (d + h) : ℕ) : WithTop ℕ) := by
+    simpa [sequencePairDistance, p, d, h] using
+      caseOneSlotNat_distance_bound γ ι i hpositive b
+  have hleft : SequenceDistance (fun j => (2 : ℝ) ^ (m 0) * p 0 j) (p 0) ≤
+      ((m 0 : ℕ) : WithTop ℕ) := by
+    rw [sequenceDistance_comm]
+    have h := sequenceDistance_pow_two_smul_le hp₀ ((m 0 : ℕ) : ℤ)
+    simpa [zpow_natCast, Int.natAbs_natCast] using h
+  have hright : SequenceDistance (p 1) (fun j => (2 : ℝ) ^ (m 1) * p 1 j) ≤
+      ((m 1 : ℕ) : WithTop ℕ) := by
+    have h := sequenceDistance_pow_two_smul_le hp₁ ((m 1 : ℕ) : ℤ)
+    simpa [zpow_natCast, Int.natAbs_natCast] using h
+  change SequenceDistance (fun j => (2 : ℝ) ^ (m 0) * p 0 j)
+      (fun j => (2 : ℝ) ^ (m 1) * p 1 j) ≤ _
+  calc
+    SequenceDistance (fun j => (2 : ℝ) ^ (m 0) * p 0 j)
+        (fun j => (2 : ℝ) ^ (m 1) * p 1 j) ≤
+        SequenceDistance (fun j => (2 : ℝ) ^ (m 0) * p 0 j) (p 0) +
+          SequenceDistance (p 0) (fun j => (2 : ℝ) ^ (m 1) * p 1 j) :=
+      sequenceDistance_triangle _ _ _
+    _ ≤ (m 0 : WithTop ℕ) +
+          (SequenceDistance (p 0) (p 1) +
+            SequenceDistance (p 1) (fun j => (2 : ℝ) ^ (m 1) * p 1 j)) := by
+      gcongr
+      exact sequenceDistance_triangle _ _ _
+    _ ≤ (m 0 : WithTop ℕ) + ((2 * (d + h) : ℕ) : WithTop ℕ) + m 1 := by
+      simpa [add_assoc] using add_le_add hbase hright
+    _ ≤ (C_gaussianDominationCombinedDistance : WithTop ℕ) *
+          ((d + h + aux_natPairWeight m : ℕ) : WithTop ℕ) := by
+      norm_num [C_gaussianDominationCombinedDistance]
+      norm_cast
+      simp only [aux_natPairWeight]
+      omega
+
+/-- The first three fields of the case-one Gaussian-domination witness, ready to be paired
+with the analytic estimate and Gaussian-series convergence proofs. -/
+private theorem caseOne_witness_side_conditions {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (hpositive : 0 < ι.1.1) :
+    caseOneB.card ≤ C_gaussianDominationCombinedCard ∧
+      (∀ b ∈ caseOneB, ∀ m : Fin 2 → ℕ, ∀ r : Fin 2,
+        SpacedSequence (caseOneScales γ ι i b m r)) ∧
+      (∀ b ∈ caseOneB, ∀ m : Fin 2 → ℕ,
+        sequencePairDistance (caseOneScales γ ι i b m) ≤
+          (C_gaussianDominationCombinedDistance : WithTop ℕ) *
+            ((geometricDelta γ + ι.1.1.natAbs + aux_natPairWeight m : ℕ) : WithTop ℕ)) := by
+  refine ⟨caseOneB_card, ?_, ?_⟩
+  · intro b _ m r
+    exact caseOneScales_spaced γ ι i b m r
+  · intro b _ m
+    exact caseOneScales_distance_bound γ ι i hpositive b m
+
+/-- The range carrier decodes the expected occurrence-slot pair on its 30 valid indices. -/
+private theorem caseOneSlotIndex_encode (k : Fin 6) (r : Fin 5) :
+    caseOneSlotIndex (k.1 * 5 + r.1) = (k, r) := by
+  apply Prod.ext <;> apply Fin.ext <;> simp [caseOneSlotIndex]
+  · omega
+
+private theorem caseOneSlotNat_encode {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (k : Fin 6) (r : Fin 5) :
+    caseOneSlotNat γ ι i (k.1 * 5 + r.1) =
+      caseOneExactSlotOf (caseOneLambda γ ι i)
+        (caseOneOccurrence (aux_hKernelGaussianMultiset γ i)
+          (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm k)) r := by
+  unfold caseOneSlotNat
+  rw [caseOneSlotIndex_encode]
+
+/-- Reindex the 30 natural-number witness slots as six multiset occurrences with five slots
+each.  This preserves the occurrence multiplicities of the H-kernel package. -/
+private theorem caseOne_sum_range30_reindex {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) {R : Type*} [AddCommMonoid R]
+    (F : SequencePair × Fin 2 → R) :
+    ∑ b ∈ caseOneB, F (caseOneSlotNat γ ι i b) =
+      ∑ k : Fin 6, ∑ r : Fin 5,
+        F (caseOneExactSlotOf (caseOneLambda γ ι i)
+          (caseOneOccurrence (aux_hKernelGaussianMultiset γ i)
+            (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm k)) r) := by
+  classical
+  calc
+    ∑ b ∈ caseOneB, F (caseOneSlotNat γ ι i b) =
+        ∑ b : Fin 30, F (caseOneSlotNat γ ι i b) := by
+      simpa [caseOneB] using
+        (Finset.sum_range (fun b : ℕ => F (caseOneSlotNat γ ι i b)))
+    _ = ∑ kr : Fin 6 × Fin 5,
+        F (caseOneExactSlotOf (caseOneLambda γ ι i)
+          (caseOneOccurrence (aux_hKernelGaussianMultiset γ i)
+            (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm kr.1)) kr.2) := by
+      let e : Fin 6 × Fin 5 ≃ Fin 30 := finProdFinEquiv
+      symm
+      refine Fintype.sum_equiv e
+        (fun kr => F (caseOneExactSlotOf (caseOneLambda γ ι i)
+          (caseOneOccurrence (aux_hKernelGaussianMultiset γ i)
+            (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm kr.1)) kr.2))
+        (fun b => F (caseOneSlotNat γ ι i b)) ?_
+      intro kr
+      apply congrArg F
+      have he : (e kr).1 = kr.1.1 * 5 + kr.2.1 := by
+        change kr.2.1 + 5 * kr.1.1 = kr.1.1 * 5 + kr.2.1
+        omega
+      rw [he, caseOneSlotNat_encode]
+    _ = ∑ k : Fin 6, ∑ r : Fin 5,
+        F (caseOneExactSlotOf (caseOneLambda γ ι i)
+          (caseOneOccurrence (aux_hKernelGaussianMultiset γ i)
+            (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm k)) r) := by
+      simpa using (Fintype.sum_prod_type (fun kr : Fin 6 × Fin 5 =>
+        F (caseOneExactSlotOf (caseOneLambda γ ι i)
+          (caseOneOccurrence (aux_hKernelGaussianMultiset γ i)
+            (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm kr.1)) kr.2)))
+
+noncomputable def aux_finTwoNatEquivProd : (Fin 2 → ℕ) ≃ (ℕ × ℕ) where
+  toFun := fun m => (m 0, m 1)
+  invFun := fun p r => if r = 0 then p.1 else p.2
+  left_inv := by
+    intro m
+    funext r
+    fin_cases r <;> simp
+  right_inv := by
+    rintro ⟨a, b⟩
+    rfl
+
+theorem aux_summable_finTwo_product {f₀ f₁ : ℕ → ℝ}
+    (h₀nonneg : ∀ a, 0 ≤ f₀ a) (h₁nonneg : ∀ a, 0 ≤ f₁ a)
+    (h₀ : Summable f₀) (h₁ : Summable f₁) :
+    Summable (fun m : Fin 2 → ℕ => f₀ (m 0) * f₁ (m 1)) := by
+  refine (aux_finTwoNatEquivProd.symm.summable_iff
+    (f := fun m : Fin 2 → ℕ => f₀ (m 0) * f₁ (m 1))).mp ?_
+  change Summable (fun p : ℕ × ℕ => f₀ p.1 * f₁ p.2)
+  refine (summable_prod_of_nonneg ?_).2 ?_
+  · rintro ⟨a, b⟩
+    exact mul_nonneg (h₀nonneg a) (h₁nonneg b)
+  constructor
+  · intro a
+    simpa using h₁.mul_left (f₀ a)
+  · simpa only [tsum_mul_left] using h₀.mul_right (∑' b, f₁ b)
+
+theorem aux_dyadic_gaussian_pair_summable
+    (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
+    (u : Fin 2) (j : ℤ) (v : RealPlane) :
+    Summable (fun m : Fin 2 → ℕ =>
+      aux_gaussianDominationWeight m *
+        aux_dominatingGaussianTerm
+          (fun r k => (2 : ℝ) ^ (m r) * p r k) u j v) := by
+  let f₀ : ℕ → ℝ := fun a =>
+    Real.rpow 2 (-(((a : ℕ) : ℝ) / 2)) *
+      gaussianRescale ((2 : ℝ) ^ a * p 0 j) (W u v).1
+  let f₁ : ℕ → ℝ := fun a =>
+    Real.rpow 2 (-(((a : ℕ) : ℝ) / 2)) *
+      gaussianRescale ((2 : ℝ) ^ a * p 1 j) (W u v).2
+  have hp₀ : 0 < p 0 j := aux_spacedSequence_pos (hp 0) j
+  have hp₁ : 0 < p 1 j := aux_spacedSequence_pos (hp 1) j
+  have hhalf (a : ℕ) : (1 - (3 / 2 : ℝ)) * (a : ℝ) = -((a : ℝ) / 2) := by
+    ring
+  have hf₀ : Summable f₀ := by
+    simpa [f₀, hhalf] using
+      aux_gaussianDomination_weight_summable (3 / 2 : ℝ) (p 0 j) (W u v).1
+        (by norm_num) hp₀
+  have hf₁ : Summable f₁ := by
+    simpa [f₁, hhalf] using
+      aux_gaussianDomination_weight_summable (3 / 2 : ℝ) (p 1 j) (W u v).2
+        (by norm_num) hp₁
+  have hf₀nonneg (a : ℕ) : 0 ≤ f₀ a := by
+    dsimp [f₀]
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (aux_gaussianRescale_nonneg (mul_pos (pow_pos (by norm_num) _) hp₀) _)
+  have hf₁nonneg (a : ℕ) : 0 ≤ f₁ a := by
+    dsimp [f₁]
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (aux_gaussianRescale_nonneg (mul_pos (pow_pos (by norm_num) _) hp₁) _)
+  have hprod := aux_summable_finTwo_product hf₀nonneg hf₁nonneg hf₀ hf₁
+  convert hprod using 1
+  funext m
+  have hweight :
+      aux_gaussianDominationWeight m =
+        Real.rpow 2 (-(((m 0 : ℕ) : ℝ) / 2)) *
+          Real.rpow 2 (-(((m 1 : ℕ) : ℝ) / 2)) := by
+    unfold aux_gaussianDominationWeight aux_natPairWeight
+    calc
+      Real.rpow 2 (-((m 0 + m 1 : ℕ) : ℝ) / 2) =
+          Real.rpow 2 (-(((m 0 : ℕ) : ℝ) / 2) +
+            -(((m 1 : ℕ) : ℝ) / 2)) := by
+        congr 1
+        push_cast
+        ring
+      _ = _ := Real.rpow_add (by norm_num) _ _
+  rw [hweight]
+  simp only [aux_dominatingGaussianTerm, twoDimensionalGaussian]
+  dsimp [f₀, f₁]
+  ring
+
+theorem aux_finite_dyadic_gaussian_series_summable
+    (B : Finset ℕ) (p : ℕ → SequencePair)
+    (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
+    (u : ℕ → Fin 2) (j : ℤ) (v : RealPlane) :
+    Summable (fun m : Fin 2 → ℕ =>
+      aux_gaussianDominationWeight m *
+        ∑ b ∈ B, aux_dominatingGaussianTerm
+          (fun r k => (2 : ℝ) ^ (m r) * p b r k) (u b) j v) := by
+  classical
+  let F : ℕ → (Fin 2 → ℕ) → ℝ := fun b m =>
+    aux_gaussianDominationWeight m *
+      aux_dominatingGaussianTerm
+        (fun r k => (2 : ℝ) ^ (m r) * p b r k) (u b) j v
+  have hF (b : ℕ) (hb : b ∈ B) : Summable (F b) := by
+    simpa [F] using aux_dyadic_gaussian_pair_summable (p b) (hp b hb) (u b) j v
+  have hsum (s : Finset ℕ) (hs : ∀ b ∈ s, Summable (F b)) :
+      Summable (fun m => ∑ b ∈ s, F b m) := by
+    induction s using Finset.induction_on with
+    | empty => simp
+    | insert b s hb ih =>
+      simp only [Finset.sum_insert hb]
+      exact (hs b (Finset.mem_insert_self b s)).add
+        (ih (fun c hc => hs c (Finset.mem_insert_of_mem hc)))
+  have hmain := hsum B hF
+  convert hmain using 1
+  funext m
+  dsimp [F]
+  rw [Finset.mul_sum]
+
+theorem aux_gaussianDominationWeight_summable :
+    Summable aux_gaussianDominationWeight := by
+  let r : ℝ := Real.rpow 2 (-(1 / 2 : ℝ))
+  have hrpos : 0 < r := Real.rpow_pos_of_pos (by norm_num) _
+  have hrlt : r < 1 :=
+    Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (by norm_num)
+  have hr : |r| < 1 := by simpa [abs_of_pos hrpos] using hrlt
+  have hgeom : Summable (fun a : ℕ => r ^ a) :=
+    summable_geometric_of_abs_lt_one hr
+  have hterm (a : ℕ) : r ^ a = Real.rpow 2 (-((a : ℝ) / 2)) := by
+    dsimp [r]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num)]
+    congr 1
+    ring
+  have hprod := aux_summable_finTwo_product
+    (fun a => (pow_nonneg hrpos.le a)) (fun a => (pow_nonneg hrpos.le a)) hgeom hgeom
+  convert hprod using 1
+  funext m
+  unfold aux_gaussianDominationWeight aux_natPairWeight
+  rw [hterm (m 0), hterm (m 1)]
+  calc
+    Real.rpow 2 (-((m 0 + m 1 : ℕ) : ℝ) / 2) =
+        Real.rpow 2 (-(((m 0 : ℕ) : ℝ) / 2) +
+          -(((m 1 : ℕ) : ℝ) / 2)) := by
+      congr 1
+      push_cast
+      ring
+    _ = _ := Real.rpow_add (by norm_num) _ _
+
+theorem aux_dyadic_gaussian_term_measurable
+    (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
+    (u : Fin 2) (j : ℤ) (m : Fin 2 → ℕ) :
+    Measurable (fun v : RealPlane =>
+      aux_gaussianDominationWeight m *
+        aux_dominatingGaussianTerm
+          (fun r k => (2 : ℝ) ^ (m r) * p r k) u j v) := by
+  have hq (r : Fin 2) : 0 < (2 : ℝ) ^ (m r) * p r j :=
+    mul_pos (pow_pos (by norm_num) _) (aux_spacedSequence_pos (hp r) j)
+  have hmem := aux_twoDimensionalGaussian_memW0
+    (fun r => (2 : ℝ) ^ (m r) * p r j) u hq
+  simpa [aux_dominatingGaussianTerm] using
+    (hmem.aux_continuous.const_mul (aux_gaussianDominationWeight m)).measurable
+
+theorem aux_dyadic_gaussian_term_integrable
+    (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
+    (u : Fin 2) (j : ℤ) (m : Fin 2 → ℕ) :
+    Integrable (fun v : RealPlane =>
+      aux_gaussianDominationWeight m *
+        aux_dominatingGaussianTerm
+          (fun r k => (2 : ℝ) ^ (m r) * p r k) u j v) := by
+  have hq (r : Fin 2) : 0 < (2 : ℝ) ^ (m r) * p r j :=
+    mul_pos (pow_pos (by norm_num) _) (aux_spacedSequence_pos (hp r) j)
+  have hmem := aux_twoDimensionalGaussian_memW0
+    (fun r => (2 : ℝ) ^ (m r) * p r j) u hq
+  have hint : Integrable (twoDimensionalGaussian
+      (fun r => (2 : ℝ) ^ (m r) * p r j) u) :=
+    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hmem
+  simpa [aux_dominatingGaussianTerm] using
+    hint.const_mul (aux_gaussianDominationWeight m)
+
+theorem aux_integral_dyadic_gaussian_term
+    (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
+    (u : Fin 2) (j : ℤ) (m : Fin 2 → ℕ) :
+    (∫ v : RealPlane,
+      aux_gaussianDominationWeight m *
+        aux_dominatingGaussianTerm
+          (fun r k => (2 : ℝ) ^ (m r) * p r k) u j v) =
+      aux_gaussianDominationWeight m := by
+  have hq (r : Fin 2) : 0 < (2 : ℝ) ^ (m r) * p r j :=
+    mul_pos (pow_pos (by norm_num) _) (aux_spacedSequence_pos (hp r) j)
+  rw [integral_const_mul]
+  simpa [aux_dominatingGaussianTerm] using
+    congrArg (fun z : ℝ => aux_gaussianDominationWeight m * z)
+      (aux_integral_twoDimensionalGaussian
+        (fun r => (2 : ℝ) ^ (m r) * p r j) u hq)
+
+theorem aux_integrable_tsum_of_nonneg
+    {ι α : Type*} [Countable ι] [MeasurableSpace α] {μ : Measure α}
+    (f : ι → α → ℝ)
+    (hmeas : ∀ k, Measurable (f k))
+    (hnonneg : ∀ k x, 0 ≤ f k x)
+    (hsum : ∀ x, Summable (fun k => f k x))
+    (hint : ∀ k, Integrable (f k) μ)
+    (hintsum : Summable (fun k => ∫ x, f k x ∂μ)) :
+    Integrable (fun x => ∑' k, f k x) μ := by
+  refine ⟨(Measurable.tsum hmeas).aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_norm]
+  calc
+    ∫⁻ x, ENNReal.ofReal ‖∑' k, f k x‖ ∂μ =
+        ∫⁻ x, ∑' k, ENNReal.ofReal (f k x) ∂μ := by
+      apply lintegral_congr_ae
+      filter_upwards [] with x
+      rw [Real.norm_eq_abs, abs_of_nonneg (tsum_nonneg fun k => hnonneg k x)]
+      rw [ENNReal.ofReal_tsum_of_nonneg (fun k => hnonneg k x) (hsum x)]
+    _ = ∑' k, ∫⁻ x, ENNReal.ofReal (f k x) ∂μ :=
+      lintegral_tsum fun k => (hmeas k).aemeasurable.ennreal_ofReal
+    _ = ∑' k, ENNReal.ofReal (∫ x, f k x ∂μ) := by
+      apply tsum_congr
+      intro k
+      exact (ofReal_integral_eq_lintegral_ofReal (hint k)
+        (ae_of_all _ fun x => hnonneg k x)).symm
+    _ < ∞ := hintsum.tsum_ofReal_lt_top
+
+theorem aux_finite_dyadic_gaussian_series_integrable
+    (B : Finset ℕ) (p : ℕ → SequencePair)
+    (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
+    (u : ℕ → Fin 2) (j : ℤ) :
+    Integrable (fun v : RealPlane =>
+      ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+        ∑ b ∈ B, aux_dominatingGaussianTerm
+          (fun r k => (2 : ℝ) ^ (m r) * p b r k) (u b) j v) := by
+  classical
+  let F : (Fin 2 → ℕ) → RealPlane → ℝ := fun m v =>
+    ∑ b ∈ B, aux_gaussianDominationWeight m *
+      aux_dominatingGaussianTerm
+        (fun r k => (2 : ℝ) ^ (m r) * p b r k) (u b) j v
+  have hmeas (m : Fin 2 → ℕ) : Measurable (F m) := by
+    apply Finset.measurable_sum
+    intro b hb
+    exact aux_dyadic_gaussian_term_measurable (p b) (hp b hb) (u b) j m
+  have hnonneg (m : Fin 2 → ℕ) (v : RealPlane) : 0 ≤ F m v := by
+    apply Finset.sum_nonneg
+    intro b hb
+    apply mul_nonneg (aux_gaussianDominationWeight_nonneg m)
+    apply aux_twoDimensionalGaussian_nonneg
+    intro r
+    exact mul_pos (pow_pos (by norm_num) _)
+      (aux_spacedSequence_pos (hp b hb r) j)
+  have hsum (v : RealPlane) : Summable (fun m : Fin 2 → ℕ => F m v) := by
+    simpa [F, Finset.mul_sum] using
+      aux_finite_dyadic_gaussian_series_summable B p hp u j v
+  have hint (m : Fin 2 → ℕ) : Integrable (F m) := by
+    dsimp [F]
+    apply integrable_finsetSum
+    intro b hb
+    exact aux_dyadic_gaussian_term_integrable (p b) (hp b hb) (u b) j m
+  have hFint (m : Fin 2 → ℕ) :
+      (∫ v : RealPlane, F m v) = (B.card : ℝ) * aux_gaussianDominationWeight m := by
+    dsimp [F]
+    rw [integral_finsetSum]
+    · calc
+        ∑ b ∈ B, ∫ v : RealPlane,
+            aux_gaussianDominationWeight m *
+              aux_dominatingGaussianTerm
+                (fun r k => (2 : ℝ) ^ (m r) * p b r k) (u b) j v =
+            ∑ b ∈ B, aux_gaussianDominationWeight m := by
+              apply Finset.sum_congr rfl
+              intro b hb
+              exact aux_integral_dyadic_gaussian_term (p b) (hp b hb) (u b) j m
+        _ = (B.card : ℝ) * aux_gaussianDominationWeight m := by
+          simp [nsmul_eq_mul]
+    · intro b hb
+      exact aux_dyadic_gaussian_term_integrable (p b) (hp b hb) (u b) j m
+  have hintsum : Summable (fun m : Fin 2 → ℕ => ∫ v : RealPlane, F m v) := by
+    refine (aux_gaussianDominationWeight_summable.mul_left (B.card : ℝ)).congr ?_
+    intro m
+    exact (hFint m).symm
+  have hmain := aux_integrable_tsum_of_nonneg F hmeas hnonneg hsum hint hintsum
+  have hfun :
+      (fun v : RealPlane => ∑' m : Fin 2 → ℕ, F m v) =
+        (fun v : RealPlane => ∑' m : Fin 2 → ℕ,
+          aux_gaussianDominationWeight m *
+            ∑ b ∈ B, aux_dominatingGaussianTerm
+              (fun r k => (2 : ℝ) ^ (m r) * p b r k) (u b) j v) := by
+    funext v
+    apply tsum_congr
+    intro m
+    dsimp [F]
+    rw [Finset.mul_sum]
+  rw [← hfun]
+  exact hmain
+
+/-- Wrapper in the exact `aux_GaussianDominationWitness.scales` shape: the scale pair at
+`m` is obtained from a fixed base pair by coordinatewise dyadic dilation. -/
+theorem aux_finite_dyadic_gaussian_series_summable_of_scales
+    (B : Finset ℕ) (p : ℕ → SequencePair)
+    (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
+    (u : ℕ → Fin 2) (scales : ℕ → (Fin 2 → ℕ) → SequencePair)
+    (hscales : ∀ b ∈ B, ∀ m r k,
+      scales b m r k = (2 : ℝ) ^ (m r) * p b r k)
+    (j : ℤ) (v : RealPlane) :
+    Summable (fun m : Fin 2 → ℕ =>
+      aux_gaussianDominationWeight m *
+        ∑ b ∈ B, aux_dominatingGaussianTerm (scales b m) (u b) j v) := by
+  have hbase := aux_finite_dyadic_gaussian_series_summable B p hp u j v
+  convert hbase using 1
+  funext m
+  congr 1
+  apply Finset.sum_congr rfl
+  intro b hb
+  congr 2
+  funext r k
+  exact hscales b hb m r k
+
+theorem aux_finite_dyadic_gaussian_series_integrable_of_scales
+    (B : Finset ℕ) (p : ℕ → SequencePair)
+    (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
+    (u : ℕ → Fin 2) (scales : ℕ → (Fin 2 → ℕ) → SequencePair)
+    (hscales : ∀ b ∈ B, ∀ m r k,
+      scales b m r k = (2 : ℝ) ^ (m r) * p b r k)
+    (j : ℤ) :
+    Integrable (fun v : RealPlane => ∑' m : Fin 2 → ℕ,
+      aux_gaussianDominationWeight m *
+        ∑ b ∈ B, aux_dominatingGaussianTerm (scales b m) (u b) j v) := by
+  have hbase := aux_finite_dyadic_gaussian_series_integrable B p hp u j
+  have hfun :
+      (fun v : RealPlane => ∑' m : Fin 2 → ℕ,
+        aux_gaussianDominationWeight m *
+          ∑ b ∈ B, aux_dominatingGaussianTerm (scales b m) (u b) j v) =
+        (fun v : RealPlane => ∑' m : Fin 2 → ℕ,
+          aux_gaussianDominationWeight m *
+            ∑ b ∈ B, aux_dominatingGaussianTerm
+              (fun r k => (2 : ℝ) ^ (m r) * p b r k) (u b) j v) := by
+    funext v
+    apply tsum_congr
+    intro m
+    congr 1
+    apply Finset.sum_congr rfl
+    intro b hb
+    congr 2
+    funext r k
+    exact hscales b hb m r k
+  rw [hfun]
+  exact hbase
+
+/-- The two analytic tail fields of a Gaussian-domination witness, for any finite family of
+base scale pairs and their coordinatewise dyadic dilates. -/
+theorem aux_finite_dyadic_gaussian_series
+    (B : Finset ℕ) (p : ℕ → SequencePair)
+    (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
+    (u : ℕ → Fin 2) (scales : ℕ → (Fin 2 → ℕ) → SequencePair)
+    (hscales : ∀ b ∈ B, ∀ m r k,
+      scales b m r k = (2 : ℝ) ^ (m r) * p b r k) :
+    (∀ j : ℤ, ∀ v : RealPlane,
+      Summable (fun m : Fin 2 → ℕ =>
+        aux_gaussianDominationWeight m *
+          ∑ b ∈ B, aux_dominatingGaussianTerm (scales b m) (u b) j v)) ∧
+    (∀ j : ℤ, Integrable (fun v : RealPlane => ∑' m : Fin 2 → ℕ,
+      aux_gaussianDominationWeight m *
+        ∑ b ∈ B, aux_dominatingGaussianTerm (scales b m) (u b) j v)) := by
+  constructor
+  · intro j v
+    exact aux_finite_dyadic_gaussian_series_summable_of_scales
+      B p hp u scales hscales j v
+  · intro j
+    exact aux_finite_dyadic_gaussian_series_integrable_of_scales
+      B p hp u scales hscales j
+
+/-- Coordinatewise dyadic dilation preserves membership in the spaced-sequence class. -/
+theorem aux_dyadic_scales_in_A
+    (B : Finset ℕ) (p : ℕ → SequencePair)
+    (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r)) :
+    ∀ b ∈ B, ∀ m : Fin 2 → ℕ, ∀ r : Fin 2,
+      SpacedSequence (fun k => (2 : ℝ) ^ (m r) * p b r k) := by
+  intro b hb m r
+  exact smul_mem_A (hp b hb r) (pow_pos (by norm_num) _)
+
+/-- In the orientation-one case the kernel sees `√2 * p`; this only improves
+the real bracket profile. -/
+private theorem aux_caseOne_m1_sqrt_arg_le (N t p : ℝ)
+    (hN : 0 ≤ N) (ht : 0 < t) :
+    scaledBracketBumpReal N t (Real.sqrt 2 * p) ≤
+      scaledBracketBumpReal N t p := by
+  have hsqrt0 : 0 ≤ Real.sqrt (2 : ℝ) := Real.sqrt_nonneg _
+  have hsqrt1 : 1 ≤ Real.sqrt (2 : ℝ) := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+  have hbase : 1 + |t⁻¹ * p| ≤ 1 + |t⁻¹ * (Real.sqrt 2 * p)| := by
+    rw [abs_mul, abs_mul, abs_mul, abs_inv, abs_of_pos ht,
+      abs_of_nonneg hsqrt0]
+    gcongr
+    simpa using mul_le_mul_of_nonneg_right hsqrt1 (abs_nonneg p)
+  unfold scaledBracketBumpReal
+  apply mul_le_mul_of_nonneg_left
+  · exact Real.rpow_le_rpow_of_nonpos (by positivity) hbase (by linarith)
+  · exact inv_nonneg.mpr ht.le
+
+/-- Exact simultaneous rescaling used to express the first M₁ coordinate in
+the formal `W 1` coordinates. -/
+private theorem aux_caseOne_m1_simul_rescale (N c s x : ℝ) (hc : 0 < c) :
+    c * scaledBracketBumpReal N (c * s) (c * x) =
+      scaledBracketBumpReal N s x := by
+  unfold scaledBracketBumpReal
+  have hcne : c ≠ 0 := ne_of_gt hc
+  have harg : (c * s)⁻¹ * (c * x) = s⁻¹ * x := by
+    field_simp [hcne]
+  have hinv : c * (c * s)⁻¹ = s⁻¹ := by
+    field_simp [hcne]
+  rw [harg]
+  calc
+    c * ((c * s)⁻¹ * (1 + |s⁻¹ * x|).rpow (-N)) =
+        (c * (c * s)⁻¹) * (1 + |s⁻¹ * x|).rpow (-N) := by ring
+    _ = s⁻¹ * (1 + |s⁻¹ * x|).rpow (-N) := by rw [hinv]
+
+private theorem aux_caseOne_m1_le_inv (N s x : ℝ) (hN : 0 ≤ N) (hs : 0 < s) :
+    scaledBracketBumpReal N s x ≤ s⁻¹ := by
+  unfold scaledBracketBumpReal
+  have hbase : 1 ≤ 1 + |s⁻¹ * x| := by linarith [abs_nonneg (s⁻¹ * x)]
+  have hpow : Real.rpow (1 + |s⁻¹ * x|) (-N) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos hbase (by linarith)
+  calc
+    s⁻¹ * Real.rpow (1 + |s⁻¹ * x|) (-N) ≤ s⁻¹ * 1 :=
+      mul_le_mul_of_nonneg_left hpow (inv_nonneg.mpr hs.le)
+    _ = s⁻¹ := by ring
+
+private theorem aux_caseOne_m1_product_integrable
+    (a s₀ s₁ : ℝ) (hs₀ : 0 < s₀) (hs₁ : 0 < s₁) :
+    Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (3 / 2 : ℝ) s₀ (a + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) s₁ p) := by
+  have hbase : Integrable (fun p : ℝ => scaledBracketBumpReal (3 / 2 : ℝ) s₁ p) :=
+    aux_integrable_scaledBracketBumpReal (3 / 2 : ℝ) s₁ (by norm_num) hs₁
+  refine (hbase.const_mul s₀⁻¹).mono' ?_ ?_
+  · apply Continuous.aestronglyMeasurable
+    have hleftBase : Continuous (fun p : ℝ => 1 + |s₀⁻¹ * (a + p)|) := by fun_prop
+    have hrightBase : Continuous (fun p : ℝ => 1 + |s₁⁻¹ * p|) := by fun_prop
+    have hleft : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (3 / 2 : ℝ) s₀ (a + p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hleftBase.continuousAt.rpow_const (Or.inl (by positivity))
+    have hright : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (3 / 2 : ℝ) s₁ p) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hrightBase.continuousAt.rpow_const (Or.inl (by positivity))
+    exact hleft.mul hright
+  · filter_upwards [] with p
+    have hleft : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) s₀ (a + p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs₀
+    have hright : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) s₁ p :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs₁
+    have hle := aux_caseOne_m1_le_inv (3 / 2 : ℝ) s₀ (a + p) (by norm_num) hs₀
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hleft hright)]
+    calc
+      scaledBracketBumpReal (3 / 2 : ℝ) s₀ (a + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) s₁ p ≤
+        s₀⁻¹ * scaledBracketBumpReal (3 / 2 : ℝ) s₁ p := by
+          nlinarith [mul_le_mul_of_nonneg_right hle hright]
+
+/-- The single orientation-one occurrence in the positive-horizontal case is
+controlled by its M₁ term in exact `W 1` coordinates.  The factor `2` only
+absorbs `√2 ≤ 2`; the output scale pair is `(√2 * λ, t₁)`. -/
+private theorem aux_caseOne_m1_orientation_one (w₀ w₁ lam t₀ t₁ : ℝ)
+    (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) (ht₀lam : t₀ ≤ lam) :
+    (∫ p : ℝ,
+      (scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)) ≤
+      2 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w₀) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₁ (Real.sqrt 2 * w₁) := by
+  let A₀ : ℝ := scaledBracketBumpReal (3 / 2 : ℝ) lam w₀
+  let D : ℝ := scaledBracketBumpReal (3 / 2 : ℝ) t₁ (Real.sqrt 2 * w₁)
+  let f : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+        scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)
+  let g₀ : ℝ → ℝ := fun p => A₀ * scaledBracketBumpReal (3 / 2 : ℝ) t₀ p
+  let g₁ : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₀ p
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqrt_le_two : Real.sqrt (2 : ℝ) ≤ 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  have hCtwo : 0 ≤ C_twoBumpEstimate (3 / 2) (3 / 2) := by
+    unfold C_twoBumpEstimate
+    norm_num
+    positivity
+  have hA₀ : 0 ≤ A₀ := by
+    dsimp [A₀]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hD : 0 ≤ D := by
+    dsimp [D]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  have hg₀ : Integrable g₀ := by
+    have hbase := aux_integrable_scaledBracketBumpReal (3 / 2 : ℝ) t₀ (by norm_num) ht₀
+    simpa [g₀] using hbase.const_mul A₀
+  have hg₁ : Integrable g₁ := by
+    simpa [g₁] using aux_caseOne_m1_product_integrable w₀ lam t₀ hlam ht₀
+  have hfnon (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    apply mul_nonneg
+    · apply mul_nonneg
+      · apply add_nonneg <;> apply aux_scaledBracketBumpReal_nonneg <;> exact hlam
+      · exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₀
+    · exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  have hpoint (p : ℝ) : f p ≤ D * (g₀ p + g₁ p) := by
+    have hfirst₀ : scaledBracketBumpReal 2 lam w₀ ≤
+        scaledBracketBumpReal (3 / 2 : ℝ) lam w₀ :=
+      aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2 lam w₀ hlam (by norm_num)
+    have hfirst₁ : scaledBracketBumpReal 2 lam (w₀ + p) ≤
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p) :=
+      aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2 lam (w₀ + p) hlam (by norm_num)
+    have hsecond : scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) ≤
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ p :=
+      aux_caseOne_m1_sqrt_arg_le (3 / 2 : ℝ) t₀ p (by norm_num) ht₀
+    have hthird : scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) ≤ D := by
+      dsimp [D]
+      exact aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2 t₁
+        (Real.sqrt 2 * w₁) ht₁ (by norm_num)
+    have hsum : scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p) ≤
+        A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p) := by
+      dsimp [A₀]
+      exact add_le_add hfirst₀ hfirst₁
+    have hsumNonneg : 0 ≤ A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p) :=
+      add_nonneg hA₀ (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+    have hsecondNonneg : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t₀
+        (Real.sqrt 2 * p) := aux_scaledBracketBumpReal_nonneg _ _ _ ht₀
+    have hthirdNonneg : 0 ≤ scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+    dsimp [f, g₀, g₁]
+    calc
+      (scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+            scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) ≤
+          (A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+              scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) := by
+            exact mul_le_mul_of_nonneg_right
+              (mul_le_mul_of_nonneg_right hsum hsecondNonneg) hthirdNonneg
+      _ ≤ (A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₀ p *
+              scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) := by
+            exact mul_le_mul_of_nonneg_right
+              (mul_le_mul_of_nonneg_left hsecond hsumNonneg) hthirdNonneg
+      _ ≤ (A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₀ p * D := by
+            exact mul_le_mul_of_nonneg_left hthird
+              (mul_nonneg hsumNonneg
+                (aux_scaledBracketBumpReal_nonneg _ _ _ ht₀))
+      _ = D * (g₀ p + g₁ p) := by ring
+  have hmajor : Integrable (fun p : ℝ => D * (g₀ p + g₁ p)) :=
+    (hg₀.add hg₁).const_mul D
+  have hint : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, D * (g₀ p + g₁ p) :=
+    integral_mono_of_nonneg (ae_of_all _ hfnon) hmajor (ae_of_all _ hpoint)
+  have hmass : (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t₀ p) = 4 := by
+    have h := aux_integral_scaledBracketBumpReal_eq (3 / 2 : ℝ) t₀ 0 (by norm_num) ht₀
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) t₀ p) =
+          2 / ((3 / 2 : ℝ) - 1) := by
+            simpa [aux_scaledBracketBumpReal_neg] using h
+      _ = 4 := by norm_num
+  have hg₀val : (∫ p : ℝ, g₀ p) = A₀ * 4 := by
+    dsimp [g₀]
+    rw [integral_const_mul, hmass]
+  have hg₁non (p : ℝ) : 0 ≤ g₁ p := by
+    dsimp [g₁]
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht₀)
+  have htwoRaw := twoBumpEstimate (-w₀) 0 lam t₀ (3 / 2 : ℝ) (3 / 2 : ℝ)
+    hlam ht₀ ht₀lam (by norm_num) (by norm_num)
+  have hg₁bound : (∫ p : ℝ, g₁ p) ≤
+      C_twoBumpEstimate (3 / 2) (3 / 2) * A₀ := by
+    rw [← abs_of_nonneg (integral_nonneg hg₁non)]
+    calc
+      |∫ p : ℝ, g₁ p| =
+          |∫ p : ℝ, scaledBracketBumpReal (3 / 2 : ℝ) lam ((-w₀) - p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₀ (0 - p)| := by
+            congr 1
+            apply integral_congr_ae
+            filter_upwards [] with p
+            dsimp [g₁]
+            rw [show (-w₀) - p = -(w₀ + p) by ring,
+              show 0 - p = -p by ring,
+              aux_scaledBracketBumpReal_neg, aux_scaledBracketBumpReal_neg]
+      _ ≤ C_twoBumpEstimate (3 / 2) (3 / 2) *
+          scaledBracketBumpReal (min (3 / 2 : ℝ) (3 / 2 : ℝ)) lam ((-w₀) - 0) := htwoRaw
+      _ = C_twoBumpEstimate (3 / 2) (3 / 2) * A₀ := by
+        dsimp [A₀]
+        rw [min_self, show -w₀ - 0 = -w₀ by ring, aux_scaledBracketBumpReal_neg]
+  have hraw : (∫ p : ℝ, f p) ≤
+      (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) * A₀ * D := by
+    calc
+      (∫ p : ℝ, f p) ≤ ∫ p : ℝ, D * (g₀ p + g₁ p) := hint
+      _ = D * ((∫ p : ℝ, g₀ p) + ∫ p : ℝ, g₁ p) := by
+        rw [integral_const_mul, integral_add hg₀ hg₁]
+      _ ≤ D * (A₀ * 4 + C_twoBumpEstimate (3 / 2) (3 / 2) * A₀) :=
+        mul_le_mul_of_nonneg_left (add_le_add (le_of_eq hg₀val) hg₁bound) hD
+      _ = (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) * A₀ * D := by ring
+  have hres := aux_caseOne_m1_simul_rescale (3 / 2 : ℝ) (Real.sqrt 2) lam w₀ hsqrt
+  have hcore : 0 ≤ (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) *
+      scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w₀) * D := by
+    apply mul_nonneg
+    · apply mul_nonneg
+      · linarith
+      · exact aux_scaledBracketBumpReal_nonneg _ _ _ (mul_pos hsqrt hlam)
+    · exact hD
+  change (∫ p : ℝ, f p) ≤ _
+  calc
+    (∫ p : ℝ, f p) ≤ (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) * A₀ * D := hraw
+    _ = Real.sqrt 2 * ((C_twoBumpEstimate (3 / 2) (3 / 2) + 4) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w₀) * D) := by
+      dsimp [A₀]
+      rw [← hres]
+      ring
+    _ ≤ 2 * ((C_twoBumpEstimate (3 / 2) (3 / 2) + 4) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w₀) * D) :=
+      mul_le_mul_of_nonneg_right hsqrt_le_two hcore
+    _ = 2 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w₀) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₁ (Real.sqrt 2 * w₁) := by
+      dsimp [D]
+      ring
+
+/-- Pulls the `2π` in the positive rho estimate outside the minimum. -/
+private theorem aux_caseOne_m1_move_twoPi_out {A lambda y B : ℝ}
+    (hA : 0 ≤ A) (hlambda : 0 < lambda) (hB : 0 ≤ B) :
+    A * min 1 (2 * Real.pi * lambda⁻¹ * |y|) * B ≤
+      (2 * Real.pi * A) * min 1 (lambda⁻¹ * |y|) * B := by
+  have hmin : min 1 (2 * Real.pi * (lambda⁻¹ * |y|)) ≤
+      2 * Real.pi * min 1 (lambda⁻¹ * |y|) := by
+    have hpi : 1 ≤ 2 * Real.pi := by nlinarith [Real.pi_gt_three]
+    by_cases h : 1 ≤ lambda⁻¹ * |y|
+    · rw [min_eq_left h]
+      exact (min_le_left _ _).trans (by nlinarith)
+    · have h' : lambda⁻¹ * |y| ≤ 1 := le_of_not_ge h
+      rw [min_eq_right h']
+      exact min_le_right _ _
+  calc
+    A * min 1 (2 * Real.pi * lambda⁻¹ * |y|) * B =
+        A * min 1 (2 * Real.pi * (lambda⁻¹ * |y|)) * B := by ring
+    _ ≤ A * (2 * Real.pi * min 1 (lambda⁻¹ * |y|)) * B :=
+      mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hmin hA) hB
+    _ = (2 * Real.pi * A) * min 1 (lambda⁻¹ * |y|) * B := by ring
+
+/-- A scale in the H-kernel distance ball is smaller than the positive-band
+N scale by the required dyadic factor. -/
+private theorem aux_caseOne_m1_distanceBall_scale_ratio_le {a b : ℤ → ℝ}
+    (ha : SpacedSequence a) {d : ℕ} (hb : b ∈ sequenceDistanceBall a (d : WithTop ℕ))
+    (h j : ℤ) :
+    b j / ((2 : ℝ) ^ h * a (j + (d : ℤ))) ≤ (2 : ℝ) ^ (-h) := by
+  rcases hb with ⟨_, hdist⟩
+  have hwithin : WithinSequenceDistance a b d :=
+    aux_withinSequenceDistance_of_sequenceDistance_le ha hdist
+  have hbj : b j ≤ a (j + (d : ℤ)) := by
+    simpa using (hwithin j).2
+  have hden : 0 < (2 : ℝ) ^ h * a (j + (d : ℤ)) :=
+    mul_pos (zpow_pos (by norm_num) _) (ha _).1
+  apply (div_le_iff₀ hden).2
+  calc
+    b j ≤ a (j + (d : ℤ)) := hbj
+    _ = ((2 : ℝ) ^ (-h) * (2 : ℝ) ^ h) * a (j + (d : ℤ)) := by
+      rw [← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0), neg_add_cancel, zpow_zero, one_mul]
+    _ = (2 : ℝ) ^ (-h) * ((2 : ℝ) ^ h * a (j + (d : ℤ))) := by ring
+
+/-- The square-root loss converts the second-order H bump into the `3/2` bump
+needed by the M₁ integral theorem. -/
+private theorem aux_caseOne_m1_two_sqrt_eq_threeHalves (t x : ℝ) (ht : 0 < t) :
+    Real.rpow (1 + t⁻¹ * |x|) (1 / 2 : ℝ) * scaledBracketBump 2 t x =
+      scaledBracketBumpReal (3 / 2 : ℝ) t x := by
+  let z : ℝ := 1 + t⁻¹ * |x|
+  have hz : 0 < z := by
+    dsimp [z]
+    positivity
+  have habs : |t⁻¹ * x| = t⁻¹ * |x| := by
+    rw [abs_mul, abs_inv, abs_of_pos ht]
+  have hnegTwo : z⁻¹ ^ (2 : ℕ) = Real.rpow z (-2 : ℝ) := by
+    calc
+      z⁻¹ ^ (2 : ℕ) = (z ^ (2 : ℕ))⁻¹ := by rw [inv_pow]
+      _ = (Real.rpow z (2 : ℝ))⁻¹ := by
+        congr 1
+        exact (Real.rpow_natCast z 2).symm
+      _ = Real.rpow z (-2 : ℝ) := (Real.rpow_neg hz.le 2).symm
+  unfold scaledBracketBump scaledBracketBumpReal
+  rw [habs]
+  change Real.rpow z (1 / 2 : ℝ) * (t⁻¹ * z⁻¹ ^ (2 : ℕ)) =
+    t⁻¹ * Real.rpow z (-(3 / 2 : ℝ))
+  rw [hnegTwo]
+  calc
+    Real.rpow z (1 / 2 : ℝ) * (t⁻¹ * Real.rpow z (-2 : ℝ)) =
+        t⁻¹ * (Real.rpow z (1 / 2 : ℝ) * Real.rpow z (-2 : ℝ)) := by ring
+    _ = t⁻¹ * Real.rpow z ((1 / 2 : ℝ) + (-2 : ℝ)) := by
+      have hsum : Real.rpow z ((1 / 2 : ℝ) + (-2 : ℝ)) =
+          Real.rpow z (1 / 2 : ℝ) * Real.rpow z (-2 : ℝ) :=
+        Real.rpow_add hz _ _
+      exact congrArg (fun r : ℝ => t⁻¹ * r) hsum.symm
+    _ = t⁻¹ * Real.rpow z (-(3 / 2 : ℝ)) := by ring_nf
+
+private theorem aux_caseOne_m1_min_scale_half_le {t lam : ℝ} {h : ℕ}
+    (ht : 0 < t) (hlam : 0 < lam)
+    (hscale : t / lam ≤ Real.rpow 2 (-(h : ℝ))) (p : ℝ) :
+    min 1 (lam⁻¹ * |p|) ≤ Real.rpow 2 (-((h : ℝ) / 2)) *
+      Real.sqrt (1 + t⁻¹ * |p|) := by
+  let a : ℝ := lam⁻¹ * |p|
+  let b : ℝ := t⁻¹ * |p|
+  let c : ℝ := Real.rpow 2 (-(h : ℝ))
+  have ha : 0 ≤ a := by
+    dsimp [a]
+    positivity
+  have hb : 0 ≤ b := by
+    dsimp [b]
+    positivity
+  have hc : 0 ≤ c := by
+    dsimp [c]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hab : a ≤ c * b := by
+    have hid : a = (t / lam) * b := by
+      dsimp [a, b]
+      field_simp [ne_of_gt ht, ne_of_gt hlam]
+    rw [hid]
+    exact mul_le_mul_of_nonneg_right hscale hb
+  have hmin : min 1 a ≤ Real.sqrt a := by
+    by_cases haone : a ≤ 1
+    · rw [min_eq_right haone]
+      exact (Real.le_sqrt_self_iff).2 haone
+    · rw [min_eq_left (le_of_not_ge haone)]
+      exact (Real.one_le_sqrt).2 (le_of_not_ge haone)
+  have hsqrt : Real.sqrt a ≤ Real.sqrt c * Real.sqrt (1 + b) := by
+    calc
+      Real.sqrt a ≤ Real.sqrt (c * b) := Real.sqrt_le_sqrt hab
+      _ = Real.sqrt c * Real.sqrt b := Real.sqrt_mul hc _
+      _ ≤ Real.sqrt c * Real.sqrt (1 + b) :=
+        mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by linarith)) (Real.sqrt_nonneg _)
+  have hroot : Real.sqrt c = Real.rpow 2 (-((h : ℝ) / 2)) := by
+    dsimp [c]
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2)]
+    congr 1
+    ring
+  simpa [a, b, hroot] using hmin.trans hsqrt
+
+/-- Combines the loss based on `p` with the orientation-one H bump, whose first
+coordinate is `√2 p`. -/
+private theorem aux_caseOne_m1_sqrt_loss_bump (t p : ℝ) (ht : 0 < t) :
+    Real.sqrt (1 + t⁻¹ * |p|) * scaledBracketBump 2 t (-Real.sqrt 2 * p) ≤
+      scaledBracketBumpReal (3 / 2 : ℝ) t (Real.sqrt 2 * p) := by
+  have hsqrt : 0 ≤ Real.sqrt (2 : ℝ) := Real.sqrt_nonneg _
+  have hsqrt_one : 1 ≤ Real.sqrt (2 : ℝ) := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+  have hbase : 1 + t⁻¹ * |p| ≤ 1 + t⁻¹ * |Real.sqrt 2 * p| := by
+    rw [abs_mul, abs_of_nonneg hsqrt]
+    gcongr
+    simpa using mul_le_mul_of_nonneg_right hsqrt_one (abs_nonneg p)
+  have hroot : Real.sqrt (1 + t⁻¹ * |p|) ≤
+      Real.sqrt (1 + t⁻¹ * |Real.sqrt 2 * p|) :=
+    Real.sqrt_le_sqrt hbase
+  have hB : 0 ≤ scaledBracketBump 2 t (-Real.sqrt 2 * p) :=
+    aux_scaledBracketBump_nonneg 2 ht _
+  have hneg : scaledBracketBump 2 t (-Real.sqrt 2 * p) =
+      scaledBracketBump 2 t (Real.sqrt 2 * p) := by
+    unfold scaledBracketBump
+    rw [show t⁻¹ * (-Real.sqrt 2 * p) = -(t⁻¹ * (Real.sqrt 2 * p)) by ring,
+      abs_neg]
+  calc
+    Real.sqrt (1 + t⁻¹ * |p|) * scaledBracketBump 2 t (-Real.sqrt 2 * p) ≤
+        Real.sqrt (1 + t⁻¹ * |Real.sqrt 2 * p|) *
+          scaledBracketBump 2 t (-Real.sqrt 2 * p) :=
+      mul_le_mul_of_nonneg_right hroot hB
+    _ = Real.sqrt (1 + t⁻¹ * |Real.sqrt 2 * p|) *
+          scaledBracketBump 2 t (Real.sqrt 2 * p) := by rw [hneg]
+    _ = scaledBracketBumpReal (3 / 2 : ℝ) t (Real.sqrt 2 * p) := by
+      have hpow : Real.sqrt (1 + t⁻¹ * |Real.sqrt 2 * p|) =
+          Real.rpow (1 + t⁻¹ * |Real.sqrt 2 * p|) (1 / 2 : ℝ) := by
+        rw [Real.sqrt_eq_rpow]
+        rfl
+      rw [hpow]
+      exact aux_caseOne_m1_two_sqrt_eq_threeHalves t (Real.sqrt 2 * p) ht
+
+private theorem aux_caseOne_m1_integrand_integrable (w₀ w₁ lam t₀ t₁ : ℝ)
+    (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
+    Integrable (fun p : ℝ =>
+      (scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)) := by
+  let A₀ : ℝ := scaledBracketBumpReal (3 / 2 : ℝ) lam w₀
+  let D : ℝ := scaledBracketBumpReal (3 / 2 : ℝ) t₁ (Real.sqrt 2 * w₁)
+  let f : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+        scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)
+  let g₀ : ℝ → ℝ := fun p => A₀ * scaledBracketBumpReal (3 / 2 : ℝ) t₀ p
+  let g₁ : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t₀ p
+  have hA₀ : 0 ≤ A₀ := by
+    dsimp [A₀]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hD : 0 ≤ D := by
+    dsimp [D]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  have hg₀ : Integrable g₀ := by
+    have hbase := aux_integrable_scaledBracketBumpReal (3 / 2 : ℝ) t₀ (by norm_num) ht₀
+    simpa [g₀] using hbase.const_mul A₀
+  have hg₁ : Integrable g₁ := by
+    simpa [g₁] using aux_caseOne_m1_product_integrable w₀ lam t₀ hlam ht₀
+  have hmajor : Integrable (fun p : ℝ => D * (g₀ p + g₁ p)) :=
+    (hg₀.add hg₁).const_mul D
+  refine hmajor.mono_nonneg ?_ (ae_of_all _ ?_) (ae_of_all _ ?_)
+  · apply Continuous.aestronglyMeasurable
+    have hfirstBase : Continuous (fun p : ℝ => 1 + |lam⁻¹ * (w₀ + p)|) := by fun_prop
+    have hsecondBase : Continuous (fun p : ℝ => 1 + |t₀⁻¹ * (Real.sqrt 2 * p)|) := by
+      fun_prop
+    have hfirst : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) := by
+      have hconst : Continuous (fun _ : ℝ => scaledBracketBumpReal 2 lam w₀) := continuous_const
+      have hvar : Continuous (fun p : ℝ => scaledBracketBumpReal 2 lam (w₀ + p)) := by
+        unfold scaledBracketBumpReal
+        apply continuous_const.mul
+        rw [continuous_iff_continuousAt]
+        intro p
+        exact hfirstBase.continuousAt.rpow_const (Or.inl (by positivity))
+      exact hconst.add hvar
+    have hsecond : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hsecondBase.continuousAt.rpow_const (Or.inl (by positivity))
+    exact (hfirst.mul hsecond).mul continuous_const
+  · intro p
+    apply mul_nonneg
+    · apply mul_nonneg
+      · apply add_nonneg <;> apply aux_scaledBracketBumpReal_nonneg <;> exact hlam
+      · exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₀
+    · exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  · intro p
+    have hfirst₀ : scaledBracketBumpReal 2 lam w₀ ≤
+        scaledBracketBumpReal (3 / 2 : ℝ) lam w₀ :=
+      aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2 lam w₀ hlam (by norm_num)
+    have hfirst₁ : scaledBracketBumpReal 2 lam (w₀ + p) ≤
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p) :=
+      aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2 lam (w₀ + p) hlam (by norm_num)
+    have hsecond : scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) ≤
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ p :=
+      aux_caseOne_m1_sqrt_arg_le (3 / 2 : ℝ) t₀ p (by norm_num) ht₀
+    have hthird : scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) ≤ D := by
+      dsimp [D]
+      exact aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2 t₁
+        (Real.sqrt 2 * w₁) ht₁ (by norm_num)
+    have hsum : scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p) ≤
+        A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p) := by
+      dsimp [A₀]
+      exact add_le_add hfirst₀ hfirst₁
+    have hsumNonneg : 0 ≤ A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p) :=
+      add_nonneg hA₀ (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+    have hsecondNonneg : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t₀
+        (Real.sqrt 2 * p) := aux_scaledBracketBumpReal_nonneg _ _ _ ht₀
+    have hthirdNonneg : 0 ≤ scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+    dsimp [f, g₀, g₁]
+    calc
+      (scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+            scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) ≤
+          (A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+              scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) := by
+            exact mul_le_mul_of_nonneg_right
+              (mul_le_mul_of_nonneg_right hsum hsecondNonneg) hthirdNonneg
+      _ ≤ (A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₀ p *
+              scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) := by
+            exact mul_le_mul_of_nonneg_right
+              (mul_le_mul_of_nonneg_left hsecond hsumNonneg) hthirdNonneg
+      _ ≤ (A₀ + scaledBracketBumpReal (3 / 2 : ℝ) lam (w₀ + p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₀ p * D := by
+            exact mul_le_mul_of_nonneg_left hthird
+              (mul_nonneg hsumNonneg
+                (aux_scaledBracketBumpReal_nonneg _ _ _ ht₀))
+      _ = D * (g₀ p + g₁ p) := by ring
+
+private theorem aux_caseOne_m1_integral_le_of_pointwise
+    (w₀ w₁ lam t₀ t₁ K : ℝ) (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁)
+    (ht₀lam : t₀ ≤ lam) (hK : 0 ≤ K) (f : ℝ → ℝ)
+    (hfnon : ∀ p, 0 ≤ f p)
+    (hpoint : ∀ p, f p ≤ K *
+      ((scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁))) :
+    (∫ p : ℝ, f p) ≤ K *
+      (2 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w₀) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₁ (Real.sqrt 2 * w₁)) := by
+  have hI := aux_caseOne_m1_integrand_integrable w₀ w₁ lam t₀ t₁ hlam ht₀ ht₁
+  have hmajor : Integrable (fun p : ℝ => K *
+      ((scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁))) := hI.const_mul K
+  have hint : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, K *
+      ((scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)) :=
+    integral_mono_of_nonneg (ae_of_all _ hfnon) hmajor (ae_of_all _ hpoint)
+  have hM1 := aux_caseOne_m1_orientation_one w₀ w₁ lam t₀ t₁ hlam ht₀ ht₁ ht₀lam
+  calc
+    (∫ p : ℝ, f p) ≤ ∫ p : ℝ, K *
+        ((scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+            scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)) := hint
+    _ = K * ∫ p : ℝ,
+        ((scaledBracketBumpReal 2 lam w₀ + scaledBracketBumpReal 2 lam (w₀ + p)) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+            scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)) := by
+          rw [integral_const_mul]
+    _ ≤ K *
+        (2 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam) (Real.sqrt 2 * w₀) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₁ (Real.sqrt 2 * w₁)) :=
+      mul_le_mul_of_nonneg_left hM1 hK
+
+/-- The rho-difference estimate applied to one orientation-one H occurrence.
+The supplied `hminloss` is exactly the scale-ratio consequence of membership in
+the H-package distance ball; the conclusion is in the M₁ coordinates shared by
+the five-slot case-one package. -/
+private theorem aux_caseOne_m1_orientation_one_rho_occurrence {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1)
+    (q : SequencePair × Fin 2) (hq₀ : SpacedSequence (q.1 0))
+    (hq₁ : SpacedSequence (q.1 1)) (hqu : q.2 = 1) (lambda r : ℝ)
+    (hlambda : lambda = (2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ)))
+    (hr : 0 ≤ r)
+    (hminloss : ∀ p : ℝ, min 1 (lambda⁻¹ * |p|) ≤
+      r * Real.sqrt (1 + (q.1 0 j)⁻¹ * |p|))
+    (ht₀lambda : q.1 0 j ≤ lambda) (w₀ w₁ : ℝ) :
+    (∫ p : ℝ,
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) ≤
+      (4 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+        C_meanFourScaleGaussianKernel 2 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)) * r *
+          (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lambda) (Real.sqrt 2 * w₀) *
+            scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (Real.sqrt 2 * w₁)) := by
+  let A : ℝ := C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2
+  let t₀ : ℝ := q.1 0 j
+  let t₁ : ℝ := q.1 1 j
+  let K : ℝ := 2 * Real.pi * A * r
+  have hlambda_pos : 0 < lambda := by
+    rw [hlambda]
+    exact mul_pos (zpow_pos (by norm_num) _) ((γ.scales_spaced i 1) _).1
+  have ht₀ : 0 < t₀ := by simpa [t₀] using (hq₀ j).1
+  have ht₁ : 0 < t₁ := by simpa [t₁] using (hq₁ j).1
+  have hA : 0 ≤ A := by
+    have hK : 0 ≤ C_meanValueBumpEstimate 2 := by
+      unfold C_meanValueBumpEstimate
+      positivity
+    have hM : 0 ≤ aux_maxUpTo C_gaussianBumpEstimate 2 :=
+      (aux_C_gaussianBumpEstimate_nonneg 0).trans
+        (aux_le_maxUpTo C_gaussianBumpEstimate (Nat.zero_le _))
+    have hT : 0 ≤ aux_maxUpTo
+        (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l) 2 := by
+      have hzero : 0 ≤ (2 : ℝ) ^ 0 * C_secondGaussianEstimate 0 := by
+        simpa using aux_C_secondGaussianEstimate_nonneg 0
+      exact hzero.trans
+        (aux_le_maxUpTo (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l)
+          (Nat.zero_le _))
+    have hmean : 0 ≤ C_meanFourScaleGaussianKernel 2 := by
+      unfold C_meanFourScaleGaussianKernel
+      exact add_nonneg
+        (mul_nonneg (mul_nonneg (by norm_num) hK) hM)
+        (mul_nonneg (mul_nonneg (by norm_num) hK) hT)
+    dsimp [A]
+    rw [show C_standardBumpPropertiesTilde 0 2 = (2 : ℝ) ^ (18 : ℕ) by
+      norm_num [C_standardBumpPropertiesTilde]]
+    positivity
+  have hK : 0 ≤ K := by
+    dsimp [K]
+    positivity
+  have hqterm (p : ℝ) : aux_kernelBracketProduct q j (-w₁ - p, w₁ - p) =
+      scaledBracketBump 2 t₀ (-Real.sqrt 2 * p) *
+        scaledBracketBump 2 t₁ (Real.sqrt 2 * w₁) := by
+    have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+    have hsquare : (Real.sqrt (2 : ℝ)) ^ 2 = 2 := by norm_num
+    have hfirst : (W q.2 (-w₁ - p, w₁ - p)).1 = -Real.sqrt 2 * p := by
+      rw [hqu]
+      simp only [W, Fin.isValue, if_false]
+      apply (div_eq_iff (ne_of_gt hsqrt)).2
+      calc
+        (-w₁ - p) + (w₁ - p) = -2 * p := by ring
+        _ = -(Real.sqrt 2)^2 * p := by rw [hsquare]
+        _ = (-Real.sqrt 2 * p) * Real.sqrt 2 := by ring
+    have hsecond : (W q.2 (-w₁ - p, w₁ - p)).2 = Real.sqrt 2 * w₁ := by
+      rw [hqu]
+      simp only [W, Fin.isValue, if_false]
+      apply (div_eq_iff (ne_of_gt hsqrt)).2
+      calc
+        -(-w₁ - p) + (w₁ - p) = 2 * w₁ := by ring
+        _ = (Real.sqrt 2)^2 * w₁ := by rw [hsquare]
+        _ = (Real.sqrt 2 * w₁) * Real.sqrt 2 := by ring
+    simp [aux_kernelBracketProduct, t₀, t₁, hfirst, hsecond]
+  let f : ℝ → ℝ := fun p =>
+    |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+      aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)
+  have hfnon (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    rw [hqterm]
+    exact mul_nonneg (abs_nonneg _) (mul_nonneg
+      (aux_scaledBracketBump_nonneg 2 ht₀ _) (aux_scaledBracketBump_nonneg 2 ht₁ _))
+  have hpoint (p : ℝ) : f p ≤ K *
+      ((scaledBracketBumpReal 2 lambda w₀ + scaledBracketBumpReal 2 lambda (w₀ + p)) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)) := by
+    have hrho := aux_nMultiplierRho_positive_difference_bound γ hkn ι i j hzero hpositive w₀ p
+    rw [← hlambda] at hrho
+    have hqnon : 0 ≤ aux_kernelBracketProduct q j (-w₁ - p, w₁ - p) := by
+      rw [hqterm]
+      exact mul_nonneg (aux_scaledBracketBump_nonneg 2 ht₀ _)
+        (aux_scaledBracketBump_nonneg 2 ht₁ _)
+    have hmul := mul_le_mul_of_nonneg_right hrho hqnon
+    have hB : 0 ≤
+        (scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+          aux_kernelBracketProduct q j (-w₁ - p, w₁ - p) := by
+      apply mul_nonneg
+      · apply add_nonneg <;> apply aux_scaledBracketBump_nonneg <;> exact hlambda_pos
+      · exact hqnon
+    have hpi := aux_caseOne_m1_move_twoPi_out (A := A) (lambda := lambda) (y := p)
+      (B := (scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) hA hlambda_pos hB
+    have hmin := hminloss p
+    have hpiA : 0 ≤ 2 * Real.pi * A := by positivity
+    have hafterMin :
+        (2 * Real.pi * A) * min 1 (lambda⁻¹ * |p|) *
+          ((scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+            aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) ≤
+          (2 * Real.pi * A) * (r * Real.sqrt (1 + t₀⁻¹ * |p|)) *
+            ((scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+              aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) := by
+      exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hmin hpiA) hB
+    have hsumNonneg : 0 ≤ scaledBracketBump 2 lambda (w₀ + p) +
+        scaledBracketBump 2 lambda w₀ :=
+      add_nonneg (aux_scaledBracketBump_nonneg 2 hlambda_pos _)
+        (aux_scaledBracketBump_nonneg 2 hlambda_pos _)
+    have hlast : Real.sqrt (1 + t₀⁻¹ * |p|) *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p) ≤
+        scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBump 2 t₁ (Real.sqrt 2 * w₁) := by
+      rw [hqterm]
+      calc
+        Real.sqrt (1 + t₀⁻¹ * |p|) *
+            (scaledBracketBump 2 t₀ (-Real.sqrt 2 * p) *
+              scaledBracketBump 2 t₁ (Real.sqrt 2 * w₁)) =
+            (Real.sqrt (1 + t₀⁻¹ * |p|) *
+              scaledBracketBump 2 t₀ (-Real.sqrt 2 * p)) *
+              scaledBracketBump 2 t₁ (Real.sqrt 2 * w₁) := by ring
+        _ ≤ scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+              scaledBracketBump 2 t₁ (Real.sqrt 2 * w₁) :=
+          mul_le_mul_of_nonneg_right (aux_caseOne_m1_sqrt_loss_bump t₀ p ht₀)
+            (aux_scaledBracketBump_nonneg 2 ht₁ _)
+    have hconvert :
+        (scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+            (scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+              scaledBracketBump 2 t₁ (Real.sqrt 2 * w₁)) =
+          (scaledBracketBumpReal 2 lambda w₀ + scaledBracketBumpReal 2 lambda (w₀ + p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+              scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁) := by
+      rw [← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq,
+        ← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq,
+        ← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq]
+      ring
+    dsimp [f, K]
+    have hmul' :
+        |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+            aux_kernelBracketProduct q j (-w₁ - p, w₁ - p) ≤
+          (C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2 *
+            min 1 (2 * Real.pi * lambda⁻¹ * |p|)) *
+            ((scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+              aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) := by
+      calc
+        _ ≤ C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2 *
+            min 1 (2 * Real.pi * lambda⁻¹ * |p|) *
+              (scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+                aux_kernelBracketProduct q j (-w₁ - p, w₁ - p) := hmul
+        _ = _ := by ring
+    calc
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+          aux_kernelBracketProduct q j (-w₁ - p, w₁ - p) ≤
+          A * min 1 (2 * Real.pi * lambda⁻¹ * |p|) *
+            ((scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+              aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) := by
+            dsimp [A]
+            exact hmul'
+      _ ≤ (2 * Real.pi * A) * min 1 (lambda⁻¹ * |p|) *
+            ((scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+              aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) := hpi
+      _ ≤ (2 * Real.pi * A) * (r * Real.sqrt (1 + t₀⁻¹ * |p|)) *
+            ((scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+              aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) := hafterMin
+      _ = (2 * Real.pi * A * r) *
+            ((scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+              (Real.sqrt (1 + t₀⁻¹ * |p|) *
+                aux_kernelBracketProduct q j (-w₁ - p, w₁ - p))) := by ring
+      _ ≤ (2 * Real.pi * A * r) *
+            ((scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) *
+              (scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+                scaledBracketBump 2 t₁ (Real.sqrt 2 * w₁))) := by
+            apply mul_le_mul_of_nonneg_left
+            · exact mul_le_mul_of_nonneg_left hlast hsumNonneg
+            · positivity
+      _ = (2 * Real.pi * A * r) *
+            ((scaledBracketBumpReal 2 lambda w₀ + scaledBracketBumpReal 2 lambda (w₀ + p)) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t₀ (Real.sqrt 2 * p) *
+                scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)) := by rw [hconvert]
+  have hmain := aux_caseOne_m1_integral_le_of_pointwise w₀ w₁ lambda t₀ t₁ K
+    hlambda_pos ht₀ ht₁ (by simpa [t₀] using ht₀lambda) hK f hfnon hpoint
+  change (∫ p : ℝ, f p) ≤ _
+  calc
+    (∫ p : ℝ, f p) ≤ K *
+        (2 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lambda) (Real.sqrt 2 * w₀) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t₁ (Real.sqrt 2 * w₁)) := hmain
+    _ = (4 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+        C_meanFourScaleGaussianKernel 2 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)) * r *
+          (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lambda) (Real.sqrt 2 * w₀) *
+            scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (Real.sqrt 2 * w₁)) := by
+      dsimp [K, A, t₁]
+      ring
+
+private theorem aux_caseOne_m1_hminloss_of_distanceBall {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hpositive : 0 < ι.1.1) (q : SequencePair × Fin 2)
+    (hq₀ : SpacedSequence (q.1 0))
+    (hqball : q.1 0 ∈ sequenceDistanceBall (γ.scales i 1)
+      (geometricDelta γ : WithTop ℕ))
+    (lambda : ℝ)
+    (hlambda : lambda = (2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ))) :
+    ∀ p : ℝ, min 1 (lambda⁻¹ * |p|) ≤
+      Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+        Real.sqrt (1 + (q.1 0 j)⁻¹ * |p|) := by
+  have hlambda_pos : 0 < lambda := by
+    rw [hlambda]
+    exact mul_pos (zpow_pos (by norm_num) _) ((γ.scales_spaced i 1) _).1
+  have ht : 0 < q.1 0 j := (hq₀ j).1
+  have hratio := aux_caseOne_m1_distanceBall_scale_ratio_le
+    (γ.scales_spaced i 1) hqball ι.1.1 j
+  have hpow : (2 : ℝ) ^ (-ι.1.1) =
+      Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ)) := by
+    have hnat : (ι.1.1.natAbs : ℤ) = ι.1.1 :=
+      Int.natAbs_of_nonneg hpositive.le
+    have hnatR : ((ι.1.1.natAbs : ℕ) : ℝ) = (ι.1.1 : ℝ) := by
+      calc
+        ((ι.1.1.natAbs : ℕ) : ℝ) = ((ι.1.1.natAbs : ℤ) : ℝ) := by norm_num
+        _ = (ι.1.1 : ℝ) := congrArg (fun z : ℤ => (z : ℝ)) hnat
+    calc
+      (2 : ℝ) ^ (-ι.1.1) = Real.rpow 2 ((-ι.1.1 : ℤ) : ℝ) :=
+        (Real.rpow_intCast _ _).symm
+      _ = Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ)) := by
+        congr 1
+        rw [Int.cast_neg, ← hnatR]
+  have hscale : q.1 0 j / lambda ≤
+      Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ)) := by
+    rw [hlambda]
+    exact hratio.trans_eq hpow
+  intro p
+  convert aux_caseOne_m1_min_scale_half_le ht hlambda_pos hscale p using 1 <;> ring
+
+/-- The orientation-one occurrence bound with the dyadic loss obtained directly
+from its membership in the H-kernel Gaussian package. -/
+private theorem aux_caseOne_m1_orientation_one_rho_occurrence_of_package {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
+    (P : Multiset (SequencePair × Fin 2)) (hP : aux_HKernelGaussianBound γ i P)
+    (q : SequencePair × Fin 2) (hqmem : q ∈ P) (hqu : q.2 = 1)
+    (lambda : ℝ)
+    (hlambda : lambda = (2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ))) (w₀ w₁ : ℝ) :
+    (∫ p : ℝ,
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) ≤
+      (4 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+        C_meanFourScaleGaussianKernel 2 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lambda) (Real.sqrt 2 * w₀) *
+            scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (Real.sqrt 2 * w₁)) := by
+  rcases hP.1 q hqmem with ⟨hqball₀, hqball₁⟩
+  have hlambda_pos : 0 < lambda := by
+    rw [hlambda]
+    exact mul_pos (zpow_pos (by norm_num) _) ((γ.scales_spaced i 1) _).1
+  have hratio := aux_caseOne_m1_distanceBall_scale_ratio_le
+    (γ.scales_spaced i 1) hqball₀ ι.1.1 j
+  have hpowle : (2 : ℝ) ^ (-ι.1.1) ≤ 1 :=
+    zpow_le_one_of_nonpos₀ (by norm_num) (by omega)
+  have ht₀lambda : q.1 0 j ≤ lambda := by
+    apply (div_le_one₀ hlambda_pos).mp
+    rw [hlambda]
+    exact hratio.trans hpowle
+  exact aux_caseOne_m1_orientation_one_rho_occurrence
+    (γ := γ) (hkn := hkn) (ι := ι) (i := i) (j := j)
+    (hzero := ne_of_gt hpositive) (hpositive := hpositive) (q := q)
+    (hq₀ := hqball₀.1) (hq₁ := hqball₁.1) (hqu := hqu)
+    (lambda := lambda)
+    (r := Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2))
+    (hlambda := hlambda) (hr := Real.rpow_nonneg (by norm_num) _)
+    (hminloss := aux_caseOne_m1_hminloss_of_distanceBall
+      (γ := γ) (ι := ι) (i := i) (j := j) (hpositive := hpositive)
+      (q := q) (hq₀ := hqball₀.1) (hqball := hqball₀)
+      (lambda := lambda) (hlambda := hlambda))
+    (ht₀lambda := ht₀lambda) (w₀ := w₀) (w₁ := w₁)
+
+/-- Integrability of a finite multiset sum follows from integrability of its
+occurrences. -/
+private theorem aux_caseOne_integrable_multiset_sum {α : Type*} (P : Multiset α)
+    (g : α → ℝ → ℝ) (hg : ∀ q ∈ P, Integrable (g q)) :
+    Integrable (fun x : ℝ => (P.map fun q => g q x).sum) := by
+  induction P using Multiset.induction_on with
+  | empty => simp
+  | cons a P ih =>
+      simp only [Multiset.map_cons, Multiset.sum_cons]
+      apply Integrable.add
+      · exact hg a (by simp)
+      · apply ih
+        intro q hq
+        exact hg q (by simp [hq])
+
+/-- Integration commutes with the finite multiset sum used by the H package. -/
+private theorem aux_caseOne_integral_multiset_sum {α : Type*} (P : Multiset α)
+    (g : α → ℝ → ℝ) (hg : ∀ q ∈ P, Integrable (g q)) :
+    (∫ x : ℝ, (P.map fun q => g q x).sum) =
+      (P.map fun q => ∫ x : ℝ, g q x).sum := by
+  induction P using Multiset.induction_on with
+  | empty => simp
+  | cons a P ih =>
+      have hgP : ∀ q ∈ P, Integrable (g q) := by
+        intro q hq
+        exact hg q (by simp [hq])
+      have hsumP : Integrable (fun x : ℝ => (P.map fun q => g q x).sum) :=
+        aux_caseOne_integrable_multiset_sum P g hgP
+      simp only [Multiset.map_cons, Multiset.sum_cons]
+      rw [integral_add (hg a (by simp)) hsumP, ih hgP]
+
+/-- Pulling a scalar through a finite multiset sum. -/
+private theorem aux_caseOne_mul_multiset_sum {α : Type*} (a : ℝ) (P : Multiset α)
+    (g : α → ℝ) :
+    a * (P.map g).sum = (P.map fun q => a * g q).sum := by
+  induction P using Multiset.induction_on with
+  | empty => simp
+  | cons q P ih =>
+      simp only [Multiset.map_cons, Multiset.sum_cons]
+      rw [mul_add, ih]
+
+/-- A finite H-package pointwise bound may be integrated occurrence-by-occurrence. -/
+private theorem aux_caseOne_finite_multiset_integral_bridge {α : Type*}
+    (P : Multiset α) (C : ℝ) (rho H : ℝ → ℝ) (B : α → ℝ → ℝ)
+    (hC : 0 ≤ C) (hrho : ∀ p, 0 ≤ rho p) (hH : ∀ p, 0 ≤ H p)
+    (hbound : ∀ p, H p ≤ C * (P.map fun q => B q p).sum)
+    (hint : ∀ q ∈ P, Integrable (fun p : ℝ => rho p * B q p)) :
+    (∫ p : ℝ, rho p * H p) ≤
+      C * (P.map fun q => ∫ p : ℝ, rho p * B q p).sum := by
+  let S : ℝ → ℝ := fun p => (P.map fun q => rho p * B q p).sum
+  have hS : Integrable S := by
+    dsimp [S]
+    exact aux_caseOne_integrable_multiset_sum P (fun q p => rho p * B q p) hint
+  have hpoint (p : ℝ) : rho p * H p ≤ C * S p := by
+    have h := mul_le_mul_of_nonneg_left (hbound p) (hrho p)
+    change rho p * H p ≤ rho p * (C * (P.map fun q => B q p).sum) at h
+    calc
+      rho p * H p ≤ rho p * (C * (P.map fun q => B q p).sum) := h
+      _ = C * (rho p * (P.map fun q => B q p).sum) := by ring
+      _ = C * S p := by
+        dsimp [S]
+        rw [aux_caseOne_mul_multiset_sum]
+  have hleft (p : ℝ) : 0 ≤ rho p * H p := mul_nonneg (hrho p) (hH p)
+  calc
+    (∫ p : ℝ, rho p * H p) ≤ ∫ p : ℝ, C * S p :=
+      integral_mono_of_nonneg (ae_of_all _ hleft) (hS.const_mul C)
+        (ae_of_all _ hpoint)
+    _ = C * (∫ p : ℝ, S p) := by rw [integral_const_mul]
+    _ = C * (P.map fun q => ∫ p : ℝ, rho p * B q p).sum := by
+      rw [aux_caseOne_integral_multiset_sum P (fun q p => rho p * B q p) hint]
+
+/-- Sum occurrence bounds while preserving every multiplicity of the H package. -/
+private theorem aux_caseOne_multiset_sum_le_scaled {α : Type*} (P : Multiset α)
+    (f g : α → ℝ) (D : ℝ) (h : ∀ q ∈ P, f q ≤ D * g q) :
+    (P.map f).sum ≤ D * (P.map g).sum := by
+  induction P using Multiset.induction_on with
+  | empty => simp
+  | cons a P ih =>
+      have hP : ∀ q ∈ P, f q ≤ D * g q := by
+        intro q hq
+        exact h q (by simp [hq])
+      simp only [Multiset.map_cons, Multiset.sum_cons]
+      calc
+        f a + (P.map f).sum ≤ D * g a + D * (P.map g).sum :=
+          add_le_add (h a (by simp)) (ih hP)
+        _ = D * (g a + (P.map g).sum) := by ring
+
+/-- Cancellation plus an H-package estimate reduces the positive-band N bound
+to the finite sum of its occurrence integrals. -/
+private theorem aux_caseOne_outer_from_occurrences {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (w₀ w₁ : ℝ)
+    (P : Multiset (SequencePair × Fin 2)) (hP : aux_HKernelGaussianBound γ i P)
+    (D : ℝ) (S : (SequencePair × Fin 2) → ℝ)
+    (hint : ∀ q ∈ P, Integrable (fun p : ℝ =>
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)))
+    (hocc : ∀ q ∈ P, (∫ p : ℝ,
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) ≤ D * S q) :
+    |nMultiplier γ hkn ι i j (w₀ - w₁, w₀ + w₁)| ≤
+      C_hKernelEstimateGaussianDomination * D * (P.map S).sum := by
+  rw [aux_nMultiplier_caseOne_cancellation]
+  let rho : ℝ → ℝ := fun p =>
+    |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀|
+  let H : ℝ → ℝ := fun p => |hMultiplier γ i j (-w₁ - p, w₁ - p)|
+  let B : (SequencePair × Fin 2) → ℝ → ℝ := fun q p =>
+    aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)
+  have hHbound (p : ℝ) : H p ≤ C_hKernelEstimateGaussianDomination *
+      (P.map fun q => B q p).sum := by
+    dsimp [H, B]
+    exact hP.2.2 (-w₁ - p, w₁ - p) j
+  have hbridge := aux_caseOne_finite_multiset_integral_bridge P
+    C_hKernelEstimateGaussianDomination rho H B
+    aux_C_hKernelEstimateGaussianDomination_nonneg (fun p => abs_nonneg _)
+    (fun p => abs_nonneg _) hHbound (by
+      intro q hq
+      simpa [rho, B] using hint q hq)
+  have hsum := aux_caseOne_multiset_sum_le_scaled P
+    (fun q => ∫ p : ℝ, rho p * B q p) S D (by
+      intro q hq
+      simpa [rho, B] using hocc q hq)
+  calc
+    |∫ p : ℝ,
+        (nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀) *
+          hMultiplier γ i j (-w₁ - p, w₁ - p)| ≤
+        ∫ p : ℝ,
+          |(nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀) *
+            hMultiplier γ i j (-w₁ - p, w₁ - p)| :=
+      abs_integral_le_integral_abs
+    _ = ∫ p : ℝ, rho p * H p := by
+      apply integral_congr_ae
+      filter_upwards [] with p
+      simp [rho, H, abs_mul]
+    _ ≤ C_hKernelEstimateGaussianDomination *
+        (P.map fun q => ∫ p : ℝ, rho p * B q p).sum := hbridge
+    _ ≤ C_hKernelEstimateGaussianDomination * (D * (P.map S).sum) :=
+      mul_le_mul_of_nonneg_left hsum aux_C_hKernelEstimateGaussianDomination_nonneg
+    _ = C_hKernelEstimateGaussianDomination * D * (P.map S).sum := by ring
+
+/-- Each one-dimensional slice of an H-package bracket product is integrable.
+This is the only integrability input needed to pass from the pointwise H bound
+to the finite sum of occurrence integrals. -/
+private theorem aux_caseOne_kernelBracketProduct_integrable
+    (q : SequencePair × Fin 2) (j : ℤ) (w₁ : ℝ)
+    (hq₀ : SpacedSequence (q.1 0)) (hq₁ : SpacedSequence (q.1 1)) :
+    Integrable (fun p : ℝ => aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) := by
+  let t₀ : ℝ := q.1 0 j
+  let t₁ : ℝ := q.1 1 j
+  have ht₀ : 0 < t₀ := by simpa [t₀] using (hq₀ j).1
+  have ht₁ : 0 < t₁ := by simpa [t₁] using (hq₁ j).1
+  by_cases hu : q.2 = 0
+  · have hprod := aux_caseOne_scaledBracketBumpReal_product_integrable
+      2 2 t₀ t₁ (-w₁) w₁ (by norm_num) (by norm_num) ht₀ ht₁
+    convert hprod using 1
+    funext p
+    simp [aux_kernelBracketProduct, W, hu, t₀, t₁,
+      ← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq]
+  · have hu' : q.2 = 1 := by
+      exact Fin.eq_one_of_ne_zero q.2 hu
+    have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+    have hbase : Integrable (fun x : ℝ => scaledBracketBumpReal 2 t₀ x) :=
+      aux_integrable_scaledBracketBumpReal 2 t₀ (by norm_num) ht₀
+    have hscaled : Integrable (fun p : ℝ =>
+        scaledBracketBumpReal 2 t₀ (-Real.sqrt 2 * p)) := by
+      convert hbase.comp_mul_left' (neg_ne_zero.mpr (ne_of_gt hsqrt)) using 1
+    have hconst : Integrable (fun p : ℝ =>
+        scaledBracketBumpReal 2 t₀ (-Real.sqrt 2 * p) *
+          scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁)) := by
+      simpa [mul_comm] using hscaled.mul_const
+        (scaledBracketBumpReal 2 t₁ (Real.sqrt 2 * w₁))
+    convert hconst using 1
+    funext p
+    have hsquare : (Real.sqrt (2 : ℝ)) ^ 2 = 2 := by norm_num
+    have hfirst : (W q.2 (-w₁ - p, w₁ - p)).1 = -Real.sqrt 2 * p := by
+      rw [hu']
+      simp only [W, Fin.isValue, if_false]
+      apply (div_eq_iff (ne_of_gt hsqrt)).2
+      calc
+        (-w₁ - p) + (w₁ - p) = -2 * p := by ring
+        _ = -(Real.sqrt 2)^2 * p := by rw [hsquare]
+        _ = (-Real.sqrt 2 * p) * Real.sqrt 2 := by ring
+    have hsecond : (W q.2 (-w₁ - p, w₁ - p)).2 = Real.sqrt 2 * w₁ := by
+      rw [hu']
+      simp only [W, Fin.isValue, if_false]
+      apply (div_eq_iff (ne_of_gt hsqrt)).2
+      calc
+        -(-w₁ - p) + (w₁ - p) = 2 * w₁ := by ring
+        _ = (Real.sqrt 2)^2 * w₁ := by rw [hsquare]
+        _ = (Real.sqrt 2 * w₁) * Real.sqrt 2 := by ring
+    simp [aux_kernelBracketProduct, t₀, t₁, hfirst, hsecond,
+      ← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq]
+
+/-- We use the explicit six-occurrence H-package so its multiplicities agree
+with the range-30 witness decoder. -/
+private theorem aux_caseOne_HPackage_explicit {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) :
+    aux_HKernelGaussianBound γ i (aux_hKernelGaussianMultiset γ i) := by
+  by_cases h : γ.orientation i = 0
+  · apply aux_hKernelGaussianBound_orientation_zero_of_sBounds γ i h
+    intro j x
+    apply aux_sMultiplier_bound_orientation_zero_of_diagonal γ i j h
+    intro y
+    rw [aux_sMultiplier_eq_diagonalSquareRoot]
+    have hsp := aux_sMultiplierScale_spaced γ i (j - 1)
+    apply diagonalSquareRoot_bound 2 (by norm_num)
+    · linarith [hsp.1]
+    · convert hsp.2 using 1 <;> ring
+  · apply aux_hKernelGaussianBound_orientation_one_of_sBounds γ i h
+    intro j x
+    apply aux_sMultiplier_bound_orientation_one_of_diagonal γ i j h
+    intro y
+    rw [aux_sMultiplier_eq_diagonalSquareRoot]
+    have hsp := aux_sMultiplierScale_spaced γ i (j - 1)
+    apply diagonalSquareRoot_bound 2 (by norm_num)
+    · linarith [hsp.1]
+    · convert hsp.2 using 1 <;> ring
+
+/-- The orientation-one M₁ product is exactly slot zero of the shared
+five-slot occurrence package. -/
+private theorem aux_caseOne_m1_slot_zero
+    (lam : ℤ → ℝ) (q : SequencePair × Fin 2) (j : ℤ) (w₀ w₁ : ℝ)
+    (hqu : q.2 = 1) :
+    scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * lam j) (Real.sqrt 2 * w₀) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (Real.sqrt 2 * w₁) =
+      aux_caseOneExactSlotTerm lam q j (w₀ - w₁, w₀ + w₁) 0 := by
+  simp [aux_caseOneExactSlotTerm, aux_caseOneExactSlotOf,
+    aux_caseOneExactM1Scale, hqu, aux_sequencePairOf, aux_caseOne_Wone]
+
+private theorem aux_caseOne_meanFour_nonneg :
+    0 ≤ C_meanFourScaleGaussianKernel 2 := by
+  have hK : 0 ≤ C_meanValueBumpEstimate 2 := by
+    unfold C_meanValueBumpEstimate
+    positivity
+  have hM : 0 ≤ aux_maxUpTo C_gaussianBumpEstimate 2 :=
+    (aux_C_gaussianBumpEstimate_nonneg 0).trans
+      (aux_le_maxUpTo C_gaussianBumpEstimate (Nat.zero_le _))
+  have hT : 0 ≤ aux_maxUpTo
+      (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l) 2 := by
+    have hzero : 0 ≤ (2 : ℝ) ^ 0 * C_secondGaussianEstimate 0 := by
+      simpa using aux_C_secondGaussianEstimate_nonneg 0
+    exact hzero.trans
+      (aux_le_maxUpTo (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l)
+        (Nat.zero_le _))
+  unfold C_meanFourScaleGaussianKernel
+  exact add_nonneg
+    (mul_nonneg (mul_nonneg (by norm_num) hK) hM)
+    (mul_nonneg (mul_nonneg (by norm_num) hK) hT)
+
+private theorem aux_caseOne_twoBump_nonneg :
+    0 ≤ C_twoBumpEstimate (3 / 2) (3 / 2) := by
+  norm_num [C_twoBumpEstimate]
+  exact Real.rpow_nonneg (by norm_num) _
+
+/-- Both orientation branches of one H-kernel occurrence have the same exact
+five-slot majorant and the coefficient needed for the doubled Case 1 constant. -/
+private theorem aux_caseOne_occurrence_uniform {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
+    (P : Multiset (SequencePair × Fin 2)) (hP : aux_HKernelGaussianBound γ i P)
+    (q : SequencePair × Fin 2) (hqmem : q ∈ P) (w₀ w₁ : ℝ) :
+    (∫ p : ℝ,
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) ≤
+      (32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+        C_meanFourScaleGaussianKernel 2) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2)) *
+          ∑ r : Fin 5,
+            aux_caseOneExactSlotTerm (caseOneLambda γ ι i) q j
+              (w₀ - w₁, w₀ + w₁) r := by
+  classical
+  by_cases hqu : q.2 = 0
+  · unfold caseOneLambda
+    exact aux_caseOne_u0_rho_occurrence_of_package γ hkn ι i j hpositive
+      P hP q hqmem hqu ((2 : ℝ) ^ ι.1.1 *
+        γ.scales i 1 (j + (geometricDelta γ : ℤ))) (by rfl) w₀ w₁
+  · have hqu' : q.2 = 1 := Fin.eq_one_of_ne_zero q.2 hqu
+    have hraw := aux_caseOne_m1_orientation_one_rho_occurrence_of_package
+      γ hkn ι i j hpositive P hP q hqmem hqu' (caseOneLambda γ ι i j) (by rfl) w₀ w₁
+    rcases hP.1 q hqmem with ⟨hq₀, hq₁⟩
+    have hq : ∀ s : Fin 2, SpacedSequence (q.1 s) := by
+      intro s
+      fin_cases s
+      · exact hq₀.1
+      · exact hq₁.1
+    have hslotnonneg (r : Fin 5) : 0 ≤
+        aux_caseOneExactSlotTerm (caseOneLambda γ ι i) q j
+          (w₀ - w₁, w₀ + w₁) r :=
+      aux_caseOneExactSlotTerm_nonneg (caseOneLambda γ ι i)
+        (caseOneLambda_spaced γ ι i) q hq j (w₀ - w₁, w₀ + w₁) r
+    have hprod : 0 ≤
+        scaledBracketBumpReal (3 / 2 : ℝ)
+          (Real.sqrt 2 * caseOneLambda γ ι i j) (Real.sqrt 2 * w₀) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (Real.sqrt 2 * w₁) := by
+      rw [aux_caseOne_m1_slot_zero (caseOneLambda γ ι i) q j w₀ w₁ hqu']
+      exact hslotnonneg 0
+    have hpad :
+        scaledBracketBumpReal (3 / 2 : ℝ)
+          (Real.sqrt 2 * caseOneLambda γ ι i j) (Real.sqrt 2 * w₀) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (Real.sqrt 2 * w₁) ≤
+          ∑ r : Fin 5,
+            aux_caseOneExactSlotTerm (caseOneLambda γ ι i) q j
+              (w₀ - w₁, w₀ + w₁) r := by
+      rw [aux_caseOne_m1_slot_zero (caseOneLambda γ ι i) q j w₀ w₁ hqu']
+      exact Finset.single_le_sum (fun r _ => hslotnonneg r) (Finset.mem_univ 0)
+    have hstd : 0 ≤ C_standardBumpPropertiesTilde 0 2 := by
+      rw [show C_standardBumpPropertiesTilde 0 2 = (2 : ℝ) ^ (18 : ℕ) by
+        norm_num [C_standardBumpPropertiesTilde]]
+      positivity
+    have hA : 0 ≤ Real.pi * C_standardBumpPropertiesTilde 0 2 *
+        C_meanFourScaleGaussianKernel 2 *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) := by
+      exact mul_nonneg
+        (mul_nonneg (mul_nonneg (by positivity) hstd)
+          aux_caseOne_meanFour_nonneg)
+        (Real.rpow_nonneg (by norm_num) _)
+    have hK : 0 ≤ max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+        (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2)) := by
+      exact (add_nonneg aux_caseOne_twoBump_nonneg (by norm_num)).trans
+        (le_max_left _ _)
+    have hscalar : 4 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) ≤
+        32 * max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+          (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+            C_twoBumpEstimate (3 / 2) (3 / 2)) := by
+      calc
+        4 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4) ≤
+            4 * max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+              (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+                C_twoBumpEstimate (3 / 2) (3 / 2)) :=
+          mul_le_mul_of_nonneg_left (le_max_left _ _) (by norm_num)
+        _ ≤ 32 * max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+              (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+                C_twoBumpEstimate (3 / 2) (3 / 2)) := by nlinarith
+    have hcoef :
+        (4 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+          C_meanFourScaleGaussianKernel 2 *
+          (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) ≤
+        (32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+          C_meanFourScaleGaussianKernel 2) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2)) := by
+      calc
+        _ = (Real.pi * C_standardBumpPropertiesTilde 0 2 *
+            C_meanFourScaleGaussianKernel 2 *
+            Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) *
+          (4 * (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)) := by ring
+        _ ≤ (Real.pi * C_standardBumpPropertiesTilde 0 2 *
+            C_meanFourScaleGaussianKernel 2 *
+            Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) *
+          (32 * max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2))) :=
+          mul_le_mul_of_nonneg_left hscalar hA
+        _ = _ := by ring
+    have hDnonneg : 0 ≤
+        (32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+          C_meanFourScaleGaussianKernel 2) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2)) := by
+      exact mul_nonneg
+        (mul_nonneg
+          (mul_nonneg
+            (mul_nonneg (mul_nonneg (by norm_num) (by positivity)) hstd)
+            aux_caseOne_meanFour_nonneg)
+          (Real.rpow_nonneg (by norm_num) _)) hK
+    calc
+      _ ≤ (4 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+          C_meanFourScaleGaussianKernel 2 *
+          (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          (scaledBracketBumpReal (3 / 2 : ℝ)
+            (Real.sqrt 2 * caseOneLambda γ ι i j) (Real.sqrt 2 * w₀) *
+            scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (Real.sqrt 2 * w₁)) := hraw
+      _ ≤ ((32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+          C_meanFourScaleGaussianKernel 2) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2))) *
+          (scaledBracketBumpReal (3 / 2 : ℝ)
+            (Real.sqrt 2 * caseOneLambda γ ι i j) (Real.sqrt 2 * w₀) *
+            scaledBracketBumpReal (3 / 2 : ℝ) (q.1 1 j) (Real.sqrt 2 * w₁)) :=
+        mul_le_mul_of_nonneg_right hcoef hprod
+      _ ≤ _ := mul_le_mul_of_nonneg_left hpad hDnonneg
+
+private def aux_caseOneSlotProduct (j : ℤ) (v : RealPlane)
+    (s : SequencePair × Fin 2) : ℝ :=
+  scaledBracketBumpReal (3 / 2 : ℝ) (s.1 0 j) (W s.2 v).1 *
+    scaledBracketBumpReal (3 / 2 : ℝ) (s.1 1 j) (W s.2 v).2
+
+private theorem aux_caseOneExactSlotOf_eq_caseOneExactSlotOf
+    (lam : ℤ → ℝ) (q : SequencePair × Fin 2) (r : Fin 5) :
+    aux_caseOneExactSlotOf lam q r = caseOneExactSlotOf lam q r := by
+  unfold aux_caseOneExactSlotOf caseOneExactSlotOf
+  unfold aux_caseOneExactM1Scale caseOneExactM1Scale
+  rfl
+
+private theorem aux_caseOneExactSlotTerm_eq_caseOneSlotProduct
+    (lam : ℤ → ℝ) (q : SequencePair × Fin 2) (j : ℤ) (v : RealPlane) (r : Fin 5) :
+    aux_caseOneExactSlotTerm lam q j v r =
+      aux_caseOneSlotProduct j v (caseOneExactSlotOf lam q r) := by
+  simp only [aux_caseOneExactSlotTerm, aux_caseOneSlotProduct,
+    aux_caseOneExactSlotOf_eq_caseOneExactSlotOf]
+
+private theorem aux_caseOne_multiset_sum_eq_occurrence_sum
+    {R : Type*} [AddCommMonoid R] (P : Multiset (SequencePair × Fin 2))
+    (F : SequencePair × Fin 2 → R) :
+    (P.map F).sum = ∑ k : Fin P.card, F (caseOneOccurrence P k) := by
+  rw [← Multiset.sum_map_toList, ← Fin.sum_univ_fun_getElem]
+  let e : Fin P.card ≃ Fin P.toList.length :=
+    finCongr (Multiset.length_toList P).symm
+  symm
+  refine Fintype.sum_equiv e
+    (fun k => F (caseOneOccurrence P k))
+    (fun l => F (P.toList.get l)) ?_
+  intro k
+  simp [e, caseOneOccurrence]
+
+private theorem aux_caseOne_multiset_slot_sum_reindex {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ) (v : RealPlane) :
+    ((aux_hKernelGaussianMultiset γ i).map
+      (fun q => ∑ r : Fin 5,
+        aux_caseOneExactSlotTerm (caseOneLambda γ ι i) q j v r)).sum =
+      ∑ b ∈ caseOneB,
+        aux_caseOneSlotProduct j v (caseOneSlotNat γ ι i b) := by
+  classical
+  rw [aux_caseOne_multiset_sum_eq_occurrence_sum]
+  have hsum :
+      (∑ k : Fin 6, ∑ r : Fin 5,
+        aux_caseOneExactSlotTerm (caseOneLambda γ ι i)
+          (caseOneOccurrence (aux_hKernelGaussianMultiset γ i)
+            (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm k)) j v r) =
+      ∑ k : Fin (aux_hKernelGaussianMultiset γ i).card, ∑ r : Fin 5,
+        aux_caseOneExactSlotTerm (caseOneLambda γ ι i)
+          (caseOneOccurrence (aux_hKernelGaussianMultiset γ i) k) j v r := by
+    let e : Fin 6 ≃ Fin (aux_hKernelGaussianMultiset γ i).card :=
+      finCongr (aux_hKernelGaussianMultiset_card γ i).symm
+    refine Fintype.sum_equiv e
+      (fun k => ∑ r : Fin 5,
+        aux_caseOneExactSlotTerm (caseOneLambda γ ι i)
+          (caseOneOccurrence (aux_hKernelGaussianMultiset γ i)
+            (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm k)) j v r)
+      (fun k => ∑ r : Fin 5,
+        aux_caseOneExactSlotTerm (caseOneLambda γ ι i)
+          (caseOneOccurrence (aux_hKernelGaussianMultiset γ i) k) j v r) ?_
+    intro k
+    simp [e]
+  rw [← hsum]
+  rw [caseOne_sum_range30_reindex γ ι i (aux_caseOneSlotProduct j v)]
+  simp_rw [aux_caseOneExactSlotTerm_eq_caseOneSlotProduct]
+
+/-- The raw rho-difference times any one H-package bracket product is integrable.
+For this bookkeeping step a uniform boundedness consequence of the positive
+rho estimate is sufficient. -/
+private theorem aux_caseOne_raw_occurrence_integrable {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
+    (P : Multiset (SequencePair × Fin 2)) (hP : aux_HKernelGaussianBound γ i P)
+    (q : SequencePair × Fin 2) (hqmem : q ∈ P) (w₀ w₁ : ℝ) :
+    Integrable (fun p : ℝ =>
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) := by
+  let lambda : ℝ := caseOneLambda γ ι i j
+  have hlambda : lambda = (2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ)) := by rfl
+  have hlambda_pos : 0 < lambda := by
+    rw [hlambda]
+    exact mul_pos (zpow_pos (by norm_num) _) ((γ.scales_spaced i 1) _).1
+  rcases hP.1 q hqmem with ⟨hq₀, hq₁⟩
+  have hq : ∀ r : Fin 2, SpacedSequence (q.1 r) := by
+    intro r
+    fin_cases r
+    · exact hq₀.1
+    · exact hq₁.1
+  let M₀ : ℝ := C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2
+  have hstd : 0 ≤ C_standardBumpPropertiesTilde 0 2 := by
+    rw [show C_standardBumpPropertiesTilde 0 2 = (2 : ℝ) ^ (18 : ℕ) by
+      norm_num [C_standardBumpPropertiesTilde]]
+    positivity
+  have hM₀ : 0 ≤ M₀ := by
+    dsimp [M₀]
+    exact mul_nonneg hstd aux_caseOne_meanFour_nonneg
+  let M : ℝ := M₀ * (2 * lambda⁻¹)
+  have hM : 0 ≤ M := by
+    dsimp [M]
+    exact mul_nonneg hM₀ (mul_nonneg (by norm_num) (inv_nonneg.mpr hlambda_pos.le))
+  let B : ℝ → ℝ := fun p => aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)
+  have hB : Integrable B := by
+    dsimp [B]
+    exact aux_caseOne_kernelBracketProduct_integrable q j w₁ hq₀.1 hq₁.1
+  have hrhoCont : Continuous (nMultiplierRho γ hkn ι i j) :=
+    (nMultiplierRho_memW0 γ hkn ι i j).aux_continuous
+  have hdiffCont : Continuous (fun p : ℝ =>
+      nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀) :=
+    (hrhoCont.comp (continuous_const.add continuous_id)).sub continuous_const
+  have hsum_nonneg (p : ℝ) : 0 ≤
+      scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀ :=
+    add_nonneg
+      (aux_scaledBracketBump_nonneg 2 hlambda_pos _)
+      (aux_scaledBracketBump_nonneg 2 hlambda_pos _)
+  have hsum_bound (p : ℝ) :
+      scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀ ≤
+        2 * lambda⁻¹ := by
+    calc
+      scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀ ≤
+          lambda⁻¹ + lambda⁻¹ :=
+        add_le_add
+          (aux_derivativeDiagonalSquareRoot_scaledBracketBump_two_le_inv hlambda_pos)
+          (aux_derivativeDiagonalSquareRoot_scaledBracketBump_two_le_inv hlambda_pos)
+      _ = 2 * lambda⁻¹ := by ring
+  have hrho_bound (p : ℝ) :
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| ≤ M := by
+    have hraw := aux_nMultiplierRho_positive_difference_bound γ hkn ι i j
+      (ne_of_gt hpositive) hpositive w₀ p
+    rw [← hlambda] at hraw
+    calc
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| ≤
+          M₀ * min 1 (2 * Real.pi * lambda⁻¹ * |p|) *
+            (scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) := by
+        simpa [M₀, mul_assoc] using hraw
+      _ ≤ M₀ * (scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) := by
+        calc
+          M₀ * min 1 (2 * Real.pi * lambda⁻¹ * |p|) *
+              (scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀) =
+              M₀ * (min 1 (2 * Real.pi * lambda⁻¹ * |p|) *
+                (scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀)) := by ring
+          _ ≤ M₀ * (1 *
+                (scaledBracketBump 2 lambda (w₀ + p) + scaledBracketBump 2 lambda w₀)) :=
+            mul_le_mul_of_nonneg_left
+              (mul_le_mul_of_nonneg_right (min_le_left _ _) (hsum_nonneg p)) hM₀
+          _ = M₀ * (scaledBracketBump 2 lambda (w₀ + p) +
+              scaledBracketBump 2 lambda w₀) := by ring
+      _ ≤ M := by
+        dsimp [M]
+        exact mul_le_mul_of_nonneg_left (hsum_bound p) hM₀
+  have hmajor : Integrable (fun p : ℝ => M * B p) := hB.const_mul M
+  refine hmajor.mono' ?_ ?_
+  · exact hdiffCont.abs.aestronglyMeasurable.mul hB.aestronglyMeasurable
+  · filter_upwards [] with p
+    have hBnon : 0 ≤ B p := by
+      dsimp [B]
+      exact aux_kernelBracketProduct_nonneg q hq j _
+    have hfnon : 0 ≤
+        |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| * B p :=
+      mul_nonneg (abs_nonneg _) hBnon
+    have hle := mul_le_mul_of_nonneg_right (hrho_bound p) hBnon
+    change ‖|nMultiplierRho γ hkn ι i j (w₀ + p) -
+        nMultiplierRho γ hkn ι i j w₀| * B p‖ ≤ M * B p
+    simpa only [Real.norm_eq_abs, abs_of_nonneg hfnon] using hle
+
+/-- Cancellation, the explicit six-term H package, and the two orientation
+occurrence estimates give a 30-slot real-bracket majorant before Gaussian
+domination is applied to its slots. -/
+private theorem aux_caseOne_preGaussian_bound {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1) (w₀ w₁ : ℝ) :
+    |nMultiplier γ hkn ι i j (w₀ - w₁, w₀ + w₁)| ≤
+      C_hKernelEstimateGaussianDomination *
+        ((32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+          C_meanFourScaleGaussianKernel 2) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2))) *
+        ∑ b ∈ caseOneB,
+          aux_caseOneSlotProduct j (w₀ - w₁, w₀ + w₁)
+            (caseOneSlotNat γ ι i b) := by
+  classical
+  let P : Multiset (SequencePair × Fin 2) := aux_hKernelGaussianMultiset γ i
+  let D : ℝ := (32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+    C_meanFourScaleGaussianKernel 2) *
+    Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+    max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+      (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+        C_twoBumpEstimate (3 / 2) (3 / 2))
+  let S : (SequencePair × Fin 2) → ℝ := fun q => ∑ r : Fin 5,
+    aux_caseOneExactSlotTerm (caseOneLambda γ ι i) q j
+      (w₀ - w₁, w₀ + w₁) r
+  have hP : aux_HKernelGaussianBound γ i P := by
+    dsimp [P]
+    exact aux_caseOne_HPackage_explicit γ i
+  have hint : ∀ q ∈ P, Integrable (fun p : ℝ =>
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) := by
+    intro q hq
+    exact aux_caseOne_raw_occurrence_integrable γ hkn ι i j hpositive P hP q hq w₀ w₁
+  have hocc : ∀ q ∈ P, (∫ p : ℝ,
+      |nMultiplierRho γ hkn ι i j (w₀ + p) - nMultiplierRho γ hkn ι i j w₀| *
+        aux_kernelBracketProduct q j (-w₁ - p, w₁ - p)) ≤ D * S q := by
+    intro q hq
+    dsimp [D, S]
+    exact aux_caseOne_occurrence_uniform γ hkn ι i j hpositive P hP q hq w₀ w₁
+  have houter := aux_caseOne_outer_from_occurrences γ hkn ι i j w₀ w₁
+    P hP D S hint hocc
+  have hreindex : (P.map S).sum = ∑ b ∈ caseOneB,
+      aux_caseOneSlotProduct j (w₀ - w₁, w₀ + w₁) (caseOneSlotNat γ ι i b) := by
+    dsimp [P, S]
+    exact aux_caseOne_multiset_slot_sum_reindex γ ι i j (w₀ - w₁, w₀ + w₁)
+  calc
+    |nMultiplier γ hkn ι i j (w₀ - w₁, w₀ + w₁)| ≤
+        C_hKernelEstimateGaussianDomination * D * (P.map S).sum := houter
+    _ = C_hKernelEstimateGaussianDomination * D *
+        ∑ b ∈ caseOneB,
+          aux_caseOneSlotProduct j (w₀ - w₁, w₀ + w₁)
+            (caseOneSlotNat γ ι i b) := by rw [hreindex]
+    _ = _ := by rfl
+
+private theorem aux_caseOne_slot_gaussian_majorant
+    (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
+    (u : Fin 2) (j : ℤ) (v : RealPlane) :
+    aux_caseOneSlotProduct j v (p, u) ≤
+      8 * Real.exp (2 * Real.pi) *
+        ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+          aux_dominatingGaussianTerm
+            (fun r k => (2 : ℝ) ^ (m r) * p r k) u j v := by
+  let f₀ : ℕ → ℝ := fun a =>
+    Real.rpow 2 (-((a : ℝ) / 2)) *
+      gaussianRescale ((2 : ℝ) ^ a * p 0 j) (W u v).1
+  let f₁ : ℕ → ℝ := fun a =>
+    Real.rpow 2 (-((a : ℝ) / 2)) *
+      gaussianRescale ((2 : ℝ) ^ a * p 1 j) (W u v).2
+  have hp₀ : 0 < p 0 j := aux_spacedSequence_pos (hp 0) j
+  have hp₁ : 0 < p 1 j := aux_spacedSequence_pos (hp 1) j
+  have hhalf (a : ℕ) : (1 - (3 / 2 : ℝ)) * (a : ℝ) = -((a : ℝ) / 2) := by
+    ring
+  have hbr₀ := gaussianDomination (3 / 2 : ℝ) (p 0 j) (W u v).1
+    (by norm_num) hp₀
+  have hbr₁ := gaussianDomination (3 / 2 : ℝ) (p 1 j) (W u v).2
+    (by norm_num) hp₁
+  have hbr₀' : scaledBracketBumpReal (3 / 2 : ℝ) (p 0 j) (W u v).1 ≤
+      C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ) * ∑' a : ℕ, f₀ a := by
+    simpa [f₀, hhalf] using hbr₀
+  have hbr₁' : scaledBracketBumpReal (3 / 2 : ℝ) (p 1 j) (W u v).2 ≤
+      C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ) * ∑' a : ℕ, f₁ a := by
+    simpa [f₁, hhalf] using hbr₁
+  have hf₀ : Summable f₀ := by
+    simpa [f₀, hhalf] using
+      aux_gaussianDomination_weight_summable (3 / 2 : ℝ) (p 0 j) (W u v).1
+        (by norm_num) hp₀
+  have hf₁ : Summable f₁ := by
+    simpa [f₁, hhalf] using
+      aux_gaussianDomination_weight_summable (3 / 2 : ℝ) (p 1 j) (W u v).2
+        (by norm_num) hp₁
+  have hf₀nonneg (a : ℕ) : 0 ≤ f₀ a := by
+    dsimp [f₀]
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (aux_gaussianRescale_nonneg (mul_pos (pow_pos (by norm_num) _) hp₀) _)
+  have hf₁nonneg (a : ℕ) : 0 ≤ f₁ a := by
+    dsimp [f₁]
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (aux_gaussianRescale_nonneg (mul_pos (pow_pos (by norm_num) _) hp₁) _)
+  have hprod : Summable (fun m : Fin 2 → ℕ => f₀ (m 0) * f₁ (m 1)) :=
+    aux_summable_finTwo_product hf₀nonneg hf₁nonneg hf₀ hf₁
+  have hprodPair : Summable (fun z : ℕ × ℕ => f₀ z.1 * f₁ z.2) := by
+    refine (aux_finTwoNatEquivProd.symm.summable_iff
+      (f := fun m : Fin 2 → ℕ => f₀ (m 0) * f₁ (m 1))).mpr ?_
+    exact hprod
+  have hprodEq : (∑' a : ℕ, f₀ a) * (∑' a : ℕ, f₁ a) =
+      ∑' m : Fin 2 → ℕ, f₀ (m 0) * f₁ (m 1) := by
+    calc
+      (∑' a : ℕ, f₀ a) * (∑' a : ℕ, f₁ a) =
+          ∑' z : ℕ × ℕ, f₀ z.1 * f₁ z.2 := hf₀.tsum_mul_tsum hf₁ hprodPair
+      _ = ∑' m : Fin 2 → ℕ, f₀ (m 0) * f₁ (m 1) := by
+        simpa [aux_finTwoNatEquivProd] using
+          (aux_finTwoNatEquivProd.symm.tsum_eq
+            (fun m : Fin 2 → ℕ => f₀ (m 0) * f₁ (m 1)))
+  have hterm (m : Fin 2 → ℕ) : f₀ (m 0) * f₁ (m 1) =
+      aux_gaussianDominationWeight m *
+        aux_dominatingGaussianTerm
+          (fun r k => (2 : ℝ) ^ (m r) * p r k) u j v := by
+    have hweight : aux_gaussianDominationWeight m =
+        Real.rpow 2 (-((m 0 : ℕ) : ℝ) / 2) *
+          Real.rpow 2 (-((m 1 : ℕ) : ℝ) / 2) := by
+      unfold aux_gaussianDominationWeight aux_natPairWeight
+      calc
+        Real.rpow 2 (-((m 0 + m 1 : ℕ) : ℝ) / 2) =
+            Real.rpow 2 (-((m 0 : ℕ) : ℝ) / 2 +
+              -((m 1 : ℕ) : ℝ) / 2) := by
+          congr 1
+          push_cast
+          ring
+        _ = _ := Real.rpow_add (by norm_num) _ _
+    rw [hweight]
+    simp only [aux_dominatingGaussianTerm, twoDimensionalGaussian]
+    dsimp [f₀, f₁]
+    ring
+  have hseriesEq : (∑' a : ℕ, f₀ a) * (∑' a : ℕ, f₁ a) =
+      ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+        aux_dominatingGaussianTerm
+          (fun r k => (2 : ℝ) ^ (m r) * p r k) u j v := by
+    rw [hprodEq]
+    exact tsum_congr hterm
+  have hcoeffnonneg : 0 ≤ C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ) := by
+    rw [C_gaussianDomination]
+    exact mul_nonneg (Real.exp_pos _).le (Real.rpow_nonneg (by norm_num) _)
+  have hsum₀ : 0 ≤ ∑' a : ℕ, f₀ a := tsum_nonneg hf₀nonneg
+  have hpow : Real.rpow 2 (3 / 2 : ℝ) * Real.rpow 2 (3 / 2 : ℝ) = 8 := by
+    change (2 : ℝ) ^ (3 / 2 : ℝ) * (2 : ℝ) ^ (3 / 2 : ℝ) = 8
+    rw [← Real.rpow_add (by norm_num)]
+    norm_num
+  have hexp : Real.exp Real.pi * Real.exp Real.pi = Real.exp (2 * Real.pi) := by
+    rw [← Real.exp_add]
+    congr 1
+    ring
+  have hcoeff :
+      (C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ)) *
+        (C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ)) =
+      8 * Real.exp (2 * Real.pi) := by
+    rw [C_gaussianDomination]
+    calc
+      (Real.exp Real.pi * Real.rpow 2 (3 / 2 : ℝ)) *
+          (Real.exp Real.pi * Real.rpow 2 (3 / 2 : ℝ)) =
+          (Real.exp Real.pi * Real.exp Real.pi) *
+            (Real.rpow 2 (3 / 2 : ℝ) * Real.rpow 2 (3 / 2 : ℝ)) := by ring
+      _ = _ := by rw [hexp, hpow]; ring
+  calc
+    aux_caseOneSlotProduct j v (p, u) =
+        scaledBracketBumpReal (3 / 2 : ℝ) (p 0 j) (W u v).1 *
+          scaledBracketBumpReal (3 / 2 : ℝ) (p 1 j) (W u v).2 := rfl
+    _ ≤ (C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ) * ∑' a : ℕ, f₀ a) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (p 1 j) (W u v).2 :=
+      mul_le_mul_of_nonneg_right hbr₀'
+        (aux_scaledBracketBumpReal_nonneg _ _ _ hp₁)
+    _ ≤ (C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ) * ∑' a : ℕ, f₀ a) *
+        (C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ) * ∑' a : ℕ, f₁ a) :=
+      mul_le_mul_of_nonneg_left hbr₁' (mul_nonneg hcoeffnonneg hsum₀)
+    _ = ((C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ)) *
+        (C_gaussianDomination * Real.rpow 2 (3 / 2 : ℝ))) *
+          ((∑' a : ℕ, f₀ a) * ∑' a : ℕ, f₁ a) := by ring
+    _ = (8 * Real.exp (2 * Real.pi)) *
+          ((∑' a : ℕ, f₀ a) * ∑' a : ℕ, f₁ a) := by rw [hcoeff]
+    _ = _ := by rw [hseriesEq]
+
+private theorem aux_caseOne_slot_sum_gaussian_majorant {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k)
+    (j : ℤ) (v : RealPlane) :
+    ∑ b ∈ caseOneB,
+      aux_caseOneSlotProduct j v (caseOneSlotNat γ ι i b) ≤
+      8 * Real.exp (2 * Real.pi) *
+        ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+          ∑ b ∈ caseOneB,
+            aux_dominatingGaussianTerm (caseOneScales γ ι i b m)
+              (caseOneOrientation γ ι i b) j v := by
+  classical
+  let T : ℕ → (Fin 2 → ℕ) → ℝ := fun b m =>
+    aux_gaussianDominationWeight m *
+      aux_dominatingGaussianTerm (caseOneScales γ ι i b m)
+        (caseOneOrientation γ ι i b) j v
+  have hslot (b : ℕ) (hb : b ∈ caseOneB) :
+      aux_caseOneSlotProduct j v (caseOneSlotNat γ ι i b) ≤
+        (8 * Real.exp (2 * Real.pi)) * ∑' m : Fin 2 → ℕ, T b m := by
+    have hbase := aux_caseOne_slot_gaussian_majorant
+      (caseOneSlotNat γ ι i b).1 (caseOneSlotNat_spaced γ ι i b)
+      (caseOneSlotNat γ ι i b).2 j v
+    change aux_caseOneSlotProduct j v (caseOneSlotNat γ ι i b) ≤
+      (8 * Real.exp (2 * Real.pi)) * ∑' m : Fin 2 → ℕ,
+        aux_gaussianDominationWeight m *
+          aux_dominatingGaussianTerm (caseOneScales γ ι i b m)
+            (caseOneOrientation γ ι i b) j v
+    unfold caseOneScales caseOneOrientation
+    exact hbase
+  have hsum (b : ℕ) (hb : b ∈ caseOneB) : Summable (T b) := by
+    have hbase := aux_dyadic_gaussian_pair_summable
+      (caseOneSlotNat γ ι i b).1 (caseOneSlotNat_spaced γ ι i b)
+      (caseOneSlotNat γ ι i b).2 j v
+    change Summable (fun m : Fin 2 → ℕ =>
+      aux_gaussianDominationWeight m *
+        aux_dominatingGaussianTerm (caseOneScales γ ι i b m)
+          (caseOneOrientation γ ι i b) j v)
+    unfold caseOneScales caseOneOrientation
+    exact hbase
+  calc
+    ∑ b ∈ caseOneB,
+        aux_caseOneSlotProduct j v (caseOneSlotNat γ ι i b) ≤
+        ∑ b ∈ caseOneB, (8 * Real.exp (2 * Real.pi)) * ∑' m : Fin 2 → ℕ, T b m :=
+      Finset.sum_le_sum fun b hb => hslot b hb
+    _ = (8 * Real.exp (2 * Real.pi)) * ∑ b ∈ caseOneB, ∑' m : Fin 2 → ℕ, T b m := by
+      rw [Finset.mul_sum]
+    _ = (8 * Real.exp (2 * Real.pi)) * ∑' m : Fin 2 → ℕ, ∑ b ∈ caseOneB, T b m := by
+      rw [Summable.tsum_finsetSum hsum]
+    _ = _ := by
+      congr 2
+      funext m
+      dsimp [T]
+      rw [Finset.mul_sum]
+
+theorem gaussDominationCase1 {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (i : Fin γ.k)
+    (ι : MultiplierIndex γ) (hpositive : 0 < ι.1.1) (_hvertical : ι.1.2 = 0) :
+    aux_GaussianDominationConclusion γ hkn i ι (C_gaussDominationCase1) := by
+  classical
+  rcases caseOne_witness_side_conditions γ ι i hpositive with ⟨hcard, hscales, hdistance⟩
+  have hbaseScales : ∀ b ∈ caseOneB, ∀ r : Fin 2,
+      SpacedSequence ((caseOneSlotNat γ ι i b).1 r) := by
+    intro b hb r
+    exact caseOneSlotNat_spaced γ ι i b r
+  have htail := aux_finite_dyadic_gaussian_series caseOneB
+    (fun b => (caseOneSlotNat γ ι i b).1) hbaseScales
+    (caseOneOrientation γ ι i) (caseOneScales γ ι i) (by
+      intro b hb m r k
+      rfl)
+  refine ⟨{
+    B := caseOneB
+    card_le := hcard
+    orientation := caseOneOrientation γ ι i
+    scales := caseOneScales γ ι i
+    scales_in_A := hscales
+    distance_bound := hdistance
+    estimate := ?_
+    series_summable := htail.1
+    series_integrable := htail.2
+  }⟩
+  intro j v
+  let w₀ : ℝ := (v.1 + v.2) / 2
+  let w₁ : ℝ := (v.2 - v.1) / 2
+  have hv : (w₀ - w₁, w₀ + w₁) = v := by
+    ext <;> dsimp [w₀, w₁] <;> ring
+  have hpre := aux_caseOne_preGaussian_bound γ hkn ι i j hpositive w₀ w₁
+  have hslot := aux_caseOne_slot_sum_gaussian_majorant γ ι i j (w₀ - w₁, w₀ + w₁)
+  have hstd : 0 ≤ C_standardBumpPropertiesTilde 0 2 := by
+    rw [show C_standardBumpPropertiesTilde 0 2 = (2 : ℝ) ^ (18 : ℕ) by
+      norm_num [C_standardBumpPropertiesTilde]]
+    positivity
+  have hK : 0 ≤ max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+      (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+        C_twoBumpEstimate (3 / 2) (3 / 2)) :=
+    (add_nonneg aux_caseOne_twoBump_nonneg (by norm_num)).trans (le_max_left _ _)
+  have hD : 0 ≤ (32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+      C_meanFourScaleGaussianKernel 2) *
+      Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+      max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+        (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+          C_twoBumpEstimate (3 / 2) (3 / 2)) := by
+    exact mul_nonneg
+      (mul_nonneg
+        (mul_nonneg
+          (mul_nonneg (mul_nonneg (by norm_num) (by positivity)) hstd)
+          aux_caseOne_meanFour_nonneg)
+        (Real.rpow_nonneg (by norm_num) _)) hK
+  have hprecoeff : 0 ≤ C_hKernelEstimateGaussianDomination *
+      ((32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+        C_meanFourScaleGaussianKernel 2) *
+        Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+        max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+          (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+            C_twoBumpEstimate (3 / 2) (3 / 2))) :=
+    mul_nonneg aux_C_hKernelEstimateGaussianDomination_nonneg hD
+  calc
+    |nMultiplier γ hkn ι i j v| =
+        |nMultiplier γ hkn ι i j (w₀ - w₁, w₀ + w₁)| := by rw [hv]
+    _ ≤ C_hKernelEstimateGaussianDomination *
+        ((32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+          C_meanFourScaleGaussianKernel 2) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2))) *
+        ∑ b ∈ caseOneB,
+          aux_caseOneSlotProduct j (w₀ - w₁, w₀ + w₁)
+            (caseOneSlotNat γ ι i b) := hpre
+    _ ≤ C_hKernelEstimateGaussianDomination *
+        ((32 * Real.pi * C_standardBumpPropertiesTilde 0 2 *
+          C_meanFourScaleGaussianKernel 2) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          max (C_twoBumpEstimate (3 / 2) (3 / 2) + 4)
+            (4 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
+              C_twoBumpEstimate (3 / 2) (3 / 2))) *
+        ((8 * Real.exp (2 * Real.pi)) *
+          ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+            ∑ b ∈ caseOneB,
+              aux_dominatingGaussianTerm (caseOneScales γ ι i b m)
+                (caseOneOrientation γ ι i b) j (w₀ - w₁, w₀ + w₁)) :=
+      mul_le_mul_of_nonneg_left hslot hprecoeff
+    _ = (C_gaussDominationCase1) *
+        Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+        ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+          ∑ b ∈ caseOneB,
+            aux_dominatingGaussianTerm (caseOneScales γ ι i b m)
+              (caseOneOrientation γ ι i b) j (w₀ - w₁, w₀ + w₁) := by
+      unfold C_gaussDominationCase1
+      norm_num
+      ring
+    _ = _ := by rw [hv]
 
 end
 

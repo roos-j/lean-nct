@@ -20,8 +20,6 @@
 
 *.png
 *.svg
-*.html
-!dependency_graph/index.html
 *.dot
 SHA256SUMS
 layout_metadata.json

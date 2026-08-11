@@ -37,6 +37,9 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
   report the error in the file 'ErrorReport.md'.
   Put date and timestamp on the errors found and specify which source line in blueprint.tex they occur in. Small gaps and omitted details in the reasoning
   that any beginning graduate student would be able to fill in do not qualify as errors. This is only about substantial definitive mathematical errors.
+- When a displayed absolute constant or cardinality cannot be justified exactly but a directly proved bound is only slightly worse
+  (normally by at most a factor of two), retain the proved Lean bound, record the discrepancy in `ErrorReport.md`, and continue.
+  Do not hold up the formalization for a sharper constant unless it is needed by a later stated estimate.
 - Ignore LaTeX comments.  Resolve author annotations and mildly unfinished
   passages in the most reasonable way; often this means simply removing the
   annotation.

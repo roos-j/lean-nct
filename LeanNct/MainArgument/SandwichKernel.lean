@@ -240,6 +240,776 @@ theorem aux_product_telescope (a b : ℕ → ℝ) (n : ℕ) :
     rw [ih]
     ring
 
+/-- The finite telescope in the integer scale parameter. -/
+theorem aux_int_telescope (f : ℤ → ℝ) (J : ℕ) :
+    (∑ j ∈ Finset.range J, (f ((j : ℤ) - 1) - f (j : ℤ))) =
+      f (-1) - f ((J : ℤ) - 1) := by
+  induction J with
+  | zero => norm_num
+  | succ J ih =>
+    rw [Finset.sum_range_succ, ih]
+    push_cast
+    ring
+
+/-- Reindex a product over the coordinates strictly below a given finite index. -/
+theorem aux_prod_filter_lt {k : ℕ} (f : Fin k → ℝ) (g : ℕ → ℝ)
+    (hg : ∀ m (hm : m < k), g m = f ⟨m, hm⟩) (i : Fin k) :
+    (∏ m ∈ Finset.univ.filter (fun m => m < i), f m) =
+      ∏ m ∈ Finset.range i.1, g m := by
+  classical
+  apply Finset.prod_bij (fun m _ => m.1)
+  · intro m hm
+    exact Finset.mem_range.mpr (Fin.lt_def.mp (Finset.mem_filter.mp hm).2)
+  · intro m₁ hm₁ m₂ hm₂ h
+    exact Fin.ext h
+  · intro m hm
+    let q : Fin k := ⟨m, lt_trans (Finset.mem_range.mp hm) i.2⟩
+    refine ⟨q, ?_, rfl⟩
+    exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, Fin.lt_def.mpr (Finset.mem_range.mp hm)⟩
+  · intro m hm
+    have hm' : m.1 < k := lt_trans (Finset.mem_filter.mp hm).2 i.2
+    simpa using (hg m.1 hm').symm
+
+/-- Reindex a product over the coordinates strictly above a given finite index. -/
+theorem aux_prod_filter_gt {k : ℕ} (f : Fin k → ℝ) (g : ℕ → ℝ)
+    (hg : ∀ m (hm : m < k), g m = f ⟨m, hm⟩) (i : Fin k) :
+    (∏ m ∈ Finset.univ.filter (fun m => i < m), f m) =
+      ∏ m ∈ Finset.Ico (i.1 + 1) k, g m := by
+  classical
+  apply Finset.prod_bij (fun m _ => m.1)
+  · intro m hm
+    exact Finset.mem_Ico.mpr ⟨Nat.succ_le_iff.mpr
+      (Fin.lt_def.mp (Finset.mem_filter.mp hm).2), m.2⟩
+  · intro m₁ hm₁ m₂ hm₂ h
+    exact Fin.ext h
+  · intro m hm
+    let q : Fin k := ⟨m, (Finset.mem_Ico.mp hm).2⟩
+    refine ⟨q, ?_, rfl⟩
+    exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, by
+      exact Fin.lt_def.mpr (Nat.lt_of_succ_le (Finset.mem_Ico.mp hm).1)⟩
+  · intro m hm
+    simpa using (hg m.1 m.2).symm
+
+/-- The finite-coordinate form of the sandwich-product telescope. -/
+theorem aux_fin_telescope {k : ℕ} (a b : Fin k → ℝ) :
+    (∑ i : Fin k,
+      (∏ m ∈ Finset.univ.filter (fun m => m < i), b m) * (a i - b i) *
+        ∏ m ∈ Finset.univ.filter (fun m => i < m), a m) =
+      (∏ m, a m) - ∏ m, b m := by
+  classical
+  let A : ℕ → ℝ := fun m => if hm : m < k then a ⟨m, hm⟩ else 0
+  let B : ℕ → ℝ := fun m => if hm : m < k then b ⟨m, hm⟩ else 0
+  have hA (m : ℕ) (hm : m < k) : A m = a ⟨m, hm⟩ := by simp [A, hm]
+  have hB (m : ℕ) (hm : m < k) : B m = b ⟨m, hm⟩ := by simp [B, hm]
+  have hsum :
+      (∑ i : Fin k,
+        (∏ m ∈ Finset.univ.filter (fun m => m < i), b m) * (a i - b i) *
+          ∏ m ∈ Finset.univ.filter (fun m => i < m), a m) =
+      ∑ i ∈ Finset.range k,
+        (∏ m ∈ Finset.range i, B m) * (A i - B i) *
+          ∏ m ∈ Finset.Ico (i + 1) k, A m := by
+    rw [Finset.sum_fin_eq_sum_range]
+    apply Finset.sum_congr rfl
+    intro i hi
+    let fi : Fin k := ⟨i, Finset.mem_range.mp hi⟩
+    simp only [dif_pos (Finset.mem_range.mp hi)]
+    rw [aux_prod_filter_lt b B hB fi, aux_prod_filter_gt a A hA fi]
+    simp [A, B, fi, Finset.mem_range.mp hi]
+  calc
+    (∑ i : Fin k,
+        (∏ m ∈ Finset.univ.filter (fun m => m < i), b m) * (a i - b i) *
+          ∏ m ∈ Finset.univ.filter (fun m => i < m), a m) =
+        ∑ i ∈ Finset.range k,
+          (∏ m ∈ Finset.range i, B m) * (A i - B i) *
+            ∏ m ∈ Finset.Ico (i + 1) k, A m := hsum
+    _ = (∏ m ∈ Finset.range k, A m) - ∏ m ∈ Finset.range k, B m :=
+      aux_product_telescope A B k
+    _ = (∏ m, a m) - ∏ m, b m := by
+      congr 1
+      · rw [Finset.prod_fin_eq_prod_range a]
+        apply Finset.prod_congr rfl
+        intro m hm
+        simp [A, Finset.mem_range.mp hm]
+      · rw [Finset.prod_fin_eq_prod_range b]
+        apply Finset.prod_congr rfl
+        intro m hm
+        simp [B, Finset.mem_range.mp hm]
+
+/-- The normalized one-dimensional rescaled Gaussian has integral one. -/
+theorem aux_integral_gaussianRescale (t : ℝ) (ht : 0 < t) :
+    (∫ x : ℝ, gaussianRescale t x) = 1 := by
+  change (∫ x : ℝ, t⁻¹ * Codex.Preliminaries.Gaussians.gaussian (t⁻¹ * x)) = 1
+  rw [integral_const_mul,
+    Measure.integral_comp_inv_mul_left Codex.Preliminaries.Gaussians.gaussian t,
+    aux_integral_gaussian]
+  simp [smul_eq_mul, abs_of_pos ht, ht.ne']
+
+/-- The product of two normalized rescaled Gaussians has integral one. -/
+theorem aux_integral_product_gaussianRescale (q : Fin 2 → ℝ)
+    (hq : ∀ r, 0 < q r) :
+    (∫ v : RealPlane,
+      gaussianRescale (q 0) v.1 * gaussianRescale (q 1) v.2) = 1 := by
+  rw [Measure.volume_eq_prod, integral_prod_mul,
+    aux_integral_gaussianRescale (q 0) (hq 0),
+    aux_integral_gaussianRescale (q 1) (hq 1)]
+  norm_num
+
+/-- Two-dimensional Gaussians belong to `W₀`. -/
+theorem aux_twoDimensionalGaussian_memW0 (q : Fin 2 → ℝ) (u : Fin 2)
+    (hq : ∀ r, 0 < q r) :
+    MemW0 (twoDimensionalGaussian q u) := by
+  let g : RealPlane → ℝ := fun v =>
+    gaussianRescale (q 0) v.1 * gaussianRescale (q 1) v.2
+  have hg : MemW0 g := by
+    exact (aux_gaussianRescale_memW0 (hq 0)).aux_mul_prod
+      (aux_gaussianRescale_memW0 (hq 1))
+  have hcomp : MemW0 (g ∘ aux_WContinuousLinearEquiv u) := by
+    apply hg.aux_comp_continuousLinearEquiv_between_of_integrable_radius
+      (aux_WContinuousLinearEquiv u)
+    exact aux_integrable_wienerEnvelope_of_integrable' hg.1 zero_lt_one
+      (norm_nonneg _) hg.2
+  have hfun : twoDimensionalGaussian q u = g ∘ aux_WContinuousLinearEquiv u := by
+    funext v
+    simp only [g, Function.comp_apply, aux_WContinuousLinearEquiv_apply,
+      twoDimensionalGaussian]
+  rw [hfun]
+  exact hcomp
+
+/-- The determinant-one reciprocal scaling used to factor the nontrivial rotation. -/
+noncomputable def aux_balancedScale (a : ℝ) (v : RealPlane) : RealPlane :=
+  (a⁻¹ * v.1, a * v.2)
+
+/-- The balanced scaling preserves Lebesgue measure. -/
+theorem aux_measurePreserving_balancedScale {a : ℝ} (ha : 0 < a) :
+    MeasurePreserving (aux_balancedScale a) volume volume := by
+  refine ⟨?_, ?_⟩
+  · unfold aux_balancedScale
+    fun_prop
+  change Measure.map (aux_balancedScale a)
+      ((volume : Measure ℝ).prod (volume : Measure ℝ)) =
+    (volume : Measure ℝ).prod (volume : Measure ℝ)
+  change Measure.map (Prod.map (fun x : ℝ => a⁻¹ * x) (fun y : ℝ => a * y))
+      ((volume : Measure ℝ).prod (volume : Measure ℝ)) =
+    (volume : Measure ℝ).prod (volume : Measure ℝ)
+  rw [← Measure.map_prod_map (volume : Measure ℝ) (volume : Measure ℝ)
+    (by fun_prop) (by fun_prop)]
+  rw [Real.map_volume_mul_left (inv_ne_zero ha.ne'),
+    Real.map_volume_mul_left ha.ne']
+  rw [Measure.prod_smul_left, Measure.prod_smul_right, smul_smul]
+  have hinv : 0 < a⁻¹ := inv_pos.mpr ha
+  rw [← ENNReal.ofReal_mul (abs_nonneg _)]
+  simp [abs_of_pos ha, abs_of_pos hinv, ha.ne']
+
+/-- The nontrivial `W₁` coordinate change preserves Lebesgue measure. -/
+theorem aux_measurePreserving_WOne :
+    MeasurePreserving (aux_WOneContinuousLinearEquiv : RealPlane → RealPlane) volume volume := by
+  have hshear₁ : MeasurePreserving (fun v : RealPlane => (v.1 + v.2, v.2)) volume volume := by
+    change MeasurePreserving (fun v : RealPlane => (v.1 + v.2, v.2))
+      ((volume : Measure ℝ).prod (volume : Measure ℝ))
+      ((volume : Measure ℝ).prod (volume : Measure ℝ))
+    exact measurePreserving_add_prod (volume : Measure ℝ) (volume : Measure ℝ)
+  have hscale := aux_measurePreserving_balancedScale (a := Real.sqrt 2) (by positivity)
+  have hshear₂ : MeasurePreserving (fun v : RealPlane => (v.1, v.2 - v.1)) volume volume := by
+    change MeasurePreserving (fun v : RealPlane => (v.1, v.2 - v.1))
+      ((volume : Measure ℝ).prod (volume : Measure ℝ))
+      ((volume : Measure ℝ).prod (volume : Measure ℝ))
+    exact measurePreserving_prod_sub (volume : Measure ℝ) (volume : Measure ℝ)
+  have hcomp := hshear₂.comp (hscale.comp hshear₁)
+  convert hcomp using 1
+  funext v
+  rcases v with ⟨x, y⟩
+  ext <;> dsimp [Function.comp_apply, aux_balancedScale,
+    aux_WOneContinuousLinearEquiv]
+  · simp [div_eq_mul_inv, mul_comm]
+  · have hs : Real.sqrt 2 ≠ 0 := Real.sqrt_ne_zero'.mpr (by norm_num)
+    have hsq : (Real.sqrt 2) ^ 2 = 2 := by norm_num
+    field_simp
+    rw [hsq]
+    ring
+
+/-- Every normalized two-dimensional Gaussian has integral one. -/
+theorem aux_integral_twoDimensionalGaussian (q : Fin 2 → ℝ) (u : Fin 2)
+    (hq : ∀ r, 0 < q r) :
+    (∫ v : RealPlane, twoDimensionalGaussian q u v) = 1 := by
+  fin_cases u
+  · simpa [twoDimensionalGaussian, W] using
+      aux_integral_product_gaussianRescale q hq
+  · let g : RealPlane → ℝ := fun v =>
+      gaussianRescale (q 0) v.1 * gaussianRescale (q 1) v.2
+    have hchange : (∫ v : RealPlane, g (aux_WOneContinuousLinearEquiv v)) =
+        ∫ v : RealPlane, g v :=
+      aux_measurePreserving_WOne.integral_comp
+        aux_WOneContinuousLinearEquiv.toHomeomorph.measurableEmbedding g
+    calc
+      (∫ v : RealPlane, twoDimensionalGaussian q 1 v) =
+          ∫ v : RealPlane, g (aux_WOneContinuousLinearEquiv v) := by
+            congr
+      _ = ∫ v : RealPlane, g v := hchange
+      _ = 1 := aux_integral_product_gaussianRescale q hq
+
+/-- Gamma Gaussians belong to `W₀`. -/
+theorem aux_gammaGaussian_memW0 {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) (j : ℤ) :
+    MemW0 (gammaGaussian γ i j) := by
+  apply aux_twoDimensionalGaussian_memW0
+  intro r
+  exact aux_spacedSequence_pos (γ.scales_spaced i r) j
+
+/-- The Gaussian difference belongs coordinatewise to `W₀`. -/
+theorem aux_gaussianDifference_mem {n : ℕ} (γ : GeometricParameters n) :
+    MemDoubleSequence γ.k (gaussianDifference γ) := by
+  intro i j
+  exact aux_memW0_sub (aux_gammaGaussian_memW0 γ i (j - 1))
+    (aux_gammaGaussian_memW0 γ i j)
+
+/-- A rescaled Gaussian is pointwise positive at every positive scale. -/
+theorem aux_gaussianRescale_pos {t x : ℝ} (ht : 0 < t) :
+    0 < gaussianRescale t x := by
+  unfold gaussianRescale
+  exact mul_pos (inv_pos.mpr ht) (aux_gaussian_pos _)
+
+/-- Two-dimensional Gaussians are nonnegative. -/
+theorem aux_twoDimensionalGaussian_nonneg (q : Fin 2 → ℝ) (u : Fin 2)
+    (hq : ∀ r, 0 < q r) (v : RealPlane) :
+    0 ≤ twoDimensionalGaussian q u v := by
+  unfold twoDimensionalGaussian
+  exact mul_nonneg (aux_gaussianRescale_pos (hq 0)).le
+    (aux_gaussianRescale_pos (hq 1)).le
+
+/-- The absolute integral of a normalized two-dimensional Gaussian is one. -/
+theorem aux_integral_abs_twoDimensionalGaussian (q : Fin 2 → ℝ) (u : Fin 2)
+    (hq : ∀ r, 0 < q r) :
+    (∫ v : RealPlane, |twoDimensionalGaussian q u v|) = 1 := by
+  calc
+    (∫ v : RealPlane, |twoDimensionalGaussian q u v|) =
+        ∫ v : RealPlane, twoDimensionalGaussian q u v := by
+          apply integral_congr_ae
+          filter_upwards [] with v
+          exact abs_of_nonneg (aux_twoDimensionalGaussian_nonneg q u hq v)
+    _ = 1 := aux_integral_twoDimensionalGaussian q u hq
+
+/-- The absolute integral of each gamma Gaussian is one. -/
+theorem aux_integral_abs_gammaGaussian {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) (j : ℤ) :
+    (∫ v : RealPlane, |gammaGaussian γ i j v|) = 1 := by
+  let q : Fin 2 → ℝ := fun r => γ.scales i r j
+  have hq : ∀ r, 0 < q r := fun r =>
+    aux_spacedSequence_pos (γ.scales_spaced i r) j
+  simpa [gammaGaussian, q] using aux_integral_abs_twoDimensionalGaussian q
+    (γ.orientation i) hq
+
+/-- The product of the gamma Gaussians at one scale. -/
+noncomputable def aux_gammaBoundaryProduct {n : ℕ} (γ : GeometricParameters n) (j : ℤ) :
+    MKernel γ.k := fun y =>
+  ∏ m, gammaGaussian γ m j (y.1 m, y.2 m)
+
+/-- The boundary Gaussian product has absolute integral one. -/
+theorem aux_integral_abs_gammaBoundaryProduct {n : ℕ} (γ : GeometricParameters n) (j : ℤ) :
+    (∫ y, |aux_gammaBoundaryProduct γ j y|) = 1 := by
+  let e := MeasurableEquiv.arrowProdEquivProdArrow ℝ ℝ (Fin γ.k)
+  have he := MeasureTheory.volume_measurePreserving_arrowProdEquivProdArrow ℝ ℝ (Fin γ.k)
+  have hchange : (∫ x : Fin γ.k → RealPlane,
+      |aux_gammaBoundaryProduct γ j (e x)|) =
+      ∫ y, |aux_gammaBoundaryProduct γ j y| :=
+    he.integral_comp e.measurableEmbedding (fun y => |aux_gammaBoundaryProduct γ j y|)
+  calc
+    (∫ y, |aux_gammaBoundaryProduct γ j y|) =
+        ∫ x : Fin γ.k → RealPlane, |aux_gammaBoundaryProduct γ j (e x)| := hchange.symm
+    _ = ∫ x : Fin γ.k → RealPlane,
+        ∏ i, |gammaGaussian γ i j (x i)| := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      change |∏ i, gammaGaussian γ i j (x i)| =
+        ∏ i, |gammaGaussian γ i j (x i)|
+      rw [Finset.abs_prod]
+    _ = ∏ i, ∫ x : RealPlane, |gammaGaussian γ i j x| := by
+      simpa only using
+        (MeasureTheory.integral_fintype_prod_volume_eq_prod
+          (fun i => fun x : RealPlane => |gammaGaussian γ i j x|))
+    _ = 1 := by simp [aux_integral_abs_gammaGaussian]
+
+/-- The gamma boundary product belongs to `W₀`. -/
+theorem aux_gammaBoundaryProduct_memW0 {n : ℕ} (γ : GeometricParameters n) (j : ℤ) :
+    MemW0 (aux_gammaBoundaryProduct γ j) := by
+  let e : EuclideanSpace ℝ (Fin γ.k) ≃L[ℝ] RealVector γ.k :=
+    EuclideanSpace.equiv (Fin γ.k) ℝ
+  let e2 : EuclideanSpace ℝ (Fin 2) ≃L[ℝ] RealPlane :=
+    (EuclideanSpace.equiv (Fin 2) ℝ).trans (ContinuousLinearEquiv.finTwoArrow ℝ ℝ)
+  let f : ∀ i : Fin γ.k, EuclideanSpace ℝ (Fin 2) → ℝ :=
+    fun i z => gammaGaussian γ i j (e2 z)
+  let π : ∀ i : Fin γ.k,
+      (EuclideanSpace ℝ (Fin γ.k) × EuclideanSpace ℝ (Fin γ.k)) →L[ℝ]
+        EuclideanSpace ℝ (Fin 2) := fun i =>
+    e2.symm.toContinuousLinearMap.comp
+      (((ContinuousLinearMap.proj i).comp
+          (e.toContinuousLinearMap.comp
+            (ContinuousLinearMap.fst ℝ (EuclideanSpace ℝ (Fin γ.k))
+              (EuclideanSpace ℝ (Fin γ.k))))).prod
+        ((ContinuousLinearMap.proj i).comp
+          (e.toContinuousLinearMap.comp
+            (ContinuousLinearMap.snd ℝ (EuclideanSpace ℝ (Fin γ.k))
+              (EuclideanSpace ℝ (Fin γ.k))))))
+  have hf : ∀ i, MemW0 (f i) := by
+    intro i
+    exact aux_memW0_comp_continuousLinearEquiv (aux_gammaGaussian_memW0 γ i j) e2
+  have hπ : Function.Injective (ContinuousLinearMap.pi π) := by
+    intro u v huv
+    apply Prod.ext
+    · apply e.injective
+      funext i
+      have hi := congrFun huv i
+      have hi' := congrArg e2 hi
+      change (e u.1 i, e u.2 i) = (e v.1 i, e v.2 i) at hi'
+      exact congrArg Prod.fst hi'
+    · apply e.injective
+      funext i
+      have hi := congrFun huv i
+      have hi' := congrArg e2 hi
+      change (e u.1 i, e u.2 i) = (e v.1 i, e v.2 i) at hi'
+      exact congrArg Prod.snd hi'
+  have hE : MemW0 (fun uv :
+      EuclideanSpace ℝ (Fin γ.k) × EuclideanSpace ℝ (Fin γ.k) =>
+      ∏ i, f i (π i uv)) :=
+    MemW0.aux_fintype_tensor_comp_injective hf π hπ
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (EuclideanSpace ℝ (Fin γ.k))) := by infer_instance
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (EuclideanSpace ℝ (Fin γ.k) × EuclideanSpace ℝ (Fin γ.k))) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector γ.k)) :=
+    isAddHaarMeasure_volume_pi (Fin γ.k)
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (RealVector γ.k × RealVector γ.k)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  have hraw : MemW0 (fun y : RealVector γ.k × RealVector γ.k =>
+      (∏ i, f i (π i ((e.prodCongr e).symm y)))) :=
+    hE.aux_comp_continuousLinearEquiv_between_of_integrable_radius
+      (e.prodCongr e).symm
+      (aux_integrable_wienerEnvelope_of_integrable' hE.1 zero_lt_one (norm_nonneg _) hE.2)
+  convert hraw using 1
+  funext y
+  unfold aux_gammaBoundaryProduct
+  apply Finset.prod_congr rfl
+  intro i hi
+  simp [f, π, e, e2]
+
+/-- The `L¹` norm of every gamma boundary product is one. -/
+theorem aux_eLpNorm_one_gammaBoundaryProduct {n : ℕ} (γ : GeometricParameters n) (j : ℤ) :
+    eLpNorm (aux_gammaBoundaryProduct γ j) 1 volume = 1 := by
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector γ.k)) :=
+    isAddHaarMeasure_volume_pi (Fin γ.k)
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (RealVector γ.k × RealVector γ.k)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  have hI : Integrable (aux_gammaBoundaryProduct γ j) :=
+    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      (aux_gammaBoundaryProduct_memW0 γ j)
+  rw [eLpNorm_one_eq_lintegral_enorm,
+    ← ofReal_integral_norm_eq_lintegral_enorm hI]
+  simpa [Real.norm_eq_abs] using congrArg ENNReal.ofReal
+    (aux_integral_abs_gammaBoundaryProduct γ j)
+
+private theorem aux_sandwich_factor {k : ℕ} (i : Fin k) (a b c : Fin k → ℝ) :
+    (∏ m, if m < i then a m else if i < m then b m else c m) =
+      (∏ m ∈ Finset.univ.filter (fun m => m < i), a m) * c i *
+        ∏ m ∈ Finset.univ.filter (fun m => i < m), b m := by
+  classical
+  rw [Finset.prod_filter, Finset.prod_filter]
+  have hc : c i = ∏ m : Fin k, if m = i then c m else 1 := by simp
+  rw [hc, ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+  apply Finset.prod_congr rfl
+  intro m hm
+  by_cases hmi : m < i
+  · have him : ¬ i < m := not_lt_of_ge hmi.le
+    simp [hmi, him, ne_of_lt hmi]
+  by_cases him : i < m
+  · simp [hmi, him, ne_of_gt him]
+  have hEq : m = i := by omega
+  simp [hEq]
+
+/-- A finite tensor product of two-dimensional Wiener functions is Wiener. -/
+private theorem aux_fintype_plane_product_memW0 (d : ℕ)
+    (f : Fin d → RealPlane → ℝ) (hf : ∀ a, MemW0 (f a)) :
+    MemW0 (fun y : RealVector d × RealVector d =>
+      ∏ a, f a (y.1 a, y.2 a)) := by
+  let e : EuclideanSpace ℝ (Fin d) ≃L[ℝ] RealVector d :=
+    EuclideanSpace.equiv (Fin d) ℝ
+  let e2 : EuclideanSpace ℝ (Fin 2) ≃L[ℝ] RealPlane :=
+    (EuclideanSpace.equiv (Fin 2) ℝ).trans (ContinuousLinearEquiv.finTwoArrow ℝ ℝ)
+  let g : ∀ a : Fin d, EuclideanSpace ℝ (Fin 2) → ℝ :=
+    fun a z => f a (e2 z)
+  let π : ∀ a : Fin d,
+      (EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d)) →L[ℝ]
+        EuclideanSpace ℝ (Fin 2) := fun a =>
+    e2.symm.toContinuousLinearMap.comp
+      (((ContinuousLinearMap.proj a).comp
+          (e.toContinuousLinearMap.comp
+            (ContinuousLinearMap.fst ℝ (EuclideanSpace ℝ (Fin d))
+              (EuclideanSpace ℝ (Fin d))))).prod
+        ((ContinuousLinearMap.proj a).comp
+          (e.toContinuousLinearMap.comp
+            (ContinuousLinearMap.snd ℝ (EuclideanSpace ℝ (Fin d))
+              (EuclideanSpace ℝ (Fin d))))))
+  have hg : ∀ a, MemW0 (g a) := by
+    intro a
+    exact aux_memW0_comp_continuousLinearEquiv (hf a) e2
+  have hπ : Function.Injective (ContinuousLinearMap.pi π) := by
+    intro u v huv
+    apply Prod.ext
+    · apply e.injective
+      funext a
+      have ha := congrFun huv a
+      have ha' := congrArg e2 ha
+      change (e u.1 a, e u.2 a) = (e v.1 a, e v.2 a) at ha'
+      exact congrArg Prod.fst ha'
+    · apply e.injective
+      funext a
+      have ha := congrFun huv a
+      have ha' := congrArg e2 ha
+      change (e u.1 a, e u.2 a) = (e v.1 a, e v.2 a) at ha'
+      exact congrArg Prod.snd ha'
+  have hE : MemW0 (fun uv :
+      EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) =>
+      ∏ a, g a (π a uv)) :=
+    MemW0.aux_fintype_tensor_comp_injective hg π hπ
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (EuclideanSpace ℝ (Fin d))) := by infer_instance
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d))) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector d)) :=
+    isAddHaarMeasure_volume_pi (Fin d)
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (RealVector d × RealVector d)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  have hraw : MemW0 (fun y : RealVector d × RealVector d =>
+      (∏ a, g a (π a ((e.prodCongr e).symm y)))) :=
+    hE.aux_comp_continuousLinearEquiv_between_of_integrable_radius
+      (e.prodCongr e).symm
+      (aux_integrable_wienerEnvelope_of_integrable' hE.1 zero_lt_one (norm_nonneg _) hE.2)
+  convert hraw using 1
+  funext y
+  apply Finset.prod_congr rfl
+  intro a ha
+  simp [g, π, e, e2]
+
+/-- The product of all Gaussian factors outside one distinguished coordinate. -/
+private noncomputable def aux_positiveTermsOutside {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) (j : ℤ) : MKernel (γ.k - 1) :=
+  let hK : γ.k - 1 + 1 = γ.k := Nat.sub_add_cancel γ.one_le_k
+  let i' : Fin (γ.k - 1 + 1) := Fin.cast hK.symm i
+  fun z => ∏ r : Fin (γ.k - 1),
+    if Fin.cast hK (i'.succAbove r) < i then
+      gammaGaussian γ (Fin.cast hK (i'.succAbove r)) j (z.1 r, z.2 r)
+    else gammaGaussian γ (Fin.cast hK (i'.succAbove r)) (j - 1) (z.1 r, z.2 r)
+
+private theorem aux_positiveTermsOutside_memW0 {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) (j : ℤ) : MemW0 (aux_positiveTermsOutside γ i j) := by
+  let hK : γ.k - 1 + 1 = γ.k := Nat.sub_add_cancel γ.one_le_k
+  let i' : Fin (γ.k - 1 + 1) := Fin.cast hK.symm i
+  let g : Fin (γ.k - 1) → RealPlane → ℝ := fun r v =>
+    if Fin.cast hK (i'.succAbove r) < i then
+      gammaGaussian γ (Fin.cast hK (i'.succAbove r)) j v
+    else gammaGaussian γ (Fin.cast hK (i'.succAbove r)) (j - 1) v
+  have hg : ∀ r, MemW0 (g r) := by
+    intro r
+    dsimp [g]
+    split_ifs
+    · exact aux_gammaGaussian_memW0 γ _ j
+    · exact aux_gammaGaussian_memW0 γ _ (j - 1)
+  have hmain := aux_fintype_plane_product_memW0 (γ.k - 1) g hg
+  simpa [aux_positiveTermsOutside, g, hK, i'] using hmain
+
+private theorem aux_gammaGaussian_nonneg {n : ℕ} (γ : GeometricParameters n)
+    (a : Fin γ.k) (j : ℤ) (v : RealPlane) : 0 ≤ gammaGaussian γ a j v := by
+  unfold gammaGaussian
+  apply aux_twoDimensionalGaussian_nonneg
+  intro r
+  exact aux_spacedSequence_pos (γ.scales_spaced a r) j
+
+private theorem aux_positiveTermsOutside_nonneg {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) (j : ℤ) : ∀ z, 0 ≤ aux_positiveTermsOutside γ i j z := by
+  intro z
+  unfold aux_positiveTermsOutside
+  apply Finset.prod_nonneg
+  intro r hr
+  split_ifs <;> apply aux_gammaGaussian_nonneg
+
+private theorem aux_prod_univ_succAbove_cast {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) (A : Fin γ.k → ℝ) :
+    let hK : γ.k - 1 + 1 = γ.k := Nat.sub_add_cancel γ.one_le_k
+    let i' : Fin (γ.k - 1 + 1) := Fin.cast hK.symm i
+    let e : Fin (γ.k - 1) → Fin γ.k := fun r => Fin.cast hK (i'.succAbove r)
+    (∏ m, A m) = A i * ∏ r : Fin (γ.k - 1), A (e r) := by
+  dsimp
+  let hK : γ.k - 1 + 1 = γ.k := Nat.sub_add_cancel γ.one_le_k
+  let i' : Fin (γ.k - 1 + 1) := Fin.cast hK.symm i
+  let A' : Fin (γ.k - 1 + 1) → ℝ := fun m => A (Fin.cast hK m)
+  have hcast : (∏ m : Fin γ.k, A m) = ∏ m : Fin (γ.k - 1 + 1), A' m := by
+    symm
+    apply Fintype.prod_equiv (finCongr hK) A' A
+    intro m
+    simp [A']
+  calc
+    (∏ m, A m) = ∏ m : Fin (γ.k - 1 + 1), A' m := hcast
+    _ = A' i' * ∏ r : Fin (γ.k - 1), A' (i'.succAbove r) :=
+      Fin.prod_univ_succAbove A' i'
+    _ = A i * ∏ r : Fin (γ.k - 1), A (Fin.cast hK (i'.succAbove r)) := by
+      simp [A', i']
+
+private theorem aux_sandwichKernel_eq_tensorSquareExtension {n : ℕ}
+    (γ : GeometricParameters n) (X : DoubleSequence γ.k) (i : Fin γ.k)
+    (j : ℤ) (f : ℝ → ℝ) (hX : X i j = tensorSquare f) :
+    sandwichKernel γ X i j =
+      tensorSquareExtension γ.k γ.one_le_k i (aux_positiveTermsOutside γ i j) f := by
+  classical
+  funext y
+  let hK : γ.k - 1 + 1 = γ.k := Nat.sub_add_cancel γ.one_le_k
+  let i' : Fin (γ.k - 1 + 1) := Fin.cast hK.symm i
+  let e : Fin (γ.k - 1) → Fin γ.k := fun r => Fin.cast hK (i'.succAbove r)
+  let a : Fin γ.k → ℝ := fun m => gammaGaussian γ m j (y.1 m, y.2 m)
+  let b : Fin γ.k → ℝ := fun m => gammaGaussian γ m (j - 1) (y.1 m, y.2 m)
+  let c : Fin γ.k → ℝ := fun m => tensorSquare f (y.1 m, y.2 m)
+  let B : Fin γ.k → ℝ := fun m => if m < i then a m else if i < m then b m else c m
+  have hcenter : X i j (y.1 i, y.2 i) = c i := by
+    simpa [c] using congrFun hX (y.1 i, y.2 i)
+  have hsandwich : sandwichKernel γ X i j y = ∏ m, B m := by
+    calc
+      sandwichKernel γ X i j y =
+          (∏ m ∈ Finset.univ.filter (fun m => m < i), a m) *
+            X i j (y.1 i, y.2 i) *
+          ∏ m ∈ Finset.univ.filter (fun m => i < m), b m := by rfl
+      _ = (∏ m ∈ Finset.univ.filter (fun m => m < i), a m) * c i *
+          ∏ m ∈ Finset.univ.filter (fun m => i < m), b m := by rw [hcenter]
+      _ = ∏ m, B m := (aux_sandwich_factor i a b c).symm
+  have hsplit : (∏ m, B m) = B i * ∏ r : Fin (γ.k - 1), B (e r) := by
+    exact aux_prod_univ_succAbove_cast γ i B
+  have houtside : aux_positiveTermsOutside γ i j
+      (aux_eraseVector γ.k γ.one_le_k i y.1,
+        aux_eraseVector γ.k γ.one_le_k i y.2) =
+      ∏ r : Fin (γ.k - 1), B (e r) := by
+    apply Finset.prod_congr rfl
+    intro r hr
+    have hne : e r ≠ i := by
+      intro heq
+      have hcast := congrArg (Fin.cast hK.symm) heq
+      have hs : i'.succAbove r = i' := by simpa [e, i'] using hcast
+      exact Fin.succAbove_ne i' r hs
+    by_cases hlt : e r < i
+    · simp [aux_eraseVector, B, a, b, c, e, i', hlt]
+    · have hgt : i < e r := (lt_or_gt_of_ne hne).resolve_left hlt
+      simp [aux_eraseVector, B, a, b, c, e, i', hlt, hgt]
+  have htensor : tensorSquareExtension γ.k γ.one_le_k i
+      (aux_positiveTermsOutside γ i j) f y =
+      (∏ r : Fin (γ.k - 1), B (e r)) * c i := by
+    change aux_positiveTermsOutside γ i j
+        (aux_eraseVector γ.k γ.one_le_k i y.1,
+          aux_eraseVector γ.k γ.one_le_k i y.2) *
+        tensorSquare f (y.1 i, y.2 i) =
+      (∏ r : Fin (γ.k - 1), B (e r)) * c i
+    rw [houtside]
+  calc
+    sandwichKernel γ X i j y = ∏ m, B m := hsandwich
+    _ = B i * ∏ r : Fin (γ.k - 1), B (e r) := hsplit
+    _ = c i * ∏ r : Fin (γ.k - 1), B (e r) := by simp [B]
+    _ = (∏ r : Fin (γ.k - 1), B (e r)) * c i := mul_comm _ _
+    _ = tensorSquareExtension γ.k γ.one_le_k i (aux_positiveTermsOutside γ i j) f y :=
+      htensor.symm
+
+/-- A sandwich term with a real tensor-square middle factor has nonnegative prism form. -/
+theorem positiveTerms {n : ℕ} (γ : GeometricParameters n)
+    (X : DoubleSequence γ.k) (_hX : MemDoubleSequence γ.k X)
+    (hfactor : ∀ i j, ∃ f : ℝ → ℝ, MemW0 f ∧
+      ∀ u v, X i j (u, v) = f u * f v)
+    (i : Fin γ.k) (j : ℤ)
+    (F : Fin n → SchwartzMap (RealVector n) ℝ)
+    (hF : F ∈ normalizedFunctionTuples n) :
+    0 ≤ prismForm n γ.k γ.one_le_k γ.k_le_n (sandwichKernel γ X i j)
+      (fun a z => F a z) := by
+  rcases hfactor i j with ⟨f, hf, hfactor⟩
+  have hfactor' : X i j = tensorSquare f := by
+    funext v
+    simpa [tensorSquare] using hfactor v.1 v.2
+  rw [aux_sandwichKernel_eq_tensorSquareExtension γ X i j f hfactor']
+  exact positivityM_nonnegative n γ.k γ.one_le_k γ.k_le_n i
+    (aux_positiveTermsOutside γ i j) (aux_positiveTermsOutside_memW0 γ i j)
+    (aux_positiveTermsOutside_nonneg γ i j) f hf F hF
+
+/-- Inserting normalized Gaussian factors around a middle factor preserves its `L¹` norm. -/
+theorem aux_eLpNorm_one_sandwichKernel {n : ℕ} (γ : GeometricParameters n)
+    (X : DoubleSequence γ.k) (i : Fin γ.k) (j : ℤ) (hX : Integrable (X i j)) :
+    eLpNorm (sandwichKernel γ X i j) 1 volume = eLpNorm (X i j) 1 volume := by
+  classical
+  let A : Fin γ.k → RealPlane → ℝ := fun m =>
+    if m < i then gammaGaussian γ m j else
+      if i < m then gammaGaussian γ m (j - 1) else X i j
+  have hA (m : Fin γ.k) : Integrable (A m) := by
+    by_cases hmi : m < i
+    · simpa [A, hmi] using
+        (aux_memW0_integrable_of_addHaar (aux_gammaGaussian_memW0 γ m j))
+    by_cases him : i < m
+    · simpa [A, hmi, him] using
+        (aux_memW0_integrable_of_addHaar (aux_gammaGaussian_memW0 γ m (j - 1)))
+    have hEq : m = i := by omega
+    subst m
+    simpa [A] using hX
+  let P : (Fin γ.k → RealPlane) → ℝ := fun x => ∏ m, A m (x m)
+  have hP : Integrable P := by
+    exact Integrable.fintype_prod_dep hA
+  let e := MeasurableEquiv.arrowProdEquivProdArrow ℝ ℝ (Fin γ.k)
+  have he := MeasureTheory.volume_measurePreserving_arrowProdEquivProdArrow ℝ ℝ (Fin γ.k)
+  have hFP : (sandwichKernel γ X i j) ∘ e = P := by
+    funext x
+    change
+      (∏ m ∈ Finset.univ.filter (fun m => m < i), gammaGaussian γ m j (x m)) *
+          X i j (x i) *
+        ∏ m ∈ Finset.univ.filter (fun m => i < m), gammaGaussian γ m (j - 1) (x m) =
+      ∏ m, A m (x m)
+    symm
+    simp only [A, ite_apply]
+    exact aux_sandwich_factor i
+      (fun m => gammaGaussian γ m j (x m))
+      (fun m => gammaGaussian γ m (j - 1) (x m))
+      (fun m => X i j (x m))
+  have hK : Integrable (sandwichKernel γ X i j) := by
+    apply (he.integrable_comp_emb e.measurableEmbedding).mp
+    rw [hFP]
+    exact hP
+  rw [eLpNorm_one_eq_lintegral_enorm,
+    ← ofReal_integral_norm_eq_lintegral_enorm hK,
+    eLpNorm_one_eq_lintegral_enorm,
+    ← ofReal_integral_norm_eq_lintegral_enorm hX]
+  apply congrArg ENNReal.ofReal
+  have hprod : (∏ m, ∫ x : RealPlane, |A m x|) = ∫ x : RealPlane, |X i j x| := by
+    calc
+      (∏ m, ∫ x : RealPlane, |A m x|) = ∫ x : RealPlane, |A i x| := by
+        apply Finset.prod_eq_single i
+        · intro m hm hmi
+          rcases lt_or_gt_of_ne hmi with hlt | hgt
+          · simpa [A, hlt] using aux_integral_abs_gammaGaussian γ m j
+          · have hnot : ¬ m < i := not_lt_of_ge hgt.le
+            simpa [A, hnot, hgt] using aux_integral_abs_gammaGaussian γ m (j - 1)
+        · simp
+      _ = ∫ x : RealPlane, |X i j x| := by simp [A]
+  have hchange : (∫ x : Fin γ.k → RealPlane,
+      ‖sandwichKernel γ X i j (e x)‖) =
+      ∫ y, ‖sandwichKernel γ X i j y‖ :=
+    he.integral_comp e.measurableEmbedding (fun y => ‖sandwichKernel γ X i j y‖)
+  calc
+    (∫ y, ‖sandwichKernel γ X i j y‖) =
+        ∫ x : Fin γ.k → RealPlane, ‖sandwichKernel γ X i j (e x)‖ := hchange.symm
+    _ = ∫ x : Fin γ.k → RealPlane, |P x| := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      rw [show sandwichKernel γ X i j (e x) = P x from congrFun hFP x]
+      rw [Real.norm_eq_abs]
+    _ = ∫ x : Fin γ.k → RealPlane, ∏ m, |A m (x m)| := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      dsimp [P]
+      rw [Finset.abs_prod]
+    _ = ∏ m, ∫ x : RealPlane, |A m x| := by
+      simpa only using
+        (MeasureTheory.integral_fintype_prod_volume_eq_prod
+          (fun m => fun x : RealPlane => |A m x|))
+    _ = ∫ x : RealPlane, |X i j x| := hprod
+    _ = ∫ x : RealPlane, ‖X i j x‖ := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      rw [Real.norm_eq_abs]
+
+/-- A single sandwich sum telescopes to two Gaussian boundary products. -/
+theorem aux_fixed_telescope {n : ℕ} (γ : GeometricParameters n) (j : ℤ)
+    (y : RealVector γ.k × RealVector γ.k) :
+    (∑ i, sandwichKernel γ (gaussianDifference γ) i j y) =
+      aux_gammaBoundaryProduct γ (j - 1) y - aux_gammaBoundaryProduct γ j y := by
+  unfold sandwichKernel gaussianDifference aux_gammaBoundaryProduct
+  simpa [mul_assoc] using
+    (aux_fin_telescope
+      (fun m => gammaGaussian γ m (j - 1) (y.1 m, y.2 m))
+      (fun m => gammaGaussian γ m j (y.1 m, y.2 m)))
+
+/-- The scale sum of sandwich terms telescopes to its two endpoint products. -/
+theorem aux_double_telescope {n : ℕ} (γ : GeometricParameters n) (J : ℕ)
+    (y : RealVector γ.k × RealVector γ.k) :
+    (∑ j ∈ Finset.range J,
+      (∑ i, sandwichKernel γ (gaussianDifference γ) i (j : ℤ) y)) =
+      aux_gammaBoundaryProduct γ (-1) y - aux_gammaBoundaryProduct γ ((J : ℤ) - 1) y := by
+  simp_rw [aux_fixed_telescope]
+  exact aux_int_telescope (fun j => aux_gammaBoundaryProduct γ j y) J
+
+/-- A kernel sequence with two unit-`L¹` boundary terms has seminorm at most two. -/
+theorem aux_kernelSequenceSeminorm_le_two {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n)
+    (B : ℤ → MKernel k) (M : KernelSequence k)
+    (hB : ∀ j, MemW0 (B j))
+    (hBnorm : ∀ j, eLpNorm (B j) 1 volume = 1)
+    (htel : ∀ J y, (∑ j ∈ Finset.range J, M (j : ℤ) y) =
+      B (-1) y - B ((J : ℤ) - 1) y) :
+    kernelSequenceSeminorm n k hk hkn M ≤ 2 := by
+  unfold kernelSequenceSeminorm
+  refine iSup_le fun J => ?_
+  refine iSup_le fun F => ?_
+  let D : MKernel k := fun y => B (-1) y - B ((J.1 : ℤ) - 1) y
+  have hD : MemW0 D := by
+    exact aux_memW0_sub (hB (-1)) (hB ((J.1 : ℤ) - 1))
+  have hK : MemW0 (mToK k hk D) :=
+    mToK_memW0 n k hk hkn D hD
+  have hDnorm : eLpNorm D 1 volume ≤ 2 := by
+    calc
+      eLpNorm D 1 volume ≤ eLpNorm (B (-1)) 1 volume +
+          eLpNorm (B ((J.1 : ℤ) - 1)) 1 volume := by
+        exact eLpNorm_sub_le (hB (-1)).1.aestronglyMeasurable
+          (hB ((J.1 : ℤ) - 1)).1.aestronglyMeasurable le_rfl
+      _ = 2 := by rw [hBnorm, hBnorm]; norm_num
+  have hKnorm : eLpNorm (mToK k hk D) 1 volume ≤ 2 :=
+    (mToK_eLpNorm_one_le n k hk hkn D hD).trans hDnorm
+  have hprism : ‖prismForm n k hk hkn D (fun i => F.1 i)‖ₑ ≤ 2 := by
+    change ‖prismBrascampLiebForm n k hk hkn (mToK k hk D)
+      (fun i x => F.1 i x)‖ₑ ≤ 2
+    exact (prismBLInequality n k hk hkn (mToK k hk D) hK F.1 F.2).trans hKnorm
+  have hform :
+      prismForm n k hk hkn (fun y => ∑ j ∈ Finset.range J.1, M (j : ℤ) y)
+        (fun i => F.1 i) = prismForm n k hk hkn D (fun i => F.1 i) := by
+    congr 1
+    funext y
+    exact htel J.1 y
+  rw [hform]
+  have hmin : 0 ≤ min 1
+      (Real.rpow (J.1 : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1))) :=
+    le_min zero_le_one (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+  calc
+    ENNReal.ofReal
+        (min 1 (Real.rpow (J.1 : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1))) *
+          |prismForm n k hk hkn D (fun i => F.1 i)|) =
+        ENNReal.ofReal (min 1
+          (Real.rpow (J.1 : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)))) *
+          ‖prismForm n k hk hkn D (fun i => F.1 i)‖ₑ := by
+      rw [ENNReal.ofReal_mul hmin, ← Real.enorm_eq_ofReal_abs]
+    _ ≤ 1 * ‖prismForm n k hk hkn D (fun i => F.1 i)‖ₑ := by
+      gcongr
+      exact ENNReal.ofReal_le_one.mpr (min_le_left _ _)
+    _ ≤ 1 * 2 := by gcongr
+    _ = 2 := by norm_num
+
+/--
+\begin{proposition}[telescoping terms]\label{telescoping terms}
+Let $\gamma=(k,u,a)\in \Gamma$. Then $Y_\gamma\in \mathcal X_k$ and
+\[\left\|\sum_{i\in[k)}\mathcal M(\gamma,Y_\gamma,i)\right\|_{\rm M(k)}\le 2.\]
+\end{proposition}
+-/
+theorem telescopingTerms {n : ℕ} (γ : GeometricParameters n) :
+    MemDoubleSequence γ.k (gaussianDifference γ) ∧
+      kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
+        (fun j => ∑ i, sandwichKernel γ (gaussianDifference γ) i j) ≤ 2 := by
+  refine ⟨aux_gaussianDifference_mem γ, ?_⟩
+  exact aux_kernelSequenceSeminorm_le_two γ.one_le_k γ.k_le_n
+    (aux_gammaBoundaryProduct γ)
+    (fun j => ∑ i, sandwichKernel γ (gaussianDifference γ) i j)
+    (fun j => aux_gammaBoundaryProduct_memW0 γ j)
+    (fun j => aux_eLpNorm_one_gammaBoundaryProduct γ j)
+    (fun J y => by
+      simpa only [Finset.sum_apply] using aux_double_telescope γ J y)
+
 end
 
 end Codex.MainArgument.SandwichKernel

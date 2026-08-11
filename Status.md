@@ -176,7 +176,7 @@ Lean file: MainArgument/SandwichKernel.lean
 #### Theorems
 
 \label{telescoping terms}: [Proof completed] (Lean: telescopingTerms) (2026-08-10 23:06:21 EDT)
-\label{positive terms}: [Todo] (Lean: positiveTerms) (2026-08-09 10:00:00 EDT)
+\label{positive terms}: [Proof completed] (Lean: positiveTerms) (2026-08-11 08:21:28 EDT)
 
 ### Multipliers $H$, $L$, $N$
 
@@ -196,14 +196,14 @@ Lean file: MainArgument/MultipliersHLN.lean
 
 \label{square root Gaussian difference W0}: [Proof completed] (Lean: squareRootGaussianDifference_memW0, sMultiplier_memW0) (2026-08-10 23:13:23 EDT)
 \label{H-in-X}: [Proof completed] (Lean: hMultiplier_memDoubleSequence) (2026-08-10 23:18:44 EDT)
-\label{H vanishing}: [Todo] (Lean: hMultiplier_vanishing) (2026-08-09 10:00:00 EDT)
-\label{H vanishing integral}: [Todo] (Lean: hMultiplier_vanishingIntegral) (2026-08-09 10:00:00 EDT)
-\label{L:F_t}: [Todo] (Lean: lMultiplierAtScale_memDoubleSequence, lMultiplierAtScale_tendsto_hMultiplier) (2026-08-09 10:00:00 EDT)
-\label{L:ft-infty}: [Todo] (Lean: lMultiplierAtScale_tendsto_zero) (2026-08-09 10:00:00 EDT)
-\label{sum L multiplier convergence-L1}: [Todo] (Lean: sumLMultiplierConvergenceL1) (2026-08-09 10:00:00 EDT)
-\label{sandwich sums L1}: [Todo] (Lean: sandwichSumsL1) (2026-08-09 10:00:00 EDT)
-\label{prism sum le sum prism-L1}: [Todo] (Lean: prismSumLeSumPrismL1) (2026-08-09 10:00:00 EDT)
-\label{auto:N-kernel-well-definedness}: [Todo] (Lean: nKernelWellDefinedness) (2026-08-09 10:00:00 EDT)
+\label{H vanishing}: [Proof completed] (Lean: hMultiplier_fourier_diagonal_vanishing) (2026-08-10 23:51:09 EDT)
+\label{H vanishing integral}: [Proof completed] (Lean: hMultiplier_vanishing_integral) (2026-08-11 00:08:24 EDT)
+\label{L:F_t}: [Proof completed] (Lean: lMultiplierAtScale_memDoubleSequence, lMultiplierAtScale_tendsto_hMultiplier) (2026-08-11 01:08:56 EDT)
+\label{L:ft-infty}: [Proof completed] (Lean: lMultiplierAtScale_tendsto_zero) (2026-08-11 01:51:17 EDT)
+\label{sum L multiplier convergence-L1}: [Proof completed] (Lean: sumLMultiplierConvergenceL1) (2026-08-11 02:52:21 EDT)
+\label{sandwich sums L1}: [Proof completed] (Lean: sandwichSumsL1) (2026-08-11 03:34:01 EDT)
+\label{prism sum le sum prism-L1}: [Proof completed] (Lean: prismSumLeSumPrismL1) (2026-08-11 04:13:12 EDT)
+\label{auto:N-kernel-well-definedness}: [Proof completed] (Lean: nKernelWellDefinedness) (2026-08-11 05:04:33 EDT)
 
 ### Gaussian domination
 
@@ -211,12 +211,12 @@ Lean file: MainArgument/GaussianDomination.lean
 
 #### Theorems
 
-\label{H kernel estimate Gaussian domination}: [Todo] (Lean: hKernelEstimateGaussianDomination) (2026-08-09 10:00:00 EDT)
-\label{constant H kernel estimate Gaussian domination}: [Todo] (Lean: constantHKernelEstimateGaussianDomination) (2026-08-09 10:00:00 EDT)
-\label{H kernel derivative estimate Gaussian domination}: [Todo] (Lean: hKernelDerivativeEstimateGaussianDomination) (2026-08-09 10:00:00 EDT)
-\label{constant H kernel derivative estimate Gaussian domination}: [Todo] (Lean: constantHKernelDerivativeEstimateGaussianDomination) (2026-08-09 10:00:00 EDT)
+\label{H kernel estimate Gaussian domination}: [Proof completed] (Lean: hKernelEstimateGaussianDomination) (2026-08-11 05:18:27 EDT)
+\label{constant H kernel estimate Gaussian domination}: [Proof completed] (Lean: constantHKernelEstimateGaussianDomination) (2026-08-11 05:25:48 EDT)
+\label{H kernel derivative estimate Gaussian domination}: [Proof completed] (Lean: hKernelDerivativeEstimateGaussianDomination) (2026-08-11 06:17:54 EDT)
+\label{constant H kernel derivative estimate Gaussian domination}: [Proof completed] (Lean: constantHKernelDerivativeEstimateGaussianDomination) (2026-08-11 06:28:08 EDT)
 \label{Gaussian domination combined}: [Todo] (Lean: gaussianDominationCombined) (2026-08-09 10:00:00 EDT)
-\label{Gauss domination case 1}: [Todo] (Lean: gaussDominationCase1) (2026-08-09 10:00:00 EDT)
+\label{Gauss domination case 1}: [Proof completed] (Lean: gaussDominationCase1) (2026-08-11 11:16:34 EDT)
 \label{Gauss domination case 2}: [Todo] (Lean: gaussDominationCase2) (2026-08-09 10:00:00 EDT)
 \label{Gauss domination case 3}: [Todo] (Lean: gaussDominationCase3) (2026-08-09 10:00:00 EDT)
 \label{Gauss domination constant}: [Todo] (Lean: gaussDominationConstant) (2026-08-09 10:00:00 EDT)

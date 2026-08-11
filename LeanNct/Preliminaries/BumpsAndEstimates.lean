@@ -14225,9 +14225,10 @@ theorem aux_C_meanFourScaleGaussianKernel_bound (N : ℕ) :
         _ = (2 : ℝ) ^ (30 * (N + 1) ^ 3) := by
           congr 1
 
-/-- The sharp finite-order mean four-scale Gaussian-kernel constant estimate. -/
-theorem aux_C_meanFourScaleGaussianKernel_two_lt :
-    C_meanFourScaleGaussianKernel 2 < (2 : ℝ) ^ 45 := by
+/-- The exact finite numerical upper bound at order two for the mean four-scale
+Gaussian-kernel constant. -/
+theorem aux_C_meanFourScaleGaussianKernel_two_lt_value :
+    C_meanFourScaleGaussianKernel 2 < 20397963318112 := by
   have hM : aux_maxUpTo C_gaussianBumpEstimate 2 < 124 := by
     apply aux_mean_maxUpTo_lt
     intro n hn
@@ -14264,7 +14265,12 @@ theorem aux_C_meanFourScaleGaussianKernel_two_lt :
     5 * 8 * aux_maxUpTo C_gaussianBumpEstimate 2 +
         4 * 8 * aux_maxUpTo (fun n => (2 : ℝ) ^ n * C_secondGaussianEstimate n) 2 <
         5 * 8 * 124 + 4 * 8 * (4 * 159359088384) := add_lt_add hfirst hsecond
-    _ < (2 : ℝ) ^ 45 := by norm_num
+    _ = 20397963318112 := by norm_num
+
+/-- The sharp finite-order mean four-scale Gaussian-kernel constant estimate. -/
+theorem aux_C_meanFourScaleGaussianKernel_two_lt :
+    C_meanFourScaleGaussianKernel 2 < (2 : ℝ) ^ 45 :=
+  aux_C_meanFourScaleGaussianKernel_two_lt_value.trans (by norm_num)
 
 /-- Source label `\ref{constant mean four scale Gaussian kernel}`. -/
 theorem constantMeanFourScaleGaussianKernel :
