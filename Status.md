@@ -243,7 +243,7 @@ Lean file: MainArgument/MainInduction.lean
 \label{P:C_k-induction}: [Todo] (Lean: inductPositiveTermsByInduction) (2026-08-09 10:00:00 EDT)
 \label{P:better-induction}: [Todo] (Lean: betterInduction) (2026-08-09 10:00:00 EDT)
 \label{induct positive terms theorem}: [Todo] (Lean: inductPositiveTermsTheorem) (2026-08-09 10:00:00 EDT)
-\label{constant induct positive terms theorem}: [Todo] (Lean: constantInductPositiveTermsTheorem) (2026-08-09 10:00:00 EDT)
+\label{constant induct positive terms theorem}: [Proof completed] (Lean: constantInductPositiveTermsTheorem) (2026-08-11 17:37:33 EDT)
 
 ## Reduction to the main argument
 

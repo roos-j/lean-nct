@@ -693,6 +693,37 @@ private theorem aux_fintype_plane_product_memW0 (d : ℕ)
   intro a ha
   simp [g, π, e, e2]
 
+/-- A sandwich built from coordinatewise Wiener factors is a kernel sequence. -/
+theorem sandwichKernel_memKernelSequence {n : ℕ} (γ : GeometricParameters n)
+    (X : DoubleSequence γ.k) (hX : MemDoubleSequence γ.k X) (i : Fin γ.k) :
+    MemKernelSequence γ.k (sandwichKernel γ X i) := by
+  intro j
+  let A : Fin γ.k → RealPlane → ℝ := fun m =>
+    if m < i then gammaGaussian γ m j else
+      if i < m then gammaGaussian γ m (j - 1) else X i j
+  have hA (m : Fin γ.k) : MemW0 (A m) := by
+    by_cases hmi : m < i
+    · simpa [A, hmi] using aux_gammaGaussian_memW0 γ m j
+    by_cases him : i < m
+    · simpa [A, hmi, him] using aux_gammaGaussian_memW0 γ m (j - 1)
+    have hm : m = i := by omega
+    subst m
+    simpa [A] using hX i j
+  have hprod : MemW0 (fun y : RealVector γ.k × RealVector γ.k =>
+      ∏ m, A m (y.1 m, y.2 m)) :=
+    aux_fintype_plane_product_memW0 γ.k A hA
+  convert hprod using 1
+  funext y
+  let a : Fin γ.k → ℝ := fun m => gammaGaussian γ m j (y.1 m, y.2 m)
+  let b : Fin γ.k → ℝ := fun m => gammaGaussian γ m (j - 1) (y.1 m, y.2 m)
+  let c : Fin γ.k → ℝ := fun m => X i j (y.1 m, y.2 m)
+  dsimp only [sandwichKernel, A, a, b, c]
+  simp only [ite_apply]
+  change (∏ m ∈ Finset.univ.filter (fun m => m < i), a m) * c i *
+      ∏ m ∈ Finset.univ.filter (fun m => i < m), b m =
+    ∏ m, if m < i then a m else if i < m then b m else c m
+  exact (aux_sandwich_factor i a b c).symm
+
 /-- The product of all Gaussian factors outside one distinguished coordinate. -/
 private noncomputable def aux_positiveTermsOutside {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) : MKernel (γ.k - 1) :=

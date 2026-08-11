@@ -186,6 +186,14 @@ noncomputable def C_inductPositiveTermsImplyIncreaseData : ℝ :=
   (2 : ℝ) ^ (10 : ℕ) * C_gaussianDominationCombinedCard *
     (1 + C_gaussianDominationCombinedDistance) ^ (2 : ℕ) * C_gaussianDominationCombined
 
+/-- Source label `\ref{constant induct positive terms imply increase data}`. -/
+theorem constantInductPositiveTermsImplyIncreaseData :
+    C_inductPositiveTermsImplyIncreaseData < (2 : ℝ) ^ (172 : ℕ) := by
+  unfold C_inductPositiveTermsImplyIncreaseData
+    C_gaussianDominationCombinedCard C_gaussianDominationCombinedDistance
+    C_gaussianDominationCombined
+  norm_num
+
 /-- This auxiliary positivity fact is needed when taking square roots of the
 constant in the reverse induction estimates. -/
 theorem aux_C_inductPositiveTermsImplyIncreaseData_pos :
@@ -208,8 +216,10 @@ theorem aux_one_le_C_inductPositiveTermsImplyIncreaseData :
 /-- Constant used by Proposition \ref{P:better-induction}, formalized by
 `betterInduction`. -/
 noncomputable def C_betterInduction (k : ℕ) : ℝ :=
-  ((2 : ℝ) ^ (10 : ℕ) * (k + 2 : ℕ) *
-      Real.sqrt C_inductPositiveTermsImplyIncreaseData + Real.sqrt 2) ^ (2 : ℕ)
+  ((2 : ℝ) ^ (15 : ℕ) * (k + 2 : ℕ) *
+      Real.sqrt
+        (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) +
+    Real.sqrt 2) ^ (2 : ℕ)
 
 /-- This auxiliary positivity fact supplies the admissibility condition on the
 constant in `betterInduction`. -/
@@ -224,29 +234,77 @@ theorem aux_C_betterInduction_pos (k : ℕ) : 0 < C_betterInduction k := by
 when `betterInduction` invokes the preceding induction implication. -/
 theorem aux_one_le_C_betterInduction (k : ℕ) : 1 ≤ C_betterInduction k := by
   unfold C_betterInduction
-  have hmain : 0 ≤ (2 : ℝ) ^ (10 : ℕ) * (k + 2 : ℕ) *
-      Real.sqrt C_inductPositiveTermsImplyIncreaseData := by
+  have hmain : 0 ≤ (2 : ℝ) ^ (15 : ℕ) * (k + 2 : ℕ) *
+      Real.sqrt
+        (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) := by
     positivity
   have hroot : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg _
-  have hsum : Real.sqrt 2 ≤ (2 : ℝ) ^ (10 : ℕ) * (k + 2 : ℕ) *
-      Real.sqrt C_inductPositiveTermsImplyIncreaseData + Real.sqrt 2 := by
+  have hsum : Real.sqrt 2 ≤ (2 : ℝ) ^ (15 : ℕ) * (k + 2 : ℕ) *
+      Real.sqrt
+        (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) +
+        Real.sqrt 2 := by
     linarith
-  have hsumnonneg : 0 ≤ (2 : ℝ) ^ (10 : ℕ) * (k + 2 : ℕ) *
-      Real.sqrt C_inductPositiveTermsImplyIncreaseData + Real.sqrt 2 := by
+  have hsumnonneg : 0 ≤ (2 : ℝ) ^ (15 : ℕ) * (k + 2 : ℕ) *
+      Real.sqrt
+        (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) +
+        Real.sqrt 2 := by
     positivity
   have hsqrt : (Real.sqrt 2) ^ (2 : ℕ) = 2 := by
     rw [Real.sq_sqrt (by norm_num)]
   calc
     1 ≤ (Real.sqrt 2) ^ (2 : ℕ) := by rw [hsqrt]; norm_num
-    _ ≤ ((2 : ℝ) ^ (10 : ℕ) * (k + 2 : ℕ) *
-        Real.sqrt C_inductPositiveTermsImplyIncreaseData + Real.sqrt 2) ^ (2 : ℕ) :=
+    _ ≤ ((2 : ℝ) ^ (15 : ℕ) * (k + 2 : ℕ) *
+        Real.sqrt
+          (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) +
+        Real.sqrt 2) ^ (2 : ℕ) :=
       (sq_le_sq₀ hroot hsumnonneg).2 hsum
 
 /-- Constant in Theorem \ref{induct positive terms theorem}, formalized by
 `inductPositiveTermsTheorem`. -/
 noncomputable def C_inductPositiveTermsTheorem : ℝ :=
-  ((2 : ℝ) ^ (12 : ℕ) * Real.sqrt C_inductPositiveTermsImplyIncreaseData +
+  ((2 : ℝ) ^ (17 : ℕ) *
+      Real.sqrt
+        (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) +
     Real.sqrt 2) ^ (2 : ℕ)
+
+/-- Source label `\ref{constant induct positive terms theorem}`. -/
+theorem constantInductPositiveTermsTheorem :
+    C_inductPositiveTermsTheorem < (2 : ℝ) ^ (359 : ℕ) := by
+  unfold C_inductPositiveTermsTheorem
+  have hproduct :
+      C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData =
+        ((18 : ℝ) * (2 : ℝ) ^ (158 : ℕ)) ^ (2 : ℕ) := by
+    unfold C_inductPositiveTermsImplyIncreaseData
+      C_gaussianDominationCombinedCard C_gaussianDominationCombinedDistance
+      C_gaussianDominationCombined
+    norm_num
+  rw [hproduct, Real.sqrt_sq_eq_abs, abs_of_nonneg (by positivity)]
+  have hsqrt : Real.sqrt 2 < (2 : ℝ) ^ (175 : ℕ) := by
+    calc
+      Real.sqrt 2 < 2 := by
+        rw [Real.sqrt_lt' (by norm_num : (0 : ℝ) < 2)]
+        norm_num
+      _ ≤ (2 : ℝ) ^ (175 : ℕ) := by norm_num
+  have hsum :
+      (2 : ℝ) ^ (17 : ℕ) * ((18 : ℝ) * (2 : ℝ) ^ (158 : ℕ)) + Real.sqrt 2 <
+        (19 : ℝ) * (2 : ℝ) ^ (175 : ℕ) := by
+    calc
+      (2 : ℝ) ^ (17 : ℕ) * ((18 : ℝ) * (2 : ℝ) ^ (158 : ℕ)) + Real.sqrt 2 =
+          (18 : ℝ) * (2 : ℝ) ^ (175 : ℕ) + Real.sqrt 2 := by norm_num
+      _ < (18 : ℝ) * (2 : ℝ) ^ (175 : ℕ) + (2 : ℝ) ^ (175 : ℕ) := by gcongr
+      _ = (19 : ℝ) * (2 : ℝ) ^ (175 : ℕ) := by ring
+  calc
+    ((2 : ℝ) ^ (17 : ℕ) * ((18 : ℝ) * (2 : ℝ) ^ (158 : ℕ)) + Real.sqrt 2) ^ (2 : ℕ) <
+        ((19 : ℝ) * (2 : ℝ) ^ (175 : ℕ)) ^ (2 : ℕ) :=
+      (sq_lt_sq₀ (by positivity) (by positivity)).mpr hsum
+    _ = (19 : ℝ) ^ (2 : ℕ) * (2 : ℝ) ^ (175 * 2 : ℕ) := by
+      rw [mul_pow, ← pow_mul]
+    _ = (361 : ℝ) * (2 : ℝ) ^ (350 : ℕ) := by norm_num
+    _ < (2 : ℝ) ^ (9 : ℕ) * (2 : ℝ) ^ (350 : ℕ) := by
+      gcongr
+      norm_num
+    _ = (2 : ℝ) ^ (359 : ℕ) := by
+      rw [← pow_add]
 
 /-- This auxiliary positivity fact supplies the admissibility condition on the
 constant in `inductPositiveTermsTheorem`. -/
@@ -263,22 +321,29 @@ constant used in the final `inductPositiveTermsTheorem`. -/
 theorem aux_one_le_C_inductPositiveTermsTheorem :
     1 ≤ C_inductPositiveTermsTheorem := by
   unfold C_inductPositiveTermsTheorem
-  have hmain : 0 ≤ (2 : ℝ) ^ (12 : ℕ) *
-      Real.sqrt C_inductPositiveTermsImplyIncreaseData := by
+  have hmain : 0 ≤ (2 : ℝ) ^ (17 : ℕ) *
+      Real.sqrt
+        (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) := by
     positivity
   have hroot : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg _
-  have hsum : Real.sqrt 2 ≤ (2 : ℝ) ^ (12 : ℕ) *
-      Real.sqrt C_inductPositiveTermsImplyIncreaseData + Real.sqrt 2 := by
+  have hsum : Real.sqrt 2 ≤ (2 : ℝ) ^ (17 : ℕ) *
+      Real.sqrt
+        (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) +
+        Real.sqrt 2 := by
     linarith
-  have hsumnonneg : 0 ≤ (2 : ℝ) ^ (12 : ℕ) *
-      Real.sqrt C_inductPositiveTermsImplyIncreaseData + Real.sqrt 2 := by
+  have hsumnonneg : 0 ≤ (2 : ℝ) ^ (17 : ℕ) *
+      Real.sqrt
+        (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) +
+        Real.sqrt 2 := by
     positivity
   have hsqrt : (Real.sqrt 2) ^ (2 : ℕ) = 2 := by
     rw [Real.sq_sqrt (by norm_num)]
   calc
     1 ≤ (Real.sqrt 2) ^ (2 : ℕ) := by rw [hsqrt]; norm_num
-    _ ≤ ((2 : ℝ) ^ (12 : ℕ) *
-        Real.sqrt C_inductPositiveTermsImplyIncreaseData + Real.sqrt 2) ^ (2 : ℕ) :=
+    _ ≤ ((2 : ℝ) ^ (17 : ℕ) *
+        Real.sqrt
+          (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) +
+        Real.sqrt 2) ^ (2 : ℕ) :=
       (sq_le_sq₀ hroot hsumnonneg).2 hsum
 
 /-- Output constant from Proposition \ref{vanishing diagonal implies induct positive terms},
@@ -298,7 +363,10 @@ theorem aux_one_le_C_vanishingDiagonalImpliesInductPositiveTerms (k : ℕ) {C : 
 /-- Output constant from Proposition \ref{increase data implies diagonal band}, formalized by
 `increaseData_implies_diagonalBand`. -/
 noncomputable def C_increaseDataImpliesDiagonalBand (k n : ℕ) (C : ℝ) : ℝ :=
-  if k < n - 1 then (2 : ℝ) ^ (10 : ℕ) * Real.sqrt C else (2 : ℝ) ^ (10 : ℕ) * C
+  if k < n - 1 then
+    (2 : ℝ) ^ (15 : ℕ) * Real.sqrt C_gaussianDominationCombined * Real.sqrt C
+  else
+    (2 : ℝ) ^ (10 : ℕ) * C
 
 /-- This auxiliary bound verifies the `C ∈ [1,∞)` side condition for the
 two constants in `increaseData_implies_diagonalBand`. -/
@@ -307,10 +375,15 @@ theorem aux_one_le_C_increaseDataImpliesDiagonalBand (k n : ℕ) {C : ℝ}
   unfold C_increaseDataImpliesDiagonalBand
   split_ifs
   · calc
-      1 ≤ Real.sqrt C := (Real.one_le_sqrt).2 hC
-      _ ≤ (2 : ℝ) ^ (10 : ℕ) * Real.sqrt C := by
-        simpa using (mul_le_mul_of_nonneg_right
-          (show (1 : ℝ) ≤ (2 : ℝ) ^ (10 : ℕ) by norm_num) (Real.sqrt_nonneg C))
+      1 ≤ Real.sqrt C_gaussianDominationCombined * Real.sqrt C := by
+        apply one_le_mul_of_one_le_of_one_le
+        · rw [C_gaussianDominationCombined]
+          norm_num
+        · exact (Real.one_le_sqrt).2 hC
+      _ ≤ (2 : ℝ) ^ (15 : ℕ) * Real.sqrt C_gaussianDominationCombined *
+          Real.sqrt C := by
+        nlinarith [mul_nonneg (Real.sqrt_nonneg C_gaussianDominationCombined)
+          (Real.sqrt_nonneg C)]
   · calc
       1 ≤ C := hC
       _ ≤ (2 : ℝ) ^ (10 : ℕ) * C := by
@@ -325,8 +398,9 @@ noncomputable def C_inductPositiveTermsByInduction (n : ℕ) : ℕ → ℝ
       (2 : ℝ) + ((n - 1 : ℕ) : ℝ) * (2 : ℝ) ^ (10 : ℕ) *
         C_inductPositiveTermsImplyIncreaseData * C_inductPositiveTermsByInduction n 0
   | Nat.succ (Nat.succ r) =>
-      (2 : ℝ) + ((n - (r + 2) : ℕ) : ℝ) * (2 : ℝ) ^ (10 : ℕ) *
-      Real.sqrt
+      (2 : ℝ) + ((n - (r + 2) : ℕ) : ℝ) * (2 : ℝ) ^ (15 : ℕ) *
+      Real.sqrt C_gaussianDominationCombined *
+        Real.sqrt
           (C_inductPositiveTermsImplyIncreaseData *
             C_inductPositiveTermsByInduction n (r + 1))
 
@@ -355,10 +429,11 @@ theorem aux_one_le_C_inductPositiveTermsByInduction (n r : ℕ) :
             linarith
           have hinc : 0 ≤ C_inductPositiveTermsImplyIncreaseData :=
             aux_C_inductPositiveTermsImplyIncreaseData_pos.le
-          have hnonneg : 0 ≤ ((n - (r + 2) : ℕ) : ℝ) * (2 : ℝ) ^ (10 : ℕ) *
-              Real.sqrt
-                (C_inductPositiveTermsImplyIncreaseData *
-                  C_inductPositiveTermsByInduction n (r + 1)) := by
+          have hnonneg : 0 ≤ ((n - (r + 2) : ℕ) : ℝ) * (2 : ℝ) ^ (15 : ℕ) *
+              Real.sqrt C_gaussianDominationCombined *
+                Real.sqrt
+                  (C_inductPositiveTermsImplyIncreaseData *
+                    C_inductPositiveTermsByInduction n (r + 1)) := by
             positivity
           linarith
 

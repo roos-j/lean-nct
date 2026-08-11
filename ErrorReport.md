@@ -105,3 +105,17 @@ With the verified shared Lean cap 36, the defining value is
 (The prior shared cap 30 already also exceeded that bound.) The direct
 replacement bound is `< 2^172`, a factor-two relaxation. The blueprint text
 is left unchanged.
+
+## `constant induct positive terms theorem`: final constant bound
+
+Reported: 2026-08-11 17:37:33 EDT. Source: `blueprint/blueprint.tex`,
+lines 4983--5006.
+
+With the verified shared cap `C_gaussianDominationCombinedCard = 36`, the
+aligned defining value has
+`C_inductPositiveTermsImplyIncreaseData = 324 * 2^163`. Hence the leading
+summand in the final constant is
+`2^17 * sqrt(2^153 * 324 * 2^163) = 18 * 2^175`, whose square is
+`324 * 2^350 = (324 / 256) * 2^358 > 2^358`. Thus the manuscript bound
+`< (253 / 256) * 2^358 < 2^358` is false; Lean proves `< 2^359`, a
+factor-two relaxation. The blueprint text is left unchanged.

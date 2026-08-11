@@ -26,3 +26,4 @@ layout_metadata.json
 diagnostic-*.md
 graph-*.json
 Old*
+dependencygraph-*
