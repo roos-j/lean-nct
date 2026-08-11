@@ -215,11 +215,11 @@ Lean file: MainArgument/GaussianDomination.lean
 \label{constant H kernel estimate Gaussian domination}: [Proof completed] (Lean: constantHKernelEstimateGaussianDomination) (2026-08-11 05:25:48 EDT)
 \label{H kernel derivative estimate Gaussian domination}: [Proof completed] (Lean: hKernelDerivativeEstimateGaussianDomination) (2026-08-11 06:17:54 EDT)
 \label{constant H kernel derivative estimate Gaussian domination}: [Proof completed] (Lean: constantHKernelDerivativeEstimateGaussianDomination) (2026-08-11 06:28:08 EDT)
-\label{Gaussian domination combined}: [Todo] (Lean: gaussianDominationCombined) (2026-08-09 10:00:00 EDT)
+\label{Gaussian domination combined}: [Proof completed] (Lean: gaussianDominationCombined) (2026-08-11 17:11:11 EDT)
 \label{Gauss domination case 1}: [Proof completed] (Lean: gaussDominationCase1) (2026-08-11 11:16:34 EDT)
-\label{Gauss domination case 2}: [Todo] (Lean: gaussDominationCase2) (2026-08-09 10:00:00 EDT)
-\label{Gauss domination case 3}: [Todo] (Lean: gaussDominationCase3) (2026-08-09 10:00:00 EDT)
-\label{Gauss domination constant}: [Todo] (Lean: gaussDominationConstant) (2026-08-09 10:00:00 EDT)
+\label{Gauss domination case 2}: [Proof completed] (Lean: gaussDominationCase2) (2026-08-11 14:54:45 EDT)
+\label{Gauss domination case 3}: [Proof completed] (Lean: gaussDominationCase3) (2026-08-11 16:46:00 EDT)
+\label{Gauss domination constant}: [Proof completed] (Lean: gaussDominationConstant) (2026-08-11 17:02:34 EDT)
 
 ### Main induction
 
@@ -239,7 +239,7 @@ Lean file: MainArgument/MainInduction.lean
 \label{vanishing kernel integral}: [Todo] (Lean: vanishingKernelIntegral) (2026-08-09 10:00:00 EDT)
 \label{increase data implies diagonal band}: [Todo] (Lean: increaseData_implies_diagonalBand) (2026-08-09 10:00:00 EDT)
 \label{induct positive terms imply increase data}: [Todo] (Lean: inductPositiveTerms_implies_increaseData) (2026-08-09 10:00:00 EDT)
-\label{constant induct positive terms imply increase data}: [Todo] (Lean: constantInductPositiveTermsImplyIncreaseData) (2026-08-09 10:00:00 EDT)
+\label{constant induct positive terms imply increase data}: [Proof completed] (Lean: constantInductPositiveTermsImplyIncreaseData) (2026-08-11 17:19:57 EDT)
 \label{P:C_k-induction}: [Todo] (Lean: inductPositiveTermsByInduction) (2026-08-09 10:00:00 EDT)
 \label{P:better-induction}: [Todo] (Lean: betterInduction) (2026-08-09 10:00:00 EDT)
 \label{induct positive terms theorem}: [Todo] (Lean: inductPositiveTermsTheorem) (2026-08-09 10:00:00 EDT)

@@ -40,9 +40,7 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
 - When a displayed absolute constant or cardinality cannot be justified exactly but a directly proved bound is only slightly worse
   (normally by at most a factor of two), retain the proved Lean bound, record the discrepancy in `ErrorReport.md`, and continue.
   Do not hold up the formalization for a sharper constant unless it is needed by a later stated estimate.
-- Ignore LaTeX comments.  Resolve author annotations and mildly unfinished
-  passages in the most reasonable way; often this means simply removing the
-  annotation.
+- Ignore LaTeX comments and author annotations. 
 - Each labeled manuscript definition and theorem must correspond to one, or
   where justified by multiple claims, several Lean definitions/theorems.
 - Use reasonable Lean names based on the source labels and names.  If one
@@ -68,8 +66,6 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
 - Formalize every theorem in scope completely, including a Lean proof.
 - The final theorem at the end of the main induction section, especially the
   induction-on-positive-terms result, must be sorry-free when finished.
-- Routine results whose manuscript proofs refer to a missing appendix must be
-  proved directly; generate the routine proof as needed.
 - You may formalize the statements of theorems first and leave them as sorry while working.
 - A theorem counts as proof-complete only when its proof is sorry-free and
   depends on standard axioms only.
