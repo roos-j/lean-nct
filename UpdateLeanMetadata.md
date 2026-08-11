@@ -1,7 +1,7 @@
 Here are instructions on how to update Lean metadata in the blueprint.
 
 - First make sure Status.md is up to date with the formalization, see Instructions.md.
-- Then go through each entry in Status.md and find it in the current blueprint file (the one with the highest pass number, if there are files with pass numbers),
+- Then go through each entry in Status.md and find it in `blueprint/blueprint.tex`.
 Then you update the \lean and \leanok commands next to that label in the latex file as follows (these commands may or may not be present already):
 If the status is "ToDo", then remove \lean and \leanok commands from that label if they are present (even if there are Lean names listed in Status.md).
 If the status is not "ToDo", the do the following:

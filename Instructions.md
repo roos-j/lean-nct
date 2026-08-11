@@ -6,7 +6,7 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
 ## Scope and file organization
 
 - The `blueprint` folder contains the draft manuscript which forms the basis of the formalization.
-  It contains multiple versions in the format `blueprint-passN.tex` with different pass numbers `N`. You should only use the latest version, with the highest pass number `N`. Do not consult previous versions unless explicitly instructed to do so and in that case only for comparison, never as basis for formalization.
+  The canonical manuscript file is `blueprint/blueprint.tex`.
 - Treat the manuscript's terms *theorem*, *lemma*, and *proposition* as
   synonymous.  Every corresponding Lean result must be declared with
   `theorem`.
@@ -118,7 +118,7 @@ Lean file: PATH HERE
 
 ## Blueprint Lean metadata update
 
-- Whenever you update a `Status.md` entry, you should also update the corresponding Lean metadata in the most recent blueprint file as follows:
+- Whenever you update a `Status.md` entry, you should also update the corresponding Lean metadata in `blueprint/blueprint.tex` as follows:
 find the appropriate label and inside of the def/thm environment update the metadata commands according to the instructions in `UpdateLeanMetadata.md`.
 
 ## Workflow

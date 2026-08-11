@@ -1,4 +1,4 @@
 interface:
   display_name: "Update Dependency Graph"
   short_description: "Regenerate timestamped dependency graph artifacts"
-  default_prompt: "Use $update-dependency-graph to regenerate the latest blueprint dependency graph."
+  default_prompt: "Use $update-dependency-graph to regenerate the dependency graph from blueprint/blueprint.tex."

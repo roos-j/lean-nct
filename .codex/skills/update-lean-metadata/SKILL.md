@@ -1,6 +1,6 @@
 ---
 name: update-lean-metadata
-description: Synchronize label-adjacent `\\lean{...}` and `\\leanok` commands in the latest LaTeX blueprint from the formalization statuses in `Status.md`. Use when asked to update, refresh, or reconcile Lean metadata in a repository containing `Status.md`, `Instructions.md`, and `blueprint/`.
+description: Synchronize label-adjacent `\\lean{...}` and `\\leanok` commands in `blueprint/blueprint.tex` from the formalization statuses in `Status.md`. Use when asked to update, refresh, or reconcile Lean metadata in a repository containing `Status.md`, `Instructions.md`, and `blueprint/`.
 ---
 
 # Update Lean Metadata
@@ -22,13 +22,11 @@ The source note uses `ToDo` in one place; interpret that as the repository's `To
 
 ### 1. Select the source blueprint
 
-Enumerate the `.tex` files in `blueprint/`.
+Use `blueprint/blueprint.tex`.
 
-- If filenames contain pass numbers such as `blueprint-pass5.tex`, select the file with the highest pass number. If multiple files have the same highest pass number, select the most recently modified one.
-- If no filename contains a pass number, select the most recently modified `.tex` file.
-- If no `.tex` file exists, stop; do not modify `Status.md` or create a metadata report without an input blueprint.
+If that file does not exist, stop; do not modify `Status.md` or create a metadata report without an input blueprint.
 
-Record the selected path and selection rule. Treat an unclear filename, an unexpected tie, or a missing source label as a diagnostic issue.
+Record the source path and treat a missing source label as a diagnostic issue.
 
 ### 2. Parse and match status entries
 
