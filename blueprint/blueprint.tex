@@ -3489,6 +3489,8 @@ Estimate each with Propositions \ref{prism BL inequality} and \ref{M to K} and t
 
 
 \begin{proposition}[positive terms]\label{positive terms}\uses{Positivity M}\usesdefs{auto:Wiener-space-definition,normalized function tuples,auto:prism-form-definition,geometric parameters,double sequence of 2D functions,sandwich kernel}
+\lean{positiveTerms}
+\leanok
 Let $\gamma=(k,u,a)\in \Gamma$. Let $X\in \mathcal{X}_k$ and assume for each $i\in [k)$ and  $j\in \Z$ we have
  $X_{i,j}(u,v)=f_{i,j}(u)f_{i,j}(v)$ for some real valued $f_{i,j}\in W_0(\R)$.
 Then for each $i\in [k)$, $j\in\Z$, and for all $\F\in {\mathfrak{F}}$,
@@ -3564,6 +3566,8 @@ This follows from Propositions~\ref{tensor Wiener}, \ref{telescoping terms} and 
 
 
 \begin{proposition}[H vanishing]\label{H vanishing}\uses{Elementary Gaussian properties,square root Gaussian difference W0}\usesdefs{gaussian,geometric parameters,2D Gaussians,auto:Gaussian-difference-kernel-definition,square root Gaussian difference,s multiplier,H multiplier}
+\lean{hMultiplier_fourier_diagonal_vanishing}
+\leanok
     For $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$, and $\xi\in \R$,
 \begin{equation}\label{auto:H-kernel-diagonal-cancellation-Fourier}
     \widehat{(H_{\gamma})_{i,j}}(\xi,-\xi)=0\, .
@@ -3582,6 +3586,8 @@ The formulas above use Proposition \ref{Elementary Gaussian properties}. The pro
 
 
 \begin{proposition}[H vanishing integral]\label{H vanishing integral}\uses{H vanishing}\usesdefs{geometric parameters,H multiplier}
+\lean{hMultiplier_vanishing_integral}
+\leanok
     For $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$, and $z\in \R$,
 \begin{equation}\label{auto:H-kernel-diagonal-cancellation-integral}
    \int_{\R} (H_{\gamma})_{i,j}(z+p,p)\,dp=0.
@@ -3601,7 +3607,10 @@ Let $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$. For $t>0$, we set
 \end{equation}
 \end{definition}
 
-\begin{lemma}\label{L:F_t}\uses{P:schwartz-into-wiener,convolution vector,H-in-X}\usesdefs{standard bump,geometric parameters,double sequence of 2D functions,H multiplier,auto:L-kernel-definition}
+\begin{lemma}\label{L:F_t}
+\lean{lMultiplierAtScale_memDoubleSequence,lMultiplierAtScale_tendsto_hMultiplier}
+\leanok
+\uses{P:schwartz-into-wiener,convolution vector,H-in-X}\usesdefs{standard bump,geometric parameters,double sequence of 2D functions,H multiplier,auto:L-kernel-definition}
 Let $\gamma=(k,u,a)\in \Gamma$ and $t>0$. Then $L_{\gamma,t} \in \mathcal{X}_k$ and for $i\in [k)$, $j\in \Z$, we have
 \begin{equation}\label{auto:L-kernel-small-scale-limit}
 \lim_{t\to 0_+} (L_{\gamma,t})_{i,j} = (H_{\gamma})_{i,j} \quad\text{in}\;L^1.
@@ -3629,7 +3638,10 @@ where
 By the continuity of the $L^1$ norm, we have $\lim_{t\to 0_+} \omega(tq)=0$ for every $q\in \R$. Additionally, $\omega(tq) \leq 2\|(H_{\gamma})_{i,j}\|_1$. Applying the Lebesgue dominated convergence theorem finishes the proof.
 \end{proof}
 
-\begin{lemma}\label{L:ft-infty}\uses{H vanishing integral}\usesdefs{standard bump,geometric parameters,H multiplier,auto:L-kernel-definition}
+\begin{lemma}\label{L:ft-infty}
+\lean{lMultiplierAtScale_tendsto_zero}
+\leanok
+\uses{H vanishing integral}\usesdefs{standard bump,geometric parameters,H multiplier,auto:L-kernel-definition}
 Let $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$, $t>0$. Then
 \begin{equation}\label{auto:L-kernel-large-scale-limit}
 \lim_{t\to \infty} (L_{\gamma,t})_{i,j} = 0 \quad\text{in}\;L^1.
@@ -3696,7 +3708,10 @@ Let $\gamma=(k,u,a)\in \Gamma$ and let $D_\iota \in X$ for $\iota \in \mathcal{I
 where the limit is taken in $X$.
 \end{definition}
 
-\begin{proposition}[Properties of L multipliers]\label{sum L multiplier convergence-L1}\uses{P:schwartz-into-wiener,convolution vector,H-in-X,L:F_t,L:ft-infty}\usesdefs{auto:Wiener-space-definition,geometric parameters,double sequence of 2D functions,H multiplier,auto:L-kernel-definition,L multiplier,summation-definition}
+\begin{proposition}[Properties of L multipliers]\label{sum L multiplier convergence-L1}
+\lean{sumLMultiplierConvergenceL1}
+\leanok
+\uses{P:schwartz-into-wiener,convolution vector,H-in-X,L:F_t,L:ft-infty}\usesdefs{auto:Wiener-space-definition,geometric parameters,double sequence of 2D functions,H multiplier,auto:L-kernel-definition,L multiplier,summation-definition}
 Let $\gamma=(k,u,a)\in \Gamma$ and $\iota \in\mathcal{I}_{\gamma}$. Then
  $L_{\gamma,\iota}$ is a well-defined element of $\mathcal{X}_k$. In addition, if $i
 \in [k)$ and $j\in \Z$ then
@@ -3718,7 +3733,10 @@ Let $N\in \N$ be such that $N>\Delta_\gamma$. Then
 An application of Lemmas~\ref{L:F_t} and~\ref{L:ft-infty} yields~\eqref{E:L2-convergence}.
 \end{proof}
 
-\begin{lemma}\label{sandwich sums L1}\uses{}\usesdefs{geometric parameters,double sequence of 2D functions,2D Gaussians,sandwich kernel,L multiplier,summation-definition}
+\begin{lemma}\label{sandwich sums L1}
+\lean{sandwichSumsL1}
+\leanok
+\uses{}\usesdefs{geometric parameters,double sequence of 2D functions,2D Gaussians,sandwich kernel,L multiplier,summation-definition}
 Let $\gamma=(k,u,a)\in \Gamma$.
 Assume $X, X_\iota\in \mathcal{X}_k$ for $\iota\in \mathcal{I}_{\gamma}$ are such that for every $i\in [k)$, $j\in\Z$, $X_{i,j}=\sum_{\iota\in \mathcal{I}_{\gamma}} (X_\iota)_{i,j}$ holds in $L^1$.
 Then for every $i\in [k), j\in\Z$,
@@ -3744,7 +3762,10 @@ The Gaussian factors have finite $L^1$ norms independent of $N$. The assumed $L^
 \end{proof}
 
 
-\begin{lemma}\label{prism sum le sum prism-L1}\uses{prism BL inequality,M to K}\usesdefs{auto:Wiener-space-definition,normalized function tuples,auto:prism-form-definition,geometric parameters,L multiplier,summation-definition}
+\begin{lemma}\label{prism sum le sum prism-L1}
+\lean{prismSumLeSumPrismL1}
+\leanok
+\uses{prism BL inequality,M to K}\usesdefs{auto:Wiener-space-definition,normalized function tuples,auto:prism-form-definition,geometric parameters,L multiplier,summation-definition}
 Let $\gamma=(k,u,a)\in \Gamma$.
 If $M=\sum_{\iota\in \mathcal{I}_\gamma} M_\iota$ holds in $L^1$ for $M,M_\iota\in W_0((\R^2)^k)$, then for every $\mathbf{F}\in\mathfrak{F}$,
 \begin{equation}\label{auto:prism-form-series-bound} |\Lambda_k(M)(\mathbf{F})| \le \sum_{\iota\in \mathcal{I}_\gamma} |\Lambda_k(M_\iota)(\mathbf{F})|. \end{equation}
@@ -3790,7 +3811,10 @@ For every $\iota\in\mathcal{I}_{\gamma}$ we define $N_{\gamma,\iota}= (N_{\gamma
 \end{equation}
 \end{definition}
 
-\begin{proposition}\label{auto:N-kernel-well-definedness}\uses{four scale Gaussian kernel,H-in-X,convolution vector}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,geometric parameters,double sequence of 2D functions,H multiplier,L multiplier,N multiplier}
+\begin{proposition}\label{auto:N-kernel-well-definedness}
+\lean{nKernelWellDefinedness}
+\leanok
+\uses{four scale Gaussian kernel,H-in-X,convolution vector}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,geometric parameters,double sequence of 2D functions,H multiplier,L multiplier,N multiplier}
 Let $\gamma=(k,u,a)\in \Gamma$ and assume $k\le n-1$. Then for every $\iota\in\mathcal{I}_{\gamma}$, the double sequence $N_{\gamma,\iota}$ is well-defined and belongs to $\mathcal{X}_k$.
 \end{proposition}
 
@@ -3807,7 +3831,10 @@ Thanks to Proposition~\ref{four scale Gaussian kernel}, we have $\rho \in W_0(\R
 
 \subsection{Gaussian domination}
 
-\begin{proposition}[Kernel estimate for Gaussian domination]\label{H kernel estimate Gaussian domination}\uses{Operations on spaced sequences,Properties of distance of sequences,diagonal square root,Gaussian bump decay}\usesdefs{gaussian,bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,auto:Gaussian-difference-kernel-definition,square root Gaussian difference,s multiplier,H multiplier}
+\begin{proposition}[Kernel estimate for Gaussian domination]\label{H kernel estimate Gaussian domination}
+\lean{hKernelEstimateGaussianDomination}
+\leanok
+\uses{Operations on spaced sequences,Properties of distance of sequences,diagonal square root,Gaussian bump decay}\usesdefs{gaussian,bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,auto:Gaussian-difference-kernel-definition,square root Gaussian difference,s multiplier,H multiplier}
 Let $\gamma=(k,u,a)\in \Gamma$ and let $i\in [k)$.
 There exists a finite multiset $\mathcal{P}\subset B_{\mathrm{dist}}(a_i^1,\Delta_\gamma)^2\times [2)$ with $\#\mathcal{P}= 6$ and for every $v\in \R^2$ and $j\in\Z$,
 \begin{equation}\label{auto:H-kernel-Gaussian-domination}|(H_\gamma)_{i,j}|(v) \le C_{\ref{H kernel estimate Gaussian domination}} \sum_{(t_0,t_1,u)\in\mathcal{P}} \langle (W_u v)_0\rangle_{(t_0(j))}^2 \langle (W_u v)_1\rangle_{(t_1(j))}^2, \end{equation}
@@ -3920,7 +3947,10 @@ applying Proposition~\ref{diagonal square root} with $N=2$, we get
 Together Proposition~\ref{Gaussian bump decay} we obtain the claim.
 \end{proof}
 
-\begin{lemma}[constant $C_{\ref{H kernel estimate Gaussian domination}}$ \auto]\label{constant H kernel estimate Gaussian domination}\uses{constant diagonal square root,diagonal square root,Gaussian bump decay,H kernel estimate Gaussian domination}\usesdefs{}
+\begin{lemma}[constant $C_{\ref{H kernel estimate Gaussian domination}}$ \auto]\label{constant H kernel estimate Gaussian domination}
+\lean{constantHKernelEstimateGaussianDomination}
+\leanok
+\uses{constant diagonal square root,diagonal square root,Gaussian bump decay,H kernel estimate Gaussian domination}\usesdefs{}
 \begin{equation}\label{constant H kernel estimate Gaussian domination bound}
 C_{\ref{H kernel estimate Gaussian domination}}
 =51^2\cdot2^{15}+12^2<2^{27}.
@@ -3938,7 +3968,10 @@ C_{\ref{H kernel estimate Gaussian domination}}
 \end{proof}
 
 
-\begin{proposition}[Kernel derivative estimate for Gaussian domination]\label{H kernel derivative estimate Gaussian domination}\uses{H kernel estimate Gaussian domination,diagonal square root,derivative of diagonal square root,Gaussian bump decay}\usesdefs{bracket bump,closed balls in A,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,auto:Gaussian-difference-kernel-definition,s multiplier,H multiplier}
+\begin{proposition}[Kernel derivative estimate for Gaussian domination]\label{H kernel derivative estimate Gaussian domination}
+\lean{hKernelDerivativeEstimateGaussianDomination}
+\leanok
+\uses{H kernel estimate Gaussian domination,diagonal square root,derivative of diagonal square root,Gaussian bump decay}\usesdefs{bracket bump,closed balls in A,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,auto:Gaussian-difference-kernel-definition,s multiplier,H multiplier}
 Let $\gamma=(k,u,a)\in \Gamma$ and let $i\in [k)$.
 There exists a finite multiset $\mathcal{P}\subset B_{\mathrm{dist}}(a_i^1,\Delta_\gamma)^2\times [2)$ with $\#\mathcal{P}\le 6$ and for every $v\in \R^2$ and $j\in\Z$,
     \begin{equation}\label{auto:H-kernel-derivative-Gaussian-domination}|(\partial_0+\partial_1)(H_\gamma)_{i,j}(v)| \le C_{\ref{H kernel derivative estimate Gaussian domination}} \sum_{(t_0,t_1,u)\in\mathcal{P}} (t_0(j)^{-1} + t_1(j)^{-1}) \langle (W_u v)_0\rangle_{(t_0(j))}^2 \langle (W_u v)_1\rangle_{(t_1(j))}^2, \end{equation}
@@ -3993,7 +4026,10 @@ $u=1$, since
 The claim follows from Definition \ref{H multiplier}.
 \end{proof}
 
-\begin{lemma}[constant $C_{\ref{H kernel derivative estimate Gaussian domination}}$ \auto]\label{constant H kernel derivative estimate Gaussian domination}\uses{constant diagonal square root,constant derivative diagonal square root,diagonal square root,derivative of diagonal square root,Gaussian bump decay,H kernel derivative estimate Gaussian domination}\usesdefs{}
+\begin{lemma}[constant $C_{\ref{H kernel derivative estimate Gaussian domination}}$ \auto]\label{constant H kernel derivative estimate Gaussian domination}
+\lean{constantHKernelDerivativeEstimateGaussianDomination}
+\leanok
+\uses{constant diagonal square root,constant derivative diagonal square root,diagonal square root,derivative of diagonal square root,Gaussian bump decay,H kernel derivative estimate Gaussian domination}\usesdefs{}
 \begin{equation}\label{constant H kernel derivative estimate Gaussian domination bound}
 C_{\ref{H kernel derivative estimate Gaussian domination}}
 <2^{30}.
