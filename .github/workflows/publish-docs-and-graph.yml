@@ -1,7 +1,9 @@
 name: Build and publish documentation
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - master
 
 permissions:
   contents: read
@@ -42,33 +44,14 @@ jobs:
           mk_all-check: false
 
       - name: Compile API documentation
-        shell: bash
-        run: |
-          set -euo pipefail
-          docgen_rev="$(cut -d: -f2 < lean-toolchain)"
-          mkdir -p docbuild
-          cat > docbuild/lakefile.toml <<EOF
-          name = "docbuild"
-          reservoir = false
-          version = "0.1.0"
-          packagesDir = "../.lake/packages"
-
-          [[require]]
-          name = "lean-nct"
-          path = "../"
-
-          [[require]]
-          scope = "leanprover"
-          name = "doc-gen4"
-          rev = "$docgen_rev"
-          EOF
-          (
-            cd docbuild
-            MATHLIB_NO_CACHE_ON_UPDATE=1 ~/.elan/bin/lake update lean-nct
-            ~/.elan/bin/lake build LeanNct:docs
-          )
-          mkdir -p docs
-          cp -r docbuild/.lake/build/doc docs/docs
+        uses: leanprover-community/docgen-action@7b5b9a1822650bd45aaeb4182d94bceba2030f89 # 2026-04-14
+        with:
+          api-docs: true
+          blueprint: false
+          build-page: false
+          deploy: false
+          homepage: docs
+          use-github-cache: true
 
       - name: Build dependency graph
         uses: xu-cheng/texlive-action@22c04326a5d855880f9d39bb955138bf11c6df80 # v3
