@@ -1,9 +1,7 @@
 name: Publish dependency graph
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -20,6 +18,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Update dependency graph HTML
+        uses: xu-cheng/texlive-action@v3
+        with:
+          run: |
+            apk add --no-cache graphviz nodejs npm python3
+            npm install --no-save --prefix /tmp/mathjax mathjax-full@3.2.2
+            python3 dependency_graph/latex_to_graph_json.py blueprint/blueprint.tex /tmp/graph.json
+            python3 dependency_graph/graph_json_to_html.py /tmp/graph.json dependency_graph/index.html \
+              --mathjax-js /tmp/mathjax/node_modules/mathjax-full/es5/tex-svg-full.js \
+              --lean-url-pattern 'https://roos-j.github.io/lean-nct/docs/find/?pattern={lean_name}&strict=false#doc'
 
       - name: Prepare Pages artifact
         shell: bash
