@@ -11,3 +11,13 @@ import LeanNct.MainArgument.SandwichKernel
 import LeanNct.MainArgument.MultipliersHLN
 import LeanNct.MainArgument.GaussianDomination
 import LeanNct.MainArgument.MainInduction
+import LeanNct.Reduction.AToLambda
+import LeanNct.Reduction.VariationSeminorms
+import LeanNct.Reduction.BumpFunctions
+import LeanNct.Reduction.WindowsAndPairs
+import LeanNct.Reduction.SmoothingDecomposition
+import LeanNct.Reduction.Miscellany
+import LeanNct.Reduction.OnDiagonalMainArgument
+import LeanNct.Reduction.OnDiagonalOffDiagonal
+import LeanNct.Reduction.TwistedAverages
+import LeanNct.Reduction.FinalReduction

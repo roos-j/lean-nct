@@ -22,6 +22,9 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
   creating one Lean file per leaf subsection, each
   with a reasonable CamelCase filename derived from its title (omitting
   articles), and put that subsection's formalization entirely in that file.
+- Every new non-temporary Lean source file under `LeanNct/` must be added as an
+  explicit import in `LeanNct.lean` when it is created. Temporary scratch files
+  must not be imported there.
 - All new work must be contained in a namespace beginning with `Codex` and
   mirroring the file structure, for example `Codex.Preliminaries.KKernels`.
 - A lot of work has already been done, make sure to inspect the state of the formalization first and continue at the appropriate point.
