@@ -237,12 +237,12 @@ Lean file: MainArgument/MainInduction.lean
 \label{vanishing diagonal implies induct positive terms}: [Proof completed] (Lean: vanishingDiagonal_implies_inductPositiveTerms) (2026-08-11 18:34:43 EDT)
 \label{diagonal band implies vanishing diagonal}: [Proof completed] (Lean: diagonalBand_implies_vanishingDiagonal) (2026-08-11 18:56:18 EDT)
 \label{vanishing kernel integral}: [Proof completed] (Lean: vanishingKernelIntegral) (2026-08-11 18:34:43 EDT)
-\label{increase data implies diagonal band}: [Todo] (Lean: increaseData_implies_diagonalBand) (2026-08-09 10:00:00 EDT)
-\label{induct positive terms imply increase data}: [Todo] (Lean: inductPositiveTerms_implies_increaseData) (2026-08-09 10:00:00 EDT)
+\label{increase data implies diagonal band}: [Proof completed] (Lean: increaseData_implies_diagonalBand) (2026-08-12 01:11:23 EDT)
+\label{induct positive terms imply increase data}: [Proof completed] (Lean: inductPositiveTerms_implies_increaseData) (2026-08-12 00:22:35 EDT)
 \label{constant induct positive terms imply increase data}: [Proof completed] (Lean: constantInductPositiveTermsImplyIncreaseData) (2026-08-11 17:19:57 EDT)
-\label{P:C_k-induction}: [Todo] (Lean: inductPositiveTermsByInduction) (2026-08-09 10:00:00 EDT)
-\label{P:better-induction}: [Todo] (Lean: betterInduction) (2026-08-09 10:00:00 EDT)
-\label{induct positive terms theorem}: [Todo] (Lean: inductPositiveTermsTheorem) (2026-08-09 10:00:00 EDT)
+\label{P:C_k-induction}: [Proof completed] (Lean: inductPositiveTermsByInduction) (2026-08-12 01:11:23 EDT)
+\label{P:better-induction}: [Proof completed] (Lean: betterInduction) (2026-08-12 07:12:24 EDT)
+\label{induct positive terms theorem}: [Proof completed] (Lean: inductPositiveTermsTheorem) (2026-08-12 07:12:24 EDT)
 \label{constant induct positive terms theorem}: [Proof completed] (Lean: constantInductPositiveTermsTheorem) (2026-08-11 17:37:33 EDT)
 
 ## Reduction to the main argument

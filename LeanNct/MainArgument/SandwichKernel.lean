@@ -194,7 +194,243 @@ noncomputable def kernelSequenceSeminorm (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤
       (min 1 (Real.rpow (J.1 : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1))) *
         |prismForm n k hk hkn
           (fun y => ∑ j ∈ Finset.range J.1, M (j : ℤ) y)
-          (fun i => F.1 i)|)
+           (fun i => F.1 i)|)
+
+/-- The kernel-sequence seminorm is homogeneous under a nonnegative scalar. -/
+theorem aux_kernelSequenceSeminorm_const_mul {n k : ℕ} (hk : 1 ≤ k)
+    (hkn : k ≤ n) (c : ℝ) (hc : 0 ≤ c) (M : KernelSequence k) :
+    kernelSequenceSeminorm n k hk hkn (fun j y => c * M j y) =
+      ENNReal.ofReal c * kernelSequenceSeminorm n k hk hkn M := by
+  classical
+  have hprism (J : {J : ℕ // 0 < J}) (F : NormalizedFunctionTuple n) :
+      prismForm n k hk hkn
+          (fun y => ∑ j ∈ Finset.range J.1, c * M (j : ℤ) y)
+          (fun a => F.1 a) =
+        c * prismForm n k hk hkn
+          (fun y => ∑ j ∈ Finset.range J.1, M (j : ℤ) y)
+          (fun a => F.1 a) := by
+    have hsum :
+        (fun y => ∑ j ∈ Finset.range J.1, c * M (j : ℤ) y) =
+          fun y => c * ∑ j ∈ Finset.range J.1, M (j : ℤ) y := by
+      funext y
+      rw [Finset.mul_sum]
+    rw [hsum]
+    unfold prismForm mToK prismBrascampLiebForm
+    have hinter (z : RealVector k × ℝ) :
+        (∫ p : RealVector (k - 1),
+          (fun y => c * ∑ j ∈ Finset.range J.1, M (j : ℤ) y)
+            (mToKPoint k hk z p)) =
+          c * ∫ p : RealVector (k - 1),
+            (fun y => ∑ j ∈ Finset.range J.1, M (j : ℤ) y)
+              (mToKPoint k hk z p) := by
+      change (∫ p : RealVector (k - 1), c *
+        (fun y => ∑ j ∈ Finset.range J.1, M (j : ℤ) y)
+          (mToKPoint k hk z p)) = _
+      rw [integral_const_mul]
+    simp_rw [hinter]
+    simp_rw [mul_assoc]
+    simp_rw [integral_const_mul]
+  unfold kernelSequenceSeminorm
+  simp_rw [hprism]
+  simp only [abs_mul, abs_of_nonneg hc]
+  simp_rw [← mul_assoc]
+  have hscale (w x : ℝ) :
+      ENNReal.ofReal ((w * c) * x) =
+        ENNReal.ofReal c * ENNReal.ofReal (w * x) := by
+    calc
+      ENNReal.ofReal ((w * c) * x) = ENNReal.ofReal (c * (w * x)) := by
+        congr 1
+        ring
+      _ = ENNReal.ofReal c * ENNReal.ofReal (w * x) := ENNReal.ofReal_mul hc
+  simp_rw [hscale]
+  rw [ENNReal.mul_iSup]
+  congr 1
+  funext J
+  rw [ENNReal.mul_iSup]
+
+private theorem aux_sandwich_prismForm_finset_sum {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n)
+    {α : Type*} (s : Finset α) (M : α → MKernel k)
+    (hM : ∀ a ∈ s, MemW0 (M a))
+    (F : Fin n → SchwartzMap (RealVector n) ℝ) :
+    prismForm n k hk hkn (fun y => ∑ a ∈ s, M a y) (fun i => F i) =
+      ∑ a ∈ s, prismForm n k hk hkn (M a) (fun i => F i) := by
+  classical
+  let e : Fin (Fintype.card {a // a ∈ s}) ≃ {a // a ∈ s} :=
+    (Fintype.equivFin {a // a ∈ s}).symm
+  let M' : Fin (Fintype.card {a // a ∈ s}) → MKernel k := fun q => M (e q).1
+  have hM' (q : Fin (Fintype.card {a // a ∈ s})) : MemW0 (M' q) :=
+    hM (e q).1 (e q).2
+  have hsum (f : α → ℝ) : (∑ q, f (e q).1) = ∑ a ∈ s, f a := by
+    calc
+      (∑ q, f (e q).1) = ∑ a : {a // a ∈ s}, f a.1 :=
+        Equiv.sum_comp e (fun a => f a.1)
+      _ = ∑ a ∈ s, f a := by simpa using Finset.sum_attach s f
+  have hsumM (y : RealVector k × RealVector k) :
+      (∑ q, M' q y) = ∑ a ∈ s, M a y := by
+    simpa [M'] using hsum (fun a => M a y)
+  have hsumP :
+      (∑ q, prismBrascampLiebForm n k hk hkn (mToK k hk (M' q))
+        (fun i x => F i x)) =
+        ∑ a ∈ s, prismBrascampLiebForm n k hk hkn (mToK k hk (M a))
+          (fun i x => F i x) := by
+    simpa [M'] using hsum (fun a =>
+      prismBrascampLiebForm n k hk hkn (mToK k hk (M a)) (fun i x => F i x))
+  calc
+    prismForm n k hk hkn (fun y => ∑ a ∈ s, M a y) (fun i => F i) =
+        prismBrascampLiebForm n k hk hkn (mToK k hk (fun y => ∑ q, M' q y))
+          (fun i x => F i x) := by
+      congr 3
+      funext y
+      exact (hsumM y).symm
+    _ = prismBrascampLiebForm n k hk hkn (fun z => ∑ q, mToK k hk (M' q) z)
+          (fun i x => F i x) := by
+      rw [aux_mToK_finset_sum k (Fintype.card {a // a ∈ s}) hk M' hM']
+    _ = ∑ q, prismBrascampLiebForm n k hk hkn (mToK k hk (M' q))
+          (fun i x => F i x) := by
+      apply aux_prismBrascampLiebForm_finset_sum
+      intro q
+      exact mToK_memW0 n k hk hkn (M' q) (hM' q)
+    _ = ∑ a ∈ s, prismBrascampLiebForm n k hk hkn (mToK k hk (M a))
+          (fun i x => F i x) := hsumP
+    _ = ∑ a ∈ s, prismForm n k hk hkn (M a) (fun i => F i) := by rfl
+
+/-- Monotonicity of a prism form after appending a terminal tensor-square factor. -/
+theorem aux_prismForm_tensorSquareExtension_last_mono
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k + 1 ≤ n)
+    (M N : MKernel k) (hM : MemW0 M) (hN : MemW0 N)
+    (hM_nonneg : ∀ y, 0 ≤ M y) (hMN : ∀ y, M y ≤ N y)
+    (phi : ℝ → ℝ) (hphi : MemW0 phi)
+    (F : Fin n → SchwartzMap (RealVector n) ℝ)
+    (hF : F ∈ normalizedFunctionTuples n) :
+    prismForm n (k + 1) (by omega) (by omega)
+      (tensorSquareExtension (k + 1) (by omega) (Fin.last k) M phi) (fun a x => F a x) ≤
+    prismForm n (k + 1) (by omega) (by omega)
+      (tensorSquareExtension (k + 1) (by omega) (Fin.last k) N phi) (fun a x => F a x) := by
+  cases k with
+  | zero => omega
+  | succ d =>
+      have hKM : MemW0 (mToK (d + 1) (by omega) M) :=
+        mToK_memW0 n (d + 1) (by omega) (by omega) M hM
+      have hKN : MemW0 (mToK (d + 1) (by omega) N) :=
+        mToK_memW0 n (d + 1) (by omega) (by omega) N hN
+      have hKM_nonneg : ∀ u, 0 ≤ mToK (d + 1) (by omega) M u := by
+        intro u
+        exact aux_mToK_nonnegative (d + 1) (by omega) M hM_nonneg u
+      have hKM_le : ∀ u, mToK (d + 1) (by omega) M u ≤
+          mToK (d + 1) (by omega) N u := by
+        intro u
+        unfold mToK
+        apply integral_mono_ae
+        · exact aux_memW0_integrable_of_addHaar
+            (mToK_integrand_memW0 n (d + 1) (by omega) (by omega) M hM u)
+        · exact aux_memW0_integrable_of_addHaar
+            (mToK_integrand_memW0 n (d + 1) (by omega) (by omega) N hN u)
+        · filter_upwards [] with p
+          exact hMN _
+      unfold prismForm
+      rw [aux_mToK_tensorSquareExtension_eq_positivity_last d M hM phi hphi,
+        aux_mToK_tensorSquareExtension_eq_positivity_last d N hN phi hphi]
+      simpa [monotonicityKernel] using
+        (monotonicityK n (d + 1) (by omega) (by omega)
+          (mToK (d + 1) (by omega) M) (mToK (d + 1) (by omega) N)
+          hKM hKN hKM_nonneg hKM_le phi hphi F hF)
+
+/-- The kernel-sequence seminorm preserves the preceding terminal-extension order. -/
+theorem aux_kernelSequenceSeminorm_tensorSquareExtension_last_mono
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k + 1 ≤ n)
+    (M N : ℤ → MKernel k)
+    (hM : ∀ j, MemW0 (M j)) (hN : ∀ j, MemW0 (N j))
+    (hM_nonneg : ∀ j y, 0 ≤ M j y) (hMN : ∀ j y, M j y ≤ N j y)
+    (phi : ℤ → ℝ → ℝ) (hphi : ∀ j, MemW0 (phi j)) :
+    kernelSequenceSeminorm n (k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (k + 1) (by omega) (Fin.last k) (M j) (phi j)) ≤
+    kernelSequenceSeminorm n (k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (k + 1) (by omega) (Fin.last k) (N j) (phi j)) := by
+  classical
+  have hP (j : ℤ) : MemW0
+      (tensorSquareExtension (k + 1) (by omega) (Fin.last k) (M j) (phi j)) :=
+    positivityM_memW0 n (k + 1) (by omega) (by omega) (Fin.last k)
+      (M j) (hM j) (hM_nonneg j) (phi j) (hphi j)
+  have hQ (j : ℤ) : MemW0
+      (tensorSquareExtension (k + 1) (by omega) (Fin.last k) (N j) (phi j)) :=
+    positivityM_memW0 n (k + 1) (by omega) (by omega) (Fin.last k)
+      (N j) (hN j) (by
+        intro y
+        exact (hM_nonneg j y).trans (hMN j y)) (phi j) (hphi j)
+  unfold kernelSequenceSeminorm
+  refine iSup_le fun J => ?_
+  refine iSup_le fun F => ?_
+  apply le_iSup_of_le J
+  apply le_iSup_of_le F
+  let p : ℤ → ℝ := fun j => prismForm n (k + 1) (by omega) (by omega)
+    (tensorSquareExtension (k + 1) (by omega) (Fin.last k) (M j) (phi j))
+    (fun a => F.1 a)
+  let q : ℤ → ℝ := fun j => prismForm n (k + 1) (by omega) (by omega)
+    (tensorSquareExtension (k + 1) (by omega) (Fin.last k) (N j) (phi j))
+    (fun a => F.1 a)
+  have hlinP : prismForm n (k + 1) (by omega) (by omega)
+      (fun y => ∑ j ∈ Finset.range J.1,
+        tensorSquareExtension (k + 1) (by omega) (Fin.last k) (M (j : ℤ))
+          (phi (j : ℤ)) y) (fun a => F.1 a) =
+      ∑ j ∈ Finset.range J.1, p (j : ℤ) := by
+    simpa [p] using
+      (aux_sandwich_prismForm_finset_sum (n := n) (k := k + 1) (by omega) (by omega)
+        (Finset.range J.1)
+        (fun j : ℕ => tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+          (M (j : ℤ)) (phi (j : ℤ)))
+        (by
+          intro j _
+          exact hP (j : ℤ)) F.1)
+  have hlinQ : prismForm n (k + 1) (by omega) (by omega)
+      (fun y => ∑ j ∈ Finset.range J.1,
+        tensorSquareExtension (k + 1) (by omega) (Fin.last k) (N (j : ℤ))
+          (phi (j : ℤ)) y) (fun a => F.1 a) =
+      ∑ j ∈ Finset.range J.1, q (j : ℤ) := by
+    simpa [q] using
+      (aux_sandwich_prismForm_finset_sum (n := n) (k := k + 1) (by omega) (by omega)
+        (Finset.range J.1)
+        (fun j : ℕ => tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+          (N (j : ℤ)) (phi (j : ℤ)))
+        (by
+          intro j _
+          exact hQ (j : ℤ)) F.1)
+  have hp_nonneg (j : ℤ) : 0 ≤ p j := by
+    dsimp [p]
+    exact positivityM_nonnegative n (k + 1) (by omega) (by omega) (Fin.last k)
+      (M j) (hM j) (hM_nonneg j) (phi j) (hphi j) F.1 F.2
+  have hp_le_q (j : ℤ) : p j ≤ q j := by
+    exact aux_prismForm_tensorSquareExtension_last_mono hk hkn
+      (M j) (N j) (hM j) (hN j) (hM_nonneg j) (hMN j)
+      (phi j) (hphi j) F.1 F.2
+  have hsumP_nonneg : 0 ≤ ∑ j ∈ Finset.range J.1, p (j : ℤ) := by
+    apply Finset.sum_nonneg
+    intro j _
+    exact hp_nonneg (j : ℤ)
+  have hsumQ_nonneg : 0 ≤ ∑ j ∈ Finset.range J.1, q (j : ℤ) := by
+    apply Finset.sum_nonneg
+    intro j _
+    exact (hp_nonneg (j : ℤ)).trans (hp_le_q (j : ℤ))
+  have hsum_le : (∑ j ∈ Finset.range J.1, p (j : ℤ)) ≤
+      ∑ j ∈ Finset.range J.1, q (j : ℤ) := by
+    apply Finset.sum_le_sum
+    intro j _
+    exact hp_le_q (j : ℤ)
+  change ENNReal.ofReal (min 1
+      (Real.rpow (J.1 : ℝ) (-1 + 2 ^ (((k + 1 : ℕ) : ℤ) - (n : ℤ) + 1))) *
+      |prismForm n (k + 1) (by omega) (by omega)
+        (fun y => ∑ j ∈ Finset.range J.1,
+          tensorSquareExtension (k + 1) (by omega) (Fin.last k) (M (j : ℤ))
+            (phi (j : ℤ)) y) (fun a => F.1 a)|) ≤
+    ENNReal.ofReal (min 1
+      (Real.rpow (J.1 : ℝ) (-1 + 2 ^ (((k + 1 : ℕ) : ℤ) - (n : ℤ) + 1))) *
+      |prismForm n (k + 1) (by omega) (by omega)
+        (fun y => ∑ j ∈ Finset.range J.1,
+          tensorSquareExtension (k + 1) (by omega) (Fin.last k) (N (j : ℤ))
+            (phi (j : ℤ)) y) (fun a => F.1 a)|)
+  rw [hlinP, hlinQ, abs_of_nonneg hsumP_nonneg, abs_of_nonneg hsumQ_nonneg]
+  apply ENNReal.ofReal_le_ofReal
+  exact mul_le_mul_of_nonneg_left hsum_le
+    (le_min zero_le_one (Real.rpow_nonneg (Nat.cast_nonneg _) _))
 
 /--
 This finite algebraic telescoping identity is used to turn the sum of the

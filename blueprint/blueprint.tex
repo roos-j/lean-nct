@@ -4750,6 +4750,8 @@ observing by Proposition \ref{H vanishing integral} that
 \end{proof}
 
 \begin{proposition}\label{increase data implies diagonal band}\uses{Gaussian domination combined,Cauchy-Schwarz at k,Cauchy-Schwarz at n-1}\usesdefs{auto:convolution-along-vector-definition,normalized function tuples,auto:prism-form-definition,geometric parameters,kernel sequences,2D Gaussians,sandwich kernel,L multiplier,N multiplier,diagonal band,increase data}
+\lean{increaseData_implies_diagonalBand}
+\leanok
 Let $k\in\N$ with $1\le k\le n-1$ and $C\in[1,\infty)$. Suppose that $\IncreaseData{k,C}$ holds. Then:
 
 (i) If $k<n-1$, then
@@ -4840,6 +4842,8 @@ Summing in $\iota$ proves (i), since $2^{9/2}2^{10}\le2^{15}$, and proves (ii).
 
 \begin{proposition}
 \label{induct positive terms imply increase data}\uses{Gaussian domination combined,Monotonicity K}\usesdefs{multiplicatively spaced monotone sequences,geometric parameters,kernel sequences,sandwich kernel,s multiplier,L multiplier,N multiplier,induct positive terms,increase data}
+\lean{inductPositiveTerms_implies_increaseData}
+\leanok
 Let $k\in\N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
 Assume that $\InductPositiveTerms{k+1,C}$ holds. Then $\IncreaseData{k,C\cdot C_{\ref{induct positive terms imply increase data}}}$ holds, where
 \begin{equation}\label{auto:increase-data-induction-constant-definition}C_{\ref{induct positive terms imply increase data}} = 2^{10} C_{\ref{Gaussian domination combined},0} (1+C_{\ref{Gaussian domination combined},1})^2 C_{\ref{Gaussian domination combined},2}.\end{equation}
@@ -4913,6 +4917,8 @@ Using the defining product in Proposition \ref{induct positive terms imply incre
 
 
 \begin{proposition}\label{P:C_k-induction}\uses{vanishing diagonal implies induct positive terms,vanishing kernel integral,induct positive terms imply increase data,increase data implies diagonal band,diagonal band implies vanishing diagonal}\usesdefs{induct positive terms}
+\lean{inductPositiveTermsByInduction}
+\leanok
 For every $k\in\N$ with $1\le k\le n$, $\InductPositiveTerms{k,C_k}$ holds, where
 \begin{equation}\label{auto:positive-induction-recursion}
 C_n=2+n,
@@ -4938,6 +4944,8 @@ follows by applying Proposition \ref{induct positive terms imply increase data},
 \ls{I have improved the constants, so that the final result holds with a constant independent of $n$.}
 \jr{Oh, of course, because we only lose $k$ in the $k$th step and this is killed by the square root! So it was there already, I just inefficiently estimated the inducted constant, my bad! Very nice}
 \begin{lemma}[constant $C_k$ \auto]\label{P:better-induction}\uses{P:C_k-induction,Gaussian domination combined,induct positive terms imply increase data}\usesdefs{induct positive terms}
+\lean{betterInduction}
+\leanok
 For every $k\in\N$ with $1\le k\le n-1$,
 \begin{equation}\label{auto:positive-induction-local-bound}
 \InductPositiveTerms{k,
@@ -4978,6 +4986,8 @@ We only need to use the previous proposition for $k=2$. The result then holds wi
 \end{rem}
 
 \begin{theorem}\label{induct positive terms theorem}\uses{P:better-induction,P:C_k-induction}\usesdefs{induct positive terms}
+\lean{inductPositiveTermsTheorem}
+\leanok
 $\InductPositiveTerms{2,C_{\ref{induct positive terms theorem}}}$ holds, where
 \begin{equation}\label{auto:positive-induction-constant-definition}
 C_{\ref{induct positive terms theorem}}

@@ -5448,6 +5448,88 @@ private theorem aux_gaussianWeightMoment_half_le :
   apply (inv_le_iff_one_le_mul₀ (Real.sqrt_pos.2 (by norm_num : (0 : ℝ) < 2))).mpr
   nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
 
+/-- The weighted second moment of the dyadic Gaussian-domination series is summable. -/
+theorem aux_gaussianDominationWeight_secondMoment_summable :
+    Summable (fun m : Fin 2 → ℕ => aux_gaussianDominationWeight m *
+      (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ)) := by
+  let q : ℝ := Real.rpow 2 (-(1 / 2 : ℝ))
+  let r : ℝ := 17 / 24
+  let f0 : ℕ → ℝ := fun a => r ^ a
+  let f2 : ℕ → ℝ := fun a => ((a : ℝ) + 1) ^ (2 : ℕ) * r ^ a
+  have hrnonneg : 0 ≤ r := by dsimp [r]; norm_num
+  have hrlt : ‖r‖ < 1 := by dsimp [r]; norm_num [Real.norm_eq_abs]
+  have hf0 : Summable f0 := by
+    dsimp [f0]
+    exact summable_geometric_of_norm_lt_one hrlt
+  have hf2 : Summable f2 := by
+    dsimp [f2, r]
+    exact aux_gaussianWeightMoment_square_summable
+  have hf0nonneg (a : ℕ) : 0 ≤ f0 a := by
+    exact pow_nonneg hrnonneg a
+  have hf2nonneg (a : ℕ) : 0 ≤ f2 a := by
+    exact mul_nonneg (sq_nonneg _) (pow_nonneg hrnonneg a)
+  have hprod : Summable (fun m : Fin 2 → ℕ =>
+      2 * (f2 (m 0) * f0 (m 1) + f0 (m 0) * f2 (m 1))) := by
+    exact Summable.mul_left 2
+      ((aux_summable_finTwo_product hf2nonneg hf0nonneg hf2 hf0).add
+        (aux_summable_finTwo_product hf0nonneg hf2nonneg hf0 hf2))
+  have hmajorantPoint (m : Fin 2 → ℕ) :
+      r ^ (m 0 + m 1) * (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ) ≤
+        2 * (f2 (m 0) * f0 (m 1) + f0 (m 0) * f2 (m 1)) := by
+    have hpow : r ^ (m 0 + m 1) = r ^ (m 0) * r ^ (m 1) := by
+      rw [pow_add]
+    have hsq : (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ) ≤
+        2 * (((m 0 : ℝ) + 1) ^ (2 : ℕ)) +
+          2 * (((m 1 : ℝ) + 1) ^ (2 : ℕ)) := by
+      push_cast
+      have hb : 0 ≤ (m 1 : ℝ) := Nat.cast_nonneg _
+      nlinarith [sq_nonneg ((m 0 : ℝ) + 1 - (m 1 : ℝ))]
+    rw [hpow]
+    dsimp [f0, f2]
+    calc
+      r ^ m 0 * r ^ m 1 * (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ) ≤
+          r ^ m 0 * r ^ m 1 *
+            (2 * (((m 0 : ℝ) + 1) ^ (2 : ℕ)) +
+              2 * (((m 1 : ℝ) + 1) ^ (2 : ℕ))) :=
+        mul_le_mul_of_nonneg_left hsq
+          (mul_nonneg (pow_nonneg hrnonneg _) (pow_nonneg hrnonneg _))
+      _ = 2 * ((((m 0 : ℝ) + 1) ^ (2 : ℕ) * r ^ m 0) * r ^ m 1 +
+          r ^ m 0 * (((m 1 : ℝ) + 1) ^ (2 : ℕ) * r ^ m 1)) := by ring
+  have hmajorant : Summable (fun m : Fin 2 → ℕ =>
+      r ^ (m 0 + m 1) * (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ)) :=
+    Summable.of_nonneg_of_le (fun m => by
+      exact mul_nonneg (pow_nonneg hrnonneg _) (sq_nonneg _)) hmajorantPoint hprod
+  have hqnonneg : 0 ≤ q := by
+    dsimp [q]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hqle : q ≤ r := by
+    dsimp [q, r]
+    exact aux_gaussianWeightMoment_half_le
+  have hterm (a : ℕ) : q ^ a = Real.rpow 2 (-((a : ℝ) / 2)) := by
+    dsimp [q]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num)]
+    congr 1
+    ring
+  have hweight (m : Fin 2 → ℕ) :
+      aux_gaussianDominationWeight m = q ^ (m 0 + m 1) := by
+    unfold aux_gaussianDominationWeight aux_natPairWeight
+    convert (hterm (m 0 + m 1)).symm using 1
+    congr 1
+    ring
+  have hpoint (m : Fin 2 → ℕ) :
+      aux_gaussianDominationWeight m *
+          (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ) ≤
+        r ^ (m 0 + m 1) *
+          (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ) := by
+    rw [hweight]
+    simp only [aux_natPairWeight]
+    exact mul_le_mul_of_nonneg_right
+      (pow_le_pow_left₀ hqnonneg hqle _)
+      (sq_nonneg _)
+  exact Summable.of_nonneg_of_le (fun m => by
+    exact mul_nonneg (aux_gaussianDominationWeight_nonneg m) (sq_nonneg _))
+    hpoint hmajorant
+
 /-- The dyadic two-parameter Gaussian weight has the second moment used in the
 main induction. -/
 theorem aux_gaussianDominationWeight_secondMoment_le_two_pow_ten :

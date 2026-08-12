@@ -334,6 +334,38 @@ private noncomputable def aux_augmentedLastBaseKernel
       aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j (x.1 q, x.2 q)
     else gammaGaussian γ q (j - 1) (x.1 q, x.2 q)
 
+private theorem aux_augmentedLastBaseKernel_eq_explicit
+    {n : ℕ} (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (b : ℕ) (m : Fin 2 → ℕ) (j : ℤ) :
+    aux_augmentedLastBaseKernel γ i ι w b m j =
+      fun x =>
+        (∏ q ∈ Finset.univ.filter (fun q => q < i),
+          gammaGaussian γ q j (x.1 q, x.2 q)) *
+        aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j (x.1 i, x.2 i) *
+        ∏ q ∈ Finset.univ.filter (fun q => i < q),
+          gammaGaussian γ q (j - 1) (x.1 q, x.2 q) := by
+  funext x
+  have hfactor (a d e : Fin γ.k → ℝ) :
+      (∏ q, if q < i then a q else if q = i then d q else e q) =
+        (∏ q ∈ Finset.univ.filter (fun q => q < i), a q) * d i *
+          ∏ q ∈ Finset.univ.filter (fun q => i < q), e q := by
+    rw [Finset.prod_filter, Finset.prod_filter]
+    have hd : d i = ∏ q : Fin γ.k, if q = i then d q else 1 := by simp
+    rw [hd, ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+    apply Finset.prod_congr rfl
+    intro q _
+    by_cases hqi : q < i
+    · have hiq : ¬ i < q := not_lt_of_ge hqi.le
+      simp [hqi, hiq, ne_of_lt hqi]
+    by_cases hiq : i < q
+    · simp [hqi, hiq, ne_of_gt hiq]
+    have hq : q = i := by omega
+    simp [hq]
+  unfold aux_augmentedLastBaseKernel
+  apply hfactor
+
 /-- The Gaussian product preceding the terminal sigma factor is Wiener. -/
 private theorem aux_augmentedLastBaseKernel_memW0
     {n : ℕ} (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
@@ -461,6 +493,27 @@ theorem aux_augmentedLast_sandwich_eq_tensorSquareExtension
   rw [hprod, hlast, hright]
   unfold tensorSquareExtension
   simp only [herase, mul_one]
+  rfl
+
+/-- The terminal augmented sandwich with its base kernel written coordinatewise. -/
+theorem aux_augmentedLast_sandwich_eq_explicit_tensorSquareExtension
+    {n : ℕ} (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (b : ℕ) (hb : b ∈ w.B) (m : Fin 2 → ℕ) (j : ℤ) :
+    sandwichKernel (aux_augmentedIncreaseParameters γ i ι w b hb m)
+      (aux_sMultiplierTensorSquare (aux_augmentedIncreaseParameters γ i ι w b hb m))
+      (Fin.last γ.k) j =
+    tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+      (fun x =>
+        (∏ q ∈ Finset.univ.filter (fun q => q < i),
+          gammaGaussian γ q j (x.1 q, x.2 q)) *
+        aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j (x.1 i, x.2 i) *
+        ∏ q ∈ Finset.univ.filter (fun q => i < q),
+          gammaGaussian γ q (j - 1) (x.1 q, x.2 q))
+      (sigmaMultiplier γ ι i j) := by
+  rw [aux_augmentedLast_sandwich_eq_tensorSquareExtension,
+    aux_augmentedLastBaseKernel_eq_explicit]
   rfl
 
 private theorem aux_augmentedIncreaseParameters_orientation_last {n : ℕ} (γ : GeometricParameters n)
@@ -989,6 +1042,1315 @@ theorem aux_one_le_C_inductPositiveTermsImplyIncreaseData :
     C_gaussianDominationCombinedCard C_gaussianDominationCombinedDistance
     C_gaussianDominationCombined
   norm_num
+
+/-! Private finite-Gaussian truncation machinery for
+`inductPositiveTerms_implies_increaseData`. -/
+namespace aux_inductPositiveTerms
+
+private noncomputable def increaseBase {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (i : Fin γ.k) (ι : MultiplierIndex γ) (j : ℤ) : MKernel γ.k :=
+  fun x =>
+    (∏ q ∈ Finset.univ.filter (fun q => q < i),
+      gammaGaussian γ q j (x.1 q, x.2 q)) *
+    |nMultiplier γ hkn ι i j (x.1 i, x.2 i)| *
+    ∏ q ∈ Finset.univ.filter (fun q => i < q),
+      gammaGaussian γ q (j - 1) (x.1 q, x.2 q)
+
+private noncomputable def gaussianBase {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (b : ℕ) (m : Fin 2 → ℕ) (j : ℤ) : MKernel γ.k :=
+  fun x =>
+    (∏ q ∈ Finset.univ.filter (fun q => q < i),
+      gammaGaussian γ q j (x.1 q, x.2 q)) *
+    aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j (x.1 i, x.2 i) *
+    ∏ q ∈ Finset.univ.filter (fun q => i < q),
+      gammaGaussian γ q (j - 1) (x.1 q, x.2 q)
+
+private noncomputable def outerGaussianProduct {n : ℕ}
+    (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) : MKernel γ.k :=
+  fun x =>
+    (∏ q ∈ Finset.univ.filter (fun q => q < i),
+      gammaGaussian γ q j (x.1 q, x.2 q)) *
+    ∏ q ∈ Finset.univ.filter (fun q => i < q),
+      gammaGaussian γ q (j - 1) (x.1 q, x.2 q)
+
+private theorem increaseBase_memW0 {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (i : Fin γ.k) (ι : MultiplierIndex γ) (j : ℤ) :
+    MemW0 (increaseBase γ hkn i ι j) := by
+  let A : Fin γ.k → RealPlane → ℝ := fun q =>
+    if q < i then gammaGaussian γ q j else if i < q then
+      gammaGaussian γ q (j - 1) else fun v => |nMultiplier γ hkn ι i j v|
+  have hA (q : Fin γ.k) : MemW0 (A q) := by
+    by_cases hlt : q < i
+    · simpa [A, hlt] using aux_gammaGaussian_memW0 γ q j
+    by_cases hgt : i < q
+    · simpa [A, hlt, hgt] using aux_gammaGaussian_memW0 γ q (j - 1)
+    · have hqi : q = i := by omega
+      subst q
+      simpa [A, hlt, hgt] using
+        aux_memW0_abs (nKernelWellDefinedness γ hkn ι i j)
+  have hprod : MemW0 (fun x : RealVector γ.k × RealVector γ.k =>
+      ∏ q, A q (x.1 q, x.2 q)) :=
+    fintype_plane_product_memW0 γ.k A hA
+  convert hprod using 1
+  funext x
+  have hfactor (a b c : Fin γ.k → ℝ) :
+      (∏ q, if q < i then a q else if i < q then b q else c q) =
+        (∏ q ∈ Finset.univ.filter (fun q => q < i), a q) * c i *
+          ∏ q ∈ Finset.univ.filter (fun q => i < q), b q := by
+    rw [Finset.prod_filter, Finset.prod_filter]
+    have hc : c i = ∏ q : Fin γ.k, if q = i then c q else 1 := by simp
+    rw [hc, ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+    apply Finset.prod_congr rfl
+    intro q _
+    by_cases hqi : q < i
+    · have hiq : ¬ i < q := not_lt_of_ge hqi.le
+      simp [hqi, hiq, ne_of_lt hqi]
+    by_cases hiq : i < q
+    · simp [hqi, hiq, ne_of_gt hiq]
+    have hq : q = i := by omega
+    simp [hq]
+  unfold increaseBase
+  simp only [A, ite_apply]
+  symm
+  apply hfactor
+
+private theorem increaseBase_nonneg {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (i : Fin γ.k) (ι : MultiplierIndex γ) (j : ℤ)
+    (x : RealVector γ.k × RealVector γ.k) :
+    0 ≤ increaseBase γ hkn i ι j x := by
+  unfold increaseBase
+  apply mul_nonneg
+  · apply mul_nonneg
+    · apply Finset.prod_nonneg
+      intro q _
+      exact aux_gammaGaussian_nonneg γ q j _
+    · exact abs_nonneg _
+  · apply Finset.prod_nonneg
+    intro q _
+    exact aux_gammaGaussian_nonneg γ q (j - 1) _
+
+private theorem gaussianBase_memW0 {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (b : ℕ) (hb : b ∈ w.B) (m : Fin 2 → ℕ) (j : ℤ) :
+    MemW0 (gaussianBase γ i ι w b m j) := by
+  let A : Fin γ.k → RealPlane → ℝ := fun q =>
+    if q < i then gammaGaussian γ q j else if q = i then
+      aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j
+    else gammaGaussian γ q (j - 1)
+  have hA (q : Fin γ.k) : MemW0 (A q) := by
+    by_cases hlt : q < i
+    · simpa [A, hlt] using aux_gammaGaussian_memW0 γ q j
+    by_cases hqi : q = i
+    · subst q
+      simpa [A, hlt] using aux_dominatingGaussianTerm_memW0
+        (w.scales b m) (w.scales_in_A b hb m) (w.orientation b) j
+    · simpa [A, hlt, hqi] using aux_gammaGaussian_memW0 γ q (j - 1)
+  have hprod : MemW0 (fun x : RealVector γ.k × RealVector γ.k =>
+      ∏ q, A q (x.1 q, x.2 q)) :=
+    fintype_plane_product_memW0 γ.k A hA
+  convert hprod using 1
+  funext x
+  have hfactor (a b c : Fin γ.k → ℝ) :
+      (∏ q, if q < i then a q else if q = i then c q else b q) =
+        (∏ q ∈ Finset.univ.filter (fun q => q < i), a q) * c i *
+          ∏ q ∈ Finset.univ.filter (fun q => i < q), b q := by
+    rw [Finset.prod_filter, Finset.prod_filter]
+    have hc : c i = ∏ q : Fin γ.k, if q = i then c q else 1 := by simp
+    rw [hc, ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+    apply Finset.prod_congr rfl
+    intro q _
+    by_cases hqi : q < i
+    · have hiq : ¬ i < q := not_lt_of_ge hqi.le
+      simp [hqi, hiq, ne_of_lt hqi]
+    by_cases hiq : i < q
+    · simp [hqi, hiq, ne_of_gt hiq]
+    have hq : q = i := by omega
+    simp [hq]
+  unfold gaussianBase
+  simp only [A, ite_apply]
+  symm
+  apply hfactor
+
+private theorem gaussianBase_nonneg {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (b : ℕ) (hb : b ∈ w.B) (m : Fin 2 → ℕ) (j : ℤ)
+    (x : RealVector γ.k × RealVector γ.k) :
+    0 ≤ gaussianBase γ i ι w b m j x := by
+  unfold gaussianBase
+  apply mul_nonneg
+  · apply mul_nonneg
+    · apply Finset.prod_nonneg
+      intro q _
+      exact aux_gammaGaussian_nonneg γ q j _
+    · exact aux_dominatingGaussianTerm_nonneg
+        (w.scales b m) (w.scales_in_A b hb m) (w.orientation b) j _
+  · apply Finset.prod_nonneg
+    intro q _
+    exact aux_gammaGaussian_nonneg γ q (j - 1) _
+
+private theorem increaseBase_eq_outer_mul_abs {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (i : Fin γ.k) (ι : MultiplierIndex γ) (j : ℤ)
+    (x : RealVector γ.k × RealVector γ.k) :
+    increaseBase γ hkn i ι j x =
+      outerGaussianProduct γ i j x *
+        |nMultiplier γ hkn ι i j (x.1 i, x.2 i)| := by
+  unfold increaseBase outerGaussianProduct
+  ring
+
+private theorem gaussianBase_eq_outer_mul {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (b : ℕ) (m : Fin 2 → ℕ) (j : ℤ)
+    (x : RealVector γ.k × RealVector γ.k) :
+    gaussianBase γ i ι w b m j x =
+      outerGaussianProduct γ i j x *
+        aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j (x.1 i, x.2 i) := by
+  unfold gaussianBase outerGaussianProduct
+  ring
+
+private theorem outerGaussianProduct_nonneg {n : ℕ}
+    (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ)
+    (x : RealVector γ.k × RealVector γ.k) :
+    0 ≤ outerGaussianProduct γ i j x := by
+  unfold outerGaussianProduct
+  apply mul_nonneg
+  · apply Finset.prod_nonneg
+    intro q _
+    exact aux_gammaGaussian_nonneg γ q j _
+  · apply Finset.prod_nonneg
+    intro q _
+    exact aux_gammaGaussian_nonneg γ q (j - 1) _
+
+private noncomputable def finTwoNatEnum : ℕ ≃ (Fin 2 → ℕ) :=
+  ((finTwoArrowEquiv ℕ).trans Nat.pairEquiv).symm
+
+private theorem memW0ConstMulNonneg {E : Type*}
+    [NormedAddCommGroup E] [ProperSpace E] [MeasureSpace E] [BorelSpace E]
+    {f : E → ℝ} (hf : MemW0 f) (c : ℝ) (hc : 0 ≤ c) :
+    MemW0 (fun x => c * f x) := by
+  let hcont : Continuous (fun x : E => c * f x) := hf.1.const_mul c
+  refine ⟨hcont, ?_⟩
+  have hscalar : Integrable (fun x : E => c * wienerEnvelope f 1 x) := hf.2.const_mul c
+  refine hscalar.mono_nonneg (continuous_wienerEnvelope hcont 1).aestronglyMeasurable
+    (ae_of_all _ fun x => aux_wienerEnvelope_nonneg hcont zero_le_one x)
+    (ae_of_all _ fun x => ?_)
+  unfold wienerEnvelope
+  apply csSup_le ((Metric.nonempty_closedBall.mpr zero_le_one).image _)
+  rintro _ ⟨z, hz, rfl⟩
+  change |c * f (x + z)| ≤ c *
+    sSup ((fun w : E => |f (x + w)|) '' Metric.closedBall 0 1)
+  rw [abs_mul, abs_of_nonneg hc]
+  exact mul_le_mul_of_nonneg_left
+    (aux_norm_le_wienerEnvelope_of_mem_closedBall hf.1
+      (by simpa [Metric.mem_closedBall, dist_eq_norm] using hz)) hc
+
+private noncomputable def gaussianPartialTerm {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (c : ℝ) (N : ℕ) (j : ℤ) : MKernel γ.k :=
+  fun x => c * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+    aux_gaussianDominationWeight (finTwoNatEnum N) *
+    ∑ b ∈ w.B, gaussianBase γ i ι w b (finTwoNatEnum N) j x
+
+private theorem gaussianPartialTerm_memW0 {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (c : ℝ) (hc : 0 ≤ c) (N : ℕ) (j : ℤ) :
+    MemW0 (gaussianPartialTerm γ i ι w c N j) := by
+  have hsum : MemW0 (fun x : RealVector γ.k × RealVector γ.k =>
+      ∑ b ∈ w.B, gaussianBase γ i ι w b (finTwoNatEnum N) j x) := by
+    apply aux_memW0_finset_sum
+    intro b hb
+    exact gaussianBase_memW0 γ i ι w b hb _ j
+  have hscalar : 0 ≤ c * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+      aux_gaussianDominationWeight (finTwoNatEnum N) := by
+    exact mul_nonneg
+      (mul_nonneg hc (Real.rpow_nonneg (by norm_num) _))
+      (aux_gaussianDominationWeight_nonneg _)
+  convert memW0ConstMulNonneg hsum
+    (c * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+      aux_gaussianDominationWeight (finTwoNatEnum N)) hscalar using 1
+  funext x
+  unfold gaussianPartialTerm
+  ring
+
+private theorem gaussianPartialTerm_nonneg {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (c : ℝ) (hc : 0 ≤ c) (N : ℕ) (j : ℤ)
+    (x : RealVector γ.k × RealVector γ.k) :
+    0 ≤ gaussianPartialTerm γ i ι w c N j x := by
+  unfold gaussianPartialTerm
+  apply mul_nonneg
+  · apply mul_nonneg
+    · exact mul_nonneg hc (Real.rpow_nonneg (by norm_num) _)
+    · exact aux_gaussianDominationWeight_nonneg _
+  · apply Finset.sum_nonneg
+    intro b hb
+    exact gaussianBase_nonneg γ i ι w b hb _ j x
+
+private theorem sumGaussianBase_eq {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (m : Fin 2 → ℕ) (j : ℤ) (x : RealVector γ.k × RealVector γ.k) :
+    (∑ b ∈ w.B, gaussianBase γ i ι w b m j x) =
+      outerGaussianProduct γ i j x *
+        ∑ b ∈ w.B,
+          aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j (x.1 i, x.2 i) := by
+  rw [Finset.mul_sum]
+  apply Finset.sum_congr rfl
+  intro b hb
+  rw [gaussianBase_eq_outer_mul]
+
+private theorem gaussianPartialTerm_eq_outer {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (c : ℝ) (N : ℕ) (j : ℤ) (x : RealVector γ.k × RealVector γ.k) :
+    gaussianPartialTerm γ i ι w c N j x =
+      c * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+        outerGaussianProduct γ i j x *
+        (aux_gaussianDominationWeight (finTwoNatEnum N) *
+          ∑ b ∈ w.B,
+            aux_dominatingGaussianTerm (w.scales b (finTwoNatEnum N))
+              (w.orientation b) j (x.1 i, x.2 i)) := by
+  unfold gaussianPartialTerm
+  rw [sumGaussianBase_eq]
+  ring
+
+private theorem gaussianPartialTerm_summable {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (c : ℝ) (j : ℤ) (x : RealVector γ.k × RealVector γ.k) :
+    Summable (fun N : ℕ => gaussianPartialTerm γ i ι w c N j x) := by
+  let H : (Fin 2 → ℕ) → ℝ := fun m =>
+    c * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+      outerGaussianProduct γ i j x *
+      (aux_gaussianDominationWeight m *
+        ∑ b ∈ w.B,
+          aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j
+            (x.1 i, x.2 i))
+  have hH : Summable H := by
+    dsimp [H]
+    exact (w.series_summable j (x.1 i, x.2 i)).mul_left _
+  have he : Summable (fun N : ℕ => H (finTwoNatEnum N)) := by
+    exact finTwoNatEnum.summable_iff.mpr hH
+  refine he.congr ?_
+  intro N
+  exact (gaussianPartialTerm_eq_outer γ i ι w c N j x).symm
+
+private theorem increaseBase_le_tsum_gaussianPartialTerm {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (j : ℤ) (x : RealVector γ.k × RealVector γ.k) :
+    increaseBase γ hkn i ι j x ≤
+      ∑' N : ℕ, gaussianPartialTerm γ i ι w C N j x := by
+  let S : (Fin 2 → ℕ) → ℝ := fun m =>
+    aux_gaussianDominationWeight m *
+      ∑ b ∈ w.B,
+        aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j
+          (x.1 i, x.2 i)
+  let H : (Fin 2 → ℕ) → ℝ := fun m =>
+    C * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+      outerGaussianProduct γ i j x * S m
+  have hS : Summable S := w.series_summable j (x.1 i, x.2 i)
+  have hmul := mul_le_mul_of_nonneg_left (w.estimate j (x.1 i, x.2 i))
+    (outerGaussianProduct_nonneg γ i j x)
+  rw [increaseBase_eq_outer_mul_abs]
+  calc
+    outerGaussianProduct γ i j x *
+        |nMultiplier γ hkn ι i j (x.1 i, x.2 i)| ≤
+        outerGaussianProduct γ i j x *
+          (C * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) * ∑' m, S m) := by
+            have hpow : Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) =
+                Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) := by
+              congr 1
+              ring
+            rw [hpow]
+            simpa [S] using hmul
+    _ = ∑' m, H m := by
+      rw [show (fun m => H m) = fun m =>
+          (C * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+            outerGaussianProduct γ i j x) * S m by
+          funext m
+          dsimp [H]]
+      rw [tsum_mul_left]
+      dsimp [H]
+      ring
+    _ = ∑' N : ℕ, gaussianPartialTerm γ i ι w C N j x := by
+      rw [← finTwoNatEnum.tsum_eq H]
+      apply tsum_congr
+      intro N
+      exact (gaussianPartialTerm_eq_outer γ i ι w C N j x).symm
+
+private theorem increaseDataKernel_eq_tensorSquareExtension {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (i : Fin γ.k) (ι : MultiplierIndex γ) (j : ℤ) :
+    aux_increaseDataKernel γ hkn i ι j =
+      tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (increaseBase γ hkn i ι j) (sigmaMultiplier γ ι i j) := by
+  funext y
+  have herase (x : RealVector (γ.k + 1)) :
+      aux_eraseVector (γ.k + 1) (by omega) (Fin.last γ.k) x =
+        fun q => x q.castSucc := by
+    funext q
+    simp [aux_eraseVector]
+  simp only [aux_increaseDataKernel, tensorSquareExtension, increaseBase, herase]
+
+private theorem gaussianBase_tensorSquareExtension_eq_sandwich {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (b : ℕ) (hb : b ∈ w.B) (m : Fin 2 → ℕ) (j : ℤ) :
+    tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+      (gaussianBase γ i ι w b m j) (sigmaMultiplier γ ι i j) =
+    sandwichKernel (aux_augmentedIncreaseParameters γ i ι w b hb m)
+      (aux_sMultiplierTensorSquare (aux_augmentedIncreaseParameters γ i ι w b hb m))
+      (Fin.last γ.k) j := by
+  symm
+  funext y
+  rw [show tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+      (gaussianBase γ i ι w b m j) (sigmaMultiplier γ ι i j) y =
+      tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (fun x =>
+          (∏ q ∈ Finset.univ.filter (fun q => q < i),
+            gammaGaussian γ q j (x.1 q, x.2 q)) *
+          aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j (x.1 i, x.2 i) *
+          ∏ q ∈ Finset.univ.filter (fun q => i < q),
+            gammaGaussian γ q (j - 1) (x.1 q, x.2 q))
+        (sigmaMultiplier γ ι i j) y by
+          unfold tensorSquareExtension gaussianBase
+          rfl]
+  exact congrFun
+    (aux_augmentedLast_sandwich_eq_explicit_tensorSquareExtension γ i ι w b hb m j) y
+
+private theorem gaussianPartialTerm_tensorSquareExtension_eq_sum {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (c : ℝ) (N : ℕ) (j : ℤ) :
+    tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+      (gaussianPartialTerm γ i ι w c N j) (sigmaMultiplier γ ι i j) =
+    fun y => ∑ b : {b // b ∈ w.B},
+      (c * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+        aux_gaussianDominationWeight (finTwoNatEnum N)) *
+      tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (gaussianBase γ i ι w b.1 (finTwoNatEnum N) j)
+        (sigmaMultiplier γ ι i j) y := by
+  classical
+  funext y
+  let a : ℝ := c * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+    aux_gaussianDominationWeight (finTwoNatEnum N)
+  let z : RealVector γ.k × RealVector γ.k :=
+    (aux_eraseVector (γ.k + 1) (by omega) (Fin.last γ.k) y.1,
+      aux_eraseVector (γ.k + 1) (by omega) (Fin.last γ.k) y.2)
+  unfold tensorSquareExtension gaussianPartialTerm
+  change a * (∑ b ∈ w.B, gaussianBase γ i ι w b
+      (finTwoNatEnum N) j z) *
+      tensorSquare (sigmaMultiplier γ ι i j)
+        (y.1 (Fin.last γ.k), y.2 (Fin.last γ.k)) = _
+  rw [mul_assoc, Finset.sum_mul, Finset.mul_sum]
+  rw [← Finset.sum_attach]
+  rfl
+
+private theorem memKernelSequence_const_mul_nonneg {r : ℕ}
+    (M : KernelSequence r) (hM : MemKernelSequence r M) (c : ℝ) (hc : 0 ≤ c) :
+    MemKernelSequence r (fun j y => c * M j y) := by
+  intro j
+  exact memW0ConstMulNonneg (hM j) c hc
+
+private theorem gaussianBase_terminal_mem {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (b : ℕ) (hb : b ∈ w.B) (m : Fin 2 → ℕ) :
+    MemKernelSequence (γ.k + 1)
+      (fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (gaussianBase γ i ι w b m j) (sigmaMultiplier γ ι i j)) := by
+  intro j
+  change MemW0 (tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+    (gaussianBase γ i ι w b m j) (sigmaMultiplier γ ι i j))
+  rw [gaussianBase_tensorSquareExtension_eq_sandwich γ i ι w b hb m j]
+  exact sandwichKernel_memKernelSequence
+    (aux_augmentedIncreaseParameters γ i ι w b hb m)
+    (aux_sMultiplierTensorSquare
+      (aux_augmentedIncreaseParameters γ i ι w b hb m))
+    (aux_sMultiplierTensorSquare_memDoubleSequence
+      (aux_augmentedIncreaseParameters γ i ι w b hb m))
+    (Fin.last γ.k) j
+
+private theorem gaussianBase_IPT_bound
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n - 1) {C C' : ℝ}
+    (hC : 1 ≤ C')
+    (hIPT : InductPositiveTerms n (k + 1) C' (by omega) (by omega) hC)
+    (γ : GeometricParameters n) (hγ : γ.k = k)
+    (i : Fin γ.k) (ι : MultiplierIndex γ)
+    (w : aux_GaussianDominationWitness γ (by simpa [hγ] using hkn) i ι C)
+    (b : ℕ) (hb : b ∈ w.B) (m : Fin 2 → ℕ) :
+    kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (gaussianBase γ i ι w b m j) (sigmaMultiplier γ ι i j)) ≤
+      ENNReal.ofReal
+        (C' * Real.rpow
+          (geometricDelta (aux_augmentedIncreaseParameters γ i ι w b hb m) : ℝ)
+          (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))) := by
+  have hseq :
+      (fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (gaussianBase γ i ι w b m j) (sigmaMultiplier γ ι i j)) =
+      sandwichKernel (aux_augmentedIncreaseParameters γ i ι w b hb m)
+        (aux_sMultiplierTensorSquare
+          (aux_augmentedIncreaseParameters γ i ι w b hb m))
+        (Fin.last γ.k) := by
+    funext j
+    exact gaussianBase_tensorSquareExtension_eq_sandwich γ i ι w b hb m j
+  rw [hseq]
+  let δ := aux_augmentedIncreaseParameters γ i ι w b hb m
+  change kernelSequenceSeminorm n δ.k δ.one_le_k δ.k_le_n
+      (sandwichKernel δ (aux_sMultiplierTensorSquare δ) (Fin.last γ.k)) ≤
+    ENNReal.ofReal (C' * Real.rpow (geometricDelta δ : ℝ)
+      (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2)))
+  have hδk : δ.k = k + 1 := by
+    simp [δ, aux_augmentedIncreaseParameters, hγ]
+  have hbound := hIPT δ hδk (Fin.last γ.k)
+  have hexp : ((k + 1 : ℕ) : ℤ) - (n : ℤ) + 1 =
+      (k : ℤ) - (n : ℤ) + 2 := by omega
+  rw [hexp] at hbound
+  exact hbound
+
+private theorem kernelSequenceSeminorm_fintype_sum_const_mul_le
+    {n r : ℕ} (hr : 1 ≤ r) (hrn : r ≤ n)
+    {β : Type*} [Fintype β] (S : β → KernelSequence r)
+    (hS : ∀ b, MemKernelSequence r (S b)) (c : ℝ) (hc : 0 ≤ c) :
+    kernelSequenceSeminorm n r hr hrn (fun j y => ∑ b, c * S b j y) ≤
+      ∑ b, ENNReal.ofReal c * kernelSequenceSeminorm n r hr hrn (S b) := by
+  classical
+  have hSc (b : β) : MemKernelSequence r (fun j y => c * S b j y) :=
+    memKernelSequence_const_mul_nonneg (S b) (hS b) c hc
+  calc
+    _ ≤ ∑ b, kernelSequenceSeminorm n r hr hrn (fun j y => c * S b j y) := by
+      simpa using
+        (aux_kernelSequenceSeminorm_finset_sum_le hr hrn
+          (Finset.univ : Finset β) (fun b => fun j y => c * S b j y)
+          (fun b _ => hSc b))
+    _ = ∑ b, ENNReal.ofReal c * kernelSequenceSeminorm n r hr hrn (S b) := by
+      apply Finset.sum_congr rfl
+      intro b _
+      rw [aux_kernelSequenceSeminorm_const_mul hr hrn c hc]
+
+private theorem rpowGrowthBound (A D h q a : ℝ)
+    (hA : 1 ≤ A) (hD : 1 ≤ D) (hh : 0 ≤ h) (hq : 0 ≤ q)
+    (ha0 : 0 ≤ a) (ha2 : a ≤ 2) :
+    (A * (D + h + q)) ^ a ≤
+      A ^ (2 : ℕ) * D ^ a * (1 + h) ^ (2 : ℕ) * (1 + q) ^ (2 : ℕ) := by
+  have hDh : h ≤ D * h := by
+    nlinarith [mul_nonneg (sub_nonneg.mpr hD) hh]
+  have hDq : q ≤ D * q := by
+    nlinarith [mul_nonneg (sub_nonneg.mpr hD) hq]
+  have hDhq : 0 ≤ D * h * q := by positivity
+  have hsum : D + h + q ≤ D * (1 + h) * (1 + q) := by
+    calc
+      D + h + q ≤ D + D * h + D * q + D * h * q := by linarith
+      _ = D * (1 + h) * (1 + q) := by ring
+  have hbase :
+      (A * (D + h + q)) ^ a ≤ (A * (D * (1 + h) * (1 + q))) ^ a := by
+    apply Real.rpow_le_rpow
+    · positivity
+    · exact mul_le_mul_of_nonneg_left hsum (by linarith)
+    · exact ha0
+  have hfactor :
+      (A * (D * (1 + h) * (1 + q))) ^ a =
+        A ^ a * D ^ a * (1 + h) ^ a * (1 + q) ^ a := by
+    rw [Real.mul_rpow (by linarith) (by positivity),
+      Real.mul_rpow (by linarith) (by positivity),
+      Real.mul_rpow (by positivity) (by positivity)]
+    ring
+  have hApow : A ^ a ≤ A ^ (2 : ℕ) := by
+    simpa only [Real.rpow_two] using
+      (Real.rpow_le_rpow_of_exponent_le hA ha2)
+  have hhpow : (1 + h) ^ a ≤ (1 + h) ^ (2 : ℕ) := by
+    simpa only [Real.rpow_two] using
+      (Real.rpow_le_rpow_of_exponent_le (by linarith) ha2)
+  have hqpow : (1 + q) ^ a ≤ (1 + q) ^ (2 : ℕ) := by
+    simpa only [Real.rpow_two] using
+      (Real.rpow_le_rpow_of_exponent_le (by linarith) ha2)
+  calc
+    (A * (D + h + q)) ^ a ≤ (A * (D * (1 + h) * (1 + q))) ^ a := hbase
+    _ = A ^ a * D ^ a * (1 + h) ^ a * (1 + q) ^ a := hfactor
+    _ ≤ A ^ (2 : ℕ) * D ^ a * (1 + h) ^ (2 : ℕ) * (1 + q) ^ (2 : ℕ) := by
+      gcongr
+
+private theorem augmentedDeltaRpowLe {n : ℕ}
+    (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (b : ℕ) (hb : b ∈ w.B) (m : Fin 2 → ℕ) :
+    Real.rpow
+        (geometricDelta (aux_augmentedIncreaseParameters γ i ι w b hb m) : ℝ)
+        (2 - (2 : ℝ) ^ ((γ.k : ℤ) - (n : ℤ) + 2)) ≤
+      (1 + C_gaussianDominationCombinedDistance : ℝ) ^ (2 : ℕ) *
+          Real.rpow (geometricDelta γ : ℝ)
+            (2 - (2 : ℝ) ^ ((γ.k : ℤ) - (n : ℤ) + 2)) *
+          (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ) *
+          (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ) := by
+  let a : ℝ := 2 - (2 : ℝ) ^ ((γ.k : ℤ) - (n : ℤ) + 2)
+  have hn : 1 ≤ n := γ.one_le_k.trans (hkn.trans (Nat.sub_le _ _))
+  have hkn0 : γ.k + 1 ≤ n := (Nat.le_sub_iff_add_le hn).mp hkn
+  have hknz : ((γ.k + 1 : ℕ) : ℤ) ≤ (n : ℤ) := by
+    exact_mod_cast hkn0
+  push_cast at hknz
+  have hindex : (γ.k : ℤ) - (n : ℤ) + 2 ≤ 1 := by omega
+  have hpow : (2 : ℝ) ^ ((γ.k : ℤ) - (n : ℤ) + 2) ≤ 2 := by
+    calc
+      _ ≤ (2 : ℝ) ^ (1 : ℤ) :=
+        zpow_le_zpow_right₀ (a := (2 : ℝ)) (by norm_num) hindex
+      _ = 2 := by norm_num
+  have ha0 : 0 ≤ a := by dsimp [a]; linarith
+  have ha2 : a ≤ 2 := by
+    have hpow0 : 0 ≤ (2 : ℝ) ^ ((γ.k : ℤ) - (n : ℤ) + 2) := by positivity
+    dsimp [a]
+    linarith
+  have hA : (1 : ℝ) ≤ 1 + C_gaussianDominationCombinedDistance := by
+    norm_num [C_gaussianDominationCombinedDistance]
+  have hD_nat : 1 ≤ geometricDelta γ := by
+    unfold geometricDelta
+    omega
+  have hD : (1 : ℝ) ≤ (geometricDelta γ : ℝ) := by exact_mod_cast hD_nat
+  have hdelta_nat := aux_geometricDelta_augmentedIncreaseParameters_le γ i ι w b hb m
+  have hdelta :
+      (geometricDelta (aux_augmentedIncreaseParameters γ i ι w b hb m) : ℝ) ≤
+        (1 + C_gaussianDominationCombinedDistance : ℝ) *
+          ((geometricDelta γ : ℝ) + (ι.1.1.natAbs : ℝ) +
+            (aux_natPairWeight m : ℝ)) := by
+    exact_mod_cast hdelta_nat
+  change (geometricDelta (aux_augmentedIncreaseParameters γ i ι w b hb m) : ℝ) ^ a ≤ _
+  calc
+    _ ≤ ((1 + C_gaussianDominationCombinedDistance : ℝ) *
+          ((geometricDelta γ : ℝ) + (ι.1.1.natAbs : ℝ) +
+            (aux_natPairWeight m : ℝ))) ^ a :=
+      Real.rpow_le_rpow (by positivity) hdelta ha0
+    _ ≤ (1 + C_gaussianDominationCombinedDistance : ℝ) ^ (2 : ℕ) *
+          (geometricDelta γ : ℝ) ^ a * (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ) *
+          (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ) := by
+      exact rpowGrowthBound
+        (1 + C_gaussianDominationCombinedDistance : ℝ) (geometricDelta γ : ℝ)
+        (ι.1.1.natAbs : ℝ) (aux_natPairWeight m : ℝ) a hA hD
+        (by positivity) (by positivity) ha0 ha2
+
+private theorem partialTerm_seminorm_le_branch_sum
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n - 1) {C : ℝ}
+    (hC : 1 ≤ C)
+    (hIPT : InductPositiveTerms n (k + 1) C (by omega) (by omega) hC)
+    (γ : GeometricParameters n) (hγ : γ.k = k)
+    (i : Fin γ.k) (ι : MultiplierIndex γ)
+    (w : aux_GaussianDominationWitness γ (by simpa [hγ] using hkn) i ι
+      C_gaussianDominationCombined)
+    (N : ℕ) :
+    kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (gaussianPartialTerm γ i ι w C_gaussianDominationCombined N j)
+        (sigmaMultiplier γ ι i j)) ≤
+      ∑ b : {b // b ∈ w.B},
+        ENNReal.ofReal
+          (C_gaussianDominationCombined *
+            Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+            aux_gaussianDominationWeight (finTwoNatEnum N)) *
+        ENNReal.ofReal
+          (C * Real.rpow
+            (geometricDelta (aux_augmentedIncreaseParameters γ i ι w b.1 b.2
+              (finTwoNatEnum N)) : ℝ)
+            (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))) := by
+  let m := finTwoNatEnum N
+  let cN : ℝ := C_gaussianDominationCombined *
+    Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+    aux_gaussianDominationWeight m
+  let S : {b // b ∈ w.B} → KernelSequence (γ.k + 1) := fun b j =>
+    tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+      (gaussianBase γ i ι w b.1 m j) (sigmaMultiplier γ ι i j)
+  have hcN : 0 ≤ cN := by
+    dsimp [cN]
+    apply mul_nonneg
+    · apply mul_nonneg
+      · unfold C_gaussianDominationCombined
+        positivity
+      · exact Real.rpow_nonneg (by norm_num) _
+    · exact aux_gaussianDominationWeight_nonneg _
+  have hS (b : {b // b ∈ w.B}) : MemKernelSequence (γ.k + 1) (S b) := by
+    exact gaussianBase_terminal_mem γ i ι w b.1 b.2 m
+  have hrewrite :
+      (fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (gaussianPartialTerm γ i ι w C_gaussianDominationCombined N j)
+        (sigmaMultiplier γ ι i j)) =
+      fun j y => ∑ b : {b // b ∈ w.B}, cN * S b j y := by
+    funext j y
+    simpa [S, cN, m] using congrFun
+      (gaussianPartialTerm_tensorSquareExtension_eq_sum
+        γ i ι w C_gaussianDominationCombined N j) y
+  rw [hrewrite]
+  calc
+    _ ≤ ∑ b : {b // b ∈ w.B},
+        ENNReal.ofReal cN * kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+          (S b) :=
+      kernelSequenceSeminorm_fintype_sum_const_mul_le (by omega) (by omega)
+        S hS cN hcN
+    _ ≤ ∑ b : {b // b ∈ w.B}, ENNReal.ofReal cN *
+        ENNReal.ofReal
+          (C * Real.rpow
+            (geometricDelta (aux_augmentedIncreaseParameters γ i ι w b.1 b.2 m) : ℝ)
+            (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))) := by
+      apply Finset.sum_le_sum
+      intro b _
+      gcongr
+      exact gaussianBase_IPT_bound hk hkn hC hIPT γ hγ i ι w b.1 b.2 m
+    _ = _ := by rfl
+
+private theorem gaussianWeight_card_factor
+    {n : ℕ} (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
+    (i : Fin γ.k) (ι : MultiplierIndex γ) {C : ℝ}
+    (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (m : Fin 2 → ℕ) :
+    (∑ _b : {b // b ∈ w.B},
+      aux_gaussianDominationWeight m *
+        (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ)) ≤
+      C_gaussianDominationCombinedCard *
+        (aux_gaussianDominationWeight m *
+          (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ)) := by
+  classical
+  let f : (Fin 2 → ℕ) → ℝ := fun q =>
+    aux_gaussianDominationWeight q *
+      (1 + (aux_natPairWeight q : ℝ)) ^ (2 : ℕ)
+  have hf_nonneg (q : Fin 2 → ℕ) : 0 ≤ f q := by
+    exact mul_nonneg (aux_gaussianDominationWeight_nonneg q) (sq_nonneg _)
+  have hcard : (w.B.card : ℝ) ≤ C_gaussianDominationCombinedCard := by
+    exact_mod_cast w.card_le
+  have hsubcard : (Finset.univ : Finset {b // b ∈ w.B}).card = w.B.card := by
+    simp
+  change (∑ _b : {b // b ∈ w.B}, f m) ≤ _
+  rw [Finset.sum_const, nsmul_eq_mul, hsubcard]
+  exact mul_le_mul_of_nonneg_right hcard (hf_nonneg m)
+
+private theorem partialTerm_weighted_seminorm_bound
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n - 1) {C : ℝ}
+    (hC : 1 ≤ C)
+    (hIPT : InductPositiveTerms n (k + 1) C (by omega) (by omega) hC)
+    (γ : GeometricParameters n) (hγ : γ.k = k)
+    (i : Fin γ.k) (ι : MultiplierIndex γ)
+    (w : aux_GaussianDominationWitness γ (by simpa [hγ] using hkn) i ι
+      C_gaussianDominationCombined)
+    (N : ℕ) :
+    kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (gaussianPartialTerm γ i ι w C_gaussianDominationCombined N j)
+        (sigmaMultiplier γ ι i j)) ≤
+      ENNReal.ofReal
+        (C_inductPositiveTermsImplyIncreaseData * C *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+          (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ) *
+          Real.rpow (geometricDelta γ : ℝ)
+            (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2)) *
+          (aux_gaussianDominationWeight (finTwoNatEnum N) *
+            (1 + (aux_natPairWeight (finTwoNatEnum N) : ℝ)) ^ (2 : ℕ)) / (2 : ℝ) ^ (10 : ℕ)) := by
+  classical
+  let m : Fin 2 → ℕ := finTwoNatEnum N
+  let c : ℝ := C_gaussianDominationCombined *
+    Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+    aux_gaussianDominationWeight m
+  let a : ℝ := 2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2)
+  let D : ℝ := Real.rpow (geometricDelta γ : ℝ) a
+  let H : ℝ := (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ)
+  let A : ℝ := (1 + C_gaussianDominationCombinedDistance : ℝ) ^ (2 : ℕ)
+  let W : (Fin 2 → ℕ) → ℝ := fun q =>
+    aux_gaussianDominationWeight q *
+      (1 + (aux_natPairWeight q : ℝ)) ^ (2 : ℕ)
+  have hc : 0 ≤ c := by
+    dsimp [c]
+    apply mul_nonneg
+    · apply mul_nonneg
+      · unfold C_gaussianDominationCombined
+        positivity
+      · exact Real.rpow_nonneg (by norm_num) _
+    · exact aux_gaussianDominationWeight_nonneg _
+  have hC0 : 0 ≤ C := by linarith
+  have hA : 0 ≤ A := by
+    dsimp [A]
+    norm_num [C_gaussianDominationCombinedDistance]
+  have hD : 0 ≤ D := by
+    dsimp [D]
+    exact Real.rpow_nonneg (by positivity) _
+  have hH : 0 ≤ H := by
+    dsimp [H]
+    positivity
+  have hW (q : Fin 2 → ℕ) : 0 ≤ W q := by
+    dsimp [W]
+    exact mul_nonneg (aux_gaussianDominationWeight_nonneg q) (sq_nonneg _)
+  have hbranch := partialTerm_seminorm_le_branch_sum
+    hk hkn hC hIPT γ hγ i ι w N
+  have hdelta (b : {b // b ∈ w.B}) :
+      Real.rpow (geometricDelta
+        (aux_augmentedIncreaseParameters γ i ι w b.1 b.2 m) : ℝ) a ≤
+        A * D * H * (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ) := by
+    dsimp [a, A, D, H]
+    simpa [hγ] using
+      (augmentedDeltaRpowLe γ i ι w b.1 b.2 m)
+  have hreal (b : {b // b ∈ w.B}) :
+      C * Real.rpow (geometricDelta
+        (aux_augmentedIncreaseParameters γ i ι w b.1 b.2 m) : ℝ) a ≤
+      C * (A * D * H * (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ)) :=
+    mul_le_mul_of_nonneg_left (hdelta b) hC0
+  calc
+    _ ≤ ∑ b : {b // b ∈ w.B}, ENNReal.ofReal c *
+        ENNReal.ofReal (C * Real.rpow
+          (geometricDelta (aux_augmentedIncreaseParameters γ i ι w b.1 b.2 m) : ℝ) a) := by
+      simpa [c, m, a] using hbranch
+    _ ≤ ∑ b : {b // b ∈ w.B}, ENNReal.ofReal c *
+        ENNReal.ofReal (C * (A * D * H *
+          (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ))) := by
+      apply Finset.sum_le_sum
+      intro b _
+      exact mul_le_mul_of_nonneg_left
+        (ENNReal.ofReal_le_ofReal (hreal b)) bot_le
+    _ = ENNReal.ofReal (∑ b : {b // b ∈ w.B},
+        c * (C * (A * D * H *
+          (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ)))) := by
+      rw [ENNReal.ofReal_sum_of_nonneg]
+      · apply Finset.sum_congr rfl
+        intro b _
+        rw [ENNReal.ofReal_mul hc]
+      · intro b _
+        exact mul_nonneg hc
+          (mul_nonneg hC0
+            (mul_nonneg (mul_nonneg (mul_nonneg hA hD) hH) (sq_nonneg _)))
+    _ ≤ ENNReal.ofReal
+        (C_gaussianDominationCombined *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) * C * A * D * H *
+          (C_gaussianDominationCombinedCard * W m)) := by
+      apply ENNReal.ofReal_le_ofReal
+      have hfactor : 0 ≤ C_gaussianDominationCombined *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) * C * A * D * H := by
+        apply mul_nonneg
+        · apply mul_nonneg
+          · apply mul_nonneg
+            · apply mul_nonneg
+              · apply mul_nonneg
+                · unfold C_gaussianDominationCombined
+                  positivity
+                · exact Real.rpow_nonneg (by norm_num) _
+              · exact hC0
+            · exact hA
+          · exact hD
+        · exact hH
+      calc
+        (∑ b : {b // b ∈ w.B}, c * (C * (A * D * H *
+          (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ)))) =
+          (C_gaussianDominationCombined *
+            Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) * C * A * D * H) *
+            (∑ b : {b // b ∈ w.B}, W m) := by
+              dsimp [c, W]
+              rw [Finset.mul_sum]
+              apply Finset.sum_congr rfl
+              intro b _
+              ring
+        _ ≤ (C_gaussianDominationCombined *
+            Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) * C * A * D * H) *
+            (C_gaussianDominationCombinedCard * W m) :=
+              mul_le_mul_of_nonneg_left
+                (gaussianWeight_card_factor γ i ι w m) hfactor
+    _ = _ := by
+      unfold C_inductPositiveTermsImplyIncreaseData
+      dsimp [A, D, H, W, a, m]
+      ring
+
+private theorem gaussianWeight_prefix_le (N : ℕ) :
+    (∑ r ∈ Finset.range N,
+      aux_gaussianDominationWeight (finTwoNatEnum r) *
+        (1 + (aux_natPairWeight (finTwoNatEnum r) : ℝ)) ^ (2 : ℕ)) ≤
+      (2 : ℝ) ^ (10 : ℕ) := by
+  let W : (Fin 2 → ℕ) → ℝ := fun q =>
+    aux_gaussianDominationWeight q *
+      (1 + (aux_natPairWeight q : ℝ)) ^ (2 : ℕ)
+  have hW (q : Fin 2 → ℕ) : 0 ≤ W q := by
+    dsimp [W]
+    exact mul_nonneg (aux_gaussianDominationWeight_nonneg q) (sq_nonneg _)
+  have hsum : Summable W :=
+    aux_gaussianDominationWeight_secondMoment_summable
+  have hsumEnum : Summable (fun r : ℕ => W (finTwoNatEnum r)) :=
+    finTwoNatEnum.summable_iff.mpr hsum
+  change (∑ r ∈ Finset.range N, W (finTwoNatEnum r)) ≤ _
+  calc
+    _ ≤ ∑' r : ℕ, W (finTwoNatEnum r) :=
+      hsumEnum.sum_le_tsum _ (fun r _ => hW _)
+    _ = ∑' q : Fin 2 → ℕ, W q := finTwoNatEnum.tsum_eq W
+    _ ≤ (2 : ℝ) ^ (10 : ℕ) :=
+      aux_gaussianDominationWeight_secondMoment_le_two_pow_ten
+
+private theorem tensorSquareExtension_finset_sum {k : ℕ}
+    {α : Type*} (s : Finset α) (G : α → ℤ → MKernel k)
+    (phi : ℤ → ℝ → ℝ) (j : ℤ) :
+    tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+      (fun x => ∑ r ∈ s, G r j x) (phi j) =
+      fun y => ∑ r ∈ s,
+        tensorSquareExtension (k + 1) (by omega) (Fin.last k) (G r j) (phi j) y := by
+  funext y
+  unfold tensorSquareExtension
+  rw [Finset.sum_mul]
+
+private theorem partialPrefix_terminal_IPT_bound
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n - 1) {C : ℝ}
+    (hC : 1 ≤ C)
+    (hIPT : InductPositiveTerms n (k + 1) C (by omega) (by omega) hC)
+    (γ : GeometricParameters n) (hγ : γ.k = k)
+    (i : Fin γ.k) (ι : MultiplierIndex γ)
+    (w : aux_GaussianDominationWitness γ (by simpa [hγ] using hkn) i ι
+      C_gaussianDominationCombined)
+    (N : ℕ) :
+    kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (fun x => ∑ r ∈ Finset.range N,
+          gaussianPartialTerm γ i ι w C_gaussianDominationCombined r j x)
+        (sigmaMultiplier γ ι i j)) ≤
+      ENNReal.ofReal
+        (C_inductPositiveTermsImplyIncreaseData * C *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+          (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ) *
+          Real.rpow (geometricDelta γ : ℝ)
+            (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))) := by
+  classical
+  let P : ℕ → KernelSequence (γ.k + 1) := fun r j =>
+    tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+      (gaussianPartialTerm γ i ι w C_gaussianDominationCombined r j)
+      (sigmaMultiplier γ ι i j)
+  let a : ℝ := 2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2)
+  let D : ℝ := Real.rpow (geometricDelta γ : ℝ) a
+  let H : ℝ := (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ)
+  let L : ℝ := Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2))
+  let B : ℝ := C_inductPositiveTermsImplyIncreaseData * C * L * H * D
+  let W : (Fin 2 → ℕ) → ℝ := fun q =>
+    aux_gaussianDominationWeight q *
+      (1 + (aux_natPairWeight q : ℝ)) ^ (2 : ℕ)
+  have hP (r : ℕ) : MemKernelSequence (γ.k + 1) (P r) := by
+    intro j
+    dsimp [P]
+    exact positivityM_memW0 n (γ.k + 1) (by omega) (by omega) (Fin.last γ.k)
+      (gaussianPartialTerm γ i ι w C_gaussianDominationCombined r j)
+      (gaussianPartialTerm_memW0 γ i ι w C_gaussianDominationCombined
+        (by norm_num [C_gaussianDominationCombined]) r j)
+      (gaussianPartialTerm_nonneg γ i ι w C_gaussianDominationCombined
+        (by norm_num [C_gaussianDominationCombined]) r j)
+      (sigmaMultiplier γ ι i j) (sigmaMultiplier_memW0 γ ι i j)
+  have hrewrite :
+      (fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+        (fun x => ∑ r ∈ Finset.range N,
+          gaussianPartialTerm γ i ι w C_gaussianDominationCombined r j x)
+        (sigmaMultiplier γ ι i j)) =
+      fun j y => ∑ r ∈ Finset.range N, P r j y := by
+    funext j y
+    exact congrFun
+      (tensorSquareExtension_finset_sum (k := γ.k) (Finset.range N)
+        (fun r j => gaussianPartialTerm γ i ι w
+          C_gaussianDominationCombined r j)
+        (sigmaMultiplier γ ι i) j) y
+  have hB : 0 ≤ B := by
+    dsimp [B, L, H, D]
+    apply mul_nonneg
+    · apply mul_nonneg
+      · apply mul_nonneg
+        · apply mul_nonneg
+          · exact (aux_C_inductPositiveTermsImplyIncreaseData_pos).le
+          · exact (by linarith : 0 ≤ C)
+        · exact Real.rpow_nonneg (by norm_num) _
+      · positivity
+    · exact Real.rpow_nonneg (by positivity) _
+  have hW (q : Fin 2 → ℕ) : 0 ≤ W q := by
+    dsimp [W]
+    exact mul_nonneg (aux_gaussianDominationWeight_nonneg q) (sq_nonneg _)
+  have hterm (r : ℕ) :
+      kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega) (P r) ≤
+        ENNReal.ofReal
+          (B * W (finTwoNatEnum r) / (2 : ℝ) ^ (10 : ℕ)) := by
+    dsimp [P, B, W, L, H, D, a]
+    exact partialTerm_weighted_seminorm_bound hk hkn hC hIPT γ hγ i ι w r
+  have hprefix := gaussianWeight_prefix_le N
+  rw [hrewrite]
+  calc
+    kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+        (fun j y => ∑ r ∈ Finset.range N, P r j y) ≤
+      ∑ r ∈ Finset.range N,
+        kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega) (P r) :=
+      aux_kernelSequenceSeminorm_finset_sum_le (by omega) (by omega)
+        (Finset.range N) P (fun r _ => hP r)
+    _ ≤ ∑ r ∈ Finset.range N,
+        ENNReal.ofReal (B * W (finTwoNatEnum r) / (2 : ℝ) ^ (10 : ℕ)) := by
+      apply Finset.sum_le_sum
+      intro r _
+      exact hterm r
+    _ = ENNReal.ofReal (∑ r ∈ Finset.range N,
+        B * W (finTwoNatEnum r) / (2 : ℝ) ^ (10 : ℕ)) := by
+      rw [ENNReal.ofReal_sum_of_nonneg]
+      intro r _
+      exact div_nonneg (mul_nonneg hB (hW _)) (by positivity)
+    _ ≤ ENNReal.ofReal B := by
+      apply ENNReal.ofReal_le_ofReal
+      have hBdiv : 0 ≤ B / (2 : ℝ) ^ (10 : ℕ) :=
+        div_nonneg hB (by positivity)
+      calc
+        (∑ r ∈ Finset.range N,
+          B * W (finTwoNatEnum r) / (2 : ℝ) ^ (10 : ℕ)) =
+            (B / (2 : ℝ) ^ (10 : ℕ)) *
+              (∑ r ∈ Finset.range N, W (finTwoNatEnum r)) := by
+              rw [Finset.mul_sum]
+              apply Finset.sum_congr rfl
+              intro r _
+              ring
+        _ ≤ (B / (2 : ℝ) ^ (10 : ℕ)) * (2 : ℝ) ^ (10 : ℕ) :=
+          mul_le_mul_of_nonneg_left hprefix hBdiv
+        _ = B := by norm_num
+    _ = _ := by rfl
+
+private theorem memW0Min {E : Type*}
+    [NormedAddCommGroup E] [ProperSpace E] [MeasureSpace E] [BorelSpace E]
+    {f g : E → ℝ} (hf : MemW0 f) (hg : MemW0 g) :
+    MemW0 (fun x => min (f x) (g x)) := by
+  have hsum : MemW0 (fun x => f x + g x - |f x - g x|) :=
+    aux_memW0_sub (aux_memW0_add hf hg) (aux_memW0_abs (aux_memW0_sub hf hg))
+  have hhalf := memW0ConstMulNonneg hsum (1 / 2 : ℝ) (by norm_num)
+  convert hhalf using 1
+  funext x
+  rcases le_total (f x) (g x) with hfg | hgf
+  · rw [min_eq_left hfg, abs_of_nonpos (sub_nonpos.mpr hfg)]
+    ring
+  · rw [min_eq_right hgf, abs_of_nonneg (sub_nonneg.mpr hgf)]
+    ring
+
+private theorem tendsto_eLpNorm_one_tensorSquareExtension_min_partialSum_sub
+    {k : ℕ} (M : ℤ → MKernel k) (G : ℕ → ℤ → MKernel k)
+    (phi : ℤ → ℝ → ℝ)
+    (hM : ∀ j, MemW0 (M j))
+    (hM_nonneg : ∀ j x, 0 ≤ M j x)
+    (hG : ∀ n j, MemW0 (G n j))
+    (hG_nonneg : ∀ n j x, 0 ≤ G n j x)
+    (hG_sum : ∀ j x, Summable (fun n => G n j x))
+    (hM_le : ∀ j x, M j x ≤ ∑' n, G n j x)
+    (hphi : ∀ j, MemW0 (phi j))
+    (J : {J : ℕ // 0 < J}) :
+    Tendsto (fun N : ℕ => eLpNorm
+      (fun y =>
+        (∑ j ∈ Finset.range J.1,
+          tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+            (fun x => min (M (j : ℤ) x)
+              (∑ n ∈ Finset.range N, G n (j : ℤ) x))
+            (phi (j : ℤ)) y) -
+          ∑ j ∈ Finset.range J.1,
+            tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+              (M (j : ℤ)) (phi (j : ℤ)) y) 1 volume) atTop (nhds 0) := by
+  classical
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector (k + 1))) :=
+    isAddHaarMeasure_volume_pi (Fin (k + 1))
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (RealVector (k + 1) × RealVector (k + 1))) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  let P : ℕ → (RealVector (k + 1) × RealVector (k + 1)) → ℝ := fun N y =>
+    ∑ j ∈ Finset.range J.1,
+      tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+        (fun x => min (M (j : ℤ) x)
+          (∑ n ∈ Finset.range N, G n (j : ℤ) x))
+        (phi (j : ℤ)) y
+  let T : (RealVector (k + 1) × RealVector (k + 1)) → ℝ := fun y =>
+    ∑ j ∈ Finset.range J.1,
+      tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+        (M (j : ℤ)) (phi (j : ℤ)) y
+  let B : (RealVector (k + 1) × RealVector (k + 1)) → ℝ := fun y =>
+    ∑ j ∈ Finset.range J.1,
+      tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+        (M (j : ℤ)) (fun t => |phi (j : ℤ) t|) y
+  have hP_mem (N : ℕ) (j : ℕ) (hj : j ∈ Finset.range J.1) : MemW0
+      (tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+        (fun x => min (M (j : ℤ) x)
+          (∑ n ∈ Finset.range N, G n (j : ℤ) x))
+        (phi (j : ℤ))) := by
+    apply positivityM_memW0 (k + 1) (k + 1) (by omega) (by omega)
+      (Fin.last k)
+    · apply memW0Min (hM (j : ℤ))
+      apply aux_memW0_finset_sum
+      intro n _
+      exact hG n (j : ℤ)
+    · intro x
+      apply le_min (hM_nonneg (j : ℤ) x)
+      apply Finset.sum_nonneg
+      intro n _
+      exact hG_nonneg n (j : ℤ) x
+    · exact hphi (j : ℤ)
+  have hB_mem : MemW0 B := by
+    dsimp [B]
+    apply aux_memW0_finset_sum
+    intro j hj
+    apply positivityM_memW0 (k + 1) (k + 1) (by omega) (by omega)
+      (Fin.last k) (M (j : ℤ)) (hM (j : ℤ)) (hM_nonneg (j : ℤ))
+    exact aux_memW0_abs (hphi (j : ℤ))
+  have hB_int : Integrable B volume :=
+    aux_memW0_integrable_of_addHaar hB_mem
+  have hP_meas : ∀ N : ℕ, AEStronglyMeasurable (P N) volume := by
+    intro N
+    apply (show MemW0 (P N) from ?_).1.aestronglyMeasurable
+    dsimp [P]
+    apply aux_memW0_finset_sum
+    intro j hj
+    exact hP_mem N j hj
+  have hbound : ∀ N : ℕ, ∀ᵐ y ∂volume, ‖P N y‖ ≤ B y := by
+    intro N
+    filter_upwards [] with y
+    dsimp [P, B]
+    calc
+      ‖∑ j ∈ Finset.range J.1,
+          tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+            (fun x => min (M (j : ℤ) x)
+              (∑ n ∈ Finset.range N, G n (j : ℤ) x))
+            (phi (j : ℤ)) y‖ ≤
+          ∑ j ∈ Finset.range J.1,
+            ‖tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+              (fun x => min (M (j : ℤ) x)
+                (∑ n ∈ Finset.range N, G n (j : ℤ) x))
+              (phi (j : ℤ)) y‖ := norm_sum_le _ _
+      _ ≤ ∑ j ∈ Finset.range J.1,
+          tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+            (M (j : ℤ)) (fun t => |phi (j : ℤ) t|) y := by
+        apply Finset.sum_le_sum
+        intro j hj
+        have hpartial : 0 ≤ ∑ n ∈ Finset.range N, G n (j : ℤ)
+            (aux_eraseVector (k + 1) (by omega) (Fin.last k) y.1,
+             aux_eraseVector (k + 1) (by omega) (Fin.last k) y.2) := by
+          apply Finset.sum_nonneg
+          intro n _
+          exact hG_nonneg n (j : ℤ) _
+        have hmin_nonneg : 0 ≤ min
+            (M (j : ℤ)
+              (aux_eraseVector (k + 1) (by omega) (Fin.last k) y.1,
+               aux_eraseVector (k + 1) (by omega) (Fin.last k) y.2))
+            (∑ n ∈ Finset.range N, G n (j : ℤ)
+              (aux_eraseVector (k + 1) (by omega) (Fin.last k) y.1,
+               aux_eraseVector (k + 1) (by omega) (Fin.last k) y.2)) :=
+          le_min (hM_nonneg (j : ℤ) _) hpartial
+        have hmin_le : min
+            (M (j : ℤ)
+              (aux_eraseVector (k + 1) (by omega) (Fin.last k) y.1,
+               aux_eraseVector (k + 1) (by omega) (Fin.last k) y.2))
+            (∑ n ∈ Finset.range N, G n (j : ℤ)
+              (aux_eraseVector (k + 1) (by omega) (Fin.last k) y.1,
+               aux_eraseVector (k + 1) (by omega) (Fin.last k) y.2)) ≤
+            M (j : ℤ)
+              (aux_eraseVector (k + 1) (by omega) (Fin.last k) y.1,
+               aux_eraseVector (k + 1) (by omega) (Fin.last k) y.2) := min_le_left _ _
+        simp only [tensorSquareExtension, tensorSquare, Real.norm_eq_abs, abs_mul]
+        rw [abs_of_nonneg hmin_nonneg]
+        exact mul_le_mul_of_nonneg_right hmin_le
+          (mul_nonneg (abs_nonneg _) (abs_nonneg _))
+  have hlim : ∀ᵐ y ∂volume, Tendsto (fun N : ℕ => P N y) atTop (nhds (T y)) := by
+    filter_upwards [] with y
+    dsimp [P, T]
+    apply tendsto_finsetSum
+    intro j hj
+    let z : RealVector k × RealVector k :=
+      (aux_eraseVector (k + 1) (by omega) (Fin.last k) y.1,
+       aux_eraseVector (k + 1) (by omega) (Fin.last k) y.2)
+    have hsum : Tendsto (fun N : ℕ => ∑ n ∈ Finset.range N, G n (j : ℤ) z)
+        atTop (nhds (∑' n, G n (j : ℤ) z)) :=
+      (hG_sum (j : ℤ) z).hasSum.tendsto_sum_nat
+    have hbase : Tendsto (fun N : ℕ => min (M (j : ℤ) z)
+        (∑ n ∈ Finset.range N, G n (j : ℤ) z)) atTop
+        (nhds (M (j : ℤ) z)) := by
+      have hconst : Tendsto (fun _ : ℕ => M (j : ℤ) z) atTop
+          (nhds (M (j : ℤ) z)) := tendsto_const_nhds
+      convert hconst.min hsum using 1 <;> simp [hM_le (j : ℤ) z]
+    simpa only [tensorSquareExtension, z] using hbase.mul tendsto_const_nhds
+  have hdc := tendsto_lintegral_norm_of_dominated_convergence hP_meas
+    hB_int.hasFiniteIntegral hbound hlim
+  change Tendsto (fun N : ℕ => eLpNorm (fun y => P N y - T y) 1 volume)
+    atTop (nhds 0)
+  simpa only [eLpNorm_one_eq_lintegral_enorm, Pi.sub_apply,
+    ← ofReal_norm] using hdc
+
+private theorem kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k + 1 ≤ n)
+    (M : ℤ → MKernel k) (G : ℕ → ℤ → MKernel k)
+    (phi : ℤ → ℝ → ℝ) (A : ℝ≥0∞)
+    (hM : ∀ j, MemW0 (M j))
+    (hM_nonneg : ∀ j x, 0 ≤ M j x)
+    (hG : ∀ N j, MemW0 (G N j))
+    (hG_nonneg : ∀ N j x, 0 ≤ G N j x)
+    (hG_sum : ∀ j x, Summable (fun N => G N j x))
+    (hM_le : ∀ j x, M j x ≤ ∑' N, G N j x)
+    (hphi : ∀ j, MemW0 (phi j))
+    (hpartial : ∀ N, kernelSequenceSeminorm n (k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+        (fun x => ∑ r ∈ Finset.range N, G r j x) (phi j)) ≤ A) :
+    kernelSequenceSeminorm n (k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+        (M j) (phi j)) ≤ A := by
+  let P : ℕ → KernelSequence (k + 1) := fun N j =>
+    tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+      (fun x => min (M j x) (∑ r ∈ Finset.range N, G r j x)) (phi j)
+  let T : KernelSequence (k + 1) := fun j =>
+    tensorSquareExtension (k + 1) (by omega) (Fin.last k) (M j) (phi j)
+  have hPbase (N : ℕ) (j : ℤ) : MemW0
+      (fun x => min (M j x) (∑ r ∈ Finset.range N, G r j x)) := by
+    apply memW0Min (hM j)
+    apply aux_memW0_finset_sum
+    intro r hr
+    exact hG r j
+  have hPbase_nonneg (N : ℕ) (j : ℤ) (x : RealVector k × RealVector k) :
+      0 ≤ min (M j x) (∑ r ∈ Finset.range N, G r j x) := by
+    apply le_min (hM_nonneg j x)
+    apply Finset.sum_nonneg
+    intro r hr
+    exact hG_nonneg r j x
+  have hP : ∀ N, MemKernelSequence (k + 1) (P N) := by
+    intro N j
+    dsimp [P]
+    exact positivityM_memW0 n (k + 1) (by omega) (by omega) (Fin.last k)
+      _ (hPbase N j) (hPbase_nonneg N j) _ (hphi j)
+  have hT : MemKernelSequence (k + 1) T := by
+    intro j
+    dsimp [T]
+    exact positivityM_memW0 n (k + 1) (by omega) (by omega) (Fin.last k)
+      _ (hM j) (hM_nonneg j) _ (hphi j)
+  have hbound : ∀ N, kernelSequenceSeminorm n (k + 1) (by omega) (by omega)
+      (P N) ≤ A := by
+    intro N
+    calc
+      kernelSequenceSeminorm n (k + 1) (by omega) (by omega) (P N) ≤
+          kernelSequenceSeminorm n (k + 1) (by omega) (by omega)
+            (fun j => tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+              (fun x => ∑ r ∈ Finset.range N, G r j x) (phi j)) := by
+        dsimp [P]
+        apply aux_kernelSequenceSeminorm_tensorSquareExtension_last_mono hk hkn
+        · exact hPbase N
+        · intro j
+          apply aux_memW0_finset_sum
+          intro r hr
+          exact hG r j
+        · exact hPbase_nonneg N
+        · intro j x
+          exact min_le_right _ _
+        · exact hphi
+      _ ≤ A := hpartial N
+  have hconv : ∀ J : {J : ℕ // 0 < J}, Tendsto (fun N => eLpNorm
+      (fun y => (∑ j ∈ Finset.range J.1, P N (j : ℤ) y) -
+        ∑ j ∈ Finset.range J.1, T (j : ℤ) y) 1 volume) atTop (nhds 0) := by
+    intro J
+    exact tendsto_eLpNorm_one_tensorSquareExtension_min_partialSum_sub
+      M G phi hM hM_nonneg hG hG_nonneg hG_sum hM_le hphi J
+  have hfatou := aux_kernelSequenceSeminorm_le_of_tendsto_eLpNorm
+    (n := n) (k := k + 1) (by omega) (by omega) T P A hT hP hbound hconv
+  simpa only [T] using hfatou
+
+end aux_inductPositiveTerms
+
+/-- Source label `\ref{induct positive terms imply increase data}`. -/
+theorem inductPositiveTerms_implies_increaseData
+    {n k : ℕ} {C : ℝ} (hk : 1 ≤ k) (hkn : k ≤ n - 1) (hC : 1 ≤ C) :
+    InductPositiveTerms n (k + 1) C (by omega) (by omega) hC →
+      IncreaseData n k (C * C_inductPositiveTermsImplyIncreaseData) hk hkn
+        (one_le_mul_of_one_le_of_one_le hC
+          aux_one_le_C_inductPositiveTermsImplyIncreaseData) := by
+  intro hIPT γ hγ i ι
+  let hγn : γ.k ≤ n - 1 := by simpa [hγ] using hkn
+  change MemKernelSequence (γ.k + 1) (aux_increaseDataKernel γ hγn i ι) ∧
+    kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+      (aux_increaseDataKernel γ hγn i ι) ≤
+      ENNReal.ofReal
+        ((C * C_inductPositiveTermsImplyIncreaseData) *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+          (1 + (ι.1.1.natAbs : ℝ)) ^ 2 *
+          Real.rpow (geometricDelta γ : ℝ)
+            (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2)))
+  constructor
+  · exact aux_increaseDataKernel_memKernelSequence γ hγn i ι
+  · rcases gaussianDominationCombined γ hγn i ι with ⟨w⟩
+    have hγkn : γ.k + 1 ≤ n := by
+      have hn : 1 ≤ n := γ.one_le_k.trans (hγn.trans (Nat.sub_le _ _))
+      exact (Nat.le_sub_iff_add_le hn).mp hγn
+    have hM (j : ℤ) : MemW0 (aux_inductPositiveTerms.increaseBase γ hγn i ι j) :=
+      aux_inductPositiveTerms.increaseBase_memW0 γ hγn i ι j
+    have hM_nonneg (j : ℤ) (x : RealVector γ.k × RealVector γ.k) :
+        0 ≤ aux_inductPositiveTerms.increaseBase γ hγn i ι j x :=
+      aux_inductPositiveTerms.increaseBase_nonneg γ hγn i ι j x
+    have hG (N : ℕ) (j : ℤ) :
+        MemW0 (aux_inductPositiveTerms.gaussianPartialTerm γ i ι w
+          C_gaussianDominationCombined N j) :=
+      aux_inductPositiveTerms.gaussianPartialTerm_memW0 γ i ι w
+        C_gaussianDominationCombined
+        (by norm_num [C_gaussianDominationCombined]) N j
+    have hG_nonneg (N : ℕ) (j : ℤ) (x : RealVector γ.k × RealVector γ.k) :
+        0 ≤ aux_inductPositiveTerms.gaussianPartialTerm γ i ι w
+          C_gaussianDominationCombined N j x :=
+      aux_inductPositiveTerms.gaussianPartialTerm_nonneg γ i ι w
+        C_gaussianDominationCombined
+        (by norm_num [C_gaussianDominationCombined]) N j x
+    have hG_sum (j : ℤ) (x : RealVector γ.k × RealVector γ.k) :
+        Summable (fun N => aux_inductPositiveTerms.gaussianPartialTerm γ i ι w
+          C_gaussianDominationCombined N j x) :=
+      aux_inductPositiveTerms.gaussianPartialTerm_summable γ i ι w
+        C_gaussianDominationCombined j x
+    have hM_le (j : ℤ) (x : RealVector γ.k × RealVector γ.k) :
+        aux_inductPositiveTerms.increaseBase γ hγn i ι j x ≤
+          ∑' N, aux_inductPositiveTerms.gaussianPartialTerm γ i ι w
+            C_gaussianDominationCombined N j x := by
+      simpa using
+        (aux_inductPositiveTerms.increaseBase_le_tsum_gaussianPartialTerm γ i ι w j x)
+    have hphi (j : ℤ) : MemW0 (sigmaMultiplier γ ι i j) :=
+      sigmaMultiplier_memW0 γ ι i j
+    have hpartial (N : ℕ) :
+        kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+          (fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+            (fun x => ∑ r ∈ Finset.range N,
+              aux_inductPositiveTerms.gaussianPartialTerm γ i ι w
+                C_gaussianDominationCombined r j x)
+            (sigmaMultiplier γ ι i j)) ≤
+          ENNReal.ofReal
+            (C_inductPositiveTermsImplyIncreaseData * C *
+              Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+              (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ) *
+              Real.rpow (geometricDelta γ : ℝ)
+                (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))) := by
+      exact aux_inductPositiveTerms.partialPrefix_terminal_IPT_bound
+        hk hkn hC hIPT γ hγ i ι w N
+    have hmain :=
+      aux_inductPositiveTerms.kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
+      (n := n) (k := γ.k) γ.one_le_k hγkn
+      (aux_inductPositiveTerms.increaseBase γ hγn i ι)
+      (fun N j => aux_inductPositiveTerms.gaussianPartialTerm γ i ι w
+        C_gaussianDominationCombined N j)
+      (sigmaMultiplier γ ι i)
+      (ENNReal.ofReal
+        (C_inductPositiveTermsImplyIncreaseData * C *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+          (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ) *
+          Real.rpow (geometricDelta γ : ℝ)
+            (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))))
+      hM hM_nonneg hG hG_nonneg hG_sum hM_le hphi hpartial
+    have hkernel : aux_increaseDataKernel γ hγn i ι =
+        fun j => tensorSquareExtension (γ.k + 1) (by omega) (Fin.last γ.k)
+          (aux_inductPositiveTerms.increaseBase γ hγn i ι j) (sigmaMultiplier γ ι i j) := by
+      funext j
+      exact aux_inductPositiveTerms.increaseDataKernel_eq_tensorSquareExtension γ hγn i ι j
+    rw [hkernel]
+    simpa [mul_assoc, mul_left_comm, mul_comm] using hmain
 
 /-- Constant used by Proposition \ref{P:better-induction}, formalized by
 `betterInduction`. -/
@@ -1592,6 +2954,1897 @@ theorem aux_one_le_C_increaseDataImpliesDiagonalBand (k n : ℕ) {C : ℝ}
         simpa using (mul_le_mul_of_nonneg_right
           (show (1 : ℝ) ≤ (2 : ℝ) ^ (10 : ℕ) by norm_num) (by linarith : 0 ≤ C))
 
+/-! The proof of the diagonal-band implication is kept in a local namespace:
+it combines the reconstruction identities for `lMultiplier` with the finite
+multiplier-index summation estimates. -/
+namespace aux_increaseDataDiagonal
+
+
+mutual
+
+private theorem aux_endpoint_increase_exponent {k n : ℕ} (htop : k + 1 = n) :
+    2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2) = 0 := by
+  subst n
+  norm_num
+
+private theorem aux_lMultiplier_seminorm_endpoint_bound {n k : ℕ} {C : ℝ}
+    (hk : 1 ≤ k) (hkn : k ≤ n - 1) (hC : 1 ≤ C)
+    (hIncrease : IncreaseData n k C hk hkn hC)
+    (γ : GeometricParameters n) (hγ : γ.k = k) (i : Fin γ.k)
+    (ι : MultiplierIndex γ) (hend : ¬ k < n - 1) :
+    kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
+      (sandwichKernel γ (lMultiplier γ ι) i) ≤ ENNReal.ofReal
+        (C * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+          (1 + (ι.1.1.natAbs : ℝ)) ^ 2) := by
+  let hγn : γ.k ≤ n - 1 := by simpa [hγ] using hkn
+  have htopK : k + 1 = n := by omega
+  have htop : γ.k + 1 = n := by omega
+  rcases hIncrease γ hγ i ι with ⟨_, hinc⟩
+  let U : ℝ := C * Real.rpow 2 (-((ι.1.1.natAbs : ℝ) / 2)) *
+    (1 + (ι.1.1.natAbs : ℝ)) ^ 2 *
+    Real.rpow (geometricDelta γ : ℝ)
+      (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))
+  have hU0 : 0 ≤ U := by
+    dsimp [U]
+    positivity
+  have hinc' : kernelSequenceSeminorm n (γ.k + 1)
+      (Nat.succ_le_succ (Nat.zero_le γ.k))
+      (by omega)
+      (aux_increaseDataKernel γ hγn i ι) ≤ ENNReal.ofReal U := by
+    simpa [U] using hinc
+  have hcore := aux_lMultiplier_seminorm_endpoint_of_increase_verified γ hγn ι i
+    (by simpa [hγ] using hend) htop hU0 hinc'
+  have hexp := aux_endpoint_increase_exponent htopK
+  apply hcore.trans
+  apply ENNReal.ofReal_le_ofReal
+  dsimp [U]
+  rw [hexp, Real.rpow_zero]
+  simp
+
+private theorem aux_increaseData_implies_diagonalBand_endpoint {n k : ℕ} {C : ℝ}
+    (hk : 1 ≤ k) (hkn : k ≤ n - 1) (hC : 1 ≤ C)
+    (hend : ¬ k < n - 1) :
+    IncreaseData n k C hk hkn hC →
+      DiagonalBand n k (C_increaseDataImpliesDiagonalBand k n C) hk hkn
+        (aux_one_le_C_increaseDataImpliesDiagonalBand k n hC) := by
+  intro hIncrease
+  unfold DiagonalBand
+  intro γ hγ i
+  have hA : 0 ≤ C := (zero_le_one.trans hC)
+  have hpoint (ι : MultiplierIndex γ) :
+      kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
+        (sandwichKernel γ (lMultiplier γ ι) i) ≤ ENNReal.ofReal
+          (C * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+            (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ)) := by
+    convert aux_lMultiplier_seminorm_endpoint_bound hk hkn hC hIncrease γ hγ i ι hend using 1
+    congr 4
+    ring
+  have hsum := aux_sumOverMultiplierIndex_half_le γ
+    (fun ι => kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
+      (sandwichKernel γ (lMultiplier γ ι) i)) C hA hpoint
+  rw [C_increaseDataImpliesDiagonalBand, if_neg hend]
+  let d : ℝ := geometricDelta γ
+  let q : ℝ := (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)
+  have htop : k + 1 = n := by omega
+  have hq : q = 1 := by
+    dsimp [q]
+    have htopZ : (k : ℤ) + 1 = (n : ℤ) := by exact_mod_cast htop
+    rw [show (k : ℤ) - (n : ℤ) + 1 = 0 by omega]
+    norm_num
+  have hscalar : ((2 : ℝ) ^ (10 : ℕ) * d) * C =
+      (2 : ℝ) ^ (10 : ℕ) * C * Real.rpow d (2 - q) := by
+    rw [hq]
+    norm_num
+    ring
+  simpa [d, q] using hsum.trans_eq (congrArg ENNReal.ofReal hscalar)
+
+theorem impl {n k : ℕ} {C : ℝ}
+    (hk : 1 ≤ k) (hkn : k ≤ n - 1) (hC : 1 ≤ C) :
+    IncreaseData n k C hk hkn hC →
+      DiagonalBand n k (C_increaseDataImpliesDiagonalBand k n C) hk hkn
+        (aux_one_le_C_increaseDataImpliesDiagonalBand k n hC) := by
+  by_cases hinterior : k < n - 1
+  · exact aux_increaseData_implies_diagonalBand_interior hk hkn hC hinterior
+  · exact aux_increaseData_implies_diagonalBand_endpoint hk hkn hC hinterior
+
+
+private theorem aux_scalar_test {d q A : ℝ} (hd : 0 < d) :
+    ((2 : ℝ) ^ (10 : ℕ) * d) * A * Real.rpow d (1 - q) =
+      (2 : ℝ) ^ (10 : ℕ) * A * Real.rpow d (2 - q) := by
+  have hpow : d * Real.rpow d (1 - q) = Real.rpow d (2 - q) := by
+    nth_rewrite 1 [← Real.rpow_one d]
+    change Real.rpow d (1 : ℝ) * Real.rpow d (1 - q) = Real.rpow d (2 - q)
+    calc
+      Real.rpow d (1 : ℝ) * Real.rpow d (1 - q) =
+          Real.rpow d ((1 : ℝ) + (1 - q)) :=
+        (Real.rpow_add hd (1 : ℝ) (1 - q)).symm
+      _ = Real.rpow d (2 - q) := by congr 1 <;> ring
+  calc
+    ((2 : ℝ) ^ (10 : ℕ) * d) * A * Real.rpow d (1 - q) =
+        (2 : ℝ) ^ (10 : ℕ) * A * (d * Real.rpow d (1 - q)) := by ring
+    _ = _ := by rw [hpow]
+
+private theorem aux_constant_test {a b p : ℝ} :
+    (2 : ℝ) ^ (10 : ℕ) * ((2 : ℝ) ^ (5 : ℕ) * a * b) * p =
+      (2 : ℝ) ^ (15 : ℕ) * a * b * p := by
+  have h : (2 : ℝ) ^ (15 : ℕ) = (2 : ℝ) ^ (10 : ℕ) * (2 : ℝ) ^ (5 : ℕ) := by
+    rw [← pow_add]
+  rw [h]
+  ring
+
+private theorem aux_increaseData_implies_diagonalBand_interior {n k : ℕ} {C : ℝ}
+    (hk : 1 ≤ k) (hkn : k ≤ n - 1) (hC : 1 ≤ C)
+    (hinterior : k < n - 1) :
+    IncreaseData n k C hk hkn hC →
+      DiagonalBand n k (C_increaseDataImpliesDiagonalBand k n C) hk hkn
+        (aux_one_le_C_increaseDataImpliesDiagonalBand k n hC) := by
+  intro hIncrease
+  unfold DiagonalBand
+  intro γ hγ i
+  let d : ℝ := geometricDelta γ
+  let q : ℝ := (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)
+  let A : ℝ := (2 : ℝ) ^ (5 : ℕ) * Real.sqrt C_gaussianDominationCombined * Real.sqrt C
+  let R : ℝ := Real.rpow d (1 - q)
+  have hdpos : 0 < d := by
+    dsimp [d]
+    exact_mod_cast aux_one_le_geometricDelta γ
+  have hA : 0 ≤ A := by
+    dsimp [A]
+    positivity
+  have hR : 0 ≤ R := by
+    dsimp [R]
+    positivity
+  have hpoint (ι : MultiplierIndex γ) :
+      kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
+        (sandwichKernel γ (lMultiplier γ ι) i) ≤ ENNReal.ofReal
+          (A * (Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 4) *
+            (1 + (ι.1.1.natAbs : ℝ))) * R) := by
+    have h := aux_lMultiplier_seminorm_interior_bound hk hkn hC hIncrease γ hγ i ι
+      (by simpa [hγ] using hinterior)
+    convert h using 1 <;> dsimp [A, R, d, q] <;> ring
+  have hsum := aux_sumOverMultiplierIndex_quarter_le γ
+    (fun ι => kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
+      (sandwichKernel γ (lMultiplier γ ι) i)) A R hA hR hpoint
+  rw [C_increaseDataImpliesDiagonalBand, if_pos hinterior]
+  have hscalar :
+      ((2 : ℝ) ^ (10 : ℕ) * d) * A * R =
+        (2 : ℝ) ^ (15 : ℕ) * Real.sqrt C_gaussianDominationCombined * Real.sqrt C *
+          Real.rpow d (2 - q) := by
+    calc
+      ((2 : ℝ) ^ (10 : ℕ) * d) * A * R =
+          ((2 : ℝ) ^ (10 : ℕ) * d) * A * Real.rpow d (1 - q) := by rfl
+      _ = (2 : ℝ) ^ (10 : ℕ) * A * Real.rpow d (2 - q) :=
+        aux_scalar_test hdpos
+      _ = (2 : ℝ) ^ (15 : ℕ) * Real.sqrt C_gaussianDominationCombined * Real.sqrt C *
+          Real.rpow d (2 - q) := by
+        dsimp [A]
+        exact aux_constant_test
+  simpa [d, q] using hsum.trans_eq (congrArg ENNReal.ofReal hscalar)
+
+
+private theorem aux_prismForm_transport_from_top {n k : ℕ} (hk : 1 ≤ k)
+    (htop : k + 1 = n) (M : MKernel k) (F : NormalizedFunctionTuple n) :
+    ∃ F0 : NormalizedFunctionTuple (k + 1),
+      |prismForm n k hk (by omega) M (fun a x => F.1 a x)| =
+        |prismForm (k + 1) k hk (by omega) M (fun a x => F0.1 a x)| := by
+  subst n
+  exact ⟨F, rfl⟩
+
+private theorem aux_prismForm_transport_to_top {n k : ℕ} (hk : 1 ≤ k)
+    (htop : k + 1 = n) (M : MKernel (k + 1))
+    (G : NormalizedFunctionTuple (k + 1)) :
+    ∃ G' : NormalizedFunctionTuple n,
+      |prismForm (k + 1) (k + 1) (by omega) le_rfl M
+        (fun a x => G.1 a x)| =
+      |prismForm n (k + 1) (by omega) (by omega) M
+        (fun a x => G'.1 a x)| := by
+  subst n
+  exact ⟨G, rfl⟩
+
+private theorem aux_lMultiplier_seminorm_endpoint_of_increase_verified {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (hend : ¬ γ.k < n - 1)
+    (htop : γ.k + 1 = n) {U : ℝ} (hU0 : 0 ≤ U)
+    (hinc : kernelSequenceSeminorm n (γ.k + 1)
+      (Nat.succ_le_succ (Nat.zero_le γ.k))
+      (by omega)
+      (aux_increaseDataKernel γ hkn i ι) ≤ ENNReal.ofReal U) :
+    kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
+      (sandwichKernel γ (lMultiplier γ ι) i) ≤ ENNReal.ofReal U := by
+  classical
+  unfold kernelSequenceSeminorm
+  refine iSup_le fun J => ?_
+  refine iSup_le fun F => ?_
+  let ρ : Fin J.1 → MKernel γ.k := fun l =>
+    sandwichKernel γ (nMultiplier γ hkn ι) i (l.1 : ℤ)
+  let φ : Fin J.1 → ℝ → ℝ := fun l => sigmaMultiplier γ ι i (l.1 : ℤ)
+  have hρ (l : Fin J.1) : MemW0 (ρ l) := by
+    dsimp [ρ]
+    exact sandwichKernel_memKernelSequence γ (nMultiplier γ hkn ι)
+      (nKernelWellDefinedness γ hkn ι) i (l.1 : ℤ)
+  have hφ (l : Fin J.1) : MemW0 (φ l) := by
+    dsimp [φ]
+    exact sigmaMultiplier_memW0 γ ι i (l.1 : ℤ)
+  have hkernel :
+      (fun y => ∑ j ∈ Finset.range J.1,
+        sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y) =
+        doublyCauchySchwarzKernel ρ φ i := by
+    calc
+      (fun y => ∑ j ∈ Finset.range J.1,
+          sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y) =
+          fun y => ∑ l : Fin J.1,
+            sandwichKernel γ (lMultiplier γ ι) i (l.1 : ℤ) y := by
+              funext y
+              rw [Finset.sum_fin_eq_sum_range]
+              apply Finset.sum_congr rfl
+              intro j hj
+              simp [Finset.mem_range.mp hj]
+      _ = doublyCauchySchwarzKernel ρ φ i :=
+        (aux_doublyCauchySchwarzKernel_eq_lMultiplier_partial γ hkn ι i J.1 hend).symm
+  have hlift :
+      (fun y => ∑ j ∈ Finset.range J.1, aux_increaseDataKernel γ hkn i ι (j : ℤ) y) =
+        cauchySchwarzLift ρ φ := by
+    calc
+      (fun y => ∑ j ∈ Finset.range J.1,
+          aux_increaseDataKernel γ hkn i ι (j : ℤ) y) =
+          fun y => ∑ l : Fin J.1,
+            aux_increaseDataKernel γ hkn i ι (l.1 : ℤ) y := by
+              funext y
+              rw [Finset.sum_fin_eq_sum_range]
+              apply Finset.sum_congr rfl
+              intro j hj
+              simp [Finset.mem_range.mp hj]
+      _ = cauchySchwarzLift ρ φ :=
+        (aux_cauchySchwarzLift_eq_increaseData_partial γ hkn ι i J.1).symm
+  have hnormal : min 1 (Real.rpow (J.1 : ℝ)
+      (-1 + (2 : ℝ) ^ (((γ.k + 1 : ℕ) : ℤ) - (n : ℤ) + 1))) = 1 := by
+    have htopz : ((γ.k + 1 : ℕ) : ℤ) = (n : ℤ) := by
+      exact_mod_cast htop
+    rw [htopz]
+    norm_num
+    exact_mod_cast (show 1 ≤ J.1 by omega)
+  obtain ⟨F0, hF0⟩ := aux_prismForm_transport_from_top γ.one_le_k htop
+    (doublyCauchySchwarzKernel ρ φ i) F
+  have hsup : sSup (Set.range (fun G : NormalizedFunctionTuple (γ.k + 1) =>
+      |prismForm (γ.k + 1) (γ.k + 1) (by omega) le_rfl
+        (cauchySchwarzLift ρ φ) (fun a x => G.1 a x)|)) ≤ U := by
+    apply csSup_le
+    · exact ⟨_, ⟨F0, rfl⟩⟩
+    rintro _ ⟨G, rfl⟩
+    obtain ⟨G', hG'⟩ := aux_prismForm_transport_to_top γ.one_le_k htop
+      (cauchySchwarzLift ρ φ) G
+    change |prismForm (γ.k + 1) (γ.k + 1) (by omega) le_rfl
+      (cauchySchwarzLift ρ φ) (fun a x => G.1 a x)| ≤ U
+    rw [hG']
+    apply (ENNReal.ofReal_le_ofReal_iff hU0).mp
+    have hterm : ENNReal.ofReal
+        |prismForm n (γ.k + 1) (by omega)
+          (by omega)
+          (cauchySchwarzLift ρ φ) (fun a x => G'.1 a x)| ≤
+        kernelSequenceSeminorm n (γ.k + 1) (by omega)
+          (by omega)
+          (aux_increaseDataKernel γ hkn i ι) := by
+          unfold kernelSequenceSeminorm
+          apply le_iSup_of_le J
+          apply le_iSup_of_le G'
+          simpa only [hnormal, one_mul, hlift] using
+            (le_refl (ENNReal.ofReal
+              |prismForm n (γ.k + 1) (by omega)
+                (by omega)
+                (cauchySchwarzLift ρ φ) (fun a x => G'.1 a x)|))
+    exact hterm.trans hinc
+  have hCS :
+      |prismForm n γ.k γ.one_le_k (by omega)
+        (fun y => ∑ j ∈ Finset.range J.1,
+          sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y)
+        (fun a => F.1 a)| ≤ U := by
+    calc
+      |prismForm n γ.k γ.one_le_k (by omega)
+          (fun y => ∑ j ∈ Finset.range J.1,
+            sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y)
+          (fun a => F.1 a)| =
+          |prismForm n γ.k γ.one_le_k (by omega)
+            (doublyCauchySchwarzKernel ρ φ i) (fun a => F.1 a)| := by rw [hkernel]
+      _ = |prismForm (γ.k + 1) γ.k γ.one_le_k (by omega)
+            (doublyCauchySchwarzKernel ρ φ i) (fun a => F0.1 a)| := hF0
+      _ ≤ sSup (Set.range (fun G : NormalizedFunctionTuple (γ.k + 1) =>
+          |prismForm (γ.k + 1) (γ.k + 1) (by omega) le_rfl
+            (cauchySchwarzLift ρ φ) (fun a x => G.1 a x)|)) :=
+        cauchySchwarzAtNMinusOne_bound γ.k J.1 γ.one_le_k J.2 ρ φ hρ hφ i F0.1 F0.2
+      _ ≤ U := hsup
+  have hnormalBottom : min 1 (Real.rpow (J.1 : ℝ)
+      (-1 + (2 : ℝ) ^ ((γ.k : ℤ) - (n : ℤ) + 1))) ≤ 1 := by
+    exact min_le_left _ _
+  calc
+    ENNReal.ofReal (min 1 (Real.rpow (J.1 : ℝ)
+        (-1 + (2 : ℝ) ^ ((γ.k : ℤ) - (n : ℤ) + 1))) *
+        |prismForm n γ.k γ.one_le_k γ.k_le_n
+          (fun y => ∑ j ∈ Finset.range J.1,
+            sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y)
+          (fun a => F.1 a)|) ≤
+        ENNReal.ofReal |prismForm n γ.k γ.one_le_k γ.k_le_n
+          (fun y => ∑ j ∈ Finset.range J.1,
+            sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y)
+          (fun a => F.1 a)| := by
+      apply ENNReal.ofReal_le_ofReal
+      have habs : 0 ≤ |prismForm n γ.k γ.one_le_k γ.k_le_n
+          (fun y => ∑ j ∈ Finset.range J.1,
+            sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y)
+          (fun a => F.1 a)| := abs_nonneg _
+      nlinarith
+    _ ≤ ENNReal.ofReal U := ENNReal.ofReal_le_ofReal hCS
+
+
+private theorem aux_sumOverMultiplierIndex_half_le {n : ℕ}
+    (γ : GeometricParameters n) (X : MultiplierIndex γ → ℝ≥0∞)
+    (A : ℝ) (hA : 0 ≤ A)
+    (hpoint : ∀ ι : MultiplierIndex γ,
+      X ι ≤ ENNReal.ofReal
+        (A * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) *
+          (1 + (ι.1.1.natAbs : ℝ)) ^ (2 : ℕ))) :
+    sumOverMultiplierIndexENNReal γ X ≤
+      ENNReal.ofReal (((2 : ℝ) ^ (10 : ℕ) * (geometricDelta γ : ℝ)) * A) := by
+  classical
+  let D : ℕ := geometricDelta γ
+  have hD : 1 ≤ D := by
+    dsimp [D, geometricDelta]
+    omega
+  unfold sumOverMultiplierIndexENNReal
+  refine iSup_le fun N => ?_
+  let M : ℕ := max N (D + 1)
+  have hNM : N ≤ M := by dsimp [M]; exact Nat.le_max_left _ _
+  have hDM : geometricDelta γ < M := by
+    dsimp [M, D]
+    omega
+  have hsubset := aux_truncation_mono γ hNM
+  have hmem (x : ℤ × ℤ) (hx : x ∈ aux_multiplierIndexTruncation γ M) :
+      x ∈ multiplierIndexSet γ :=
+    aux_mem_multiplierIndex_of_truncation γ M hx
+  have hsumENN :
+      (∑ x ∈ aux_multiplierIndexTruncation γ N,
+        if hx : x ∈ multiplierIndexSet γ then X ⟨x, hx⟩ else 0) ≤
+      ENNReal.ofReal
+        (∑ x ∈ aux_multiplierIndexTruncation γ M,
+          A * Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+            (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) := by
+    calc
+      (∑ x ∈ aux_multiplierIndexTruncation γ N,
+        if hx : x ∈ multiplierIndexSet γ then X ⟨x, hx⟩ else 0) ≤
+          ∑ x ∈ aux_multiplierIndexTruncation γ M,
+            if hx : x ∈ multiplierIndexSet γ then X ⟨x, hx⟩ else 0 :=
+        Finset.sum_le_sum_of_subset hsubset
+      _ ≤ ∑ x ∈ aux_multiplierIndexTruncation γ M,
+          ENNReal.ofReal
+            (A * Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+              (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) := by
+        apply Finset.sum_le_sum
+        intro x hx
+        rw [dif_pos (hmem x hx)]
+        exact hpoint ⟨x, hmem x hx⟩
+      _ = ENNReal.ofReal
+          (∑ x ∈ aux_multiplierIndexTruncation γ M,
+            A * Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+              (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) := by
+        symm
+        apply ENNReal.ofReal_sum_of_nonneg
+        intro x hx
+        exact mul_nonneg (mul_nonneg hA (Real.rpow_nonneg (by norm_num) _))
+          (sq_nonneg _)
+  have hnv : Disjoint (aux_lMultiplierNegIndices M)
+      (aux_lMultiplierVerticalIndices (geometricDelta γ)) := by
+    rw [Finset.disjoint_left]
+    rintro ⟨h, l⟩ hneg hvert
+    simp [aux_lMultiplierNegIndices, aux_lMultiplierVerticalIndices] at hneg hvert
+    omega
+  have hnvpos : Disjoint
+      (aux_lMultiplierNegIndices M ∪ aux_lMultiplierVerticalIndices (geometricDelta γ))
+      (aux_lMultiplierPosIndices M) := by
+    rw [Finset.disjoint_left]
+    rintro ⟨h, l⟩ hleft hpos
+    simp [aux_lMultiplierNegIndices, aux_lMultiplierVerticalIndices,
+      aux_lMultiplierPosIndices] at hleft hpos
+    rcases hleft with hneg | hvert <;> omega
+  have hweights :
+      (∑ x ∈ aux_multiplierIndexTruncation γ M,
+        Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+          (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) ≤ (2 : ℝ) ^ (10 : ℕ) * D := by
+    rw [aux_lMultiplier_truncation_decomp γ M hDM,
+      Finset.sum_union hnvpos, Finset.sum_union hnv]
+    have hvertical :
+        (∑ x ∈ aux_lMultiplierVerticalIndices (geometricDelta γ),
+          Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+            (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) =
+          ∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ) := by
+      change
+        (∑ x ∈ aux_lMultiplierVerticalIndices D,
+          Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+            (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) =
+          ∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)
+      apply Finset.sum_congr rfl
+      intro x hx
+      have hx0 : x.1 = 0 := by
+        unfold aux_lMultiplierVerticalIndices at hx
+        rcases Finset.mem_image.mp hx with ⟨l, hl, hxl⟩
+        rw [← hxl]
+      rw [hx0]
+      norm_num
+    rw [hvertical]
+    exact aux_sum_multiplier_blocks_half_le M D hD
+  have hscalar :
+      (∑ x ∈ aux_multiplierIndexTruncation γ M,
+        A * Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+          (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) ≤
+        ((2 : ℝ) ^ (10 : ℕ) * (D : ℝ)) * A := by
+    calc
+      (∑ x ∈ aux_multiplierIndexTruncation γ M,
+        A * Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+          (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) =
+          A * ∑ x ∈ aux_multiplierIndexTruncation γ M,
+            Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+              (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ) := by
+          rw [Finset.mul_sum]
+          apply Finset.sum_congr rfl
+          intro x hx
+          ring
+      _ ≤ A * ((2 : ℝ) ^ (10 : ℕ) * D) :=
+        mul_le_mul_of_nonneg_left hweights hA
+      _ = ((2 : ℝ) ^ (10 : ℕ) * (D : ℝ)) * A := by ring
+  calc
+    (∑ x ∈ aux_multiplierIndexTruncation γ N,
+      if hx : x ∈ multiplierIndexSet γ then X ⟨x, hx⟩ else 0) ≤
+        ENNReal.ofReal
+          (∑ x ∈ aux_multiplierIndexTruncation γ M,
+            A * Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+              (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) := hsumENN
+    _ ≤ ENNReal.ofReal (((2 : ℝ) ^ (10 : ℕ) * (D : ℝ)) * A) :=
+      ENNReal.ofReal_le_ofReal hscalar
+    _ = ENNReal.ofReal (((2 : ℝ) ^ (10 : ℕ) * (geometricDelta γ : ℝ)) * A) := by
+      rfl
+
+
+private theorem aux_sum_multiplier_blocks_half_le (N D : ℕ) (hD : 1 ≤ D) :
+    (∑ x ∈ aux_lMultiplierNegIndices N,
+      Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+        (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) +
+      (∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) +
+      ∑ x ∈ aux_lMultiplierPosIndices N,
+        Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+          (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ) ≤ (2 : ℝ) ^ (10 : ℕ) * D := by
+  have hneg := aux_sum_half_weight_neg_le N
+  have hvert := aux_sum_vertical_one_le D hD
+  have hpos := aux_sum_half_weight_pos_le N
+  calc
+    (∑ x ∈ aux_lMultiplierNegIndices N,
+      Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+        (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) +
+      (∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) +
+      ∑ x ∈ aux_lMultiplierPosIndices N,
+        Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+          (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ) ≤
+        (128 : ℝ) + 3 * D + 128 := by gcongr
+    _ ≤ (2 : ℝ) ^ (10 : ℕ) * D := by
+      have hD' : (1 : ℝ) ≤ D := by exact_mod_cast hD
+      nlinarith
+
+private theorem aux_truncation_mono {n : ℕ} (γ : GeometricParameters n)
+    {N M : ℕ} (hNM : N ≤ M) :
+    aux_multiplierIndexTruncation γ N ⊆ aux_multiplierIndexTruncation γ M := by
+  rintro ⟨x1, x2⟩ hx
+  simp [aux_multiplierIndexTruncation] at hx ⊢
+  rcases hx with ⟨hbox, hset⟩
+  refine ⟨?_, hset⟩
+  rcases hbox with ⟨⟨hx1, hx2⟩, hx3, hx4⟩
+  exact ⟨⟨by omega, by omega⟩, by omega, by omega⟩
+
+private theorem aux_mem_multiplierIndex_of_truncation {n : ℕ}
+    (γ : GeometricParameters n) (N : ℕ) {x : ℤ × ℤ}
+    (hx : x ∈ aux_multiplierIndexTruncation γ N) : x ∈ multiplierIndexSet γ := by
+  rcases x with ⟨x1, x2⟩
+  simp [aux_multiplierIndexTruncation] at hx
+  exact hx.2
+
+private theorem aux_sumOverMultiplierIndex_quarter_le {n : ℕ}
+    (γ : GeometricParameters n) (X : MultiplierIndex γ → ℝ≥0∞)
+    (A R : ℝ) (hA : 0 ≤ A) (hR : 0 ≤ R)
+    (hpoint : ∀ ι : MultiplierIndex γ,
+      X ι ≤ ENNReal.ofReal
+        (A * (Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 4) *
+          (1 + (ι.1.1.natAbs : ℝ))) * R)) :
+    sumOverMultiplierIndexENNReal γ X ≤
+      ENNReal.ofReal (((2 : ℝ) ^ (10 : ℕ) * (geometricDelta γ : ℝ)) * A * R) := by
+  classical
+  let D : ℕ := geometricDelta γ
+  have hD : 1 ≤ D := by
+    dsimp [D, geometricDelta]
+    omega
+  unfold sumOverMultiplierIndexENNReal
+  refine iSup_le fun N => ?_
+  let M : ℕ := max N (D + 1)
+  have hNM : N ≤ M := by dsimp [M]; exact Nat.le_max_left _ _
+  have hDM : geometricDelta γ < M := by
+    dsimp [M, D]
+    omega
+  have hsubset := aux_truncation_mono γ hNM
+  have hmem (x : ℤ × ℤ) (hx : x ∈ aux_multiplierIndexTruncation γ M) :
+      x ∈ multiplierIndexSet γ :=
+    aux_mem_multiplierIndex_of_truncation γ M hx
+  have hsumENN :
+      (∑ x ∈ aux_multiplierIndexTruncation γ N,
+        if hx : x ∈ multiplierIndexSet γ then X ⟨x, hx⟩ else 0) ≤
+      ENNReal.ofReal
+        (∑ x ∈ aux_multiplierIndexTruncation γ M,
+          A * (Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+            (1 + (x.1.natAbs : ℝ))) * R) := by
+    calc
+      (∑ x ∈ aux_multiplierIndexTruncation γ N,
+        if hx : x ∈ multiplierIndexSet γ then X ⟨x, hx⟩ else 0) ≤
+          ∑ x ∈ aux_multiplierIndexTruncation γ M,
+            if hx : x ∈ multiplierIndexSet γ then X ⟨x, hx⟩ else 0 :=
+        Finset.sum_le_sum_of_subset hsubset
+      _ ≤ ∑ x ∈ aux_multiplierIndexTruncation γ M,
+          ENNReal.ofReal
+            (A * (Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+              (1 + (x.1.natAbs : ℝ))) * R) := by
+        apply Finset.sum_le_sum
+        intro x hx
+        rw [dif_pos (hmem x hx)]
+        exact hpoint ⟨x, hmem x hx⟩
+      _ = ENNReal.ofReal
+          (∑ x ∈ aux_multiplierIndexTruncation γ M,
+            A * (Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+              (1 + (x.1.natAbs : ℝ))) * R) := by
+        symm
+        apply ENNReal.ofReal_sum_of_nonneg
+        intro x hx
+        exact mul_nonneg (mul_nonneg hA
+          (mul_nonneg (Real.rpow_nonneg (by norm_num) _) (by positivity))) hR
+  have hnv : Disjoint (aux_lMultiplierNegIndices M)
+      (aux_lMultiplierVerticalIndices (geometricDelta γ)) := by
+    rw [Finset.disjoint_left]
+    rintro ⟨h, l⟩ hneg hvert
+    simp [aux_lMultiplierNegIndices, aux_lMultiplierVerticalIndices] at hneg hvert
+    omega
+  have hnvpos : Disjoint
+      (aux_lMultiplierNegIndices M ∪ aux_lMultiplierVerticalIndices (geometricDelta γ))
+      (aux_lMultiplierPosIndices M) := by
+    rw [Finset.disjoint_left]
+    rintro ⟨h, l⟩ hleft hpos
+    simp [aux_lMultiplierNegIndices, aux_lMultiplierVerticalIndices,
+      aux_lMultiplierPosIndices] at hleft hpos
+    rcases hleft with hneg | hvert <;> omega
+  have hweights :
+      (∑ x ∈ aux_multiplierIndexTruncation γ M,
+        Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+          (1 + (x.1.natAbs : ℝ))) ≤ (2 : ℝ) ^ (10 : ℕ) * D := by
+    rw [aux_lMultiplier_truncation_decomp γ M hDM,
+      Finset.sum_union hnvpos, Finset.sum_union hnv]
+    have hvertical :
+        (∑ x ∈ aux_lMultiplierVerticalIndices (geometricDelta γ),
+          Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+            (1 + (x.1.natAbs : ℝ))) =
+          ∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ) := by
+      change
+        (∑ x ∈ aux_lMultiplierVerticalIndices D,
+          Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+            (1 + (x.1.natAbs : ℝ))) =
+          ∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)
+      apply Finset.sum_congr rfl
+      intro x hx
+      have hx0 : x.1 = 0 := by
+        unfold aux_lMultiplierVerticalIndices at hx
+        rcases Finset.mem_image.mp hx with ⟨l, hl, hxl⟩
+        rw [← hxl]
+      rw [hx0]
+      norm_num
+    rw [hvertical]
+    exact aux_sum_multiplier_blocks_quarter_le M D hD
+  have hscalar :
+      (∑ x ∈ aux_multiplierIndexTruncation γ M,
+        A * (Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+          (1 + (x.1.natAbs : ℝ))) * R) ≤
+        ((2 : ℝ) ^ (10 : ℕ) * (D : ℝ)) * A * R := by
+    calc
+      (∑ x ∈ aux_multiplierIndexTruncation γ M,
+        A * (Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+          (1 + (x.1.natAbs : ℝ))) * R) =
+          (A * R) *
+            ∑ x ∈ aux_multiplierIndexTruncation γ M,
+              Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+                (1 + (x.1.natAbs : ℝ)) := by
+          rw [Finset.mul_sum]
+          apply Finset.sum_congr rfl
+          intro x hx
+          ring
+      _ ≤ (A * R) * ((2 : ℝ) ^ (10 : ℕ) * D) :=
+        mul_le_mul_of_nonneg_left hweights (mul_nonneg hA hR)
+      _ = ((2 : ℝ) ^ (10 : ℕ) * (D : ℝ)) * A * R := by ring
+  calc
+    (∑ x ∈ aux_multiplierIndexTruncation γ N,
+      if hx : x ∈ multiplierIndexSet γ then X ⟨x, hx⟩ else 0) ≤
+        ENNReal.ofReal
+          (∑ x ∈ aux_multiplierIndexTruncation γ M,
+            A * (Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+              (1 + (x.1.natAbs : ℝ))) * R) := hsumENN
+    _ ≤ ENNReal.ofReal (((2 : ℝ) ^ (10 : ℕ) * (D : ℝ)) * A * R) :=
+      ENNReal.ofReal_le_ofReal hscalar
+    _ = ENNReal.ofReal (((2 : ℝ) ^ (10 : ℕ) * (geometricDelta γ : ℝ)) * A * R) := by
+      rfl
+
+
+private theorem aux_half_weight_summable :
+    Summable (fun a : ℕ => Real.rpow 2 (-((a : ℝ) / 2)) * (1 + (a : ℝ)) ^ (2 : ℕ)) := by
+  let q : ℝ := Real.rpow 2 (-(1 / 2 : ℝ))
+  let r : ℝ := 3 / 4
+  let f : ℕ → ℝ := fun a => 2 * ((↑((a + 2).choose 2) : ℝ) * r ^ a)
+  have hr0 : 0 ≤ r := by dsimp [r]; norm_num
+  have hrlt : ‖r‖ < 1 := by dsimp [r]; norm_num [Real.norm_eq_abs]
+  have hq0 : 0 ≤ q := by
+    dsimp [q]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hqle : q ≤ r := by
+    dsimp [q, r]
+    rw [Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2)]
+    rw [← Real.sqrt_eq_rpow]
+    apply (inv_le_iff_one_le_mul₀ (Real.sqrt_pos.2 (by norm_num : (0 : ℝ) < 2))).mpr
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  have hterm (a : ℕ) : q ^ a = Real.rpow 2 (-((a : ℝ) / 2)) := by
+    dsimp [q]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2)]
+    congr 1
+    ring
+  have hpoly (a : ℕ) : (1 + (a : ℝ)) ^ (2 : ℕ) ≤
+      2 * ((↑((a + 2).choose 2) : ℝ)) := by
+    have hchoose : ((↑((a + 2).choose 2) : ℝ)) =
+        ((a : ℝ) + 2) * ((a : ℝ) + 1) / 2 := by
+      rw [Nat.cast_choose_two]
+      push_cast
+      ring
+    rw [hchoose]
+    have ha : 0 ≤ (a : ℝ) := Nat.cast_nonneg _
+    nlinarith
+  have hpoint (a : ℕ) :
+      Real.rpow 2 (-((a : ℝ) / 2)) * (1 + (a : ℝ)) ^ (2 : ℕ) ≤ f a := by
+    rw [← hterm]
+    dsimp [f]
+    calc
+      q ^ a * (1 + (a : ℝ)) ^ (2 : ℕ) ≤
+          q ^ a * (2 * ((↑((a + 2).choose 2) : ℝ))) :=
+        mul_le_mul_of_nonneg_left (hpoly a) (pow_nonneg hq0 _)
+      _ ≤ r ^ a * (2 * ((↑((a + 2).choose 2) : ℝ))) :=
+        mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hq0 hqle _) (by positivity)
+      _ = f a := by ring
+  have hsumRaw := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 2 hrlt
+  have hsum : Summable f := by
+    apply (hsumRaw.summable.mul_left 2).congr
+    intro a
+    dsimp [f]
+  exact hsum.of_nonneg_of_le (fun a =>
+    mul_nonneg (Real.rpow_nonneg (by norm_num) _) (sq_nonneg _)) hpoint
+
+private theorem aux_half_weight_tsum_le_oneTwentyEight :
+    (∑' a : ℕ, Real.rpow 2 (-((a : ℝ) / 2)) * (1 + (a : ℝ)) ^ (2 : ℕ)) ≤
+      (128 : ℝ) := by
+  let q : ℝ := Real.rpow 2 (-(1 / 2 : ℝ))
+  let r : ℝ := 3 / 4
+  let f : ℕ → ℝ := fun a => 2 * ((↑((a + 2).choose 2) : ℝ) * r ^ a)
+  have hr0 : 0 ≤ r := by dsimp [r]; norm_num
+  have hrlt : ‖r‖ < 1 := by dsimp [r]; norm_num [Real.norm_eq_abs]
+  have hq0 : 0 ≤ q := by
+    dsimp [q]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hqle : q ≤ r := by
+    dsimp [q, r]
+    rw [Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2)]
+    rw [← Real.sqrt_eq_rpow]
+    apply (inv_le_iff_one_le_mul₀ (Real.sqrt_pos.2 (by norm_num : (0 : ℝ) < 2))).mpr
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  have hterm (a : ℕ) : q ^ a = Real.rpow 2 (-((a : ℝ) / 2)) := by
+    dsimp [q]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2)]
+    congr 1
+    ring
+  have hpoly (a : ℕ) : (1 + (a : ℝ)) ^ (2 : ℕ) ≤
+      2 * ((↑((a + 2).choose 2) : ℝ)) := by
+    have hchoose : ((↑((a + 2).choose 2) : ℝ)) =
+        ((a : ℝ) + 2) * ((a : ℝ) + 1) / 2 := by
+      rw [Nat.cast_choose_two]
+      push_cast
+      ring
+    rw [hchoose]
+    have ha : 0 ≤ (a : ℝ) := Nat.cast_nonneg _
+    nlinarith
+  have hpoint (a : ℕ) :
+      Real.rpow 2 (-((a : ℝ) / 2)) * (1 + (a : ℝ)) ^ (2 : ℕ) ≤ f a := by
+    rw [← hterm]
+    dsimp [f]
+    calc
+      q ^ a * (1 + (a : ℝ)) ^ (2 : ℕ) ≤
+          q ^ a * (2 * ((↑((a + 2).choose 2) : ℝ))) :=
+        mul_le_mul_of_nonneg_left (hpoly a) (pow_nonneg hq0 _)
+      _ ≤ r ^ a * (2 * ((↑((a + 2).choose 2) : ℝ))) :=
+        mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hq0 hqle _) (by positivity)
+      _ = f a := by ring
+  have hsumRaw := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 2 hrlt
+  have hsum : Summable f := by
+    apply (hsumRaw.summable.mul_left 2).congr
+    intro a
+    dsimp [f]
+  have hweight : Summable (fun a : ℕ =>
+      Real.rpow 2 (-((a : ℝ) / 2)) * (1 + (a : ℝ)) ^ (2 : ℕ)) :=
+    hsum.of_nonneg_of_le (fun a =>
+      mul_nonneg (Real.rpow_nonneg (by norm_num) _) (sq_nonneg _)) hpoint
+  have hftsum : (∑' a : ℕ, f a) = (128 : ℝ) := by
+    calc
+      (∑' a : ℕ, f a) = 2 * ∑' a : ℕ, ((↑((a + 2).choose 2) : ℝ) * r ^ a) := by
+        rw [tsum_mul_left]
+      _ = 2 * (1 / (1 - r) ^ (2 + 1)) := by rw [hsumRaw.tsum_eq]
+      _ = (128 : ℝ) := by dsimp [r]; norm_num
+  calc
+    (∑' a : ℕ, Real.rpow 2 (-((a : ℝ) / 2)) * (1 + (a : ℝ)) ^ (2 : ℕ)) ≤
+        ∑' a : ℕ, f a :=
+      Summable.tsum_le_tsum hpoint hweight hsum
+    _ = (128 : ℝ) := hftsum
+
+private theorem aux_sum_half_weight_pos_le (N : ℕ) :
+    (∑ x ∈ aux_lMultiplierPosIndices N,
+      Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+        (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) ≤ (128 : ℝ) := by
+  classical
+  let w : ℕ → ℝ := fun a => Real.rpow 2 (-((a : ℝ) / 2)) * (1 + (a : ℝ)) ^ (2 : ℕ)
+  have hw0 (a : ℕ) : 0 ≤ w a := by dsimp [w]; positivity
+  have hwsum : Summable w := by simpa [w] using aux_half_weight_summable
+  have hwtail : (∑' a : ℕ, w a) ≤ (128 : ℝ) := by
+    simpa [w] using aux_half_weight_tsum_le_oneTwentyEight
+  let s : Finset ℤ := Finset.Icc 1 (N : ℤ)
+  have hnonneg {z : ℤ} (hz : z ∈ s) : 0 ≤ z := by
+    dsimp only [s] at hz
+    rw [Finset.mem_Icc] at hz
+    omega
+  have hinj : Set.InjOn Int.natAbs (↑s : Set ℤ) := by
+    intro x hx y hy hxy
+    have hcast : (x.natAbs : ℤ) = (y.natAbs : ℤ) := congrArg Int.ofNat hxy
+    rw [Int.natAbs_of_nonneg (hnonneg hx), Int.natAbs_of_nonneg (hnonneg hy)] at hcast
+    exact hcast
+  have hsum : (∑ z ∈ s, w z.natAbs) ≤ (128 : ℝ) := by
+    calc
+      (∑ z ∈ s, w z.natAbs) = ∑ a ∈ s.image Int.natAbs, w a := by
+        symm
+        exact Finset.sum_image hinj
+      _ ≤ ∑' a : ℕ, w a := hwsum.sum_le_tsum _ (fun a ha => hw0 a)
+      _ ≤ 128 := hwtail
+  unfold aux_lMultiplierPosIndices
+  rw [Finset.sum_image]
+  · convert hsum using 1
+    apply Finset.sum_congr rfl
+    intro z hz
+    dsimp [s, w]
+    congr 1
+    ring
+  · intro a ha b hb hab
+    exact congrArg Prod.fst hab
+
+private theorem aux_sum_half_weight_neg_le (N : ℕ) :
+    (∑ x ∈ aux_lMultiplierNegIndices N,
+      Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
+        (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) ≤ (128 : ℝ) := by
+  classical
+  let w : ℕ → ℝ := fun a => Real.rpow 2 (-((a : ℝ) / 2)) * (1 + (a : ℝ)) ^ (2 : ℕ)
+  have hw0 (a : ℕ) : 0 ≤ w a := by dsimp [w]; positivity
+  have hwsum : Summable w := by simpa [w] using aux_half_weight_summable
+  have hwtail : (∑' a : ℕ, w a) ≤ (128 : ℝ) := by
+    simpa [w] using aux_half_weight_tsum_le_oneTwentyEight
+  let s : Finset ℤ := Finset.Icc (-(N : ℤ)) (-1)
+  have hnonpos {z : ℤ} (hz : z ∈ s) : z ≤ 0 := by
+    dsimp only [s] at hz
+    rw [Finset.mem_Icc] at hz
+    omega
+  have hinj : Set.InjOn Int.natAbs (↑s : Set ℤ) := by
+    intro x hx y hy hxy
+    have hcast : (x.natAbs : ℤ) = (y.natAbs : ℤ) := congrArg Int.ofNat hxy
+    rw [Int.ofNat_natAbs_of_nonpos (hnonpos hx),
+      Int.ofNat_natAbs_of_nonpos (hnonpos hy)] at hcast
+    omega
+  have hsum : (∑ z ∈ s, w z.natAbs) ≤ (128 : ℝ) := by
+    calc
+      (∑ z ∈ s, w z.natAbs) = ∑ a ∈ s.image Int.natAbs, w a := by
+        symm
+        exact Finset.sum_image hinj
+      _ ≤ ∑' a : ℕ, w a := hwsum.sum_le_tsum _ (fun a ha => hw0 a)
+      _ ≤ 128 := hwtail
+  unfold aux_lMultiplierNegIndices
+  rw [Finset.sum_image]
+  · convert hsum using 1
+    apply Finset.sum_congr rfl
+    intro z hz
+    dsimp [s, w]
+    congr 1
+    ring
+  · intro a ha b hb hab
+    exact congrArg Prod.fst hab
+
+
+private theorem aux_quarter_weight_summable :
+    Summable (fun a : ℕ => Real.rpow 2 (-((a : ℝ) / 4)) * (1 + (a : ℝ))) := by
+  let q : ℝ := Real.rpow 2 (-(1 / 4 : ℝ))
+  let r : ℝ := 6 / 7
+  let f : ℕ → ℝ := fun a => ((a : ℝ) + 1) * r ^ a
+  have hr0 : 0 ≤ r := by dsimp [r]; norm_num
+  have hrlt : ‖r‖ < 1 := by dsimp [r]; norm_num [Real.norm_eq_abs]
+  have hq0 : 0 ≤ q := by
+    dsimp [q]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hqpow : q ^ 4 = (1 / 2 : ℝ) := by
+    dsimp [q]
+    calc
+      (Real.rpow 2 (-(1 / 4 : ℝ))) ^ 4 =
+          Real.rpow 2 (-(1 / 4 : ℝ) * (4 : ℝ)) :=
+        (Real.rpow_mul_natCast (by norm_num : (0 : ℝ) ≤ 2) (-(1 / 4 : ℝ)) 4).symm
+      _ = Real.rpow 2 (-1 : ℝ) := by congr 1; ring
+      _ = (1 / 2 : ℝ) := by
+        change (2 : ℝ) ^ (-(1 : ℝ)) = _
+        rw [Real.rpow_neg_one]
+        norm_num
+  have hqle : q ≤ r := by
+    by_contra h
+    have hlt : r < q := lt_of_not_ge h
+    have hpow : r ^ 4 < q ^ 4 :=
+      pow_lt_pow_left₀ hlt hr0 (by norm_num)
+    rw [hqpow] at hpow
+    dsimp [r] at hpow
+    norm_num at hpow
+  have hterm (a : ℕ) : q ^ a = Real.rpow 2 (-((a : ℝ) / 4)) := by
+    dsimp [q]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2)]
+    congr 1
+    ring
+  have hpoint (a : ℕ) :
+      Real.rpow 2 (-((a : ℝ) / 4)) * (1 + (a : ℝ)) ≤ f a := by
+    rw [← hterm]
+    dsimp [f]
+    nlinarith [pow_nonneg hr0 a, pow_le_pow_left₀ hq0 hqle a]
+  have hsumRaw := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 1 hrlt
+  have hsum : Summable f := by
+    apply hsumRaw.summable.congr
+    intro a
+    dsimp [f]
+    simp [Nat.choose_one_right]
+  exact hsum.of_nonneg_of_le (fun a =>
+    mul_nonneg (Real.rpow_nonneg (by norm_num) _) (by positivity)) hpoint
+
+private theorem aux_quarter_weight_tsum_le_fortyNine :
+    (∑' a : ℕ, Real.rpow 2 (-((a : ℝ) / 4)) * (1 + (a : ℝ))) ≤ (49 : ℝ) := by
+  let q : ℝ := Real.rpow 2 (-(1 / 4 : ℝ))
+  let r : ℝ := 6 / 7
+  let f : ℕ → ℝ := fun a => ((a : ℝ) + 1) * r ^ a
+  have hr0 : 0 ≤ r := by dsimp [r]; norm_num
+  have hrlt : ‖r‖ < 1 := by dsimp [r]; norm_num [Real.norm_eq_abs]
+  have hq0 : 0 ≤ q := by
+    dsimp [q]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hqpow : q ^ 4 = (1 / 2 : ℝ) := by
+    dsimp [q]
+    calc
+      (Real.rpow 2 (-(1 / 4 : ℝ))) ^ 4 =
+          Real.rpow 2 (-(1 / 4 : ℝ) * (4 : ℝ)) :=
+        (Real.rpow_mul_natCast (by norm_num : (0 : ℝ) ≤ 2) (-(1 / 4 : ℝ)) 4).symm
+      _ = Real.rpow 2 (-1 : ℝ) := by congr 1; ring
+      _ = (1 / 2 : ℝ) := by
+        change (2 : ℝ) ^ (-(1 : ℝ)) = _
+        rw [Real.rpow_neg_one]
+        norm_num
+  have hqle : q ≤ r := by
+    by_contra h
+    have hlt : r < q := lt_of_not_ge h
+    have hpow : r ^ 4 < q ^ 4 :=
+      pow_lt_pow_left₀ hlt hr0 (by norm_num)
+    rw [hqpow] at hpow
+    dsimp [r] at hpow
+    norm_num at hpow
+  have hterm (a : ℕ) : q ^ a = Real.rpow 2 (-((a : ℝ) / 4)) := by
+    dsimp [q]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2)]
+    congr 1
+    ring
+  have hpoint (a : ℕ) :
+      Real.rpow 2 (-((a : ℝ) / 4)) * (1 + (a : ℝ)) ≤ f a := by
+    rw [← hterm]
+    dsimp [f]
+    nlinarith [pow_nonneg hr0 a, pow_le_pow_left₀ hq0 hqle a]
+  have hsumRaw := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 1 hrlt
+  have hsum : Summable f := by
+    apply hsumRaw.summable.congr
+    intro a
+    dsimp [f]
+    simp [Nat.choose_one_right]
+  have hweight : Summable (fun a : ℕ =>
+      Real.rpow 2 (-((a : ℝ) / 4)) * (1 + (a : ℝ))) :=
+    hsum.of_nonneg_of_le (fun a =>
+      mul_nonneg (Real.rpow_nonneg (by norm_num) _) (by positivity)) hpoint
+  have hftsum : (∑' a : ℕ, f a) = (49 : ℝ) := by
+    calc
+      (∑' a : ℕ, f a) =
+          ∑' a : ℕ, ((↑((a + 1).choose 1) : ℝ) * r ^ a) := by
+            apply tsum_congr
+            intro a
+            dsimp [f]
+            simp [Nat.choose_one_right]
+      _ = 1 / (1 - r) ^ (1 + 1) := hsumRaw.tsum_eq
+      _ = (49 : ℝ) := by dsimp [r]; norm_num
+  calc
+    (∑' a : ℕ, Real.rpow 2 (-((a : ℝ) / 4)) * (1 + (a : ℝ))) ≤
+        ∑' a : ℕ, f a :=
+      Summable.tsum_le_tsum hpoint hweight hsum
+    _ = (49 : ℝ) := hftsum
+
+private theorem aux_sum_quarter_weight_pos_le (N : ℕ) :
+    (∑ x ∈ aux_lMultiplierPosIndices N,
+      Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+        (1 + (x.1.natAbs : ℝ))) ≤ (49 : ℝ) := by
+  classical
+  let w : ℕ → ℝ := fun a => Real.rpow 2 (-((a : ℝ) / 4)) * (1 + (a : ℝ))
+  have hw0 (a : ℕ) : 0 ≤ w a := by
+    dsimp [w]
+    positivity
+  have hwsum : Summable w := by
+    simpa [w] using aux_quarter_weight_summable
+  have hwtail : (∑' a : ℕ, w a) ≤ (49 : ℝ) := by
+    simpa [w] using aux_quarter_weight_tsum_le_fortyNine
+  let s : Finset ℤ := Finset.Icc 1 (N : ℤ)
+  have hnonneg {z : ℤ} (hz : z ∈ s) : 0 ≤ z := by
+    dsimp only [s] at hz
+    rw [Finset.mem_Icc] at hz
+    omega
+  have hinj : Set.InjOn Int.natAbs (↑s : Set ℤ) := by
+    intro x hx y hy hxy
+    have hcast : (x.natAbs : ℤ) = (y.natAbs : ℤ) := congrArg Int.ofNat hxy
+    rw [Int.natAbs_of_nonneg (hnonneg hx),
+      Int.natAbs_of_nonneg (hnonneg hy)] at hcast
+    exact hcast
+  have hsum : (∑ z ∈ s, w z.natAbs) ≤ (49 : ℝ) := by
+    calc
+      (∑ z ∈ s, w z.natAbs) = ∑ a ∈ s.image Int.natAbs, w a := by
+        symm
+        exact Finset.sum_image hinj
+      _ ≤ ∑' a : ℕ, w a := hwsum.sum_le_tsum _ (fun a ha => hw0 a)
+      _ ≤ 49 := hwtail
+  unfold aux_lMultiplierPosIndices
+  rw [Finset.sum_image]
+  · convert hsum using 1
+    apply Finset.sum_congr rfl
+    intro z hz
+    dsimp [s, w]
+    congr 1
+    ring
+  · intro a ha b hb hab
+    exact congrArg Prod.fst hab
+
+private theorem aux_sum_quarter_weight_neg_le (N : ℕ) :
+    (∑ x ∈ aux_lMultiplierNegIndices N,
+      Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+        (1 + (x.1.natAbs : ℝ))) ≤ (49 : ℝ) := by
+  classical
+  let w : ℕ → ℝ := fun a => Real.rpow 2 (-((a : ℝ) / 4)) * (1 + (a : ℝ))
+  have hw0 (a : ℕ) : 0 ≤ w a := by
+    dsimp [w]
+    positivity
+  have hwsum : Summable w := by
+    simpa [w] using aux_quarter_weight_summable
+  have hwtail : (∑' a : ℕ, w a) ≤ (49 : ℝ) := by
+    simpa [w] using aux_quarter_weight_tsum_le_fortyNine
+  let s : Finset ℤ := Finset.Icc (-(N : ℤ)) (-1)
+  have hnonpos {z : ℤ} (hz : z ∈ s) : z ≤ 0 := by
+    dsimp only [s] at hz
+    rw [Finset.mem_Icc] at hz
+    omega
+  have hinj : Set.InjOn Int.natAbs (↑s : Set ℤ) := by
+    intro x hx y hy hxy
+    have hcast : (x.natAbs : ℤ) = (y.natAbs : ℤ) := congrArg Int.ofNat hxy
+    rw [Int.ofNat_natAbs_of_nonpos (hnonpos hx),
+      Int.ofNat_natAbs_of_nonpos (hnonpos hy)] at hcast
+    omega
+  have hsum : (∑ z ∈ s, w z.natAbs) ≤ (49 : ℝ) := by
+    calc
+      (∑ z ∈ s, w z.natAbs) = ∑ a ∈ s.image Int.natAbs, w a := by
+        symm
+        exact Finset.sum_image hinj
+      _ ≤ ∑' a : ℕ, w a := hwsum.sum_le_tsum _ (fun a ha => hw0 a)
+      _ ≤ 49 := hwtail
+  unfold aux_lMultiplierNegIndices
+  rw [Finset.sum_image]
+  · convert hsum using 1
+    apply Finset.sum_congr rfl
+    intro z hz
+    dsimp [s, w]
+    congr 1
+    ring
+  · intro a ha b hb hab
+    exact congrArg Prod.fst hab
+
+private theorem aux_sum_vertical_one_le (D : ℕ) (hD : 1 ≤ D) :
+    (∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) ≤ 3 * D := by
+  classical
+  unfold aux_lMultiplierVerticalIndices
+  rw [Finset.sum_image]
+  · rw [Finset.sum_const, nsmul_eq_mul, Int.card_Icc]
+    norm_cast
+    omega
+  · intro a ha b hb hab
+    exact congrArg Prod.snd hab
+
+private theorem aux_sum_multiplier_blocks_quarter_le (N D : ℕ) (hD : 1 ≤ D) :
+    (∑ x ∈ aux_lMultiplierNegIndices N,
+      Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+        (1 + (x.1.natAbs : ℝ))) +
+      (∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) +
+      ∑ x ∈ aux_lMultiplierPosIndices N,
+        Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+          (1 + (x.1.natAbs : ℝ)) ≤ (2 : ℝ) ^ (10 : ℕ) * D := by
+  have hneg := aux_sum_quarter_weight_neg_le N
+  have hvert := aux_sum_vertical_one_le D hD
+  have hpos := aux_sum_quarter_weight_pos_le N
+  calc
+    (∑ x ∈ aux_lMultiplierNegIndices N,
+      Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+        (1 + (x.1.natAbs : ℝ))) +
+      (∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) +
+      ∑ x ∈ aux_lMultiplierPosIndices N,
+        Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
+          (1 + (x.1.natAbs : ℝ)) ≤
+        (49 : ℝ) + 3 * D + 49 := by gcongr
+    _ ≤ (2 : ℝ) ^ (10 : ℕ) * D := by
+      have hD' : (1 : ℝ) ≤ D := by exact_mod_cast hD
+      nlinarith
+
+
+private theorem aux_lMultiplier_seminorm_interior_bound {n k : ℕ} {C : ℝ}
+    (hk : 1 ≤ k) (hkn : k ≤ n - 1) (hC : 1 ≤ C)
+    (hIncrease : IncreaseData n k C hk hkn hC)
+    (γ : GeometricParameters n) (hγ : γ.k = k) (i : Fin γ.k)
+    (ι : MultiplierIndex γ) (hinterior : γ.k < n - 1) :
+    kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
+      (sandwichKernel γ (lMultiplier γ ι) i) ≤ ENNReal.ofReal
+        ((2 : ℝ) ^ (5 : ℕ) * Real.sqrt C_gaussianDominationCombined * Real.sqrt C *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 4) *
+          (1 + (ι.1.1.natAbs : ℝ)) *
+          Real.rpow (geometricDelta γ : ℝ)
+            (1 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1))) := by
+  let hγn : γ.k ≤ n - 1 := by simpa [hγ] using hkn
+  rcases hIncrease γ hγ i ι with ⟨_, hinc⟩
+  let h : ℝ := (ι.1.1.natAbs : ℝ)
+  let d : ℝ := geometricDelta γ
+  let q : ℝ := (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)
+  let U : ℝ := C * Real.rpow 2 (-(h / 2)) * (1 + h) ^ (2 : ℕ) *
+    Real.rpow d (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))
+  have hC0 : 0 ≤ C := zero_le_one.trans hC
+  have hd0 : 0 ≤ d := by
+    dsimp [d]
+    positivity
+  have hh0 : 0 ≤ h := by
+    dsimp [h]
+    exact Nat.cast_nonneg _
+  have hU0 : 0 ≤ U := by
+    dsimp [U]
+    positivity
+  have hpow : (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2) = 2 * q := by
+    dsimp [q]
+    have hshift : (k : ℤ) - (n : ℤ) + 2 =
+        ((k : ℤ) - (n : ℤ) + 1) + 1 := by ring
+    rw [hshift, zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+    ring
+  have hinc' : kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+      (aux_increaseDataKernel γ hγn i ι) ≤ ENNReal.ofReal U := by
+    simpa [U, h, d] using hinc
+  have hcore := aux_lMultiplier_seminorm_interior_of_increase γ hγn ι i hinterior
+    hU0 hinc'
+  have hsqrtU : Real.sqrt U =
+      Real.sqrt C * Real.rpow 2 (-h / 4) * (1 + h) *
+        Real.rpow d (1 - q) := by
+    simpa [U, hpow, neg_div] using aux_sqrt_increase_product hC0 hd0 hh0
+      (C := C) (d := d) (h := h) (q := q)
+  have hright0 : 0 ≤ Real.sqrt C * Real.rpow 2 (-h / 4) * (1 + h) *
+      Real.rpow d (1 - q) := by
+    apply mul_nonneg
+    · apply mul_nonneg
+      · apply mul_nonneg
+        · exact Real.sqrt_nonneg _
+        · exact Real.rpow_nonneg (by norm_num) _
+      · linarith
+    · exact Real.rpow_nonneg hd0 _
+  apply hcore.trans
+  apply ENNReal.ofReal_le_ofReal
+  rw [hsqrtU]
+  calc
+    Real.sqrt ((2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined) *
+        (Real.sqrt C * Real.rpow 2 (-h / 4) * (1 + h) * Real.rpow d (1 - q)) ≤
+        ((2 : ℝ) ^ (5 : ℕ) * Real.sqrt C_gaussianDominationCombined) *
+          (Real.sqrt C * Real.rpow 2 (-h / 4) * (1 + h) * Real.rpow d (1 - q)) :=
+      mul_le_mul_of_nonneg_right aux_sqrt_gaussianDomination_le_two_pow_five
+        hright0
+    _ = (2 : ℝ) ^ (5 : ℕ) * Real.sqrt C_gaussianDominationCombined * Real.sqrt C *
+        Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 4) *
+        (1 + (ι.1.1.natAbs : ℝ)) *
+        Real.rpow (geometricDelta γ : ℝ)
+          (1 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)) := by
+      dsimp [h, d, q]
+      ring
+
+private theorem aux_one_le_geometricDelta {n : ℕ} (γ : GeometricParameters n) :
+    1 ≤ geometricDelta γ := by
+  unfold geometricDelta
+  omega
+
+
+private theorem aux_sqrt_increase_product {C d h q : ℝ}
+    (hC0 : 0 ≤ C) (hd0 : 0 ≤ d) (hh0 : 0 ≤ h) :
+    Real.sqrt (C * Real.rpow 2 (-h / 2) * (1 + h) ^ (2 : ℕ) *
+      Real.rpow d (2 - 2 * q)) =
+      Real.sqrt C * Real.rpow 2 (-h / 4) * (1 + h) *
+        Real.rpow d (1 - q) := by
+  let X : ℝ := C * Real.rpow 2 (-h / 2) * (1 + h) ^ (2 : ℕ) *
+    Real.rpow d (2 - 2 * q)
+  let Y : ℝ := Real.sqrt C * Real.rpow 2 (-h / 4) * (1 + h) *
+    Real.rpow d (1 - q)
+  have hX0 : 0 ≤ X := by
+    dsimp [X]
+    positivity
+  have hY0 : 0 ≤ Y := by
+    dsimp [Y]
+    positivity
+  have htwo : (Real.rpow 2 (-h / 4)) ^ 2 = Real.rpow 2 (-h / 2) := by
+    calc
+      (Real.rpow 2 (-h / 4)) ^ 2 = Real.rpow 2 ((-h / 4) * (2 : ℝ)) :=
+        (Real.rpow_mul_natCast (by norm_num : (0 : ℝ) ≤ 2) (-h / 4) 2).symm
+      _ = Real.rpow 2 (-h / 2) := by congr 1; ring
+  have hdPow : (Real.rpow d (1 - q)) ^ 2 = Real.rpow d (2 - 2 * q) := by
+    calc
+      (Real.rpow d (1 - q)) ^ 2 = Real.rpow d ((1 - q) * (2 : ℝ)) :=
+        (Real.rpow_mul_natCast hd0 (1 - q) 2).symm
+      _ = Real.rpow d (2 - 2 * q) := by congr 1; ring
+  have hsq : Y ^ 2 = X := by
+    dsimp [X, Y]
+    rw [mul_pow, mul_pow, mul_pow, Real.sq_sqrt hC0]
+    change C * (Real.rpow 2 (-h / 4)) ^ 2 * (1 + h) ^ 2 *
+        (Real.rpow d (1 - q)) ^ 2 =
+      C * Real.rpow 2 (-h / 2) * (1 + h) ^ 2 * Real.rpow d (2 - 2 * q)
+    rw [htwo, hdPow]
+  have hsqrt0 : 0 ≤ Real.sqrt X := Real.sqrt_nonneg _
+  have hsquare : (Real.sqrt X) ^ 2 = Y ^ 2 := by
+    rw [Real.sq_sqrt hX0, hsq]
+  have hEq : Real.sqrt X = Y := by nlinarith
+  simpa [X, Y] using hEq
+
+private theorem aux_sqrt_gaussianDomination_le_two_pow_five :
+    Real.sqrt ((2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined) ≤
+      (2 : ℝ) ^ (5 : ℕ) * Real.sqrt C_gaussianDominationCombined := by
+  have hC0 : 0 ≤ C_gaussianDominationCombined := by
+    unfold C_gaussianDominationCombined
+    positivity
+  have hX0 : 0 ≤ Real.sqrt ((2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined) :=
+    Real.sqrt_nonneg _
+  have hY0 : 0 ≤ (2 : ℝ) ^ (5 : ℕ) * Real.sqrt C_gaussianDominationCombined := by
+    positivity
+  have hsq : (Real.sqrt ((2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined)) ^ 2 ≤
+      ((2 : ℝ) ^ (5 : ℕ) * Real.sqrt C_gaussianDominationCombined) ^ 2 := by
+    rw [Real.sq_sqrt (by positivity), mul_pow, Real.sq_sqrt hC0]
+    nlinarith
+  nlinarith
+
+
+private theorem aux_normalized_cauchy_real {J : ℕ} {a a' P S D U : ℝ}
+    (ha : 0 ≤ a) (hP0 : 0 ≤ P) (hS0 : 0 ≤ S) (hD0 : 0 ≤ D) (hU0 : 0 ≤ U)
+    (hsquare : a ^ 2 * (J : ℝ) = a')
+    (hP : a' * P ≤ U) (hS : S ≤ D * (J : ℝ)) :
+    a * (Real.sqrt P * Real.sqrt S) ≤ Real.sqrt D * Real.sqrt U := by
+  have hleft : (a * (Real.sqrt P * Real.sqrt S)) ^ 2 = a ^ 2 * P * S := by
+    rw [mul_pow, mul_pow, Real.sq_sqrt hP0, Real.sq_sqrt hS0]
+    ring
+  have hright : (Real.sqrt D * Real.sqrt U) ^ 2 = D * U := by
+    rw [mul_pow, Real.sq_sqrt hD0, Real.sq_sqrt hU0]
+  have hsq : (a * (Real.sqrt P * Real.sqrt S)) ^ 2 ≤
+      (Real.sqrt D * Real.sqrt U) ^ 2 := by
+    rw [hleft, hright]
+    calc
+      a ^ 2 * P * S ≤ a ^ 2 * P * (D * (J : ℝ)) := by
+        apply mul_le_mul_of_nonneg_left hS
+        positivity
+      _ = D * (a ^ 2 * (J : ℝ) * P) := by ring
+      _ = D * (a' * P) := by rw [hsquare]
+      _ ≤ D * U := mul_le_mul_of_nonneg_left hP hD0
+  have hleft0 : 0 ≤ a * (Real.sqrt P * Real.sqrt S) := by positivity
+  have hright0 : 0 ≤ Real.sqrt D * Real.sqrt U := by positivity
+  nlinarith
+
+private theorem aux_succ_le_of_le_pred {k n : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n - 1) :
+    k + 1 ≤ n := by
+  omega
+
+private theorem aux_succ_eq_of_le_pred_not_lt {k n : ℕ} (hk : 1 ≤ k)
+    (hkn : k ≤ n - 1) (hend : ¬ k < n - 1) : k + 1 = n := by
+  omega
+
+private theorem aux_lMultiplier_seminorm_interior_of_increase {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (hk : γ.k < n - 1)
+    {U : ℝ} (hU0 : 0 ≤ U)
+    (hinc : kernelSequenceSeminorm n (γ.k + 1)
+      (Nat.succ_le_succ (Nat.zero_le γ.k))
+      (by omega)
+      (aux_increaseDataKernel γ hkn i ι) ≤ ENNReal.ofReal U) :
+    kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
+      (sandwichKernel γ (lMultiplier γ ι) i) ≤ ENNReal.ofReal
+        (Real.sqrt ((2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined) * Real.sqrt U) := by
+  classical
+  unfold kernelSequenceSeminorm
+  refine iSup_le fun J => ?_
+  refine iSup_le fun F => ?_
+  let ρ : Fin J.1 → MKernel γ.k := fun l =>
+    sandwichKernel γ (nMultiplier γ hkn ι) i (l.1 : ℤ)
+  let φ : Fin J.1 → ℝ → ℝ := fun l => sigmaMultiplier γ ι i (l.1 : ℤ)
+  let a : ℝ := min 1 (Real.rpow (J.1 : ℝ)
+    (-1 + (2 : ℝ) ^ ((γ.k : ℤ) - (n : ℤ) + 1)))
+  let a' : ℝ := min 1 (Real.rpow (J.1 : ℝ)
+    (-1 + (2 : ℝ) ^ (((γ.k + 1 : ℕ) : ℤ) - (n : ℤ) + 1)))
+  let P : ℝ := |prismForm n (γ.k + 1) (by omega) (by omega)
+    (cauchySchwarzLift ρ φ) (fun r => F.1 r)|
+  let S : ℝ := ∑ l : Fin J.1, (eLpNorm (ρ l) 1 volume).toReal
+  let D : ℝ := (2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined
+  have hρ (l : Fin J.1) : MemW0 (ρ l) := by
+    dsimp [ρ]
+    exact sandwichKernel_memKernelSequence γ (nMultiplier γ hkn ι)
+      (nKernelWellDefinedness γ hkn ι) i (l.1 : ℤ)
+  have hφ (l : Fin J.1) : MemW0 (φ l) := by
+    dsimp [φ]
+    exact sigmaMultiplier_memW0 γ ι i (l.1 : ℤ)
+  have hkernel :
+      (fun y => ∑ j ∈ Finset.range J.1,
+        sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y) =
+        cauchySchwarzKernel ρ φ i := by
+    calc
+      (fun y => ∑ j ∈ Finset.range J.1,
+          sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y) =
+          fun y => ∑ l : Fin J.1,
+            sandwichKernel γ (lMultiplier γ ι) i (l.1 : ℤ) y := by
+              funext y
+              rw [Finset.sum_fin_eq_sum_range]
+              apply Finset.sum_congr rfl
+              intro j hj
+              simp [Finset.mem_range.mp hj]
+      _ = cauchySchwarzKernel ρ φ i :=
+        (aux_cauchySchwarzKernel_eq_lMultiplier_partial γ hkn ι i J.1 hk).symm
+  have hlift :
+      (fun y => ∑ j ∈ Finset.range J.1, aux_increaseDataKernel γ hkn i ι (j : ℤ) y) =
+        cauchySchwarzLift ρ φ := by
+    calc
+      (fun y => ∑ j ∈ Finset.range J.1,
+          aux_increaseDataKernel γ hkn i ι (j : ℤ) y) =
+          fun y => ∑ l : Fin J.1,
+            aux_increaseDataKernel γ hkn i ι (l.1 : ℤ) y := by
+              funext y
+              rw [Finset.sum_fin_eq_sum_range]
+              apply Finset.sum_congr rfl
+              intro j hj
+              simp [Finset.mem_range.mp hj]
+      _ = cauchySchwarzLift ρ φ :=
+        (aux_cauchySchwarzLift_eq_increaseData_partial γ hkn ι i J.1).symm
+  have hincTerm : ENNReal.ofReal (a' * P) ≤
+      kernelSequenceSeminorm n (γ.k + 1) (by omega) (by omega)
+        (aux_increaseDataKernel γ hkn i ι) := by
+    unfold kernelSequenceSeminorm
+    apply le_iSup_of_le J
+    apply le_iSup_of_le F
+    simpa [a', P, hlift]
+  have hP : a' * P ≤ U := by
+    apply (ENNReal.ofReal_le_ofReal_iff hU0).mp
+    exact hincTerm.trans hinc
+  have hP0 : 0 ≤ P := abs_nonneg _
+  have hS0 : 0 ≤ S := by
+    dsimp [S]
+    exact Finset.sum_nonneg fun l _ => ENNReal.toReal_nonneg
+  have hD0 : 0 ≤ D := by
+    dsimp [D]
+    unfold C_gaussianDominationCombined
+    positivity
+  have ha : 0 ≤ a := by
+    dsimp [a]
+    exact le_min zero_le_one (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+  have hweight : Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) ≤ 1 := by
+    apply Real.rpow_le_one_of_one_le_of_nonpos (by norm_num)
+    have hnat : 0 ≤ ((ι.1.1.natAbs : ℕ) : ℝ) := Nat.cast_nonneg _
+    linarith
+  have hS : S ≤ D * (J.1 : ℝ) := by
+    have hsum := aux_sum_eLpNorm_sandwichN_toReal_le_two_pow_nine
+      (J := J.1) γ hkn i ι
+    have hDr : D * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) ≤ D := by
+      simpa using mul_le_mul_of_nonneg_left hweight hD0
+    calc
+      S ≤ (J.1 : ℝ) * (D * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) := by
+        simpa [S, ρ, D] using hsum
+      _ ≤ (J.1 : ℝ) * D := mul_le_mul_of_nonneg_left hDr (Nat.cast_nonneg _)
+      _ = D * (J.1 : ℝ) := by ring
+  have hnormal : a ^ 2 * (J.1 : ℝ) = a' := by
+    calc
+      a ^ 2 * (J.1 : ℝ) = min 1 (Real.rpow (J.1 : ℝ)
+          (-1 + (2 : ℝ) ^ ((γ.k : ℤ) - (n : ℤ) + 2))) := by
+        simpa [a] using
+          aux_interior_normalizer_square (n := n) (k := γ.k) J.2 hk
+      _ = a' := by
+        dsimp [a']
+        congr 2
+        congr 1
+        push_cast
+        ring
+  have hCS :
+      |prismForm n γ.k γ.one_le_k γ.k_le_n
+        (fun y => ∑ j ∈ Finset.range J.1,
+          sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y)
+        (fun r => F.1 r)| ≤ Real.sqrt P * Real.sqrt S := by
+    rw [hkernel]
+    simpa [P, S] using cauchySchwarzAtK_bound n γ.k J.1 γ.one_le_k hk
+      (by omega) ρ φ hρ hφ i F.1 F.2
+  have hreal : a *
+      |prismForm n γ.k γ.one_le_k γ.k_le_n
+        (fun y => ∑ j ∈ Finset.range J.1,
+          sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y)
+        (fun r => F.1 r)| ≤ Real.sqrt D * Real.sqrt U := by
+    calc
+      a * |prismForm n γ.k γ.one_le_k γ.k_le_n
+          (fun y => ∑ j ∈ Finset.range J.1,
+            sandwichKernel γ (lMultiplier γ ι) i (j : ℤ) y)
+          (fun r => F.1 r)| ≤ a * (Real.sqrt P * Real.sqrt S) :=
+        mul_le_mul_of_nonneg_left hCS ha
+      _ ≤ Real.sqrt D * Real.sqrt U :=
+        aux_normalized_cauchy_real ha hP0 hS0 hD0 hU0 hnormal hP hS
+  simpa [a, D] using ENNReal.ofReal_le_ofReal hreal
+
+
+private theorem aux_interior_normalizer_square {n k J : ℕ} (hJ : 0 < J)
+    (hk : k < n - 1) :
+    (min 1 (Real.rpow (J : ℝ)
+      (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)))) ^ 2 * (J : ℝ) =
+      min 1 (Real.rpow (J : ℝ)
+        (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))) := by
+  have hJr : 1 ≤ (J : ℝ) := by
+    exact_mod_cast (Nat.succ_le_iff.mpr hJ)
+  have hJpos : 0 < (J : ℝ) := lt_of_lt_of_le zero_lt_one hJr
+  have hindex : (k : ℤ) - (n : ℤ) + 1 ≤ -1 := by omega
+  have ha : (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1) ≤ (1 / 2 : ℝ) := by
+    calc
+      (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1) ≤ (2 : ℝ) ^ (-1 : ℤ) :=
+        zpow_le_zpow_right₀ (by norm_num) hindex
+      _ = (1 / 2 : ℝ) := by norm_num
+  have heK : -1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1) ≤ 0 := by linarith
+  have hshift : ((k : ℤ) - (n : ℤ) + 2) =
+      ((k : ℤ) - (n : ℤ) + 1) + 1 := by ring
+  have haI : (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2) =
+      2 * (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1) := by
+    rw [hshift, zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+    ring
+  have heI : -1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2) ≤ 0 := by
+    rw [haI]
+    linarith
+  have hminK : min 1 (Real.rpow (J : ℝ)
+      (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1))) =
+      Real.rpow (J : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)) := by
+    exact min_eq_right (Real.rpow_le_one_of_one_le_of_nonpos hJr heK)
+  have hminI : min 1 (Real.rpow (J : ℝ)
+      (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2))) =
+      Real.rpow (J : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 2)) := by
+    exact min_eq_right (Real.rpow_le_one_of_one_le_of_nonpos hJr heI)
+  rw [hminK, hminI]
+  have hpow2 (e : ℝ) : (Real.rpow (J : ℝ) e) ^ 2 =
+      Real.rpow (J : ℝ) (e * 2) := by
+    exact (Real.rpow_mul_natCast hJpos.le e 2).symm
+  have hadd (a b : ℝ) : Real.rpow (J : ℝ) a * Real.rpow (J : ℝ) b =
+      Real.rpow (J : ℝ) (a + b) :=
+    (Real.rpow_add hJpos a b).symm
+  calc
+    (Real.rpow (J : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1))) ^ 2 * (J : ℝ) =
+        Real.rpow (J : ℝ)
+          ((-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)) * 2) * (J : ℝ) := by
+          rw [hpow2]
+    _ = Real.rpow (J : ℝ)
+          ((-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)) * 2) *
+          Real.rpow (J : ℝ) (1 : ℝ) := by
+          congr 1
+          exact (Real.rpow_one (J : ℝ)).symm
+    _ = Real.rpow (J : ℝ)
+          ((-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)) * 2 + 1) := by
+          rw [hadd]
+  congr 1
+  rw [haI]
+  ring
+
+private theorem aux_gaussianDominationWeight_tsum_le_fortyNine_div_four :
+    (∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m) ≤ (49 / 4 : ℝ) := by
+  let q : ℝ := Real.rpow 2 (-(1 / 2 : ℝ))
+  let r : ℝ := 5 / 7
+  let f : ℕ → ℝ := fun a => r ^ a
+  have hrnonneg : 0 ≤ r := by dsimp [r]; norm_num
+  have hrlt : ‖r‖ < 1 := by dsimp [r]; norm_num [Real.norm_eq_abs]
+  have hfsum : Summable f := by
+    dsimp [f]
+    exact summable_geometric_of_norm_lt_one hrlt
+  have hqnonneg : 0 ≤ q := by
+    dsimp [q]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hqle : q ≤ r := by
+    dsimp [q, r]
+    rw [Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2), ← Real.sqrt_eq_rpow]
+    apply (inv_le_iff_one_le_mul₀ (Real.sqrt_pos.2 (by norm_num : (0 : ℝ) < 2))).mpr
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+  have hterm (a : ℕ) : q ^ a = Real.rpow 2 (-((a : ℝ) / 2)) := by
+    dsimp [q]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num)]
+    congr 1
+    ring
+  have hweight (m : Fin 2 → ℕ) :
+      aux_gaussianDominationWeight m = q ^ (m 0 + m 1) := by
+    unfold aux_gaussianDominationWeight aux_natPairWeight
+    convert (hterm (m 0 + m 1)).symm using 1
+    congr 1
+    ring
+  have hpoint (m : Fin 2 → ℕ) :
+      aux_gaussianDominationWeight m ≤ f (m 0) * f (m 1) := by
+    rw [hweight, pow_add]
+    dsimp [f]
+    gcongr
+  have hprod : Summable (fun m : Fin 2 → ℕ => f (m 0) * f (m 1)) := by
+    apply aux_summable_finTwo_product
+    · intro a; exact pow_nonneg hrnonneg a
+    · intro a; exact pow_nonneg hrnonneg a
+    · exact hfsum
+    · exact hfsum
+  have hweight_sum : Summable aux_gaussianDominationWeight :=
+    aux_gaussianDominationWeight_summable
+  have hprodPair : Summable (fun z : ℕ × ℕ => f z.1 * f z.2) := by
+    refine (aux_finTwoNatEquivProd.symm.summable_iff
+      (f := fun m : Fin 2 → ℕ => f (m 0) * f (m 1))).mpr hprod
+  have hprod_tsum : (∑' m : Fin 2 → ℕ, f (m 0) * f (m 1)) =
+      (∑' a : ℕ, f a) * (∑' a : ℕ, f a) := by
+    calc
+      (∑' m : Fin 2 → ℕ, f (m 0) * f (m 1)) =
+          ∑' z : ℕ × ℕ, f z.1 * f z.2 := by
+            exact (aux_finTwoNatEquivProd.symm.tsum_eq
+              (fun m : Fin 2 → ℕ => f (m 0) * f (m 1))).symm
+      _ = (∑' a : ℕ, f a) * (∑' a : ℕ, f a) :=
+        (hfsum.tsum_mul_tsum hfsum hprodPair).symm
+  have hftsum : (∑' a : ℕ, f a) = 7 / 2 := by
+    dsimp [f, r]
+    rw [tsum_geometric_of_norm_lt_one hrlt]
+    norm_num
+  calc
+    (∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m) ≤
+        ∑' m : Fin 2 → ℕ, f (m 0) * f (m 1) :=
+      Summable.tsum_le_tsum hpoint hweight_sum hprod
+    _ = (49 / 4 : ℝ) := by rw [hprod_tsum, hftsum]; norm_num
+
+private theorem aux_witness_mass_le_two_pow_nine {n : ℕ} (γ : GeometricParameters n)
+    (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ)
+    {C : ℝ} (w : aux_GaussianDominationWitness γ hkn i ι C) :
+    (w.B.card : ℝ) * ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m ≤
+      (2 : ℝ) ^ (9 : ℕ) := by
+  calc
+    (w.B.card : ℝ) * ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m ≤
+        (C_gaussianDominationCombinedCard : ℝ) * (49 / 4 : ℝ) := by
+      apply mul_le_mul
+      · exact_mod_cast w.card_le
+      · exact aux_gaussianDominationWeight_tsum_le_fortyNine_div_four
+      · exact tsum_nonneg aux_gaussianDominationWeight_nonneg
+      · positivity
+    _ ≤ (2 : ℝ) ^ (9 : ℕ) := by
+      norm_num [C_gaussianDominationCombinedCard]
+
+private theorem aux_eLpNorm_nMultiplier_le_two_pow_nine {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (i : Fin γ.k) (ι : MultiplierIndex γ) (j : ℤ) :
+    eLpNorm (nMultiplier γ hkn ι i j) 1 volume ≤ ENNReal.ofReal
+      ((2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined *
+        Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) := by
+  rcases gaussianDominationCombined γ hkn i ι with ⟨w⟩
+  have hCGD : 0 ≤ C_gaussianDominationCombined := by
+    unfold C_gaussianDominationCombined
+    positivity
+  have hbase := aux_eLpNorm_nMultiplier_le_witness γ hkn i ι
+    hCGD w j
+  apply hbase.trans
+  apply ENNReal.ofReal_le_ofReal
+  have hfac : 0 ≤ C_gaussianDominationCombined *
+      Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) :=
+    mul_nonneg hCGD (Real.rpow_nonneg (by norm_num) _)
+  calc
+    (C_gaussianDominationCombined *
+        Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) *
+        ((w.B.card : ℝ) * ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m) ≤
+        (C_gaussianDominationCombined *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) * (2 : ℝ) ^ (9 : ℕ) :=
+      mul_le_mul_of_nonneg_left (aux_witness_mass_le_two_pow_nine γ hkn i ι w) hfac
+    _ = (2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined *
+        Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) := by ring
+
+private theorem aux_eLpNorm_sandwichN_le_two_pow_nine {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (i : Fin γ.k) (ι : MultiplierIndex γ) (j : ℤ) :
+    eLpNorm (sandwichKernel γ (nMultiplier γ hkn ι) i j) 1 volume ≤ ENNReal.ofReal
+      ((2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined *
+        Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) := by
+  rw [aux_eLpNorm_one_sandwichKernel γ (nMultiplier γ hkn ι) i j
+    (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      (nKernelWellDefinedness γ hkn ι i j))]
+  exact aux_eLpNorm_nMultiplier_le_two_pow_nine γ hkn i ι j
+
+private theorem aux_eLpNorm_sandwichN_toReal_le_two_pow_nine {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (i : Fin γ.k) (ι : MultiplierIndex γ) (j : ℤ) :
+    (eLpNorm (sandwichKernel γ (nMultiplier γ hkn ι) i j) 1 volume).toReal ≤
+      (2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined *
+        Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2) := by
+  let B : ℝ := (2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined *
+    Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)
+  have hB : 0 ≤ B := by
+    dsimp [B]
+    unfold C_gaussianDominationCombined
+    positivity
+  calc
+    (eLpNorm (sandwichKernel γ (nMultiplier γ hkn ι) i j) 1 volume).toReal ≤
+        (ENNReal.ofReal B).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top
+          (aux_eLpNorm_sandwichN_le_two_pow_nine γ hkn i ι j)
+    _ = B := ENNReal.toReal_ofReal hB
+
+private theorem aux_sum_eLpNorm_sandwichN_toReal_le_two_pow_nine {n J : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (i : Fin γ.k) (ι : MultiplierIndex γ) :
+    ∑ l : Fin J,
+      (eLpNorm (sandwichKernel γ (nMultiplier γ hkn ι) i (l.1 : ℤ)) 1 volume).toReal ≤
+        (J : ℝ) * ((2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined *
+          Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) := by
+  let B : ℝ := (2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined *
+    Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)
+  calc
+    ∑ l : Fin J,
+        (eLpNorm (sandwichKernel γ (nMultiplier γ hkn ι) i (l.1 : ℤ)) 1 volume).toReal ≤
+        ∑ _l : Fin J, B := by
+          apply Finset.sum_le_sum
+          intro l _
+          exact aux_eLpNorm_sandwichN_toReal_le_two_pow_nine γ hkn i ι (l.1 : ℤ)
+    _ = (J : ℝ) * B := by simp [nsmul_eq_mul]
+
+
+private theorem aux_integral_dominatingGaussianTerm (p : SequencePair)
+    (hp : ∀ r : Fin 2, SpacedSequence (p r)) (u : Fin 2) (j : ℤ) :
+    (∫ v : RealPlane, aux_dominatingGaussianTerm p u j v) = 1 := by
+  unfold aux_dominatingGaussianTerm
+  exact aux_integral_twoDimensionalGaussian (fun r => p r j) u
+    (fun r => aux_spacedSequence_pos (hp r) j)
+
+private theorem aux_integral_witness_level {n : ℕ} (γ : GeometricParameters n)
+    (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ)
+    {C : ℝ} (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (j : ℤ) (m : Fin 2 → ℕ) :
+    (∫ v : RealPlane, aux_gaussianDominationWeight m *
+      ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v) =
+      (w.B.card : ℝ) * aux_gaussianDominationWeight m := by
+  have hfun : (fun v : RealPlane => aux_gaussianDominationWeight m *
+      ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v) =
+      fun v => ∑ b ∈ w.B, aux_gaussianDominationWeight m *
+        aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v := by
+    funext v
+    rw [Finset.mul_sum]
+  rw [hfun, integral_finsetSum]
+  · calc
+      ∑ b ∈ w.B, ∫ v : RealPlane,
+          aux_gaussianDominationWeight m *
+            aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v =
+          ∑ b ∈ w.B, aux_gaussianDominationWeight m := by
+            apply Finset.sum_congr rfl
+            intro b hb
+            rw [integral_const_mul,
+              aux_integral_dominatingGaussianTerm (w.scales b m)
+                (w.scales_in_A b hb m) (w.orientation b) j]
+            ring
+      _ = (w.B.card : ℝ) * aux_gaussianDominationWeight m := by
+        simp [nsmul_eq_mul]
+  · intro b hb
+    exact (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      (aux_dominatingGaussianTerm_memW0 (w.scales b m)
+        (w.scales_in_A b hb m) (w.orientation b) j)).const_mul _
+
+private theorem aux_integral_witness_series {n : ℕ} (γ : GeometricParameters n)
+    (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ)
+    {C : ℝ} (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (j : ℤ) :
+    (∫ v : RealPlane, ∑' m : Fin 2 → ℕ,
+      aux_gaussianDominationWeight m *
+        ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v) =
+      (w.B.card : ℝ) * ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m := by
+  let f : (Fin 2 → ℕ) → RealPlane → ℝ := fun m v =>
+    aux_gaussianDominationWeight m *
+      ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v
+  have hnonneg (m : Fin 2 → ℕ) (v : RealPlane) : 0 ≤ f m v := by
+    dsimp [f]
+    apply mul_nonneg (aux_gaussianDominationWeight_nonneg m)
+    apply Finset.sum_nonneg
+    intro b hb
+    exact aux_dominatingGaussianTerm_nonneg (w.scales b m)
+      (w.scales_in_A b hb m) (w.orientation b) j v
+  have hint (m : Fin 2 → ℕ) : Integrable (f m) := by
+    have hfun : f m = fun v => ∑ b ∈ w.B, aux_gaussianDominationWeight m *
+        aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v := by
+      funext v
+      dsimp [f]
+      rw [Finset.mul_sum]
+    rw [hfun]
+    apply integrable_finsetSum
+    intro b hb
+    exact (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      (aux_dominatingGaussianTerm_memW0 (w.scales b m)
+        (w.scales_in_A b hb m) (w.orientation b) j)).const_mul _
+  have hint_eq (m : Fin 2 → ℕ) :
+      (∫ v : RealPlane, f m v) = (w.B.card : ℝ) * aux_gaussianDominationWeight m := by
+    exact aux_integral_witness_level γ hkn i ι w j m
+  have hnorm_sum : Summable (fun m : Fin 2 → ℕ => ∫ v : RealPlane, ‖f m v‖) := by
+    refine (aux_gaussianDominationWeight_summable.mul_left (w.B.card : ℝ)).congr ?_
+    intro m
+    symm
+    calc
+      (∫ v : RealPlane, ‖f m v‖) = ∫ v : RealPlane, f m v := by
+        apply integral_congr_ae
+        filter_upwards [] with v
+        rw [Real.norm_eq_abs, abs_of_nonneg (hnonneg m v)]
+      _ = (w.B.card : ℝ) * aux_gaussianDominationWeight m := hint_eq m
+  have hmain := integral_tsum_of_summable_integral_norm hint hnorm_sum
+  change (∫ v : RealPlane, ∑' m : Fin 2 → ℕ, f m v) = _
+  rw [← hmain]
+  calc
+    (∑' m : Fin 2 → ℕ, ∫ v : RealPlane, f m v) =
+        ∑' m : Fin 2 → ℕ, (w.B.card : ℝ) * aux_gaussianDominationWeight m :=
+      tsum_congr hint_eq
+    _ = (w.B.card : ℝ) * ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m :=
+      tsum_mul_left
+
+private theorem aux_nMultiplier_integral_abs_le_witness {n : ℕ} (γ : GeometricParameters n)
+    (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ)
+    {C : ℝ} (hC : 0 ≤ C) (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (j : ℤ) :
+    (∫ v : RealPlane, |nMultiplier γ hkn ι i j v|) ≤
+      (C * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) *
+        ((w.B.card : ℝ) * ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m) := by
+  let T : RealPlane → ℝ := fun v => ∑' m : Fin 2 → ℕ,
+    aux_gaussianDominationWeight m *
+      ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v
+  let A : ℝ := C * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)
+  have hN : Integrable (nMultiplier γ hkn ι i j) :=
+    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      (nKernelWellDefinedness γ hkn ι i j)
+  have hNabs : Integrable (fun v : RealPlane => |nMultiplier γ hkn ι i j v|) := by
+    simpa [Real.norm_eq_abs] using hN.norm
+  have hT : Integrable T := by
+    simpa [T] using w.series_integrable j
+  have hmono : (∫ v : RealPlane, |nMultiplier γ hkn ι i j v|) ≤
+      ∫ v : RealPlane, A * T v := by
+    refine integral_mono_ae hNabs (hT.const_mul A) (ae_of_all _ fun v => ?_)
+    simpa [A, T] using w.estimate j v
+  calc
+    (∫ v : RealPlane, |nMultiplier γ hkn ι i j v|) ≤ ∫ v : RealPlane, A * T v := hmono
+    _ = A * ∫ v : RealPlane, T v := by rw [integral_const_mul]
+    _ = A * ((w.B.card : ℝ) * ∑' m : Fin 2 → ℕ,
+        aux_gaussianDominationWeight m) := by
+      rw [show (∫ v : RealPlane, T v) = (w.B.card : ℝ) *
+          ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m from
+        aux_integral_witness_series γ hkn i ι w j]
+
+private theorem aux_eLpNorm_nMultiplier_le_witness {n : ℕ} (γ : GeometricParameters n)
+    (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ)
+    {C : ℝ} (hC : 0 ≤ C) (w : aux_GaussianDominationWitness γ hkn i ι C)
+    (j : ℤ) :
+    eLpNorm (nMultiplier γ hkn ι i j) 1 volume ≤ ENNReal.ofReal
+      ((C * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) *
+        ((w.B.card : ℝ) * ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m)) := by
+  apply aux_eLpNorm_one_le_of_integral_norm_le
+    (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      (nKernelWellDefinedness γ hkn ι i j))
+  simpa [Real.norm_eq_abs] using
+    aux_nMultiplier_integral_abs_le_witness γ hkn i ι hC w j
+
+
+private theorem aux_sandwichKernel_lMultiplier_eq_diagonalConvolution
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ) (hk : γ.k < n - 1) :
+    sandwichKernel γ (lMultiplier γ ι) i j =
+      diagonalConvolution (sandwichKernel γ (nMultiplier γ hkn ι) i j) i
+        (sigmaMultiplier γ ι i j) := by
+  funext y
+  unfold sandwichKernel diagonalConvolution
+  rw [lMultiplier_eq_nMultiplier_diagonalConvolution γ hkn ι i j hk]
+  let A : ℝ := ∏ m ∈ Finset.univ.filter (fun m => m < i),
+    gammaGaussian γ m j (y.1 m, y.2 m)
+  let B : ℝ := ∏ m ∈ Finset.univ.filter (fun m => i < m),
+    gammaGaussian γ m (j - 1) (y.1 m, y.2 m)
+  have hA (q : ℝ) :
+      (∏ m ∈ Finset.univ.filter (fun m => m < i),
+        gammaGaussian γ m j
+          (Function.update y.1 i (y.1 i - q) m, Function.update y.2 i (y.2 i - q) m)) = A := by
+    dsimp [A]
+    apply Finset.prod_congr rfl
+    intro m hm
+    have hmi : m < i := (Finset.mem_filter.mp hm).2
+    simp [ne_of_lt hmi]
+  have hB (q : ℝ) :
+      (∏ m ∈ Finset.univ.filter (fun m => i < m),
+        gammaGaussian γ m (j - 1)
+          (Function.update y.1 i (y.1 i - q) m, Function.update y.2 i (y.2 i - q) m)) = B := by
+    dsimp [B]
+    apply Finset.prod_congr rfl
+    intro m hm
+    have him : i < m := (Finset.mem_filter.mp hm).2
+    simp [ne_of_gt him]
+  change (A * (∫ p : ℝ,
+      nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * sigmaMultiplier γ ι i j p)) * B =
+    ∫ q : ℝ,
+      ((∏ m ∈ Finset.univ.filter (fun m => m < i),
+          gammaGaussian γ m j
+            (Function.update y.1 i (y.1 i - q) m, Function.update y.2 i (y.2 i - q) m)) *
+        nMultiplier γ hkn ι i j
+          (Function.update y.1 i (y.1 i - q) i, Function.update y.2 i (y.2 i - q) i) *
+        ∏ m ∈ Finset.univ.filter (fun m => i < m),
+          gammaGaussian γ m (j - 1)
+            (Function.update y.1 i (y.1 i - q) m, Function.update y.2 i (y.2 i - q) m)) *
+        sigmaMultiplier γ ι i j q
+  simp_rw [hA, hB]
+  simp only [Function.update_self]
+  change (A * (∫ p : ℝ,
+      nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * sigmaMultiplier γ ι i j p)) * B =
+    ∫ q : ℝ, (A * nMultiplier γ hkn ι i j (y.1 i - q, y.2 i - q) * B) *
+      sigmaMultiplier γ ι i j q
+  calc
+    (A * (∫ p : ℝ,
+        nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * sigmaMultiplier γ ι i j p)) * B =
+        ∫ p : ℝ, (A *
+          (nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * sigmaMultiplier γ ι i j p)) * B := by
+      rw [← integral_const_mul, ← integral_mul_const]
+    _ = ∫ q : ℝ, (A * nMultiplier γ hkn ι i j (y.1 i - q, y.2 i - q) * B) *
+        sigmaMultiplier γ ι i j q := by
+      apply integral_congr_ae
+      filter_upwards [] with q
+      ring
+
+private theorem aux_sandwichKernel_eq_diagonalConvolution_of_repr
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ) (φ : ℝ → ℝ)
+    (hL : lMultiplier γ ι i j = fun v =>
+      ∫ p : ℝ, nMultiplier γ hkn ι i j (v.1 - p, v.2 - p) * φ p) :
+    sandwichKernel γ (lMultiplier γ ι) i j =
+      diagonalConvolution (sandwichKernel γ (nMultiplier γ hkn ι) i j) i φ := by
+  funext y
+  unfold sandwichKernel diagonalConvolution
+  rw [hL]
+  let A : ℝ := ∏ m ∈ Finset.univ.filter (fun m => m < i),
+    gammaGaussian γ m j (y.1 m, y.2 m)
+  let B : ℝ := ∏ m ∈ Finset.univ.filter (fun m => i < m),
+    gammaGaussian γ m (j - 1) (y.1 m, y.2 m)
+  have hA (q : ℝ) :
+      (∏ m ∈ Finset.univ.filter (fun m => m < i),
+        gammaGaussian γ m j
+          (Function.update y.1 i (y.1 i - q) m, Function.update y.2 i (y.2 i - q) m)) = A := by
+    dsimp [A]
+    apply Finset.prod_congr rfl
+    intro m hm
+    have hmi : m < i := (Finset.mem_filter.mp hm).2
+    simp [ne_of_lt hmi]
+  have hB (q : ℝ) :
+      (∏ m ∈ Finset.univ.filter (fun m => i < m),
+        gammaGaussian γ m (j - 1)
+          (Function.update y.1 i (y.1 i - q) m, Function.update y.2 i (y.2 i - q) m)) = B := by
+    dsimp [B]
+    apply Finset.prod_congr rfl
+    intro m hm
+    have him : i < m := (Finset.mem_filter.mp hm).2
+    simp [ne_of_gt him]
+  change (A * (∫ p : ℝ,
+      nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * φ p)) * B =
+    ∫ q : ℝ,
+      ((∏ m ∈ Finset.univ.filter (fun m => m < i),
+          gammaGaussian γ m j
+            (Function.update y.1 i (y.1 i - q) m, Function.update y.2 i (y.2 i - q) m)) *
+        nMultiplier γ hkn ι i j
+          (Function.update y.1 i (y.1 i - q) i, Function.update y.2 i (y.2 i - q) i) *
+        ∏ m ∈ Finset.univ.filter (fun m => i < m),
+          gammaGaussian γ m (j - 1)
+            (Function.update y.1 i (y.1 i - q) m, Function.update y.2 i (y.2 i - q) m)) * φ q
+  simp_rw [hA, hB]
+  simp only [Function.update_self]
+  change (A * (∫ p : ℝ,
+      nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * φ p)) * B =
+    ∫ q : ℝ, (A * nMultiplier γ hkn ι i j (y.1 i - q, y.2 i - q) * B) * φ q
+  calc
+    (A * (∫ p : ℝ,
+        nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * φ p)) * B =
+        ∫ p : ℝ, (A *
+          (nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * φ p)) * B := by
+      rw [← integral_const_mul, ← integral_mul_const]
+    _ = ∫ q : ℝ, (A * nMultiplier γ hkn ι i j (y.1 i - q, y.2 i - q) * B) * φ q := by
+      apply integral_congr_ae
+      filter_upwards [] with q
+      ring
+
+private theorem aux_cauchySchwarzKernel_eq_lMultiplier_partial
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (J : ℕ) (hk : γ.k < n - 1) :
+    cauchySchwarzKernel
+      (fun l : Fin J => sandwichKernel γ (nMultiplier γ hkn ι) i (l.1 : ℤ))
+      (fun l : Fin J => sigmaMultiplier γ ι i (l.1 : ℤ)) i =
+      fun y => ∑ l : Fin J, sandwichKernel γ (lMultiplier γ ι) i (l.1 : ℤ) y := by
+  funext y
+  unfold cauchySchwarzKernel
+  apply Finset.sum_congr rfl
+  intro l _
+  exact (congrFun (aux_sandwichKernel_lMultiplier_eq_diagonalConvolution
+    γ hkn ι i (l.1 : ℤ) hk) y).symm
+
+private theorem aux_cauchySchwarzLift_eq_increaseData_partial
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (J : ℕ) :
+    cauchySchwarzLift
+      (fun l : Fin J => sandwichKernel γ (nMultiplier γ hkn ι) i (l.1 : ℤ))
+      (fun l : Fin J => sigmaMultiplier γ ι i (l.1 : ℤ)) =
+      fun y => ∑ l : Fin J, aux_increaseDataKernel γ hkn i ι (l.1 : ℤ) y := by
+  funext y
+  unfold cauchySchwarzLift aux_increaseDataKernel sandwichKernel
+  apply Finset.sum_congr rfl
+  intro l _
+  let A : ℝ := ∏ m ∈ Finset.univ.filter (fun m => m < i),
+    gammaGaussian γ m (l.1 : ℤ) (y.1 m.castSucc, y.2 m.castSucc)
+  let B : ℝ := ∏ m ∈ Finset.univ.filter (fun m => i < m),
+    gammaGaussian γ m ((l.1 : ℤ) - 1) (y.1 m.castSucc, y.2 m.castSucc)
+  have hA : 0 ≤ A := by
+    dsimp [A]
+    apply Finset.prod_nonneg
+    intro m _
+    exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ m (l.1 : ℤ) _
+  have hB : 0 ≤ B := by
+    dsimp [B]
+    apply Finset.prod_nonneg
+    intro m _
+    exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ m ((l.1 : ℤ) - 1) _
+  change |A * nMultiplier γ hkn ι i (l.1 : ℤ)
+      (y.1 i.castSucc, y.2 i.castSucc) * B| *
+        tensorSquare (sigmaMultiplier γ ι i (l.1 : ℤ))
+          (y.1 (Fin.last γ.k), y.2 (Fin.last γ.k)) =
+      A * |nMultiplier γ hkn ι i (l.1 : ℤ)
+        (y.1 i.castSucc, y.2 i.castSucc)| * B *
+        tensorSquare (sigmaMultiplier γ ι i (l.1 : ℤ))
+          (y.1 (Fin.last γ.k), y.2 (Fin.last γ.k))
+  rw [abs_mul, abs_mul, abs_of_nonneg hA, abs_of_nonneg hB]
+
+private theorem aux_doublyCauchySchwarzKernel_eq_lMultiplier_partial
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (J : ℕ) (hk : ¬ γ.k < n - 1) :
+    doublyCauchySchwarzKernel
+      (fun l : Fin J => sandwichKernel γ (nMultiplier γ hkn ι) i (l.1 : ℤ))
+      (fun l => sigmaMultiplier γ ι i (l.1 : ℤ)) i =
+      fun y => ∑ l : Fin J, sandwichKernel γ (lMultiplier γ ι) i (l.1 : ℤ) y := by
+  funext y
+  unfold doublyCauchySchwarzKernel
+  apply Finset.sum_congr rfl
+  intro l _
+  exact (congrFun
+    (aux_sandwichKernel_eq_diagonalConvolution_of_repr γ hkn ι i (l.1 : ℤ)
+      (realConvolution (sigmaMultiplier γ ι i (l.1 : ℤ))
+        (sigmaMultiplier γ ι i (l.1 : ℤ)))
+      (lMultiplier_eq_nMultiplier_diagonalConvolution_endpoint γ hkn ι i (l.1 : ℤ) hk)) y).symm
+
+
+end
+
+end aux_increaseDataDiagonal
+
+/-- Proposition \ref{increase data implies diagonal band}. -/
+theorem increaseData_implies_diagonalBand {n k : ℕ} {C : ℝ}
+    (hk : 1 ≤ k) (hkn : k ≤ n - 1) (hC : 1 ≤ C) :
+    IncreaseData n k C hk hkn hC →
+      DiagonalBand n k (C_increaseDataImpliesDiagonalBand k n C) hk hkn
+        (aux_one_le_C_increaseDataImpliesDiagonalBand k n hC) :=
+  aux_increaseDataDiagonal.impl hk hkn hC
+
 /-- Recursive constants from Proposition \ref{P:C_k-induction}, formalized by
 `inductPositiveTermsByInduction`.  The argument is the reverse distance from `n`. -/
 noncomputable def C_inductPositiveTermsByInduction (n : ℕ) : ℕ → ℝ
@@ -1638,6 +4891,388 @@ theorem aux_one_le_C_inductPositiveTermsByInduction (n r : ℕ) :
                     C_inductPositiveTermsByInduction n (r + 1)) := by
             positivity
           linarith
+
+/-! Private reverse-distance induction for Proposition `P:C_k-induction`. -/
+namespace aux_inductPositiveTermsByInduction
+
+theorem distance (n : ℕ) (hn : 1 ≤ n) :
+    ∀ r : ℕ, ∀ _hr : r < n,
+      InductPositiveTerms n (n - r) (C_inductPositiveTermsByInduction n r)
+        (by omega) (by omega)
+        (aux_one_le_C_inductPositiveTermsByInduction n r) := by
+  intro r
+  induction r with
+  | zero =>
+      intro hr
+      have hterminal : VanishingDiagonal n n 1 hn le_rfl (by norm_num) :=
+        (vanishingKernelIntegral n hn).2
+      have hipt := vanishingDiagonal_implies_inductPositiveTerms
+        (n := n) (k := n) (C := 1) hn le_rfl (by norm_num) hterminal
+      convert hipt using 1 <;>
+        simp [C_inductPositiveTermsByInduction,
+          C_vanishingDiagonalImpliesInductPositiveTerms] <;> ring
+  | succ r ih =>
+      intro hr
+      have hr' : r < n := by omega
+      have hprev := ih hr'
+      cases r with
+      | zero =>
+          have hk : 1 ≤ n - 1 := by omega
+          have hkn : n - 1 ≤ n - 1 := le_rfl
+          have hCprev : 1 ≤ C_inductPositiveTermsByInduction n 0 :=
+            aux_one_le_C_inductPositiveTermsByInduction n 0
+          have hprev' :
+              InductPositiveTerms n ((n - 1) + 1)
+                (C_inductPositiveTermsByInduction n 0)
+                (by omega) (by omega) hCprev := by
+            convert hprev using 1 <;> omega
+          have hincrease := inductPositiveTerms_implies_increaseData
+            (n := n) (k := n - 1)
+            (C := C_inductPositiveTermsByInduction n 0) hk hkn hCprev hprev'
+          have hCincrease :
+              1 ≤ C_inductPositiveTermsByInduction n 0 *
+                C_inductPositiveTermsImplyIncreaseData :=
+            one_le_mul_of_one_le_of_one_le hCprev
+              aux_one_le_C_inductPositiveTermsImplyIncreaseData
+          have hband := increaseData_implies_diagonalBand
+            (n := n) (k := n - 1)
+            (C := C_inductPositiveTermsByInduction n 0 *
+              C_inductPositiveTermsImplyIncreaseData)
+            hk hkn hCincrease hincrease
+          have hvanishing := diagonalBand_implies_vanishingDiagonal
+            (n := n) (k := n - 1)
+            (C := C_increaseDataImpliesDiagonalBand (n - 1) n
+              (C_inductPositiveTermsByInduction n 0 *
+                C_inductPositiveTermsImplyIncreaseData))
+            hk hkn
+            (aux_one_le_C_increaseDataImpliesDiagonalBand (n - 1) n hCincrease)
+            hband
+          have hipt := vanishingDiagonal_implies_inductPositiveTerms
+            (n := n) (k := n - 1)
+            (C := C_increaseDataImpliesDiagonalBand (n - 1) n
+              (C_inductPositiveTermsByInduction n 0 *
+                C_inductPositiveTermsImplyIncreaseData))
+            hk (by omega)
+            (aux_one_le_C_increaseDataImpliesDiagonalBand (n - 1) n hCincrease)
+            hvanishing
+          have hterminal : ¬ n - 1 < n - 1 := by omega
+          convert hipt using 1 <;>
+            simp [C_inductPositiveTermsByInduction,
+              C_vanishingDiagonalImpliesInductPositiveTerms,
+              C_increaseDataImpliesDiagonalBand, hterminal] <;> ring
+      | succ q =>
+          have hk : 1 ≤ n - (q + 2) := by omega
+          have hkn : n - (q + 2) ≤ n - 1 := by omega
+          have hinterior : n - (q + 2) < n - 1 := by omega
+          have hCprev : 1 ≤ C_inductPositiveTermsByInduction n (q + 1) :=
+            aux_one_le_C_inductPositiveTermsByInduction n (q + 1)
+          have hprev' :
+              InductPositiveTerms n ((n - (q + 2)) + 1)
+                (C_inductPositiveTermsByInduction n (q + 1))
+                (by omega) (by omega) hCprev := by
+            convert hprev using 1 <;> omega
+          have hincrease := inductPositiveTerms_implies_increaseData
+            (n := n) (k := n - (q + 2))
+            (C := C_inductPositiveTermsByInduction n (q + 1))
+            hk hkn hCprev hprev'
+          have hCincrease :
+              1 ≤ C_inductPositiveTermsByInduction n (q + 1) *
+                C_inductPositiveTermsImplyIncreaseData :=
+            one_le_mul_of_one_le_of_one_le hCprev
+              aux_one_le_C_inductPositiveTermsImplyIncreaseData
+          have hband := increaseData_implies_diagonalBand
+            (n := n) (k := n - (q + 2))
+            (C := C_inductPositiveTermsByInduction n (q + 1) *
+              C_inductPositiveTermsImplyIncreaseData)
+            hk hkn hCincrease hincrease
+          have hvanishing := diagonalBand_implies_vanishingDiagonal
+            (n := n) (k := n - (q + 2))
+            (C := C_increaseDataImpliesDiagonalBand (n - (q + 2)) n
+              (C_inductPositiveTermsByInduction n (q + 1) *
+                C_inductPositiveTermsImplyIncreaseData))
+            hk hkn
+            (aux_one_le_C_increaseDataImpliesDiagonalBand (n - (q + 2)) n hCincrease)
+            hband
+          have hipt := vanishingDiagonal_implies_inductPositiveTerms
+            (n := n) (k := n - (q + 2))
+            (C := C_increaseDataImpliesDiagonalBand (n - (q + 2)) n
+              (C_inductPositiveTermsByInduction n (q + 1) *
+                C_inductPositiveTermsImplyIncreaseData))
+            hk (by omega)
+            (aux_one_le_C_increaseDataImpliesDiagonalBand (n - (q + 2)) n hCincrease)
+            hvanishing
+          convert hipt using 1 <;>
+            simp [C_inductPositiveTermsByInduction,
+              C_vanishingDiagonalImpliesInductPositiveTerms,
+              C_increaseDataImpliesDiagonalBand, hinterior] <;> ring
+
+end aux_inductPositiveTermsByInduction
+
+/-- Proposition \ref{P:C_k-induction}. -/
+theorem inductPositiveTermsByInduction (n k : ℕ)
+    (hk : 1 ≤ k) (hkn : k ≤ n) :
+    InductPositiveTerms n k
+      (C_inductPositiveTermsByInduction n (n - k)) hk hkn
+      (aux_one_le_C_inductPositiveTermsByInduction n (n - k)) := by
+  convert aux_inductPositiveTermsByInduction.distance n (hk.trans hkn) (n - k) (by omega) using 1 <;>
+    omega
+
+/-! The recursive constants are dominated by the uniform local induction
+constant. -/
+namespace aux_betterInduction
+
+private def A : ℝ :=
+  (2 : ℝ) ^ (15 : ℕ) *
+    Real.sqrt
+      (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData)
+
+private theorem product_eq_square :
+    C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData =
+      ((18 : ℝ) * (2 : ℝ) ^ (158 : ℕ)) ^ (2 : ℕ) := by
+  unfold C_inductPositiveTermsImplyIncreaseData
+    C_gaussianDominationCombinedCard C_gaussianDominationCombinedDistance
+    C_gaussianDominationCombined
+  norm_num
+
+private theorem sqrt_product :
+    Real.sqrt
+      (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) =
+        (18 : ℝ) * (2 : ℝ) ^ (158 : ℕ) := by
+  rw [product_eq_square, Real.sqrt_sq_eq_abs, abs_of_nonneg]
+  positivity
+
+private theorem A_eq : A = (18 : ℝ) * (2 : ℝ) ^ (173 : ℕ) := by
+  unfold A
+  rw [sqrt_product]
+  norm_num
+
+private theorem one_le_A : (1 : ℝ) ≤ A := by
+  rw [A_eq]
+  norm_num
+
+private theorem A_nonneg : 0 ≤ A := by
+  exact one_le_A.trans' (by norm_num)
+
+private theorem c_better_eq (k : ℕ) :
+    C_betterInduction k = (A * (k + 2 : ℕ) + Real.sqrt 2) ^ (2 : ℕ) := by
+  unfold C_betterInduction A
+  ring
+
+private theorem sqrt_c_better (k : ℕ) :
+    Real.sqrt (C_betterInduction k) = A * (k + 2 : ℕ) + Real.sqrt 2 := by
+  rw [c_better_eq, Real.sqrt_sq_eq_abs, abs_of_nonneg]
+  exact add_nonneg (mul_nonneg A_nonneg (Nat.cast_nonneg _)) (Real.sqrt_nonneg _)
+
+private theorem sqrt_two_sq : (Real.sqrt 2) ^ (2 : ℕ) = (2 : ℝ) := by
+  rw [Real.sq_sqrt]
+  norm_num
+
+private theorem coefficient_le_A_sq :
+    (2 : ℝ) ^ (10 : ℕ) * C_inductPositiveTermsImplyIncreaseData ≤ A ^ (2 : ℕ) := by
+  rw [A_eq]
+  unfold C_inductPositiveTermsImplyIncreaseData
+    C_gaussianDominationCombinedCard C_gaussianDominationCombinedDistance
+    C_gaussianDominationCombined
+  norm_num
+
+private theorem A_factor :
+    A = (2 : ℝ) ^ (15 : ℕ) * Real.sqrt C_gaussianDominationCombined *
+      Real.sqrt C_inductPositiveTermsImplyIncreaseData := by
+  unfold A
+  rw [Real.sqrt_mul]
+  · ring
+  · unfold C_gaussianDominationCombined
+    positivity
+
+private theorem base_zero_bound (n : ℕ) :
+    (2 : ℝ) + n ≤ C_betterInduction n := by
+  rw [c_better_eq]
+  let y : ℝ := A * (n + 2 : ℕ) + Real.sqrt 2
+  have hn : 0 ≤ (n : ℝ) := Nat.cast_nonneg n
+  have hn2 : 0 ≤ ((n + 2 : ℕ) : ℝ) := Nat.cast_nonneg _
+  have hs : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg _
+  have hbase : ((n + 2 : ℕ) : ℝ) ≤ A * ((n + 2 : ℕ) : ℝ) := by
+    simpa using mul_le_mul_of_nonneg_right one_le_A hn2
+  have hy : (2 : ℝ) + n ≤ y := by
+    dsimp [y]
+    norm_num at hbase ⊢
+    linarith
+  have hyone : 1 ≤ y := by linarith
+  have hyprod : 0 ≤ y * (y - 1) :=
+    mul_nonneg (by linarith) (by linarith)
+  change (2 : ℝ) + n ≤ y ^ (2 : ℕ)
+  nlinarith
+
+private theorem base_one_bound (k : ℕ) :
+    (2 : ℝ) + (k : ℝ) * (2 : ℝ) ^ (10 : ℕ) *
+        C_inductPositiveTermsImplyIncreaseData * ((k + 3 : ℕ) : ℝ) ≤
+      C_betterInduction k := by
+  rw [c_better_eq]
+  have hk : 0 ≤ (k : ℝ) := Nat.cast_nonneg k
+  have hk3 : 0 ≤ ((k + 3 : ℕ) : ℝ) := Nat.cast_nonneg _
+  have hs : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg _
+  have hmain :
+      (k : ℝ) * (2 : ℝ) ^ (10 : ℕ) *
+          C_inductPositiveTermsImplyIncreaseData * ((k + 3 : ℕ) : ℝ) ≤
+        (k : ℝ) * ((k + 3 : ℕ) : ℝ) * A ^ (2 : ℕ) := by
+    calc
+      (k : ℝ) * (2 : ℝ) ^ (10 : ℕ) *
+          C_inductPositiveTermsImplyIncreaseData * ((k + 3 : ℕ) : ℝ) =
+        ((k : ℝ) * ((k + 3 : ℕ) : ℝ)) *
+          ((2 : ℝ) ^ (10 : ℕ) * C_inductPositiveTermsImplyIncreaseData) := by
+          ring
+      _ ≤ ((k : ℝ) * ((k + 3 : ℕ) : ℝ)) * A ^ (2 : ℕ) :=
+        mul_le_mul_of_nonneg_left coefficient_le_A_sq (mul_nonneg hk hk3)
+  have hcast2 : ((k + 2 : ℕ) : ℝ) = (k : ℝ) + 2 := by norm_num
+  have hcast3 : ((k + 3 : ℕ) : ℝ) = (k : ℝ) + 3 := by norm_num
+  have hsqA : 0 ≤ A ^ (2 : ℕ) * ((k : ℝ) + 4) :=
+    mul_nonneg (sq_nonneg A) (by linarith)
+  have hcross : 0 ≤ A * Real.sqrt 2 * ((k : ℝ) + 2) :=
+    mul_nonneg (mul_nonneg A_nonneg hs) (by linarith)
+  rw [hcast2] at ⊢
+  rw [hcast3] at hmain
+  nlinarith [sqrt_two_sq]
+
+private theorem recursive_step_bound (k : ℕ) {C : ℝ}
+    (hC : C ≤ C_betterInduction (k + 1)) :
+    (2 : ℝ) + (k : ℝ) * (2 : ℝ) ^ (15 : ℕ) *
+        Real.sqrt C_gaussianDominationCombined *
+        Real.sqrt (C_inductPositiveTermsImplyIncreaseData * C) ≤
+      C_betterInduction k := by
+  rw [c_better_eq]
+  have hI0 : 0 ≤ C_inductPositiveTermsImplyIncreaseData :=
+    aux_C_inductPositiveTermsImplyIncreaseData_pos.le
+  have hmul :
+      C_inductPositiveTermsImplyIncreaseData * C ≤
+        C_inductPositiveTermsImplyIncreaseData * C_betterInduction (k + 1) :=
+    mul_le_mul_of_nonneg_left hC hI0
+  have hsqrt :
+      Real.sqrt (C_inductPositiveTermsImplyIncreaseData * C) ≤
+        Real.sqrt C_inductPositiveTermsImplyIncreaseData *
+          (A * ((k + 3 : ℕ) : ℝ) + Real.sqrt 2) := by
+    calc
+      Real.sqrt (C_inductPositiveTermsImplyIncreaseData * C) ≤
+          Real.sqrt (C_inductPositiveTermsImplyIncreaseData *
+            C_betterInduction (k + 1)) :=
+        Real.sqrt_le_sqrt hmul
+      _ = Real.sqrt C_inductPositiveTermsImplyIncreaseData *
+          Real.sqrt (C_betterInduction (k + 1)) :=
+        Real.sqrt_mul hI0 _
+      _ = Real.sqrt C_inductPositiveTermsImplyIncreaseData *
+          (A * ((k + 3 : ℕ) : ℝ) + Real.sqrt 2) := by
+        rw [sqrt_c_better]
+  have hcoef0 :
+      0 ≤ (k : ℝ) * (2 : ℝ) ^ (15 : ℕ) *
+        Real.sqrt C_gaussianDominationCombined := by
+    positivity
+  have hmain :
+      (k : ℝ) * (2 : ℝ) ^ (15 : ℕ) *
+          Real.sqrt C_gaussianDominationCombined *
+          Real.sqrt (C_inductPositiveTermsImplyIncreaseData * C) ≤
+        (k : ℝ) * A * (A * ((k + 3 : ℕ) : ℝ) + Real.sqrt 2) := by
+    calc
+      (k : ℝ) * (2 : ℝ) ^ (15 : ℕ) *
+          Real.sqrt C_gaussianDominationCombined *
+          Real.sqrt (C_inductPositiveTermsImplyIncreaseData * C) =
+        ((k : ℝ) * (2 : ℝ) ^ (15 : ℕ) *
+          Real.sqrt C_gaussianDominationCombined) *
+          Real.sqrt (C_inductPositiveTermsImplyIncreaseData * C) := by ring
+      _ ≤ ((k : ℝ) * (2 : ℝ) ^ (15 : ℕ) *
+          Real.sqrt C_gaussianDominationCombined) *
+          (Real.sqrt C_inductPositiveTermsImplyIncreaseData *
+            (A * ((k + 3 : ℕ) : ℝ) + Real.sqrt 2)) :=
+        mul_le_mul_of_nonneg_left hsqrt hcoef0
+      _ = (k : ℝ) * A * (A * ((k + 3 : ℕ) : ℝ) + Real.sqrt 2) := by
+        rw [A_factor]
+        ring
+  have hk : 0 ≤ (k : ℝ) := Nat.cast_nonneg k
+  have hs : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg _
+  have hcast2 : ((k + 2 : ℕ) : ℝ) = (k : ℝ) + 2 := by norm_num
+  have hcast3 : ((k + 3 : ℕ) : ℝ) = (k : ℝ) + 3 := by norm_num
+  have hsqA : 0 ≤ A ^ (2 : ℕ) * ((k : ℝ) + 4) :=
+    mul_nonneg (sq_nonneg A) (by linarith)
+  have hcross : 0 ≤ A * Real.sqrt 2 * ((k : ℝ) + 4) :=
+    mul_nonneg (mul_nonneg A_nonneg hs) (by linarith)
+  rw [hcast2] at ⊢
+  rw [hcast3] at hmain
+  nlinarith [sqrt_two_sq]
+
+private theorem recursive_constant_le_better (n : ℕ) :
+    ∀ r : ℕ, r ≤ n →
+      C_inductPositiveTermsByInduction n r ≤ C_betterInduction (n - r) := by
+  intro r
+  induction r using Nat.twoStepInduction with
+  | zero =>
+      intro hr
+      simpa [C_inductPositiveTermsByInduction] using base_zero_bound n
+  | one =>
+      intro hr
+      have hbase := base_one_bound (n - 1)
+      convert hbase using 1 <;>
+        simp [C_inductPositiveTermsByInduction] <;> norm_cast <;> omega
+  | more r ih0 ih1 =>
+      intro hr
+      have hrprev : r + 1 ≤ n := by omega
+      have hprev := ih1 hrprev
+      have hshift : n - (r + 1) = (n - (r + 2)) + 1 := by omega
+      have hprev' :
+          C_inductPositiveTermsByInduction n (r + 1) ≤
+            C_betterInduction ((n - (r + 2)) + 1) := by
+        simpa [hshift] using hprev
+      have hstep := recursive_step_bound (n - (r + 2)) hprev'
+      simpa [C_inductPositiveTermsByInduction] using hstep
+
+end aux_betterInduction
+
+/-- Proposition \ref{P:better-induction}. -/
+theorem betterInduction (n k : ℕ)
+    (hk : 1 ≤ k) (hkn : k ≤ n - 1) :
+    InductPositiveTerms n k (C_betterInduction k) hk (by omega)
+      (aux_one_le_C_betterInduction k) := by
+  have hkn' : k ≤ n := by omega
+  have hrec := inductPositiveTermsByInduction n k hk hkn'
+  have hbound :
+      C_inductPositiveTermsByInduction n (n - k) ≤ C_betterInduction k := by
+    have h := aux_betterInduction.recursive_constant_le_better n (n - k) (Nat.sub_le _ _)
+    simpa [Nat.sub_sub_self hkn'] using h
+  exact aux_inductPositiveTerms_mono hk hkn'
+    (aux_one_le_C_inductPositiveTermsByInduction n (n - k))
+    (aux_one_le_C_betterInduction k) hbound hrec
+
+/-- Theorem \ref{induct positive terms theorem}. -/
+theorem inductPositiveTermsTheorem (n : ℕ) (hn : 2 ≤ n) :
+    InductPositiveTerms n 2 C_inductPositiveTermsTheorem (by omega) hn
+      aux_one_le_C_inductPositiveTermsTheorem := by
+  rcases hn.eq_or_lt with rfl | hn
+  · have hbase := inductPositiveTermsByInduction 2 2 (by omega) (by omega)
+    apply aux_inductPositiveTerms_mono (n := 2) (k := 2)
+      (C := C_inductPositiveTermsByInduction 2 (2 - 2))
+      (D := C_inductPositiveTermsTheorem) (by omega) (by omega)
+      (aux_one_le_C_inductPositiveTermsByInduction 2 (2 - 2))
+      aux_one_le_C_inductPositiveTermsTheorem
+    · have hproduct :
+        C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData =
+          ((18 : ℝ) * (2 : ℝ) ^ (158 : ℕ)) ^ (2 : ℕ) := by
+        unfold C_inductPositiveTermsImplyIncreaseData
+          C_gaussianDominationCombinedCard C_gaussianDominationCombinedDistance
+          C_gaussianDominationCombined
+        norm_num
+      have hrecursive : C_inductPositiveTermsByInduction 2 0 = (4 : ℝ) := by
+        norm_num [C_inductPositiveTermsByInduction]
+      rw [show C_inductPositiveTermsByInduction 2 (2 - 2) =
+        C_inductPositiveTermsByInduction 2 0 by norm_num, hrecursive]
+      simp only [C_inductPositiveTermsTheorem]
+      rw [hproduct, Real.sqrt_sq_eq_abs, abs_of_nonneg (by positivity)]
+      have hlarge : (2 : ℝ) ≤ (2 : ℝ) ^ (17 : ℕ) *
+          ((18 : ℝ) * (2 : ℝ) ^ (158 : ℕ)) := by
+        norm_num
+      have hsqrt : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg _
+      nlinarith [sq_nonneg ((2 : ℝ) ^ (17 : ℕ) *
+        ((18 : ℝ) * (2 : ℝ) ^ (158 : ℕ)) + Real.sqrt 2 - 2)]
+    · exact hbase
+  · have hbetter2 := betterInduction n 2 (by omega) (by omega)
+    convert hbetter2 using 1 <;>
+      norm_num [C_betterInduction, C_inductPositiveTermsTheorem]
 
 end
 
