@@ -1,9 +1,10 @@
 name: Build and publish documentation
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - master
 
 permissions:
   contents: read
