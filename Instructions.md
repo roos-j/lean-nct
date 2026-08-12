@@ -15,7 +15,7 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
   material in the Introduction.
 - Skip the sections “from real to ergodic” and “overview” for now.
 - Leave the main twisted theorem in `Introduction.lean` as `sorry`; do not
-  delete it.  This is the sole intentionally unproved theorem.
+  delete it.  
 - Formalize the top-level sections “Preliminaries” and “The main argument” and "Reduction to the main argument" in
   their existing respective folders.
 - Work through each subsection in turn, reflecting the subsection structure with subfolder structure and
@@ -122,5 +122,6 @@ find the appropriate label and inside of the def/thm environment update the meta
 
 ## Workflow
 
-- The first stage is to formalize all the statements and definitions, and where proofs are still missing and leave proofs as sorry. Update `Status.md` appropriately.
+- Before beginning, make sure you are aware of the current state of the formalization as recorded in `Status.md`. Also familiarize yourself with the Lean files and the auxiliary setup left behind by previous agents. You should pick the work back up and avoid duplication of effort as much as possible.
+- Then the first stage is to formalize all the statements and definitions, and where proofs are still missing and leave proofs as sorry. Update `Status.md` appropriately.
 - Once all statements and definitions are formalized, you should focus on proving the theorems one by one, in the order they appear in the manuscript. You may locally parallelize independent pieces, but you should not try to do the whole formalization at once. Move on to the next theorem, or batch of theorems only when the previous is completely formalized.

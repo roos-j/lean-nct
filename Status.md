@@ -255,7 +255,7 @@ Lean file: Reduction/AToLambda.lean
 
 #### Theorems
 
-\label{A to Lambda}: [Todo] (Lean: aToLambda) (2026-08-09 10:00:00 EDT)
+\label{A to Lambda}: [Proof completed] (Lean: aToLambda) (2026-08-12 09:41:23 EDT)
 
 ### Further preliminaries for the reduction / Variation seminorms
 
@@ -263,8 +263,8 @@ Lean file: Reduction/VariationSeminorms.lean
 
 #### Theorems
 
-\label{lem:shortlongjumps}: [Todo] (Lean: shortlongJumps) (2026-08-09 10:00:00 EDT)
-\label{lem:ftccs-R}: [Todo] (Lean: ftcCsR) (2026-08-09 10:00:00 EDT)
+\label{lem:shortlongjumps}: [Proof completed] (Lean: shortlongJumps) (2026-08-12 10:35:57 EDT)
+\label{lem:ftccs-R}: [Proof completed] (Lean: ftcCsR) (2026-08-12 11:32:21 EDT)
 
 ### Further preliminaries for the reduction / Bump functions
 
@@ -272,12 +272,12 @@ Lean file: Reduction/BumpFunctions.lean
 
 #### Theorems
 
-\label{lem:ft_deriv_mul}: [Todo] (Lean: fourierDerivativeMul) (2026-08-09 10:00:00 EDT)
-\label{lem:widebump}: [Todo] (Lean: wideBump) (2026-08-09 10:00:00 EDT)
-\label{lem:thetat_offcenter}: [Todo] (Lean: thetaTOffcenter) (2026-08-09 10:00:00 EDT)
-\label{constant off center bump}: [Todo] (Lean: constantOffCenterBump) (2026-08-09 10:00:00 EDT)
-\label{lem:int_fct}: [Todo] (Lean: integralFct) (2026-08-09 10:00:00 EDT)
-\label{lem:Phipos_v2}: [Todo] (Lean: phiPosV2) (2026-08-09 10:00:00 EDT)
+\label{lem:ft_deriv_mul}: [Proof completed] (Lean: fourierDerivativeMul) (2026-08-12 11:35:51 EDT)
+\label{lem:widebump}: [Proof completed] (Lean: wideBump) (2026-08-12 11:40:49 EDT)
+\label{lem:thetat_offcenter}: [Statement completed] (Lean: thetaTOffcenter) (2026-08-12 08:32:42 EDT)
+\label{constant off center bump}: [Statement completed] (Lean: constantOffCenterBump) (2026-08-12 08:32:42 EDT)
+\label{lem:int_fct}: [Statement completed] (Lean: integralFct) (2026-08-12 08:32:42 EDT)
+\label{lem:Phipos_v2}: [Statement completed] (Lean: phiPosV2) (2026-08-12 08:32:42 EDT)
 
 ### Further preliminaries for the reduction / Windows and pairs
 
@@ -285,34 +285,38 @@ Lean file: Reduction/WindowsAndPairs.lean
 
 #### Definitions
 
-\label{def:cn-window}: [Todo] (Lean: cnWindow) (2026-08-09 10:00:00 EDT)
-\label{def:cpair}: [Todo] (Lean: cPair) (2026-08-09 10:00:00 EDT)
-\label{def:unipair}: [Todo] (Lean: uniPair) (2026-08-09 10:00:00 EDT)
-\label{def:window}: [Todo] (Lean: window) (2026-08-09 10:00:00 EDT)
+\label{def:cn-window}: [Completed] (Lean: cnWindow) (2026-08-12 08:32:42 EDT)
+\label{def:cpair}: [Completed] (Lean: cPair) (2026-08-12 08:32:42 EDT)
+\label{def:unipair}: [Completed] (Lean: uniPair) (2026-08-12 08:32:42 EDT)
+\label{def:window}: [Completed] (Lean: window) (2026-08-12 08:32:42 EDT)
 
 #### Theorems
 
-\label{lem:cpair}: [Todo] (Lean: existsUniversalPair) (2026-08-09 10:15:00 EDT)
+\label{lem:cpair}: [Statement completed] (Lean: existsUniversalPair) (2026-08-12 08:32:42 EDT)
 
 ### Further preliminaries for the reduction / A smoothing decomposition
 
 Lean file: Reduction/SmoothingDecomposition.lean
 
+#### Definitions
+
+\label{defn:window based bump functions}: [Completed] (Lean: windowBasedBumpFunctions) (2026-08-12 08:32:42 EDT)
+
 #### Theorems
 
-\label{lem:bumpbasic}: [Todo] (Lean: bumpBasic) (2026-08-09 10:00:00 EDT)
-\label{lem:chardecomp}: [Todo] (Lean: charDecomp) (2026-08-09 10:00:00 EDT)
-\label{lem:smoothingdecomp}: [Todo] (Lean: smoothingDecomp) (2026-08-09 10:00:00 EDT)
-\label{lem:theta_decay}: [Todo] (Lean: thetaDecay) (2026-08-09 10:00:00 EDT)
-\label{constant theta decay}: [Todo] (Lean: constantThetaDecay) (2026-08-09 10:00:00 EDT)
-\label{lem:ft_phi3_eq}: [Todo] (Lean: fourierPhiThreeEq) (2026-08-09 10:00:00 EDT)
-\label{lem:abs_deriv_ft_phi3_le}: [Todo] (Lean: absDerivFourierPhiThreeLe) (2026-08-09 10:00:00 EDT)
-\label{constant phi three derivative}: [Todo] (Lean: constantPhiThreeDerivative) (2026-08-09 10:00:00 EDT)
-\label{lem:abs_deriv_ft_Tphi3_le}: [Todo] (Lean: absDerivFourierTPhiThreeLe) (2026-08-09 10:00:00 EDT)
-\label{constant T phi three derivative}: [Todo] (Lean: constantTPhiThreeDerivative) (2026-08-09 10:00:00 EDT)
-\label{lem:theta_prim}: [Todo] (Lean: thetaPrimitive) (2026-08-09 10:00:00 EDT)
-\label{constant theta primitive}: [Todo] (Lean: constantThetaPrimitive) (2026-08-09 10:00:00 EDT)
-\label{lem:phi4_supp}: [Todo] (Lean: phiFourSupport) (2026-08-09 10:00:00 EDT)
+\label{lem:bumpbasic}: [Statement completed] (Lean: bumpBasic) (2026-08-12 08:32:42 EDT)
+\label{lem:chardecomp}: [Statement completed] (Lean: charDecomp) (2026-08-12 08:32:42 EDT)
+\label{lem:smoothingdecomp}: [Statement completed] (Lean: smoothingDecomp) (2026-08-12 08:32:42 EDT)
+\label{lem:theta_decay}: [Statement completed] (Lean: thetaDecay) (2026-08-12 08:32:42 EDT)
+\label{constant theta decay}: [Statement completed] (Lean: constantThetaDecay) (2026-08-12 08:32:42 EDT)
+\label{lem:ft_phi3_eq}: [Statement completed] (Lean: fourierPhiThreeEq) (2026-08-12 08:32:42 EDT)
+\label{lem:abs_deriv_ft_phi3_le}: [Statement completed] (Lean: absDerivFourierPhiThreeLe) (2026-08-12 08:32:42 EDT)
+\label{constant phi three derivative}: [Statement completed] (Lean: constantPhiThreeDerivative) (2026-08-12 08:32:42 EDT)
+\label{lem:abs_deriv_ft_Tphi3_le}: [Statement completed] (Lean: absDerivFourierTPhiThreeLe) (2026-08-12 08:32:42 EDT)
+\label{constant T phi three derivative}: [Statement completed] (Lean: constantTPhiThreeDerivative) (2026-08-12 08:32:42 EDT)
+\label{lem:theta_prim}: [Statement completed] (Lean: thetaPrimitive) (2026-08-12 08:32:42 EDT)
+\label{constant theta primitive}: [Statement completed] (Lean: constantThetaPrimitive) (2026-08-12 08:32:42 EDT)
+\label{lem:phi4_supp}: [Statement completed] (Lean: phiFourSupport) (2026-08-12 08:32:42 EDT)
 
 ### Further preliminaries for the reduction / Miscellany
 
@@ -320,13 +324,13 @@ Lean file: Reduction/Miscellany.lean
 
 #### Theorems
 
-\label{lem:rescaling}: [Todo] (Lean: rescaling) (2026-08-09 10:00:00 EDT)
-\label{lem:norm_A_sum_le_sum}: [Todo] (Lean: normASumLeSum) (2026-08-09 10:00:00 EDT)
-\label{lem:form_pos}: [Todo] (Lean: formPos) (2026-08-09 10:00:00 EDT)
-\label{lem:ftc_ATphi}: [Todo] (Lean: ftcATphi) (2026-08-09 10:00:00 EDT)
-\label{lem:Phij_prop}: [Todo] (Lean: phiJProperties) (2026-08-09 10:00:00 EDT)
-\label{constant Phij proposition}: [Todo] (Lean: constantPhiJProposition) (2026-08-09 10:00:00 EDT)
-\label{lem:bootstrap}: [Todo] (Lean: bootstrap) (2026-08-09 10:00:00 EDT)
+\label{lem:rescaling}: [Statement completed] (Lean: rescaling) (2026-08-12 08:32:42 EDT)
+\label{lem:norm_A_sum_le_sum}: [Statement completed] (Lean: normASumLeSum) (2026-08-12 08:32:42 EDT)
+\label{lem:form_pos}: [Statement completed] (Lean: formPos) (2026-08-12 08:32:42 EDT)
+\label{lem:ftc_ATphi}: [Statement completed] (Lean: ftcATphi) (2026-08-12 08:32:42 EDT)
+\label{lem:Phij_prop}: [Statement completed] (Lean: phiJProperties) (2026-08-12 08:32:42 EDT)
+\label{constant Phij proposition}: [Statement completed] (Lean: constantPhiJProposition) (2026-08-12 08:32:42 EDT)
+\label{lem:bootstrap}: [Statement completed] (Lean: bootstrap) (2026-08-12 08:32:42 EDT)
 
 ### On-diagonal from main argument
 
@@ -334,17 +338,17 @@ Lean file: Reduction/OnDiagonalMainArgument.lean
 
 #### Theorems
 
-\label{lem:rho-kernels-reduction}: [Todo] (Lean: rhoKernelsReduction) (2026-08-09 10:00:00 EDT)
-\label{constant rho kernels reduction}: [Todo] (Lean: constantRhoKernelsReduction) (2026-08-09 10:00:00 EDT)
-\label{lem:affine-diagonal-cancellation-reduction}: [Todo] (Lean: affineDiagonalCancellationReduction) (2026-08-09 10:00:00 EDT)
-\label{lem:increase-data-bracket-domination}: [Todo] (Lean: increaseDataBracketDomination) (2026-08-09 10:00:00 EDT)
-\label{constant increase data bracket domination}: [Todo] (Lean: constantIncreaseDataBracketDomination) (2026-08-09 10:00:00 EDT)
-\label{lem:increase-data-Gaussian-expansion}: [Todo] (Lean: increaseDataGaussianExpansion) (2026-08-09 10:00:00 EDT)
-\label{constant increase data Gaussian expansion}: [Todo] (Lean: constantIncreaseDataGaussianExpansion) (2026-08-09 10:00:00 EDT)
-\label{lem:N-reduction}: [Todo] (Lean: nReduction) (2026-08-09 10:00:00 EDT)
-\label{constant N reduction}: [Todo] (Lean: constantNReduction) (2026-08-09 10:00:00 EDT)
-\label{P:increase-data-reduction}: [Todo] (Lean: increaseDataReduction) (2026-08-09 10:00:00 EDT)
-\label{constant increase data reduction}: [Todo] (Lean: constantIncreaseDataReduction) (2026-08-09 10:00:00 EDT)
+\label{lem:rho-kernels-reduction}: [Statement completed] (Lean: rhoKernelsReduction) (2026-08-12 08:32:42 EDT)
+\label{constant rho kernels reduction}: [Statement completed] (Lean: constantRhoKernelsReduction) (2026-08-12 08:32:42 EDT)
+\label{lem:affine-diagonal-cancellation-reduction}: [Statement completed] (Lean: affineDiagonalCancellationReduction) (2026-08-12 08:32:42 EDT)
+\label{lem:increase-data-bracket-domination}: [Statement completed] (Lean: increaseDataBracketDomination) (2026-08-12 08:32:42 EDT)
+\label{constant increase data bracket domination}: [Statement completed] (Lean: constantIncreaseDataBracketDomination) (2026-08-12 08:32:42 EDT)
+\label{lem:increase-data-Gaussian-expansion}: [Statement completed] (Lean: increaseDataGaussianExpansion) (2026-08-12 08:32:42 EDT)
+\label{constant increase data Gaussian expansion}: [Statement completed] (Lean: constantIncreaseDataGaussianExpansion) (2026-08-12 08:32:42 EDT)
+\label{lem:N-reduction}: [Statement completed] (Lean: nReduction) (2026-08-12 08:32:42 EDT)
+\label{constant N reduction}: [Statement completed] (Lean: constantNReduction) (2026-08-12 08:32:42 EDT)
+\label{P:increase-data-reduction}: [Statement completed] (Lean: increaseDataReduction) (2026-08-12 08:32:42 EDT)
+\label{constant increase data reduction}: [Statement completed] (Lean: constantIncreaseDataReduction) (2026-08-12 08:32:42 EDT)
 
 ### On-diagonal from off-diagonal estimates
 
@@ -352,24 +356,24 @@ Lean file: Reduction/OnDiagonalOffDiagonal.lean
 
 #### Theorems
 
-\label{P:diagonal-band-reduction}: [Todo] (Lean: diagonalBandReduction) (2026-08-09 10:00:00 EDT)
-\label{constant diagonal band reduction}: [Todo] (Lean: constantDiagonalBandReduction) (2026-08-09 10:00:00 EDT)
-\label{lem:L1-reduction}: [Todo] (Lean: lOneReduction) (2026-08-09 10:00:00 EDT)
-\label{P:vanishing-diagonal-reduction}: [Todo] (Lean: vanishingDiagonalReduction) (2026-08-09 10:00:00 EDT)
-\label{P:one-scale-estimate-window}: [Todo] (Lean: oneScaleEstimateWindow) (2026-08-09 10:00:00 EDT)
-\label{auto:constant-one-scale-window}: [Todo] (Lean: constantOneScaleWindow) (2026-08-09 10:00:00 EDT)
-\label{L:fourier-transform-window}: [Todo] (Lean: fourierTransformWindow) (2026-08-09 10:00:00 EDT)
-\label{lem:scaleest}: [Todo] (Lean: scaleEstimate) (2026-08-09 10:00:00 EDT)
-\label{P:induct-positive-terms-reduction-non-whitney}: [Todo] (Lean: inductPositiveTermsReductionNonWhitney) (2026-08-09 10:00:00 EDT)
-\label{constant non Whitney reduction}: [Todo] (Lean: constantNonWhitneyReduction) (2026-08-09 10:00:00 EDT)
-\label{P:induct-positive-terms-reduction-non-whitney-skip}: [Todo] (Lean: inductPositiveTermsReductionNonWhitneySkip) (2026-08-09 10:00:00 EDT)
-\label{constant non Whitney skip reduction}: [Todo] (Lean: constantNonWhitneySkipReduction) (2026-08-09 10:00:00 EDT)
-\label{P:induct-positive-terms-reduction-whitney-gap}: [Todo] (Lean: inductPositiveTermsReductionWhitneyGap) (2026-08-09 10:00:00 EDT)
-\label{constant Whitney gap reduction}: [Todo] (Lean: constantWhitneyGapReduction) (2026-08-09 10:00:00 EDT)
-\label{P:induct-positive-terms-reduction-whitney}: [Todo] (Lean: inductPositiveTermsReductionWhitney) (2026-08-09 10:00:00 EDT)
-\label{constant Whitney reduction}: [Todo] (Lean: constantWhitneyReduction) (2026-08-09 10:00:00 EDT)
-\label{P:induct-positive-terms-reduction-whitney-product}: [Todo] (Lean: inductPositiveTermsReductionWhitneyProduct) (2026-08-09 10:00:00 EDT)
-\label{constant Whitney product reduction}: [Todo] (Lean: constantWhitneyProductReduction) (2026-08-09 10:00:00 EDT)
+\label{P:diagonal-band-reduction}: [Statement completed] (Lean: diagonalBandReduction) (2026-08-12 08:32:42 EDT)
+\label{constant diagonal band reduction}: [Statement completed] (Lean: constantDiagonalBandReduction) (2026-08-12 08:32:42 EDT)
+\label{lem:L1-reduction}: [Statement completed] (Lean: lOneReduction) (2026-08-12 08:32:42 EDT)
+\label{P:vanishing-diagonal-reduction}: [Statement completed] (Lean: vanishingDiagonalReduction) (2026-08-12 08:32:42 EDT)
+\label{P:one-scale-estimate-window}: [Statement completed] (Lean: oneScaleEstimateWindow) (2026-08-12 08:32:42 EDT)
+\label{auto:constant-one-scale-window}: [Statement completed] (Lean: constantOneScaleWindow) (2026-08-12 08:32:42 EDT)
+\label{L:fourier-transform-window}: [Statement completed] (Lean: fourierTransformWindow) (2026-08-12 08:32:42 EDT)
+\label{lem:scaleest}: [Statement completed] (Lean: scaleEstimate) (2026-08-12 08:32:42 EDT)
+\label{P:induct-positive-terms-reduction-non-whitney}: [Statement completed] (Lean: inductPositiveTermsReductionNonWhitney) (2026-08-12 08:32:42 EDT)
+\label{constant non Whitney reduction}: [Statement completed] (Lean: constantNonWhitneyReduction) (2026-08-12 08:32:42 EDT)
+\label{P:induct-positive-terms-reduction-non-whitney-skip}: [Statement completed] (Lean: inductPositiveTermsReductionNonWhitneySkip) (2026-08-12 08:32:42 EDT)
+\label{constant non Whitney skip reduction}: [Statement completed] (Lean: constantNonWhitneySkipReduction) (2026-08-12 08:32:42 EDT)
+\label{P:induct-positive-terms-reduction-whitney-gap}: [Statement completed] (Lean: inductPositiveTermsReductionWhitneyGap) (2026-08-12 08:32:42 EDT)
+\label{constant Whitney gap reduction}: [Statement completed] (Lean: constantWhitneyGapReduction) (2026-08-12 08:32:42 EDT)
+\label{P:induct-positive-terms-reduction-whitney}: [Statement completed] (Lean: inductPositiveTermsReductionWhitney) (2026-08-12 08:32:42 EDT)
+\label{constant Whitney reduction}: [Statement completed] (Lean: constantWhitneyReduction) (2026-08-12 08:32:42 EDT)
+\label{P:induct-positive-terms-reduction-whitney-product}: [Statement completed] (Lean: inductPositiveTermsReductionWhitneyProduct) (2026-08-12 08:32:42 EDT)
+\label{constant Whitney product reduction}: [Statement completed] (Lean: constantWhitneyProductReduction) (2026-08-12 08:32:42 EDT)
 
 ### Final reduction: proof of main theorem
 
@@ -377,28 +381,28 @@ Lean file: Reduction/FinalReduction.lean
 
 #### Theorems
 
-\label{lem:main_aux1}: [Todo] (Lean: mainAuxOne) (2026-08-09 10:00:00 EDT)
-\label{constant main auxiliary one}: [Todo] (Lean: constantMainAuxiliaryOne) (2026-08-09 10:00:00 EDT)
-\label{lem:shortlongftc_reduction}: [Todo] (Lean: shortlongFtcReduction) (2026-08-09 10:00:00 EDT)
-\label{lem:mainbump1_long1}: [Todo] (Lean: mainBumpOneLongOne) (2026-08-09 10:00:00 EDT)
-\label{constant main bump one long one}: [Todo] (Lean: constantMainBumpOneLongOne) (2026-08-09 10:00:00 EDT)
-\label{lem:mainbump1_long2}: [Todo] (Lean: mainBumpOneLongTwo) (2026-08-09 10:00:00 EDT)
-\label{constant main bump one long two}: [Todo] (Lean: constantMainBumpOneLongTwo) (2026-08-09 10:00:00 EDT)
-\label{lem:mainbump1_long}: [Todo] (Lean: mainBumpOneLong) (2026-08-09 10:00:00 EDT)
-\label{constant main bump one long}: [Todo] (Lean: constantMainBumpOneLong) (2026-08-09 10:00:00 EDT)
-\label{lem:mainbump1}: [Todo] (Lean: mainBumpOne) (2026-08-09 10:00:00 EDT)
-\label{constant main bump one}: [Todo] (Lean: constantMainBumpOne) (2026-08-09 10:00:00 EDT)
-\label{lem:main_aux2}: [Todo] (Lean: mainAuxTwo) (2026-08-09 10:00:00 EDT)
-\label{constant main auxiliary two}: [Todo] (Lean: constantMainAuxiliaryTwo) (2026-08-09 10:00:00 EDT)
-\label{lem:mainbump2}: [Todo] (Lean: mainBumpTwo) (2026-08-09 10:00:00 EDT)
-\label{constant main bump two}: [Todo] (Lean: constantMainBumpTwo) (2026-08-09 10:00:00 EDT)
-\label{lem:leftbump}: [Todo] (Lean: leftBump) (2026-08-09 10:00:00 EDT)
-\label{constant left bump}: [Todo] (Lean: constantLeftBump) (2026-08-09 10:00:00 EDT)
-\label{lem:leftbump1_short1}: [Todo] (Lean: leftBumpOneShortOne) (2026-08-09 10:00:00 EDT)
-\label{constant left bump one short one}: [Todo] (Lean: constantLeftBumpOneShortOne) (2026-08-09 10:00:00 EDT)
-\label{lem:leftbump1_short2}: [Todo] (Lean: leftBumpOneShortTwo) (2026-08-09 10:00:00 EDT)
-\label{constant left bump one short two}: [Todo] (Lean: constantLeftBumpOneShortTwo) (2026-08-09 10:00:00 EDT)
-\label{lem:leftbump1_long}: [Todo] (Lean: leftBumpOneLong) (2026-08-09 10:00:00 EDT)
-\label{constant left bump one long}: [Todo] (Lean: constantLeftBumpOneLong) (2026-08-09 10:00:00 EDT)
-\label{lem:leftbump1}: [Todo] (Lean: leftBumpOne) (2026-08-09 10:00:00 EDT)
-\label{constant left bump one}: [Todo] (Lean: constantLeftBumpOne) (2026-08-09 10:00:00 EDT)
+\label{lem:main_aux1}: [Statement completed] (Lean: mainAuxOne) (2026-08-12 08:32:42 EDT)
+\label{constant main auxiliary one}: [Statement completed] (Lean: constantMainAuxiliaryOne) (2026-08-12 08:32:42 EDT)
+\label{lem:shortlongftc_reduction}: [Statement completed] (Lean: shortLongFtcReduction) (2026-08-12 08:32:42 EDT)
+\label{lem:mainbump1_long1}: [Statement completed] (Lean: mainBumpOneLongOne) (2026-08-12 08:32:42 EDT)
+\label{constant main bump one long one}: [Statement completed] (Lean: constantMainBumpOneLongOne) (2026-08-12 08:32:42 EDT)
+\label{lem:mainbump1_long2}: [Statement completed] (Lean: mainBumpOneLongTwo) (2026-08-12 08:32:42 EDT)
+\label{constant main bump one long two}: [Statement completed] (Lean: constantMainBumpOneLongTwo) (2026-08-12 08:32:42 EDT)
+\label{lem:mainbump1_long}: [Statement completed] (Lean: mainBumpOneLong) (2026-08-12 08:32:42 EDT)
+\label{constant main bump one long}: [Statement completed] (Lean: constantMainBumpOneLong) (2026-08-12 08:32:42 EDT)
+\label{lem:mainbump1}: [Statement completed] (Lean: mainBumpOne) (2026-08-12 08:32:42 EDT)
+\label{constant main bump one}: [Statement completed] (Lean: constantMainBumpOne) (2026-08-12 08:32:42 EDT)
+\label{lem:main_aux2}: [Statement completed] (Lean: mainAuxTwo) (2026-08-12 08:32:42 EDT)
+\label{constant main auxiliary two}: [Statement completed] (Lean: constantMainAuxiliaryTwo) (2026-08-12 08:32:42 EDT)
+\label{lem:mainbump2}: [Statement completed] (Lean: mainBumpTwo) (2026-08-12 08:32:42 EDT)
+\label{constant main bump two}: [Statement completed] (Lean: constantMainBumpTwo) (2026-08-12 08:32:42 EDT)
+\label{lem:leftbump}: [Statement completed] (Lean: leftBump) (2026-08-12 08:32:42 EDT)
+\label{constant left bump}: [Statement completed] (Lean: constantLeftBump) (2026-08-12 08:32:42 EDT)
+\label{lem:leftbump1_short1}: [Statement completed] (Lean: leftBumpOneShortOne) (2026-08-12 08:32:42 EDT)
+\label{constant left bump one short one}: [Statement completed] (Lean: constantLeftBumpOneShortOne) (2026-08-12 08:32:42 EDT)
+\label{lem:leftbump1_short2}: [Statement completed] (Lean: leftBumpOneShortTwo) (2026-08-12 08:32:42 EDT)
+\label{constant left bump one short two}: [Statement completed] (Lean: constantLeftBumpOneShortTwo) (2026-08-12 08:32:42 EDT)
+\label{lem:leftbump1_long}: [Statement completed] (Lean: leftBumpOneLong) (2026-08-12 08:32:42 EDT)
+\label{constant left bump one long}: [Statement completed] (Lean: constantLeftBumpOneLong) (2026-08-12 08:32:42 EDT)
+\label{lem:leftbump1}: [Statement completed] (Lean: leftBumpOne) (2026-08-12 08:32:42 EDT)
+\label{constant left bump one}: [Statement completed] (Lean: constantLeftBumpOne) (2026-08-12 08:32:42 EDT)

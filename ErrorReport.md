@@ -119,3 +119,24 @@ summand in the final constant is
 `324 * 2^350 = (324 / 256) * 2^358 > 2^358`. Thus the manuscript bound
 `< (253 / 256) * 2^358 < 2^358` is false; Lean proves `< 2^359`, a
 factor-two relaxation. The blueprint text is left unchanged.
+
+## `shortlongJumps`: finite variation must allow at most `J` jumps
+
+Reported: 2026-08-12 09:33:34 EDT. Source: `blueprint/blueprint.tex`, lines 5096--5121
+and the proof at lines 5123--5135.
+
+The blueprint defines the finite variation seminorm and then, in the proof of
+Lemma `shortlongjumps`, bounds dyadic short and long subchains which have “at
+most `J` jumps.” The Lean definition initially took a supremum only over
+strict chains of exactly `J + 1` points. For `r > 1`, exact-`J` variation does
+not dominate shorter-chain variation: on `[0,1]`, with `J = 2`, `r = 2`, and
+`a(0)=0`, `a(x)=1` for `0<x<1`, `a(1)=2`, the one-jump chain `(0,1)` has
+variation `2`, while every strict three-point chain has variation at most
+`sqrt 2`.
+
+Consequently the displayed proof cannot justify its key short- and
+long-subchain bounds using the former Lean definition. The Lean implementation
+uses monotone chains of exactly `J + 1` points; repeated entries contribute
+zero, so in the intended range `1 ≤ r` this is equivalent to the blueprint's
+supremum over strict chains with at most `J` jumps. The blueprint definition
+has been corrected accordingly.

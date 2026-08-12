@@ -1,5 +1,6 @@
 import Mathlib
 import LeanNct.Preliminaries.Notation
+import LeanNct.Reduction.TwistedAverages
 
 /-!
 # Introduction
@@ -22,8 +23,7 @@ A(\chi,\mathbf f)(x) = \int_{\mathbb{R}} \chi(s)\Big(\prod_{i\in [n)} f_i(x+se_i
 -/
 noncomputable def twistedAverage {n : ℕ} (χ : ℝ → ℝ)
     (f : Fin n → EuclideanSpace ℝ (Fin n) → ℝ) : EuclideanSpace ℝ (Fin n) → ℝ :=
-  fun x ↦ ∫ s : ℝ, χ s * ∏ i,
-    f i (x + s • WithLp.toLp 2 (Pi.single i (1 : ℝ)))
+  Codex.Reduction.TwistedAverages.twistedAverage χ f
 
 /--
 \begin{definition}[Twisted averages]
@@ -32,7 +32,7 @@ Also, $A_t(\chi,\mathbf{f})=A(\chi_{(t)},\mathbf{f})$, where $\chi_{(t)}(x)=t^{-
 -/
 noncomputable def twistedAverageAtScale {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
     (f : Fin n → EuclideanSpace ℝ (Fin n) → ℝ) : EuclideanSpace ℝ (Fin n) → ℝ :=
-  twistedAverage (fun s ↦ t⁻¹ * χ (t⁻¹ * s)) f
+  Codex.Reduction.TwistedAverages.twistedAverageAtScale t χ f
 
 /--
 \begin{theorem}[Main twisted theorem]\label{thm:nct main real}

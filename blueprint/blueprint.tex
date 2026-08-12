@@ -5033,6 +5033,8 @@ In this section we prove Theorem \ref{thm:nct main real} from Theorem \ref{induc
 \subsubsection{\texorpdfstring{$A$ to $\Lambda_1$}{Average to prism form}}
 
 \begin{lemma}[$A$ to $\Lambda_1$]\label{A to Lambda}\uses{}\usesdefs{A_def,auto:prism-form-definition}
+\lean{aToLambda}
+\leanok
 Let $\phi\in \mathcal{S}(\R)$.
 Let $\mathbf{f}=(f_0,\dots,f_{n-1})$ be functions in $\mathcal{S}(\R^n)$.
 Then
@@ -5093,8 +5095,8 @@ which is $\Lambda_1(\phi^{\otimes 2})(\mathbf{F})$.
 
 \subsubsection{Variation seminorms}\label{sec:variation-norm}
 
-Let $B$ be a seminormed space, $I\subset\mathbb{R}$ a subset and $a:I\to B$ and $J,k\in\mathbb{N}$, $r\ge 1$. The \emph{$r$-variation seminorm} (with $J$ jumps) is
-\begin{equation}\label{auto:finite-variation-seminorm} \|a\|_{V_{r,J}(I; B)} = \sup_{\substack{t_0<\cdots<t_J,\\t_j\in I\;\text{for all}\;j\in [J+1)}} \Big(\sum_{j\in[J)} \|a(t_{j+1})- a(t_{j})\|^r\Big)^{1/r}. \end{equation}
+Let $B$ be a seminormed space, $I\subset\mathbb{R}$ a subset and $a:I\to B$ and $J,k\in\mathbb{N}$, $r\ge 1$. The \emph{$r$-variation seminorm} (with at most $J$ jumps) is
+\begin{equation}\label{auto:finite-variation-seminorm} \|a\|_{V_{r,J}(I; B)} = \sup_{0\le M\le J}\ \sup_{\substack{t_0<\cdots<t_M,\\t_j\in I\;\text{for all}\;j\in [M+1)}} \Big(\sum_{j\in[M)} \|a(t_{j+1})- a(t_{j})\|^r\Big)^{1/r}. \end{equation}
 
 One usually considers $V_r(a)=\sup_{J\ge 1} V_{r,J}(a)$.
 The $k$-th short variation can be expressed as
@@ -5104,6 +5106,8 @@ $\|a\|_{V_{r,J}(2^\mathbb{Z}; B)}.$
 
 
 \begin{lemma}\label{lem:shortlongjumps}\uses{}\usesdefs{}
+\lean{shortlongJumps}
+\leanok
 For every increasing sequence of positive real numbers $(t_j)_{j\in[J+1)}$,
 \begin{equation}\label{auto:short-long-variation-decomposition}
 \Big(\sum_{j\in[J)}\|a(t_{j+1})-a(t_j)\|^r\Big)^{1/r}
@@ -5122,21 +5126,23 @@ where $\kappa$ is the set of $k\in\Z$ such that $2^k\le t_j<2^{k+1}$ for some $j
 \begin{proof}[Proof \auto]
 Group the points $t_j$ according to the dyadic intervals $[2^k,2^{k+1})$. The jumps whose two endpoints lie in the same interval are kept unchanged. If a jump goes from the last point in $[2^k,2^{k+1})$ to the first point in a later occupied interval $[2^l,2^{l+1})$, write it as the sum of
 \[
-a(t_j)-a(2^{k+1}),
+a(t_{j+1})-a(2^l),
 \qquad
-a(2^{k+1})-a(2^l),
+a(2^l)-a(2^k),
 \qquad
-a(2^l)-a(t_{j+1}).
+a(2^k)-a(t_j).
 \]
 The internal jumps in an occupied interval, together with the first of these boundary terms when it occurs, form an increasing sequence in $[2^k,2^{k+1}]$ with at most $J$ jumps. Their combined $\ell^r$ norm, summed over the occupied intervals, is therefore at most
 \[
 \Big(\sum_{k\in\kappa}\|a\|_{V_{r,J}([2^k,2^{k+1}];B)}^r\Big)^{1/r}.
 \]
-The third boundary terms are bounded by the same expression. The middle terms form an increasing sequence on $2^\Z$ after repeated endpoints are deleted, so their $\ell^r$ norm is at most $\|a\|_{V_{r,J}(2^\Z;B)}$. Minkowski's inequality gives the first estimate. Taking the supremum over the sequence $(t_j)$ gives the second.
+The third boundary terms are bounded by the same expression. The middle terms use the lower endpoints $2^k$, and hence form an increasing sequence on $2^\Z$ after repeated endpoints are deleted, so their $\ell^r$ norm is at most $\|a\|_{V_{r,J}(2^\Z;B)}$. Minkowski's inequality gives the first estimate. Taking the supremum over the sequence $(t_j)$ gives the second.
 \end{proof}
 
 
 \begin{lemma}\label{lem:ftccs-R}\uses{}\usesdefs{}   Let $0<\alpha < \beta$ and $a:[\alpha,\beta]\to \R$ be continuously differentiable.
+\lean{ftcCsR}
+\leanok
     Then
 \begin{equation}\label{ftccs1-R}
 \|a\|_{V_{2,J}([\alpha, \beta]; \R)} \le (\tfrac{\beta-\alpha}{\alpha})^{1/2} \|ta'(t)\|_{L^2(t\in [\alpha, \beta],\tfrac{dt}{t})}, \end{equation}
@@ -5191,6 +5197,8 @@ Squaring proves \eqref{ftccs2-R}.
 \subsubsection{Bump functions}\label{sec:bump red}
 
 \begin{lemma}\label{lem:ft_deriv_mul}\uses{}\usesdefs{}
+\lean{fourierDerivativeMul}
+\leanok
 For a Schwartz function $\phi:\mathbb{R}\to\mathbb{C}$ let
 $T\phi(x)=\frac{d}{dx} (x \phi(x))|_x$. Then
 for every $m\ge 0$,
@@ -5209,6 +5217,8 @@ Suppose the claim holds for $m$. Then by inductive hypothesis and the product ru
 
 
 \begin{lemma} \label{lem:widebump}\uses{}\usesdefs{bracket bump}
+\lean{wideBump}
+\leanok
 Let $k \leq 2$, $t\in [2^{1-k}, 2^{2-k}]$. Then for every $u\in \R$ and $N\ge 0$,
 \begin{equation}\label{auto:wide-bump-translation-bound}\langle u-t\rangle^{N} \le C_{\ref{lem:widebump},N} 2^{-kN}\langle u\rangle^{N},\end{equation}
 where $C_{\ref{lem:widebump},N}=2^{3N}$.
@@ -5227,6 +5237,7 @@ Taking reciprocal $N$th powers proves the claim.
 
 
 \begin{lemma}\label{lem:thetat_offcenter}\uses{lem:widebump}\usesdefs{bracket bump}
+\lean{thetaTOffcenter}
 Let $k\le-1$. Then for every $v\in\R^2$,
 \begin{equation}\label{E:two-terms}
 2^{k/2}\int_1^2
@@ -5303,6 +5314,7 @@ This proves \eqref{E:two-terms}.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:thetat_offcenter}}$ \auto]\label{constant off center bump}\uses{lem:thetat_offcenter}\usesdefs{}
+\lean{constantOffCenterBump}
 \begin{equation}\label{constant off center bump bound}
 C_{\ref{lem:thetat_offcenter}}\le133.
 \end{equation}
@@ -5318,6 +5330,7 @@ For a function $\phi$ we define
 
    \begin{lemma}
          \label{lem:int_fct}\uses{}\usesdefs{}
+\lean{integralFct}
           Let $\psi:\R\to \R$ be a Schwartz function and assume that
           \begin{equation}
               \label{int_fct_assumption}
@@ -5362,6 +5375,7 @@ Then the bound \eqref{int_fct_supp}
 
 
 \begin{lemma}\label{lem:Phipos_v2}\uses{}\usesdefs{}
+\lean{phiPosV2}
 Let
 $\Psi:\mathbb{R}^2\to \mathbb{R}$ be such   that $\Psi(u_0,u_1)=\Psi(u_1,u_0)$ for all $(u_0,u_1)\in \R^2$ and such that
 for all bounded functions $g:\R\to\R$,
@@ -5392,6 +5406,7 @@ the right-hand side is the sum of the two expressions in \eqref{nonneg_assumptio
 
 \subsubsection{Windows and pairs}\label{sec:windows}
 \begin{definition}[$(c,N)$-window]\label{def:cn-window}\uses{}\usesdefs{}
+\lean{cnWindow}
 Let $c > 0$, $N\in\mathbb{N}$. A {\em $(c,N)$-window} is a Schwartz function $\phi:\R\to\R$ such that
 \begin{enumerate}
 \item For all $\xi\in \R$, $\widehat{\phi}$ is real and
@@ -5413,6 +5428,7 @@ Let $c > 0$, $N\in\mathbb{N}$. A {\em $(c,N)$-window} is a Schwartz function $\p
 
 \begin{definition}[$(c,N)$-pair]
 \label{def:cpair}\uses{}\usesdefs{def:cn-window}
+\lean{cPair}
 Let $c > 0$, $N\in\mathbb{N}$.  A pair $(\phi_0,\phi_1)$ of $(c,N)$-windows is a {\em $(c,N)$-pair} if
 \begin{equation}\label{windowsum}
 (\widehat{\phi_0})^2+(1-\widehat{\phi_1})^2=1.
@@ -5425,6 +5441,7 @@ for $i\in [2), k\in\mathbb{Z}$
 Existence of $(c,N)$-pairs is shown in Lemma \ref{lem:cpair}.
 
 \begin{definition}[Universal pair]\label{def:unipair}\uses{}\usesdefs{def:cpair}
+\lean{uniPair}
 Set
 \begin{equation}\label{universal pair parameters}
 N_{\ref{def:unipair}}=3,
@@ -5437,10 +5454,12 @@ A universal pair is a $(C_{\ref{def:unipair}},N_{\ref{def:unipair}})$-pair.
 \end{definition}
 
 \begin{definition}[Windows]\label{def:window}\uses{}\usesdefs{def:unipair}
+\lean{window}
 A function is a window if it is one of the two components of a universal pair.
 \end{definition}
 
 \begin{lemma}[Existence of a universal pair]\label{lem:cpair}\uses{standard bump properties}\usesdefs{standard bump,def:cn-window,def:cpair,def:unipair}
+\lean{existsUniversalPair}
 There exists a universal pair.
 \end{lemma}
 
@@ -5490,6 +5509,7 @@ These are bounded by the three displayed powers of two. Thus every derivative of
 In this section we  decompose the characteristic function $\mathbf{1}_{[0,1)}$ into smoother functions.
 
 \begin{definition}[Window-based bump functions]\label{defn:window based bump functions}\uses{lem:cpair}\usesdefs{def:unipair}
+\lean{windowBasedBumpFunctions}
 Let $(\phi_0,\phi_1)$ be a universal pair.
 Define
 \begin{equation}\label{eqn:thetadef}
@@ -5514,6 +5534,7 @@ where $\widetilde{\theta}=\mathbf{1}_{[0,\infty)}*\theta$ (a primitive of $\thet
 \end{definition}
 
 \begin{lemma}\label{lem:bumpbasic}\uses{}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
+\lean{bumpBasic}
 Let $\theta$ be as in \eqref{eqn:thetadef}.\\
 
 (i) We have
@@ -5534,6 +5555,7 @@ Since $2^{-N}$ converges   to $0$ as $N\to \infty$, the conclusion follows.
 \end{proof}
 
 \begin{lemma}\label{lem:chardecomp}\uses{}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
+\lean{charDecomp}
 With $\phi_0,\theta$ defined as in \eqref{eqn:thetadef}, the identity
  \begin{equation}\label{auto:indicator-smoothing-decomposition} \mathbf{1}_{[0,1]} = \mathbf{1}_{[0,1]}* \phi_0 +  \sum_{\ell=-\infty}^{-1} \mathbf{1}_{[0,1]} * \theta_{(2^\ell)}  \end{equation}
 holds in $L^2$.
@@ -5570,6 +5592,7 @@ which tends to zero.
 
 
 \begin{lemma}[Smoothing decomposition]\label{lem:smoothingdecomp}\uses{lem:chardecomp,lem:bumpbasic}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
+\lean{smoothingDecomp}
 The identity
 \begin{equation}\label{eq:seriesexpansion}
 \mathbf{1}_{[0,1]} = \phi_0 + \sum_{k=-2}^\infty \varphi_{0,k}  + \sum_{k=-\infty}^{-1} \varphi_{1,k}+ \sum_{k=-\infty}^{-1}\varphi_{2,k}.
@@ -5604,6 +5627,7 @@ The  second equality is justified, for example, by uniform convergence.
 \end{proof}
 
 \begin{lemma}\label{lem:theta_decay}\uses{lem:smoothdecay2,lem: min and bracket}\usesdefs{bracket bump,def:cn-window,def:unipair,defn:window based bump functions}
+\lean{thetaDecay}
 Let $1\le N\le3$. Then
 \begin{equation}\label{auto:theta-decay}
 |\theta(u)|\le C_{\ref{lem:theta_decay},N}\langle u\rangle^N,
@@ -5639,6 +5663,7 @@ If $N\in\{2,3\}$, Lemma \ref{lem:smoothdecay2}, applied with $m=N$, gives
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:theta_decay},N}$ \auto]\label{constant theta decay}\uses{lem:theta_decay}\usesdefs{def:unipair}
+\lean{constantThetaDecay}
 For $1\le N\le3$,
 \begin{equation}\label{constant theta decay bound}
 C_{\ref{lem:theta_decay},N}\le2^{2N+17}.
@@ -5650,6 +5675,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in \eqref{auto:theta-decay-constant-de
 
 
 \begin{lemma}\label{lem:ft_phi3_eq}\uses{}\usesdefs{defn:window based bump functions}
+\lean{fourierPhiThreeEq}
 For $k\in\mathbb{Z}$ and $\xi\in\mathbb{R}$,
 \begin{equation}\label{auto:varphi-three-Fourier-transform} \widehat{\varphi_{3,k}}(\xi) = 2^k(\widehat{\mathbf{1}_{[0,1)}}-1)(2^{-k}\xi)\widehat{\phi_0}(2^{-k}\xi)\widehat{\theta}(\xi) \end{equation}
 \end{lemma}
@@ -5662,6 +5688,7 @@ By the convolution theorem,
 \end{proof}
 
 \begin{lemma}\label{lem:abs_deriv_ft_phi3_le}\uses{lem:ft_phi3_eq}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
+\lean{absDerivFourierPhiThreeLe}
 Let $m\in[4)$, $k\in\Z$, and $|\xi|\le1$. Then
 \begin{equation}\label{auto:varphi-three-Fourier-derivative-bound}
 |\widehat{\varphi_{3,k}}^{(m)}(\xi)|
@@ -5736,6 +5763,7 @@ These are the defining values.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:abs_deriv_ft_phi3_le},m}$ \auto]\label{constant phi three derivative}\uses{lem:abs_deriv_ft_phi3_le}\usesdefs{def:unipair}
+\lean{constantPhiThreeDerivative}
 For $m=0$,
 \begin{equation}\label{constant phi three derivative bound}
 C_{\ref{lem:abs_deriv_ft_phi3_le},0}=2^2.
@@ -5758,6 +5786,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in the four defining values.
 \end{proof}
 
 \begin{lemma}\label{lem:abs_deriv_ft_Tphi3_le}\uses{lem:ft_deriv_mul,lem:abs_deriv_ft_phi3_le}\usesdefs{def:unipair,defn:window based bump functions}
+\lean{absDerivFourierTPhiThreeLe}
 Let $m\in[3)$, $k\in\Z$, and $|\xi|\le1$. Then
 \begin{equation}\label{auto:T-varphi-three-Fourier-derivative-bound}
 |\widehat{T\varphi_{3,k}}^{(m)}(\xi)|
@@ -5793,6 +5822,7 @@ Substitution of the defining values from Lemma \ref{lem:abs_deriv_ft_phi3_le} gi
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:abs_deriv_ft_Tphi3_le},m}$ \auto]\label{constant T phi three derivative}\uses{lem:abs_deriv_ft_Tphi3_le}\usesdefs{def:unipair}
+\lean{constantTPhiThreeDerivative}
 For $m=0$,
 \begin{equation}\label{constant T phi three derivative bound}
 C_{\ref{lem:abs_deriv_ft_Tphi3_le},0}<2^{20}.
@@ -5811,6 +5841,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in the three exact values from Lemma \
 \end{proof}
 
 \begin{lemma}\label{lem:theta_prim}\uses{lem:smoothdecay2}\usesdefs{bracket bump,def:cn-window,def:unipair,defn:window based bump functions}
+\lean{thetaPrimitive}
 Let $\widetilde\theta$ be the primitive of $\theta$ fixed above. Then
 \begin{equation}\label{thetaprim_supp}
 \operatorname{supp}(\widehat{\widetilde\theta})
@@ -5882,6 +5913,7 @@ for $2\le N<N_{\ref{def:unipair}}$. This proves \eqref{thetaprim_decay} and \eqr
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:theta_prim},N}$ \auto]\label{constant theta primitive}\uses{lem:theta_prim}\usesdefs{def:unipair}
+\lean{constantThetaPrimitive}
 For $2\le N<N_{\ref{def:unipair}}$,
 \begin{equation}\label{constant theta primitive bound}
 C_{\ref{lem:theta_prim},N}\le2^{5N+21}.
@@ -5896,6 +5928,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in \eqref{auto:theta-primitive-constan
 \end{proof}
 
 \begin{lemma}\label{lem:phi4_supp}\uses{lem:theta_prim,lem:ft_deriv_mul}\usesdefs{defn:window based bump functions} We have
+\lean{phiFourSupport}
 (a) $\textup{supp}(\widehat{\varphi_{4,k}})
 \subset  [-1,-2^{-2}]\cup [2^{-2},1]$\\
 
@@ -5920,6 +5953,7 @@ Let $\mathbf{f}=(f_0,\dots,f_{n-1})$ be real-valued Schwartz functions satisfyin
 
 
 \begin{lemma}[Rescaling]\label{lem:rescaling}\uses{}\usesdefs{A_def}Let $\phi\in L^1(\mathbb{R})$.
+\lean{rescaling}
 For all $r,q,\lambda>0$,
 \begin{equation}\label{auto:variation-rescaling-invariance} \|A_t({\phi_{(\lambda)}})\|_{V_{r,J}(t\in (0,\infty); L^q)} =  \|A_t({\phi})\|_{V_{r,J}(t\in (0,\infty); L^q)}. \end{equation}
 \end{lemma}
@@ -5930,6 +5964,7 @@ By replacing $t_j \lambda\mapsto t_j$ in the supremum defining the variation sem
 
 
 \begin{lemma}\label{lem:norm_A_sum_le_sum}\uses{}\usesdefs{A_def,bracket bump}
+\lean{normASumLeSum}
 If $\phi=\sum_{j=1}^\infty \phi_j$ holds in $L^2$ (with $L^2$ functions $\phi, \phi_j$), then
 \begin{equation}\label{auto:twisted-average-series-triangle} \|A(\phi, \mathbf{f})\|_{L^2(\mathbb{R}^n)} \le \sum_{j=1}^\infty \|A({\phi_j}, \mathbf{f})\|_{L^2(\mathbb{R}^n)}. \end{equation}
 \end{lemma}
@@ -5960,6 +5995,7 @@ and $|f_i|\le C$ for $i\ge2$. After the change of variables $y=x_0+s$, the resul
 \end{proof}
 
 \begin{lemma}\label{lem:form_pos}\uses{M to K,prism BL inequality}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb,auto:prism-form-definition}
+\lean{formPos}
 (i) Let $\Psi\in W_0(\R^2)$ be real-valued and assume that
 \begin{equation}\label{eqn:hyp_form_pos}
 \int_{\R^2}g(u_0)g(u_1)\Psi(u)\,du\ge0
@@ -6008,6 +6044,7 @@ Part (i) gives the result.
 \end{proof}
 
 \begin{lemma} \label{lem:ftc_ATphi}\uses{}\usesdefs{A_def}
+\lean{ftcATphi}
 Let $x\in \R^n$, $\phi$ a Schwartz function,  $t\in [2^k, 2^{k+1}]$, $k\in \Z$. Let $a(t)=A_t(\phi)(x)$. Then
 \begin{equation}\label{auto:average-logarithmic-derivative-identity} \|ta'(t)\|_{L^2(t\in [2^k, 2^{k+1}],\tfrac{dt}{t})}^2 = \int_{1}^2 |A_{2^k t}(T\phi)(x)|^2\,\tfrac{dt}{t}. \end{equation}
 \end{lemma}
@@ -6027,6 +6064,7 @@ the claim follows.
 
 \begin{lemma}
 \label{lem:Phij_prop}\uses{lem:Phipos_v2}\usesdefs{def:cn-window,def:unipair}
+\lean{phiJProperties}
 Let $\Psi:\mathbb{R}^2\to\mathbb{R}$ be a non-zero Schwartz function such that for all $u=(u_0,u_1)\in\R^2$,
 \begin{equation}\label{auto:Phij-symmetry-assumption}
 \Psi(u_0,u_1)=\Psi(u_1,u_0).
@@ -6104,6 +6142,7 @@ The derivative estimate follows.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:Phij_prop}}$ \auto]\label{constant Phij proposition}\uses{lem:Phij_prop}\usesdefs{def:unipair}
+\lean{constantPhiJProposition}
 \begin{equation}\label{constant Phij proposition bound}
 C_{\ref{lem:Phij_prop}}=2^{27}.
 \end{equation}
@@ -6115,6 +6154,7 @@ This follows from \eqref{auto:Phij-constant-definition} and $C_{\ref{def:unipair
 
 \begin{lemma}[Bootstrapping]
 \label{lem:bootstrap}\uses{}\usesdefs{A_def}
+\lean{bootstrap}
 Let $\phi:\R\to \R$ be a Schwartz function.
 Then
     \begin{equation}\label{auto:dyadic-variation-bootstrap}\|A_{t}(\phi)\|^2_{V_{2,J}(t\in 2^{\Z}; L^2)} \le  4 \cdot \sup \sum_{\ell\in [J)} \|A_{2^{k_{\ell}}}(\phi)\|^2_2     \end{equation}
@@ -6155,6 +6195,7 @@ Throughout this section, let
 $\nu=1$ if $n>2$ and $\nu=2$ if $n=2$.
 
 \begin{lemma}[$\rho$ kernels - reduction variant] \label{lem:rho-kernels-reduction}\uses{mean four scale Gaussian kernel,standard bump properties,four scale Gaussian kernel}\usesdefs{gaussian,bracket bump,auto:Wiener-space-definition,multiplicatively spaced monotone sequences,standard bump}  Let $a\in A$. For $h\in\N$ with $h\ge1$ and $j\in\Z$, define
+\lean{rhoKernelsReduction}
 \begin{equation}\label{auto:rho-lambda-scales}
 \lambda_{h,j}^-=2^{h-1}a(j),
 \end{equation}
@@ -6257,6 +6298,7 @@ If $h\in \N$, we use  Proposition~\ref{four scale Gaussian kernel}   with $N=2$,
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:rho-kernels-reduction}}$ \auto]\label{constant rho kernels reduction}\uses{lem:rho-kernels-reduction,constant mean four scale Gaussian kernel,constant four scale Gaussian kernel,mean four scale Gaussian kernel,four scale Gaussian kernel}\usesdefs{}
+\lean{constantRhoKernelsReduction}
 \begin{equation}\label{constant rho kernels reduction bound}
 C_{\ref{lem:rho-kernels-reduction}}
 <2^{66}.
@@ -6284,6 +6326,7 @@ extension supplied by Proposition~\ref{four scale Gaussian kernel}.
 
 \begin{lemma}[affine diagonal cancellation - reduction variant]
 \label{lem:affine-diagonal-cancellation-reduction}\uses{W_0 fiber integrals}\usesdefs{auto:Wiener-space-definition}
+\lean{affineDiagonalCancellationReduction}
 Let \(M\in W_0(\mathbb R^2)\) satisfy for every \(\xi\in\mathbb R\)
 \begin{equation}\label{auto:affine-diagonal-cancellation-assumption}
 \widehat M(\xi,-\xi)=0
@@ -6323,6 +6366,7 @@ Injectivity of the Fourier transform on \(L^1\) and continuity of $G$ give
 
 \begin{proposition}[bracket domination - reduction variant]
 \label{lem:increase-data-bracket-domination}\uses{lem:rho-kernels-reduction,two bump estimate,bump triangle,orthogonal decay,convolution vector,lem:affine-diagonal-cancellation-reduction,Properties of distance of sequences,Operations on spaced sequences}\usesdefs{gaussian,bracket bump,auto:Wiener-space-definition,auto:convolution-along-vector-definition,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,standard bump,geometric parameters,auto:unitary-matrices-definition,square root Gaussian difference}
+\lean{increaseDataBracketDomination}
 Let \(a\in A\), and let
 $
 \mathcal P\subset B_{\dist}(a,1)^2\times[2)$ be such that $\#\mathcal P\leq5$. Assume additionally that
@@ -6967,6 +7011,7 @@ which is
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:increase-data-bracket-domination},1}$ \auto]\label{constant increase data bracket domination}\uses{lem:increase-data-bracket-domination,lem:rho-kernels-reduction,constant rho kernels reduction}\usesdefs{}
+\lean{constantIncreaseDataBracketDomination}
 \begin{equation}\label{constant increase data bracket domination bound}
 C_{\ref{lem:increase-data-bracket-domination},1}
 <\tfrac35 2^{76}<2^{76}.
@@ -6979,6 +7024,7 @@ Use $C_{\ref{lem:increase-data-bracket-domination},1}=2^{10}C_{\ref{lem:rho-kern
 
 \begin{proposition}[Gaussian domination - reduction variant]
 \label{lem:increase-data-Gaussian-expansion}\uses{Gaussian domination,lem:increase-data-bracket-domination,Operations on spaced sequences,Properties of distance of sequences}\usesdefs{gaussian,bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,geometric parameters,auto:unitary-matrices-definition,2D Gaussians}
+\lean{increaseDataGaussianExpansion}
 Let the notation and conclusions of Proposition~
 \ref{lem:increase-data-bracket-domination} hold. For
 \(b\in\mathcal B_h\) and
@@ -7242,6 +7288,7 @@ The series therefore converges absolutely in
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:increase-data-Gaussian-expansion}}$ \auto]\label{constant increase data Gaussian expansion}\uses{lem:increase-data-bracket-domination,constant increase data bracket domination,constant rho kernels reduction,lem:rho-kernels-reduction,Gaussian domination,lem:increase-data-Gaussian-expansion}\usesdefs{}
+\lean{constantIncreaseDataGaussianExpansion}
 \begin{equation}\label{constant increase data Gaussian expansion bound}
 C_{\ref{lem:increase-data-Gaussian-expansion}}
 <\tfrac{123}{128}2^{91}<2^{91}.
@@ -7264,6 +7311,7 @@ Using the exact upper bound from Lemma \ref{constant rho kernels reduction}, and
 
 \begin{lemma}
 \label{lem:N-reduction}\uses{lem:rho-kernels-reduction,convolution vector,lem:increase-data-bracket-domination}\usesdefs{bracket bump,auto:Wiener-space-definition,auto:convolution-along-vector-definition,multiplicatively spaced monotone sequences,auto:unitary-matrices-definition} Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$, and $(N_{h,j})_{h\in \N,j\in \Z}$,  be as in Proposition~\ref{lem:increase-data-bracket-domination}.
+\lean{nReduction}
 Then for each $h\in \N$ and $j\in \Z$,   $N_{h,j}\in W_0(\R^2)$ and
 \begin{equation}
     \label{E:diagonal-band-reduction-N-L1}
@@ -7338,6 +7386,7 @@ C_{\ref{lem:N-reduction}}.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:N-reduction}}$ \auto]\label{constant N reduction}\uses{lem:N-reduction,lem:rho-kernels-reduction,constant rho kernels reduction}\usesdefs{}
+\lean{constantNReduction}
 \begin{equation}\label{constant N reduction bound}
 C_{\ref{lem:N-reduction}}
 <\tfrac35 2^{75}<2^{75}.
@@ -7350,6 +7399,7 @@ Use $C_{\ref{lem:N-reduction}}=2^9C_{\ref{lem:rho-kernels-reduction}}$ and Lemma
 
 \begin{proposition}[increase data - reduction variant]
 \label{P:increase-data-reduction}\uses{lem:N-reduction,square root Gaussian difference W0,tensor Wiener,lem:increase-data-Gaussian-expansion,induct positive terms theorem,Monotonicity K,prism BL inequality,lem:increase-data-bracket-domination}\usesdefs{auto:Wiener-space-definition,multiplicatively spaced monotone sequences,geometric parameters,kernel sequences,2D Gaussians,sandwich kernel,square root Gaussian difference,s multiplier}
+\lean{increaseDataReduction}
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$, and $(N_{h,j})_{h\in\N,j\in\Z}$ be as in Proposition~\ref{lem:increase-data-bracket-domination}.
  For $j\in \Z$ and $y\in (\R^2)^2$ let
     \begin{equation}\label{auto:increase-data-majorant-kernel}\tilde{M}_{h,j}(y) = |N_{h,j}(y_0)| (\sigma_{h,j}^{\otimes2})(y_1). \end{equation}
@@ -7488,6 +7538,7 @@ as desired.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:increase-data-reduction}}$ \auto]\label{constant increase data reduction}\uses{constant induct positive terms theorem,constant increase data Gaussian expansion,lem:increase-data-bracket-domination,P:increase-data-reduction}\usesdefs{}
+\lean{constantIncreaseDataReduction}
 \begin{equation}\label{constant increase data reduction bound}
 C_{\ref{P:increase-data-reduction}}
 <\tfrac{31}{32}2^{477}<2^{477}.
@@ -7506,6 +7557,7 @@ C_{\ref{P:increase-data-reduction}}
 \subsection{On-diagonal from off-diagonal estimates}\label{sec:on-diag}
 \begin{proposition}[diagonal band - reduction variant]
 \label{P:diagonal-band-reduction}\uses{P:increase-data-reduction,convolution vector,Cauchy-Schwarz at k,lem:N-reduction,Cauchy-Schwarz at n-1}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,standard bump,kernel sequences,square root Gaussian difference}
+\lean{diagonalBandReduction}
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$ be as in Proposition~\ref{P:increase-data-reduction}. For $h\in\N$ with $h\ge1$ and $j\in\Z$, define
 \begin{equation}\label{auto:diagonal-band-positive-scale}
 L_{h,j}= M_j \ast_{(1,1)} (\Phi_{(2^{h-1}a(j))}-\Phi_{(2^{h}a(j))}),
@@ -7652,6 +7704,7 @@ Summing in $h\in \N$ finishes the proof.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:diagonal-band-reduction}}$ \auto]\label{constant diagonal band reduction}\uses{constant N reduction,constant increase data reduction,P:diagonal-band-reduction}\usesdefs{}
+\lean{constantDiagonalBandReduction}
 \begin{equation}\label{constant diagonal band reduction bound}
 C_{\ref{P:diagonal-band-reduction}}
 <\tfrac{63}{64}2^{480}<2^{480}.
@@ -7675,6 +7728,7 @@ Since $2^{280}<2^{-6}2^{480}$, their sum is smaller than
 
 
 \begin{lemma}\label{lem:L1-reduction}\uses{lem:affine-diagonal-cancellation-reduction}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,multiplicatively spaced monotone sequences,standard bump}
+\lean{lOneReduction}
 
 Let $a\in A$ and suppose that $(M_j)_{j\in\Z}\subset W_0(\R^2)$ satisfies for all $\xi \in \R$ and $j\in \Z$
 \begin{equation}\label{auto:vanishing-diagonal-assumption}
@@ -7732,6 +7786,7 @@ The claim now follows by the
 
 \begin{proposition}[vanishing diagonal - reduction variant]
 \label{P:vanishing-diagonal-reduction}\uses{P:diagonal-band-reduction,prism BL inequality,M to K,lem:L1-reduction,P:increase-data-reduction}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,standard bump,kernel sequences}
+\lean{vanishingDiagonalReduction}
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$ be as in Proposition~\ref{P:increase-data-reduction}. In addition, assume that $\widehat{M_j}(\xi,\eta)$ is supported in the set where $|\xi+\eta| \leq 2^{-1} (a(j-1))^{-1}$.
 Let $\mathbf{M}=(M_j)_{j\in \Z}$. Then
 \begin{equation}\label{auto:vanishing-diagonal-M-bound}
@@ -7764,6 +7819,7 @@ Fix a universal pair $(\phi_0,\phi_1)$. For $\lambda>0$ and $i\in[2)$ write
 \begin{equation}\label{auto:rescaled-window-continuous-notation} \phi_{i,\lambda} = (\phi_i)_{(\lambda)}. \end{equation}
 
 \begin{proposition}\label{P:one-scale-estimate-window}\uses{prism BL inequality,M to K,lem:smoothdecay2}\usesdefs{bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,kernel sequences,def:cn-window,def:unipair}
+\lean{oneScaleEstimateWindow}
 Let $a\in A$. For $j\in \Z$, we set
 \begin{equation}\label{auto:one-scale-window-kernel}
 M_j=(\phi_{0,a(j-1)})^{\otimes 2} - (\phi_{0,a(j)})^{\otimes 2}
@@ -7799,6 +7855,7 @@ Since $\int_\R\langle x\rangle^2\,dx=2$, we have $\|\phi_0\|_1\le16C_{\ref{def:u
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:one-scale-estimate-window}}$ \auto]\label{auto:constant-one-scale-window}\uses{P:one-scale-estimate-window}\usesdefs{def:unipair}
+\lean{constantOneScaleWindow}
 \begin{equation}\label{auto:constant-one-scale-window-bound}
 C_{\ref{P:one-scale-estimate-window}}=2^{39}.
 \end{equation}
@@ -7808,6 +7865,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in the defining value $2^9C_{\ref{def:
 \end{proof}
 
 \begin{lemma}\label{L:fourier-transform-window}\uses{}\usesdefs{multiplicatively spaced monotone sequences,def:cn-window,def:cpair,def:unipair}
+\lean{fourierTransformWindow}
 Let $a\in A$. Then for any $j\in \Z$,
 \begin{equation}\label{auto:window-square-Fourier-identity}
 \mathcal F({\phi}_{0,a(j-1)}-{\phi}_{1,a(j)})^2=
@@ -7829,6 +7887,7 @@ The conclusion follows by applying~\eqref{windowsum}.
 \end{proof}
 
 \begin{lemma} \label{lem:scaleest}\uses{}\usesdefs{bracket bump}
+\lean{scaleEstimate}
     For any $x\in \R$ and $\lambda, s>0$,
     \begin{equation}\label{auto:scaled-bracket-comparison}\langle x \rangle^2_{(\lambda s)} \le \max\{\lambda,\lambda^{-1}\}\langle x \rangle^2_{(s)}\end{equation}
 \end{lemma}
@@ -7844,6 +7903,7 @@ The conclusion follows by applying~\eqref{windowsum}.
 
 \begin{proposition}[induct positive terms - reduction variant, non-Whitney]
 \label{P:induct-positive-terms-reduction-non-whitney}\uses{P:one-scale-estimate-window,L:fourier-transform-window,Operations on spaced sequences,lem:smoothdecay2,lem:scaleest,P:vanishing-diagonal-reduction,P:diagonal-band-reduction}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,auto:unitary-matrices-definition,kernel sequences,def:cn-window,def:unipair}
+\lean{inductPositiveTermsReductionNonWhitney}
 Let $a\in A$ and let
 \begin{equation}\label{auto:non-Whitney-kernel}M_j=({\phi}_{0,a(j-1)}-{\phi}_{1,a(j)})^{\otimes 2}.\end{equation}
 Then with $\M=(M_j)_{j\in \Z}$,  \begin{equation}\label{auto:non-Whitney-reduction-bound}\|\M\|_{\rm M(1)}\le C_{\ref{P:induct-positive-terms-reduction-non-whitney}},\end{equation}
@@ -7898,6 +7958,7 @@ where $\mathcal P$ consists of all triples of the form $(t_0,t_1,0)$, where for 
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-non-whitney}}$ \auto]\label{constant non Whitney reduction}\uses{auto:constant-one-scale-window,lem:smoothdecay2,P:diagonal-band-reduction,constant diagonal band reduction,P:induct-positive-terms-reduction-non-whitney}\usesdefs{def:unipair}
+\lean{constantNonWhitneyReduction}
 \begin{equation}\label{constant non Whitney reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-non-whitney}}
 <\tfrac89 2^{541}<2^{541}.
@@ -7915,6 +7976,7 @@ The first term is $2^{39}<\frac19 2^{541}$, which proves the claim.
 
 \begin{proposition}[induct positive terms - reduction variant, non-Whitney, skip terms]
 \label{P:induct-positive-terms-reduction-non-whitney-skip}\uses{positive terms,P:induct-positive-terms-reduction-non-whitney}\usesdefs{normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,geometric parameters,double sequence of 2D functions,kernel sequences,def:unipair}
+\lean{inductPositiveTermsReductionNonWhitneySkip}
 Let $a\in A$ and let
 \begin{equation}\label{auto:skipped-non-Whitney-kernel}\tilde{M}_j=({\phi}_{0,a(2j)}-{\phi}_{1,a(2j+1)})^{\otimes 2}.\end{equation}
 Then with $\tilde{\M}=(\tilde{M}_j)_{j\in \Z}$,
@@ -7948,6 +8010,7 @@ This yields~\eqref{E:est-skipped-terms}.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-non-whitney-skip}}$ \auto]\label{constant non Whitney skip reduction}\uses{constant non Whitney reduction,P:induct-positive-terms-reduction-non-whitney-skip}\usesdefs{}
+\lean{constantNonWhitneySkipReduction}
 \begin{equation}\label{constant non Whitney skip reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-non-whitney-skip}}
 <\tfrac89 2^{542}<2^{542}.
@@ -7960,6 +8023,7 @@ The factor $2^{1-2^{2-n}}$ is at most $2$. Lemma \ref{constant non Whitney reduc
 
 \begin{proposition}[induct positive terms - reduction variant, Whitney, with gap]
 \label{P:induct-positive-terms-reduction-whitney-gap}\uses{lem:Phij_prop,lem:form_pos,P:induct-positive-terms-reduction-non-whitney-skip,P:vanishing-diagonal-reduction,lem:smoothdecay2,lem:scaleest,P:diagonal-band-reduction}\usesdefs{bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,auto:unitary-matrices-definition,kernel sequences,def:cn-window,def:unipair}
+\lean{inductPositiveTermsReductionWhitneyGap}
 Let $a\in {\rm A}$ satisfy $a(j)\geq 2^{11}a(j-1)$ for every $j\in\mathbb Z$. Let $M_j:\mathbb{R}^2\to \mathbb{R}$ be of the form
 \begin{equation}\label{auto:Whitney-gap-kernel}
 M_j=\Psi_{(a(j))}
@@ -8086,6 +8150,7 @@ which proves the claim.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-whitney-gap}}$ \auto]\label{constant Whitney gap reduction}\uses{constant non Whitney skip reduction,P:induct-positive-terms-reduction-whitney-gap,constant Phij proposition,constant diagonal band reduction}\usesdefs{def:unipair}
+\lean{constantWhitneyGapReduction}
 \begin{equation}\label{constant Whitney gap reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-whitney-gap}}
 <\tfrac{127}{128}2^{553}<2^{553}.
@@ -8105,6 +8170,7 @@ The sum of these two bounds is smaller than $\frac{127}{128}2^{553}$.
 
 \begin{proposition}[induct positive terms - reduction variant, Whitney]
 \label{P:induct-positive-terms-reduction-whitney}\uses{P:induct-positive-terms-reduction-whitney-gap}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,auto:unitary-matrices-definition,kernel sequences}
+\lean{inductPositiveTermsReductionWhitney}
 Let $a\in {\rm A}$. Let $M_j:\mathbb{R}^2\to \mathbb{R}$ be of the form
 \begin{equation}\label{auto:Whitney-kernel}
 M_j=\Psi_{(a(j))}
@@ -8142,6 +8208,7 @@ Split any finite sum into these eleven residue classes and apply Proposition \re
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-whitney}}$ \auto]\label{constant Whitney reduction}\uses{constant Whitney gap reduction,P:induct-positive-terms-reduction-whitney}\usesdefs{}
+\lean{constantWhitneyReduction}
 \begin{equation}\label{constant Whitney reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-whitney}}
 <2^{557}.
@@ -8159,6 +8226,7 @@ C_{\ref{P:induct-positive-terms-reduction-whitney}}
 
 \begin{proposition}[induct positive terms - reduction variant, Whitney, product-type]
 \label{P:induct-positive-terms-reduction-whitney-product}\uses{P:induct-positive-terms-reduction-whitney,lem:smoothdecay2}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,kernel sequences}
+\lean{inductPositiveTermsReductionWhitneyProduct}
 Let $a\in A$ and let
 \begin{equation}\label{auto:Whitney-product-kernel}
 M_j=(\psi_{(a(j))})^{\otimes2}
@@ -8201,6 +8269,7 @@ so \eqref{p1-on-W_decay} holds. Proposition \ref{P:induct-positive-terms-reducti
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-whitney-product}}$ \auto]\label{constant Whitney product reduction}\uses{constant Whitney reduction,P:induct-positive-terms-reduction-whitney-product}\usesdefs{}
+\lean{constantWhitneyProductReduction}
 \begin{equation}\label{constant Whitney product reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-whitney-product}}
 <2^{569}.
@@ -8235,6 +8304,7 @@ In what follows we denote
 \end{equation}
 
 \begin{lemma}\label{lem:main_aux1}\uses{Extension of sequences,A to Lambda,P:induct-positive-terms-reduction-whitney-product}\usesdefs{A_def,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences}
+\lean{mainAuxOne}
 Suppose that $\psi:\R\to\R$ is a Schwartz function with
 \begin{equation}\label{main_aux1_supp}
 {\rm supp}(\widehat\psi)\subset\mathrm{Ann}_1(1,2^2),
@@ -8274,6 +8344,7 @@ for $m\in[3)$, which verifies \eqref{auto:Whitney-product-Fourier-derivative-ass
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:main_aux1}}$ \auto]\label{constant main auxiliary one}\uses{constant Whitney product reduction,lem:main_aux1}\usesdefs{}
+\lean{constantMainAuxiliaryOne}
 \begin{equation}\label{constant main auxiliary one bound}
 C_{\ref{lem:main_aux1}}<2^{573}.
 \end{equation}
@@ -8283,6 +8354,7 @@ Use Lemma \ref{constant Whitney product reduction} in \eqref{auto:main-auxiliary
 \end{proof}
 
 \begin{lemma}[Long and short variation]\label{lem:shortlongftc_reduction}\uses{lem:shortlongjumps,lem:ftccs-R,lem:ftc_ATphi,lem:main_aux1}\usesdefs{A_def}
+\lean{shortLongFtcReduction}
 Let $J\ge 1$ and $\phi$ a Schwartz function.
 Assume that the function $T\phi(s) = (s \phi(s))'$ satisfies \eqref{main_aux1_supp} and \eqref{auto:main-auxiliary-one-Fourier-derivative-assumption}.
 Suppose that $A\in (0,\infty)$ is such that
@@ -8353,6 +8425,7 @@ The claim now follows from
 
 
 \begin{lemma}\label{lem:mainbump1_long1}\uses{lem:main_aux1}\usesdefs{A_def,def:cn-window,def:unipair}
+\lean{mainBumpOneLongOne}
 For every $J\ge1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
 \begin{equation}\label{mainbump1_long1}
 \sum_{j\in[J)}\|A_{2^{k_j}}(\phi_0)-A_{2^{k_j}}(\phi_1)\|_2^2
@@ -8374,6 +8447,7 @@ The Fourier transform of $\phi_0-\phi_1$ is supported in $\mathrm{Ann}_1(1,2)$. 
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1_long1}}$ \auto]\label{constant main bump one long one}\uses{constant main auxiliary one,lem:mainbump1_long1}\usesdefs{def:unipair}
+\lean{constantMainBumpOneLongOne}
 \begin{equation}\label{constant main bump one long one bound}
 C_{\ref{lem:mainbump1_long1}}<2^{605}.
 \end{equation}
@@ -8383,6 +8457,7 @@ Use $C_{\ref{def:unipair}}=2^{15}$ and Lemma \ref{constant main auxiliary one} i
 \end{proof}
 
 \begin{lemma}\label{lem:mainbump1_long2}\uses{Extension of sequences,A to Lambda,P:induct-positive-terms-reduction-non-whitney-skip,Operations on spaced sequences}\usesdefs{A_def,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,def:unipair}
+\lean{mainBumpOneLongTwo}
 For every $J\ge 1$ and every strictly increasing sequence of integers $(m_j)_{j\in[J+1)}$,
 \begin{equation}\label{mainbump1_long2}
 \sum_{j\in[J)} \|
@@ -8405,6 +8480,7 @@ Split this sum according to the parity of $j$. The even terms are an initial par
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1_long2}}$ \auto]\label{constant main bump one long two}\uses{P:induct-positive-terms-reduction-non-whitney-skip,constant non Whitney skip reduction,lem:mainbump1_long2}\usesdefs{}
+\lean{constantMainBumpOneLongTwo}
 \begin{equation}\label{constant main bump one long two bound}
 C_{\ref{lem:mainbump1_long2}}<\tfrac89 2^{543}<2^{543}.
 \end{equation}
@@ -8414,6 +8490,7 @@ The defining constant is twice the constant in Proposition \ref{P:induct-positiv
 \end{proof}
 
 \begin{lemma}\label{lem:mainbump1_long}\uses{lem:mainbump1_long2,lem:mainbump1_long1}\usesdefs{A_def,def:unipair}
+\lean{mainBumpOneLong}
 Let $J\ge 1$. Then
 \begin{equation}\label{mainbump1_long}
 \|A_{t}(\phi_0)\|^2_{V_{2,J}(t\in 2^\mathbb{Z}; L^2)}  \le C_{\ref{lem:mainbump1_long}} J^{\alpha(n)},
@@ -8433,6 +8510,7 @@ By Lemma \ref{lem:mainbump1_long2} and Lemma \ref{lem:mainbump1_long1} this is
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1_long}}$ \auto]\label{constant main bump one long}\uses{constant main bump one long one,constant main bump one long two,lem:mainbump1_long}\usesdefs{}
+\lean{constantMainBumpOneLong}
 \begin{equation}\label{constant main bump one long bound}
 C_{\ref{lem:mainbump1_long}}<\tfrac{11}{16}2^{606}<2^{606}.
 \end{equation}
@@ -8442,6 +8520,7 @@ Use Lemmas \ref{constant main bump one long one} and \ref{constant main bump one
 \end{proof}
 
 \begin{lemma}\label{lem:mainbump1}\uses{lem:shortlongftc_reduction,lem:mainbump1_long,lem:ft_deriv_mul}\usesdefs{A_def,def:cn-window,def:unipair}
+\lean{mainBumpOne}
 Let $J\ge1$. Then
 \begin{equation}\label{mainbump1}
 \|A_t(\phi_0)\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
@@ -8470,6 +8549,7 @@ By Lemma \ref{lem:ft_deriv_mul}, $\widehat{T\phi_0}$ is supported in $\mathrm{An
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1}}$ \auto]\label{constant main bump one}\uses{constant main auxiliary one,lem:mainbump1,constant main bump one long}\usesdefs{def:unipair}
+\lean{constantMainBumpOne}
 \begin{equation}\label{constant main bump one bound}
 C_{\ref{lem:mainbump1}}<\tfrac78 2^{610}<2^{610}.
 \end{equation}
@@ -8487,6 +8567,7 @@ The sum is smaller than $\frac78 2^{610}$.
 \end{proof}
 
 \begin{lemma}\label{lem:main_aux2}\uses{lem:shortlongftc_reduction,lem:main_aux1,lem:bootstrap}\usesdefs{A_def}
+\lean{mainAuxTwo}
 Let $\psi$ satisfy \eqref{main_aux1_supp} and \eqref{auto:main-auxiliary-one-Fourier-derivative-assumption}. Assume also that
 \begin{equation}\label{auto:main-auxiliary-two-Fourier-derivative-assumption}
 |\widehat{T\psi}^{(m)}(\xi)|\le1,
@@ -8527,6 +8608,7 @@ Lemma \ref{lem:main_aux1}, applied with $t=1$, gives \eqref{eq:main_aux2_long} b
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:main_aux2}}$ \auto]\label{constant main auxiliary two}\uses{constant main auxiliary one,lem:main_aux2}\usesdefs{}
+\lean{constantMainAuxiliaryTwo}
 \begin{equation}\label{constant main auxiliary two bound}
 C_{\ref{lem:main_aux2}}<2^{578}.
 \end{equation}
@@ -8541,6 +8623,7 @@ C_{\ref{lem:main_aux2}}
 \end{proof}
 
 \begin{lemma}\label{lem:mainbump2}\uses{lem:rescaling,lem:main_aux2,lem:abs_deriv_ft_Tphi3_le,lem:ft_phi3_eq,lem:abs_deriv_ft_phi3_le,lem:ft_deriv_mul}\usesdefs{A_def,defn:window based bump functions}
+\lean{mainBumpTwo}
 For all $k\ge-2$,
 \begin{equation}\label{mainbump2}
 \|A_t(\varphi_{0,k})\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
@@ -8573,6 +8656,7 @@ The support of $\widehat{T\varphi_{3,k}}$ is contained in the same annulus by Le
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump2}}$ \auto]\label{constant main bump two}\uses{constant main auxiliary two,lem:abs_deriv_ft_Tphi3_le,constant T phi three derivative,lem:mainbump2}\usesdefs{def:unipair}
+\lean{constantMainBumpTwo}
 \begin{equation}\label{constant main bump two bound}
 C_{\ref{lem:mainbump2}}<\tfrac{27}{32}2^{658}<2^{658}.
 \end{equation}
@@ -8594,6 +8678,7 @@ C_{\ref{lem:mainbump2}}
 \end{proof}
 
 \begin{lemma}\label{lem:leftbump}\uses{lem:rescaling,lem:main_aux2,lem:theta_prim}\usesdefs{A_def,def:unipair,defn:window based bump functions}
+\lean{leftBump}
 For every $k\le-1$,
 \begin{equation}\label{leftbump}
 \|A_t(\varphi_{1,k})\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
@@ -8621,6 +8706,7 @@ bound the Fourier derivatives of both functions through order $2$ by $2^{14}C_{\
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump}}$ \auto]\label{constant left bump}\uses{constant main auxiliary two,lem:leftbump}\usesdefs{def:unipair}
+\lean{constantLeftBump}
 \begin{equation}\label{constant left bump bound}
 C_{\ref{lem:leftbump}}<\tfrac{33}{64}2^{636}<2^{636}.
 \end{equation}
@@ -8635,6 +8721,7 @@ C_{\ref{lem:leftbump}}
 \end{proof}
 
 \begin{lemma}\label{lem:leftbump1_short1}\uses{Extension of sequences,A to Lambda,lem:theta_prim,lem:thetat_offcenter,P:induct-positive-terms-reduction-whitney,lem:int_fct,lem:phi4_supp}\usesdefs{A_def,bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,defn:window based bump functions}
+\lean{leftBumpOneShortOne}
 Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
 \begin{equation}\label{auto:left-bump-one-short-one-bound}
 \sum_{j\in[J)}2^{-(1+\gamma)k}\int_1^2
@@ -8693,6 +8780,7 @@ Thus \eqref{p1-on-W_der} holds. Proposition \ref{P:induct-positive-terms-reducti
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1_short1}}$ \auto]\label{constant left bump one short one}\uses{constant Whitney reduction,constant theta primitive,constant off center bump,lem:leftbump1_short1}\usesdefs{}
+\lean{constantLeftBumpOneShortOne}
 \begin{equation}\label{constant left bump one short one bound}
 C_{\ref{lem:leftbump1_short1}}
 <2^{628}.
@@ -8709,6 +8797,7 @@ C_{\ref{lem:leftbump1_short1}}
 
 
 \begin{lemma}\label{lem:leftbump1_short2}\uses{Extension of sequences,A to Lambda,lem:theta_prim,lem:theta_decay,lem:thetat_offcenter,P:induct-positive-terms-reduction-whitney,lem:int_fct,lem:phi4_supp,lem:ft_deriv_mul}\usesdefs{A_def,bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,defn:window based bump functions}
+\lean{leftBumpOneShortTwo}
 Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
 \begin{equation}\label{auto:left-bump-one-short-two-bound}
 \sum_{j\in[J)}2^{(1-\gamma)k}\int_1^2
@@ -8778,6 +8867,7 @@ Thus \eqref{p1-on-W_der} holds, and Proposition \ref{P:induct-positive-terms-red
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1_short2}}$ \auto]\label{constant left bump one short two}\uses{lem:theta_prim,constant theta primitive,constant theta decay,constant Whitney reduction,constant off center bump,lem:leftbump1_short2}\usesdefs{}
+\lean{constantLeftBumpOneShortTwo}
 \begin{equation}\label{constant left bump one short two bound}
 C_{\ref{lem:leftbump1_short2}}
 <2^{630}.
@@ -8798,6 +8888,7 @@ C_{\ref{lem:leftbump1_short2}}
 
 
 \begin{lemma}\label{lem:leftbump1_long}\uses{lem:bootstrap,Extension of sequences,A to Lambda,lem:theta_prim,P:induct-positive-terms-reduction-whitney,lem:phi4_supp,lem:form_pos}\usesdefs{A_def,bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,defn:window based bump functions}
+\lean{leftBumpOneLong}
 Let $\gamma=\frac12$. For every $k\le-1$,
 \begin{equation}\label{auto:left-bump-one-long-bound}
 \|A_t(\varphi_{4,k})\|_{V_{2,J}(t\in2^\mathbb Z;L^2)}^2
@@ -8871,6 +8962,7 @@ Thus \eqref{p1-on-W_der} holds. Proposition \ref{P:induct-positive-terms-reducti
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1_long}}$ \auto]\label{constant left bump one long}\uses{constant Whitney reduction,constant theta primitive,lem:leftbump1_long}\usesdefs{}
+\lean{constantLeftBumpOneLong}
 \begin{equation}\label{constant left bump one long bound}
 C_{\ref{lem:leftbump1_long}}<2^{625}.
 \end{equation}
@@ -8881,6 +8973,7 @@ Use Lemmas \ref{constant Whitney reduction} and \ref{constant theta primitive} i
 
 
 \begin{lemma}\label{lem:leftbump1}\uses{lem:rescaling,lem:shortlongjumps,lem:leftbump1_long,lem:leftbump1_short1,lem:leftbump1_short2,lem:ftccs-R,lem:ftc_ATphi}\usesdefs{A_def,defn:window based bump functions}
+\lean{leftBumpOne}
 
 Let $\gamma=\frac12$. For every $k\le -1$,
 \begin{equation}\label{leftbump1}
@@ -8948,6 +9041,7 @@ where we used $(J+1)^{\alpha(n)}\le2J^{\alpha(n)}$. This shows \eqref{leftbump_s
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1}}$ \auto]\label{constant left bump one}\uses{constant left bump one short one,constant left bump one short two,constant left bump one long,lem:leftbump1}\usesdefs{}
+\lean{constantLeftBumpOne}
 \begin{equation}\label{constant left bump one bound}
 C_{\ref{lem:leftbump1}}<\tfrac{23}{32}2^{636}<2^{636}.
 \end{equation}
