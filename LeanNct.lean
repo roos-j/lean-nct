@@ -1,6 +1,13 @@
+import LeanNct.Introduction
+import LeanNct.WienerSpace
+import LeanNct.Preliminaries.Notation
+import LeanNct.Preliminaries.MultiplicativelySpacedMonotoneSequences
+import LeanNct.Preliminaries.Gaussians
+import LeanNct.Preliminaries.KKernels
 import LeanNct.Preliminaries.MKernels
-
-open Codex.Preliminaries.MKernels
-
-#check cauchySchwarzAtK_bound
-#print axioms cauchySchwarzAtK_bound
+import LeanNct.Preliminaries.BumpsAndEstimates
+import LeanNct.Preliminaries.ConvolutionAlongVector
+import LeanNct.MainArgument.SandwichKernel
+import LeanNct.MainArgument.MultipliersHLN
+import LeanNct.MainArgument.GaussianDomination
+import LeanNct.MainArgument.MainInduction

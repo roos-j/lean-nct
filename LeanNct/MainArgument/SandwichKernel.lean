@@ -693,6 +693,13 @@ private theorem aux_fintype_plane_product_memW0 (d : ℕ)
   intro a ha
   simp [g, π, e, e2]
 
+/-- A finite product of coordinatewise plane Wiener functions is Wiener. -/
+theorem fintype_plane_product_memW0 (d : ℕ)
+    (f : Fin d → RealPlane → ℝ) (hf : ∀ a, MemW0 (f a)) :
+    MemW0 (fun y : RealVector d × RealVector d =>
+      ∏ a, f a (y.1 a, y.2 a)) :=
+  aux_fintype_plane_product_memW0 d f hf
+
 /-- A sandwich built from coordinatewise Wiener factors is a kernel sequence. -/
 theorem sandwichKernel_memKernelSequence {n : ℕ} (γ : GeometricParameters n)
     (X : DoubleSequence γ.k) (hX : MemDoubleSequence γ.k X) (i : Fin γ.k) :

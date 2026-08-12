@@ -234,9 +234,9 @@ Lean file: MainArgument/MainInduction.lean
 
 #### Theorems
 
-\label{vanishing diagonal implies induct positive terms}: [Todo] (Lean: vanishingDiagonal_implies_inductPositiveTerms) (2026-08-09 10:00:00 EDT)
-\label{diagonal band implies vanishing diagonal}: [Todo] (Lean: diagonalBand_implies_vanishingDiagonal) (2026-08-09 10:00:00 EDT)
-\label{vanishing kernel integral}: [Todo] (Lean: vanishingKernelIntegral) (2026-08-09 10:00:00 EDT)
+\label{vanishing diagonal implies induct positive terms}: [Proof completed] (Lean: vanishingDiagonal_implies_inductPositiveTerms) (2026-08-11 18:34:43 EDT)
+\label{diagonal band implies vanishing diagonal}: [Proof completed] (Lean: diagonalBand_implies_vanishingDiagonal) (2026-08-11 18:56:18 EDT)
+\label{vanishing kernel integral}: [Proof completed] (Lean: vanishingKernelIntegral) (2026-08-11 18:34:43 EDT)
 \label{increase data implies diagonal band}: [Todo] (Lean: increaseData_implies_diagonalBand) (2026-08-09 10:00:00 EDT)
 \label{induct positive terms imply increase data}: [Todo] (Lean: inductPositiveTerms_implies_increaseData) (2026-08-09 10:00:00 EDT)
 \label{constant induct positive terms imply increase data}: [Proof completed] (Lean: constantInductPositiveTermsImplyIncreaseData) (2026-08-11 17:19:57 EDT)

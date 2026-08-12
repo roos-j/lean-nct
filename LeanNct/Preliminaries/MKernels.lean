@@ -1300,6 +1300,113 @@ theorem aux_measurePreserving_lastFibreEquiv (d : ℕ) (s : ℝ) :
     ring
   · rfl
 
+/-- A terminal `mToK` fibre integral is the corresponding diagonal `M` integral. -/
+theorem mToK_terminalFibreIntegral (d : ℕ) (M : MKernel (d + 1))
+    (hM : MemW0 M) (z : RealVector (d + 1) × ℝ) :
+    (∫ q : ℝ, mToK (d + 1) (by omega) M (z.1, z.2 - q)) =
+      ∫ p : RealVector (d + 1), M (z.1 + p, p) := by
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector d)) :=
+    isAddHaarMeasure_volume_pi (Fin d)
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector (d + 1))) :=
+    isAddHaarMeasure_volume_pi (Fin (d + 1))
+  letI : Measure.IsAddHaarMeasure (volume : Measure (ℝ × RealVector d)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector (d + 1) × ℝ)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (RealVector (d + 1) × (ℝ × RealVector d))) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure ((RealVector (d + 1) × ℝ) × RealVector d)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure
+      (volume : Measure (RealVector (d + 1) × RealVector (d + 1))) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  let e : (RealVector (d + 1) × (ℝ × RealVector d)) ≃L[ℝ]
+      (RealVector (d + 1) × RealVector (d + 1)) :=
+    (ContinuousLinearEquiv.prodAssoc ℝ (RealVector (d + 1)) ℝ (RealVector d)).symm.trans
+      (aux_mToKContinuousLinearEquiv (d + 1) (by omega))
+  have hE : MemW0 (M ∘ e) :=
+    aux_memW0_comp_continuousLinearEquiv hM e
+  have hslice : MemW0 (fun sp : ℝ × RealVector d =>
+      M (mToKPoint (d + 1) (by omega) (z.1, sp.1) sp.2)) := by
+    have hs := hE.aux_memW0_slice_of_addHaar z.1
+    convert hs using 1
+    funext sp
+    rcases sp with ⟨s, p⟩
+    rfl
+  have hslice_int : Integrable (fun sp : ℝ × RealVector d =>
+      M (mToKPoint (d + 1) (by omega) (z.1, sp.1) sp.2)) :=
+    aux_memW0_integrable_of_addHaar hslice
+  let t : ℝ × RealVector d → ℝ × RealVector d := fun qp => (z.2 - qp.1, qp.2)
+  have ht_scalar : MeasurePreserving (fun q : ℝ => z.2 - q) volume volume := by
+    have hneg : MeasurePreserving (fun q : ℝ => -q) volume volume :=
+      Measure.measurePreserving_neg (volume : Measure ℝ)
+    have hadd : MeasurePreserving (fun q : ℝ => z.2 + q) volume volume :=
+      measurePreserving_add_left (volume : Measure ℝ) z.2
+    convert hadd.comp hneg using 1
+    funext q
+    simp only [Function.comp_apply]
+    ring
+  have ht : MeasurePreserving t volume volume := by
+    have hprod := ht_scalar.prod (MeasurePreserving.id (volume : Measure (RealVector d)))
+    convert hprod using 1 <;> rfl
+  have hA : Integrable (fun qp : ℝ × RealVector d =>
+      M (mToKPoint (d + 1) (by omega) (z.1, z.2 - qp.1) qp.2)) := by
+    have h := ht.integrable_comp_of_integrable hslice_int
+    change Integrable (fun qp : ℝ × RealVector d =>
+      M (mToKPoint (d + 1) (by omega) (z.1, z.2 - qp.1) qp.2)) at h
+    exact h
+  let eLast := aux_lastFibreEquiv d z.2
+  have hLast : MeasurePreserving eLast volume volume :=
+    aux_measurePreserving_lastFibreEquiv d z.2
+  have hLastInv := hLast.symm eLast
+  let C : RealVector (d + 1) → ℝ := fun p => M (z.1 + p, p)
+  have hpoint (qp : ℝ × RealVector d) :
+      M (mToKPoint (d + 1) (by omega) (z.1, z.2 - qp.1) qp.2) =
+        C (eLast.symm qp) := by
+    rcases qp with ⟨q, r⟩
+    change M (mToKPoint (d + 1) (by omega) (z.1, z.2 - q) r) =
+      M (z.1 + eLast.symm (q, r), eLast.symm (q, r))
+    congr 1
+    have hlast : lastIndex (d + 1) (by omega) = Fin.last d := Fin.ext rfl
+    apply Prod.ext <;> funext a
+    · refine Fin.lastCases ?_ (fun b => ?_) a
+      · simp [eLast, aux_lastFibreEquiv, mToKPoint, hlast]
+        ring
+      · have hne : b.castSucc ≠ Fin.last d := Fin.ne_last_of_lt b.castSucc_lt_last
+        simp [eLast, aux_lastFibreEquiv, mToKPoint, hlast, hne]
+    · refine Fin.lastCases ?_ (fun b => ?_) a
+      · simp [eLast, aux_lastFibreEquiv, mToKPoint, hlast]
+        ring
+      · have hne : b.castSucc ≠ Fin.last d := Fin.ne_last_of_lt b.castSucc_lt_last
+        simp [eLast, aux_lastFibreEquiv, mToKPoint, hlast, hne]
+  unfold mToK
+  calc
+    (∫ q : ℝ, ∫ p : RealVector d,
+        M (mToKPoint (d + 1) (by omega) (z.1, z.2 - q) p)) =
+        ∫ qp : ℝ × RealVector d,
+          M (mToKPoint (d + 1) (by omega) (z.1, z.2 - qp.1) qp.2) := by
+      simpa only [Measure.volume_eq_prod] using
+        (integral_prod (fun qp : ℝ × RealVector d =>
+          M (mToKPoint (d + 1) (by omega) (z.1, z.2 - qp.1) qp.2)) hA).symm
+    _ = ∫ qp : ℝ × RealVector d, C (eLast.symm qp) := by
+      apply integral_congr_ae
+      filter_upwards [] with qp
+      exact hpoint qp
+    _ = ∫ p : RealVector (d + 1), C p := hLastInv.integral_comp' C
+
+theorem mToK_terminalFibreIntegral_general {k : ℕ} (hk : 1 ≤ k)
+    (M : MKernel k) (hM : MemW0 M) (z : RealVector k × ℝ) :
+    (∫ q : ℝ, mToK k hk M (z.1, z.2 - q)) =
+      ∫ p : RealVector k, M (z.1 + p, p) := by
+  cases k with
+  | zero => omega
+  | succ d =>
+    have hhk : hk = Nat.succ_le_succ (Nat.zero_le d) := Subsingleton.elim _ _
+    subst hhk
+    exact mToK_terminalFibreIntegral d M hM z
+
 /-- Auxiliary for Proposition \ref{Positivity M}, formalized as `positivityM_nonnegative`. -/
 theorem aux_mToKPoint_erase_last (d : ℕ)
     (z : RealVector (d + 2) × ℝ) (q : ℝ) (r : RealVector d) :

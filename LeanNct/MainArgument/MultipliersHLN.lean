@@ -10,12 +10,14 @@ Formalization of the first part of the subsection ``Multipliers `H`, `L`, `N``.
 namespace Codex.MainArgument.MultipliersHLN
 
 open MeasureTheory Filter Topology Metric
-open scoped BigOperators ENNReal Real FourierTransform RealInnerProductSpace
+open scoped BigOperators ENNReal Real FourierTransform RealInnerProductSpace Convolution
 
 open Codex.Preliminaries.Notation
 open Codex.Preliminaries.Gaussians
+open Codex.Preliminaries.KKernels
 open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
 open Codex.Preliminaries.BumpsAndEstimates
+open Codex.Preliminaries.MKernels
 open Codex.MainArgument.SandwichKernel
 
 noncomputable section
@@ -707,6 +709,13 @@ noncomputable def sumOverMultiplierIndex {n : ℕ} {X : Type*} [NormedAddCommGro
     ∑ ι ∈ aux_multiplierIndexTruncation γ N,
       if hι : ι ∈ multiplierIndexSet γ then D ⟨ι, hι⟩ else 0
 
+/-- The nonnegative extended-real form of the manuscript's symmetric multiplier-index sum. -/
+noncomputable def sumOverMultiplierIndexENNReal {n : ℕ}
+    (γ : GeometricParameters n) (D : MultiplierIndex γ → ℝ≥0∞) : ℝ≥0∞ := by
+  classical
+  exact ⨆ N : ℕ, ∑ ι ∈ aux_multiplierIndexTruncation γ N,
+    if hι : ι ∈ multiplierIndexSet γ then D ⟨ι, hι⟩ else 0
+
 /--
 \begin{definition}[L multiplier]\label{L multiplier}
 For every $\iota \in\mathcal{I}_{\gamma}$, we define  $L_{\gamma,\iota}=(L_{\gamma,\iota})_{i\in [k),j\in \Z}$
@@ -767,6 +776,288 @@ multiplier `\sigma_{\gamma,\iota,i,j}`.
 noncomputable def aux_fourierReal (f : ℝ → ℝ) (ξ : ℝ) : ℂ :=
   ∫ x : ℝ, (f x : ℂ) * Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * x * ξ))
 
+/-- The product-coordinate Fourier integral on complex-valued plane functions. -/
+noncomputable def aux_fourierPlaneComplex (F : RealPlane → ℂ) (ξ : RealPlane) : ℂ :=
+  ∫ v : RealPlane, F v * Complex.exp
+    (-((2 : ℂ) * Real.pi * Complex.I * (v.1 * ξ.1 + v.2 * ξ.2)))
+
+/-- The complex-valued one-dimensional raw Fourier integral. -/
+noncomputable def aux_fourierRealComplex (ρ : ℝ → ℂ) (t : ℝ) : ℂ :=
+  ∫ p : ℝ, ρ p * Complex.exp
+    (-((2 : ℂ) * Real.pi * Complex.I * (p : ℂ) * (t : ℂ)))
+
+/-- Fourier transform of convolution along the diagonal in the product-coordinate model. -/
+theorem aux_fourierPlaneComplex_diagonalConvolution
+    (F : RealPlane → ℂ) (ρ : ℝ → ℂ) (hFcont : Continuous F) (hFint : Integrable F)
+    (hρcont : Continuous ρ) (hρint : Integrable ρ)
+    (ξ : RealPlane) :
+    aux_fourierPlaneComplex (fun v => ∫ p : ℝ, F (v.1 - p, v.2 - p) * ρ p) ξ =
+      aux_fourierPlaneComplex F ξ * aux_fourierRealComplex ρ (ξ.1 + ξ.2) := by
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  let phase : RealPlane → ℂ := fun v => Complex.exp
+    (-((2 : ℂ) * Real.pi * Complex.I * (v.1 * ξ.1 + v.2 * ξ.2)))
+  let K : RealPlane × ℝ → ℂ := fun vp =>
+    F (vp.1.1 - vp.2, vp.1.2 - vp.2) * ρ vp.2
+  have hKmeas : AEStronglyMeasurable K
+      ((volume : Measure RealPlane).prod (volume : Measure ℝ)) := by
+    apply Continuous.aestronglyMeasurable
+    exact
+      (hFcont.comp ((continuous_fst.fst.sub continuous_snd).prodMk
+        (continuous_fst.snd.sub continuous_snd))).mul (hρcont.comp continuous_snd)
+  have hK : Integrable K ((volume : Measure RealPlane).prod (volume : Measure ℝ)) := by
+    rw [integrable_prod_iff' hKmeas]
+    refine ⟨Filter.Eventually.of_forall fun p => ?_, ?_⟩
+    · exact (hFint.comp_sub_right (p, p)).mul_const (ρ p)
+    · have hnorm (p : ℝ) :
+          (∫ v : RealPlane, ‖K (v, p)‖) = (∫ v : RealPlane, ‖F v‖) * ‖ρ p‖ := by
+        simp only [K, norm_mul]
+        rw [integral_mul_const]
+        congr 1
+        exact integral_sub_right_eq_self (fun v : RealPlane => ‖F v‖) (p, p)
+      convert hρint.norm.const_mul (∫ v : RealPlane, ‖F v‖) using 1
+      ext p
+      rw [hnorm]
+  have hphase : Continuous phase := by
+    dsimp [phase]
+    fun_prop
+  have hphase_bound (v : RealPlane) : ‖phase v‖ ≤ (1 : ℝ) := by
+    have harg : -((2 : ℂ) * Real.pi * Complex.I * (v.1 * ξ.1 + v.2 * ξ.2)) =
+        ((-2 * Real.pi * (v.1 * ξ.1 + v.2 * ξ.2) : ℝ) : ℂ) * Complex.I := by
+      push_cast
+      ring
+    rw [show phase v = Complex.exp
+      (-((2 : ℂ) * Real.pi * Complex.I * (v.1 * ξ.1 + v.2 * ξ.2))) by rfl,
+      harg, Complex.norm_exp]
+    norm_num
+  have hphase_add (a b : RealPlane) : phase (a + b) = phase a * phase b := by
+    dsimp [phase]
+    rw [← Complex.exp_add]
+    congr 1
+    push_cast
+    ring
+  let H : RealPlane × ℝ → ℂ := fun vp => phase vp.1 * K vp
+  have hH : Integrable H ((volume : Measure RealPlane).prod (volume : Measure ℝ)) := by
+    refine hK.mono ?_ ?_
+    · exact (hphase.comp continuous_fst).aestronglyMeasurable.mul hK.aestronglyMeasurable
+    · filter_upwards [] with vp
+      change ‖phase vp.1 * K vp‖ ≤ ‖K vp‖
+      rw [norm_mul]
+      simpa using mul_le_mul_of_nonneg_right (hphase_bound vp.1) (norm_nonneg (K vp))
+  have htranslate (p : ℝ) :
+      (∫ v : RealPlane, phase v * F (v.1 - p, v.2 - p)) =
+        phase (p, p) * ∫ v : RealPlane, phase v * F v := by
+    let d : RealPlane := (p, p)
+    calc
+      (∫ v : RealPlane, phase v * F (v.1 - p, v.2 - p)) =
+          ∫ v : RealPlane, (fun w => phase (w + d) * F w) (v - d) := by
+            apply integral_congr_ae
+            filter_upwards [] with v
+            change phase v * F (v - d) = phase ((v - d) + d) * F (v - d)
+            congr 2
+            abel
+      _ = ∫ w : RealPlane, phase (w + d) * F w :=
+        integral_sub_right_eq_self (fun w => phase (w + d) * F w) d
+      _ = phase d * ∫ w : RealPlane, phase w * F w := by
+        rw [← integral_const_mul]
+        apply integral_congr_ae
+        filter_upwards [] with w
+        rw [hphase_add w d]
+        ring
+      _ = phase (p, p) * ∫ v : RealPlane, phase v * F v := by rfl
+  have hphase_integral :
+      (∫ v : RealPlane, phase v * F v) = ∫ v : RealPlane, F v * phase v := by
+    apply integral_congr_ae
+    filter_upwards [] with v
+    ring
+  have hcore :
+      (∫ v : RealPlane, (∫ p : ℝ, K (v, p)) * phase v) =
+        (∫ v : RealPlane, F v * phase v) *
+          ∫ p : ℝ, ρ p * phase (p, p) := by
+    calc
+      (∫ v : RealPlane, (∫ p : ℝ, K (v, p)) * phase v) =
+        ∫ v : RealPlane, ∫ p : ℝ, phase v * K (v, p) := by
+          apply integral_congr_ae
+          filter_upwards [] with v
+          rw [mul_comm, ← integral_const_mul]
+      _ = ∫ p : ℝ, ∫ v : RealPlane, phase v * K (v, p) := by
+        simpa [H] using integral_integral_swap hH
+      _ = ∫ p : ℝ, (phase (p, p) * ∫ v : RealPlane, phase v * F v) * ρ p := by
+        apply integral_congr_ae
+        filter_upwards [] with p
+        calc
+          (∫ v : RealPlane, phase v * K (v, p)) =
+              (∫ v : RealPlane, phase v * F (v.1 - p, v.2 - p)) * ρ p := by
+                rw [← integral_mul_const]
+                apply integral_congr_ae
+                filter_upwards [] with v
+                simp [K]
+                ring
+          _ = _ := by rw [htranslate p]
+      _ = (∫ v : RealPlane, F v * phase v) *
+          ∫ p : ℝ, ρ p * phase (p, p) := by
+        rw [← integral_const_mul]
+        apply integral_congr_ae
+        filter_upwards [] with p
+        rw [hphase_integral]
+        ring
+  have hphasep (p : ℝ) : phase (p, p) = Complex.exp
+      (-((2 : ℂ) * Real.pi * Complex.I * (p : ℂ) * ((ξ.1 + ξ.2 : ℝ) : ℂ))) := by
+    dsimp [phase]
+    congr 1
+    push_cast
+    ring
+  simpa only [aux_fourierPlaneComplex, aux_fourierRealComplex, K, phase, hphasep] using hcore
+
+/-- The real-valued specialization of diagonal convolution in product coordinates. -/
+theorem aux_fourierPlane_diagonalConvolution
+    (F : RealPlane → ℝ) (ρ : ℝ → ℝ) (hF : MemW0 F) (hρ : MemW0 ρ)
+    (ξ : RealPlane) :
+    aux_fourierPlane (fun v => ∫ p : ℝ, F (v.1 - p, v.2 - p) * ρ p) ξ =
+      aux_fourierPlane F ξ * aux_fourierReal ρ (ξ.1 + ξ.2) := by
+  have hcomplex := aux_fourierPlaneComplex_diagonalConvolution
+    (fun v : RealPlane => (F v : ℂ)) (fun p : ℝ => (ρ p : ℂ))
+    (Complex.continuous_ofReal.comp hF.1)
+      (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hF).ofReal
+    (Complex.continuous_ofReal.comp hρ.1)
+      (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hρ).ofReal ξ
+  have hconv (v : RealPlane) :
+      ((∫ p : ℝ, F (v.1 - p, v.2 - p) * ρ p : ℝ) : ℂ) =
+        ∫ p : ℝ, (F (v.1 - p, v.2 - p) : ℂ) * (ρ p : ℂ) := by
+    calc
+      ((∫ p : ℝ, F (v.1 - p, v.2 - p) * ρ p : ℝ) : ℂ) =
+          ∫ p : ℝ, ((F (v.1 - p, v.2 - p) * ρ p : ℝ) : ℂ) :=
+            (integral_ofReal (𝕜 := ℂ) (μ := volume)
+              (f := fun p : ℝ => F (v.1 - p, v.2 - p) * ρ p)).symm
+      _ = ∫ p : ℝ, (F (v.1 - p, v.2 - p) : ℂ) * (ρ p : ℂ) := by
+        apply integral_congr_ae
+        filter_upwards [] with p
+        exact Complex.ofReal_mul _ _
+  calc
+    aux_fourierPlane (fun v => ∫ p : ℝ, F (v.1 - p, v.2 - p) * ρ p) ξ =
+        aux_fourierPlaneComplex (fun v => ∫ p : ℝ,
+          (F (v.1 - p, v.2 - p) : ℂ) * (ρ p : ℂ)) ξ := by
+            unfold aux_fourierPlane aux_fourierPlaneComplex
+            apply integral_congr_ae
+            filter_upwards [] with v
+            rw [hconv]
+    _ = aux_fourierPlaneComplex (fun v : RealPlane => (F v : ℂ)) ξ *
+        aux_fourierRealComplex (fun p : ℝ => (ρ p : ℂ)) (ξ.1 + ξ.2) := hcomplex
+    _ = aux_fourierPlane F ξ * aux_fourierReal ρ (ξ.1 + ξ.2) := by rfl
+
+/-- Fourier factorization of the one-scale diagonal convolution defining `L`. -/
+theorem aux_fourierPlane_lMultiplierAtScale {n : ℕ} (γ : GeometricParameters n)
+    {t : ℝ} (ht : 0 < t) (i : Fin γ.k) (j : ℤ) (ξ : RealPlane) :
+    aux_fourierPlane (lMultiplierAtScale γ t i j) ξ =
+      aux_fourierPlane (hMultiplier γ i j) ξ *
+        aux_fourierReal (standardBumpRescale t) (ξ.1 + ξ.2) := by
+  change aux_fourierPlane (fun v : RealPlane => ∫ p : ℝ,
+    hMultiplier γ i j (v.1 - p, v.2 - p) * standardBumpRescale t p) ξ = _
+  exact aux_fourierPlane_diagonalConvolution
+    (hMultiplier γ i j) (standardBumpRescale t)
+    (hMultiplier_memDoubleSequence γ i j)
+    (aux_standardBumpRescale_memW0 ht) ξ
+
+/-- Fourier factorization of `L` in the central multiplier-index branch. -/
+theorem aux_fourierPlane_lMultiplier_vertical {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 = 0) (ξ : RealPlane) :
+    aux_fourierPlane (lMultiplier γ ι i j) ξ =
+      aux_fourierPlane (hMultiplier γ i j) ξ *
+        aux_fourierReal (fun p : ℝ =>
+          standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) p -
+            standardBumpRescale (γ.scales i 1 (j + ι.1.2)) p) (ξ.1 + ξ.2) := by
+  have hphi : MemW0 (fun p : ℝ =>
+      standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) p -
+        standardBumpRescale (γ.scales i 1 (j + ι.1.2)) p) :=
+    Codex.Preliminaries.KKernels.aux_memW0_sub
+      (aux_standardBumpRescale_memW0
+        (aux_spacedSequence_pos (γ.scales_spaced i 1) _))
+      (aux_standardBumpRescale_memW0
+        (aux_spacedSequence_pos (γ.scales_spaced i 1) _))
+  have hl : lMultiplier γ ι i j = fun v => ∫ p : ℝ,
+      hMultiplier γ i j (v.1 - p, v.2 - p) *
+        (standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) p -
+          standardBumpRescale (γ.scales i 1 (j + ι.1.2)) p) := by
+    funext v
+    unfold lMultiplier
+    simp [hzero]
+  rw [hl]
+  exact aux_fourierPlane_diagonalConvolution (hMultiplier γ i j) _
+    (hMultiplier_memDoubleSequence γ i j) hphi ξ
+
+/-- Fourier factorization of `L` in the positive multiplier-index branch. -/
+theorem aux_fourierPlane_lMultiplier_positive {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1) (ξ : RealPlane) :
+    aux_fourierPlane (lMultiplier γ ι i j) ξ =
+      aux_fourierPlane (hMultiplier γ i j) ξ *
+        aux_fourierReal (fun p : ℝ =>
+          standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
+            γ.scales i 1 (j + (geometricDelta γ : ℤ))) p -
+          standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+            γ.scales i 1 (j + (geometricDelta γ : ℤ))) p) (ξ.1 + ξ.2) := by
+  have hphi : MemW0 (fun p : ℝ =>
+      standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
+        γ.scales i 1 (j + (geometricDelta γ : ℤ))) p -
+      standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+        γ.scales i 1 (j + (geometricDelta γ : ℤ))) p) :=
+    Codex.Preliminaries.KKernels.aux_memW0_sub
+      (aux_standardBumpRescale_memW0
+        (mul_pos (zpow_pos (by norm_num) _)
+          (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
+      (aux_standardBumpRescale_memW0
+        (mul_pos (zpow_pos (by norm_num) _)
+          (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
+  have hl : lMultiplier γ ι i j = fun v => ∫ p : ℝ,
+      hMultiplier γ i j (v.1 - p, v.2 - p) *
+        (standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
+          γ.scales i 1 (j + (geometricDelta γ : ℤ))) p -
+        standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+          γ.scales i 1 (j + (geometricDelta γ : ℤ))) p) := by
+    funext v
+    unfold lMultiplier
+    simp [hzero, hpositive]
+  rw [hl]
+  exact aux_fourierPlane_diagonalConvolution (hMultiplier γ i j) _
+    (hMultiplier_memDoubleSequence γ i j) hphi ξ
+
+/-- Fourier factorization of `L` in the negative multiplier-index branch. -/
+theorem aux_fourierPlane_lMultiplier_negative {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hnegative : ι.1.1 < 0) (ξ : RealPlane) :
+    aux_fourierPlane (lMultiplier γ ι i j) ξ =
+      aux_fourierPlane (hMultiplier γ i j) ξ *
+        aux_fourierReal (fun p : ℝ =>
+          standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+            γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p -
+          standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
+            γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p) (ξ.1 + ξ.2) := by
+  have hphi : MemW0 (fun p : ℝ =>
+      standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+        γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p -
+      standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
+        γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p) :=
+    Codex.Preliminaries.KKernels.aux_memW0_sub
+      (aux_standardBumpRescale_memW0
+        (mul_pos (zpow_pos (by norm_num) _)
+          (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
+      (aux_standardBumpRescale_memW0
+        (mul_pos (zpow_pos (by norm_num) _)
+          (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
+  have hl : lMultiplier γ ι i j = fun v => ∫ p : ℝ,
+      hMultiplier γ i j (v.1 - p, v.2 - p) *
+        (standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+          γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p -
+        standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
+          γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p) := by
+    funext v
+    unfold lMultiplier
+    simp [hzero, not_lt_of_ge hnegative.le]
+  rw [hl]
+  exact aux_fourierPlane_diagonalConvolution (hMultiplier γ i j) _
+    (hMultiplier_memDoubleSequence γ i j) hphi ξ
+
 /-- The raw plane Fourier transform factors over product functions. -/
 theorem aux_fourierPlane_tensor (f g : ℝ → ℝ) (ξ η : ℝ) :
     aux_fourierPlane (fun v : RealPlane => f v.1 * g v.2) (ξ, η) =
@@ -814,6 +1105,148 @@ theorem aux_fourierReal_eq_fourier (f : ℝ → ℝ) (ξ : ℝ) :
     ring
   rw [hExp]
   ring
+
+/-- The raw Fourier transform of a positively rescaled standard bump. -/
+theorem aux_fourierReal_standardBumpRescale (t : ℝ) (ht : 0 < t) (u : ℝ) :
+    aux_fourierReal (standardBumpRescale t) u =
+      FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)) (t * u) := by
+  rw [← aux_fourierReal_eq_fourier standardBump (t * u)]
+  unfold aux_fourierReal
+  let g : ℝ → ℂ := fun q => (standardBump q : ℂ) * Complex.exp
+    (-((2 : ℂ) * Real.pi * Complex.I * (q : ℂ) * ((t * u : ℝ) : ℂ)))
+  calc
+    (∫ x : ℝ, (standardBumpRescale t x : ℂ) * Complex.exp
+        (-((2 : ℂ) * Real.pi * Complex.I * x * u))) =
+        ∫ x : ℝ, (t⁻¹ : ℂ) * g (t⁻¹ * x) := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      dsimp [g, standardBumpRescale]
+      have hphase : Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * (x : ℂ) * (u : ℂ))) =
+          Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * ((t⁻¹ * x : ℝ) : ℂ) *
+            ((t * u : ℝ) : ℂ))) := by
+        congr 1
+        push_cast
+        field_simp [ne_of_gt ht]
+      rw [hphase]
+      push_cast
+      ring
+    _ = (t⁻¹ : ℂ) * ∫ x : ℝ, g (t⁻¹ * x) := by
+      rw [integral_const_mul]
+    _ = (t⁻¹ : ℂ) * (|t| • ∫ y : ℝ, g y) := by
+      rw [Measure.integral_comp_inv_mul_left]
+    _ = ∫ y : ℝ, g y := by
+      rw [abs_of_pos ht]
+      field_simp [ne_of_gt ht]
+      rw [Complex.real_smul]
+    _ = ∫ x : ℝ, (standardBump x : ℂ) * Complex.exp
+        (-((2 : ℂ) * Real.pi * Complex.I * (x : ℂ) * ((t * u : ℝ) : ℂ))) := by
+      rfl
+
+/-- Raw one-dimensional Fourier integration is linear on Wiener functions. -/
+theorem aux_fourierReal_sub (f g : ℝ → ℝ)
+    (hf : MemW0 f) (hg : MemW0 g) (u : ℝ) :
+    aux_fourierReal (fun x => f x - g x) u =
+      aux_fourierReal f u - aux_fourierReal g u := by
+  let e : ℝ → ℂ := fun x => Complex.exp
+    (-((2 : ℂ) * Real.pi * Complex.I * x * u))
+  have he : Continuous e := by
+    dsimp [e]
+    fun_prop
+  have he_bound : ∀ x, ‖e x‖ ≤ (1 : ℝ) := by
+    intro x
+    rw [show e x = Complex.exp
+        (((-2 * Real.pi * x * u : ℝ) : ℂ) * Complex.I) by
+          dsimp [e]
+          push_cast
+          ring,
+      Complex.norm_exp]
+    norm_num
+  have hfint := Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hf
+  have hgint := Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hg
+  have hf' : Integrable (fun x : ℝ => (f x : ℂ) * e x) := by
+    apply (hfint.ofReal.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)).congr
+    filter_upwards [] with x
+    exact mul_comm _ _
+  have hg' : Integrable (fun x : ℝ => (g x : ℂ) * e x) := by
+    apply (hgint.ofReal.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)).congr
+    filter_upwards [] with x
+    exact mul_comm _ _
+  unfold aux_fourierReal
+  change (∫ x : ℝ, ((f x - g x : ℝ) : ℂ) * e x) = _
+  calc
+    (∫ x : ℝ, ((f x - g x : ℝ) : ℂ) * e x) =
+        ∫ x : ℝ, ((f x : ℂ) * e x - (g x : ℂ) * e x) := by
+          apply integral_congr_ae
+          filter_upwards [] with x
+          push_cast
+          ring
+    _ = (∫ x : ℝ, (f x : ℂ) * e x) - ∫ x : ℝ, (g x : ℂ) * e x :=
+      integral_sub hf' hg'
+    _ = _ := by rfl
+
+/-- Raw Fourier transform of a difference of two positively rescaled standard bumps. -/
+theorem aux_fourierReal_standardBumpRescale_sub (s t u : ℝ)
+    (hs : 0 < s) (ht : 0 < t) :
+    aux_fourierReal (fun x => standardBumpRescale s x - standardBumpRescale t x) u =
+      FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)) (s * u) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)) (t * u) := by
+  rw [aux_fourierReal_sub _ _
+    (aux_standardBumpRescale_memW0 hs) (aux_standardBumpRescale_memW0 ht),
+    aux_fourierReal_standardBumpRescale s hs,
+    aux_fourierReal_standardBumpRescale t ht]
+
+/-- Fourier-side bump factor in the central branch of `L`. -/
+theorem aux_fourierPlane_lMultiplier_vertical_phiHat {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 = 0) (ξ : RealPlane) :
+    aux_fourierPlane (lMultiplier γ ι i j) ξ =
+      aux_fourierPlane (hMultiplier γ i j) ξ *
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (γ.scales i 1 (j + ι.1.2 - 1) * (ξ.1 + ξ.2)) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (γ.scales i 1 (j + ι.1.2) * (ξ.1 + ξ.2))) := by
+  rw [aux_fourierPlane_lMultiplier_vertical γ ι i j hzero ξ,
+    aux_fourierReal_standardBumpRescale_sub]
+  · exact aux_spacedSequence_pos (γ.scales_spaced i 1) _
+  · exact aux_spacedSequence_pos (γ.scales_spaced i 1) _
+
+/-- Fourier-side bump factor in the positive branch of `L`. -/
+theorem aux_fourierPlane_lMultiplier_positive_phiHat {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1) (ξ : RealPlane) :
+    aux_fourierPlane (lMultiplier γ ι i j) ξ =
+      aux_fourierPlane (hMultiplier γ i j) ξ *
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ (ι.1.1 - 1) * γ.scales i 1
+            (j + (geometricDelta γ : ℤ))) * (ξ.1 + ξ.2)) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+            (j + (geometricDelta γ : ℤ))) * (ξ.1 + ξ.2))) := by
+  rw [aux_fourierPlane_lMultiplier_positive γ ι i j hzero hpositive ξ,
+    aux_fourierReal_standardBumpRescale_sub]
+  · exact mul_pos (zpow_pos (by norm_num) _)
+      (aux_spacedSequence_pos (γ.scales_spaced i 1) _)
+  · exact mul_pos (zpow_pos (by norm_num) _)
+      (aux_spacedSequence_pos (γ.scales_spaced i 1) _)
+
+/-- Fourier-side bump factor in the negative branch of `L`. -/
+theorem aux_fourierPlane_lMultiplier_negative_phiHat {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hnegative : ι.1.1 < 0) (ξ : RealPlane) :
+    aux_fourierPlane (lMultiplier γ ι i j) ξ =
+      aux_fourierPlane (hMultiplier γ i j) ξ *
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+            (j - (geometricDelta γ : ℤ) - 1)) * (ξ.1 + ξ.2)) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ (ι.1.1 + 1) * γ.scales i 1
+            (j - (geometricDelta γ : ℤ) - 1)) * (ξ.1 + ξ.2))) := by
+  rw [aux_fourierPlane_lMultiplier_negative γ ι i j hzero hnegative ξ,
+    aux_fourierReal_standardBumpRescale_sub]
+  · exact mul_pos (zpow_pos (by norm_num) _)
+      (aux_spacedSequence_pos (γ.scales_spaced i 1) _)
+  · exact mul_pos (zpow_pos (by norm_num) _)
+      (aux_spacedSequence_pos (γ.scales_spaced i 1) _)
 
 /-- The one-dimensional square-root multiplier has the prescribed Fourier transform. -/
 theorem aux_squareRootGaussianDifference_fourier {a : ℤ → ℝ}
@@ -1309,6 +1742,59 @@ theorem hMultiplier_vanishing_integral {n : ℕ} (γ : GeometricParameters n)
   have hzero : L z = 0 := by
     exact_mod_cast hzeroC
   simpa [L] using hzero
+
+private theorem aux_sandwichFactor_terminal {k : ℕ} (i : Fin k) (a b c : Fin k → ℝ) :
+    (∏ m, if m < i then a m else if i < m then b m else c m) =
+      (∏ m ∈ Finset.univ.filter (fun m => m < i), a m) * c i *
+        ∏ m ∈ Finset.univ.filter (fun m => i < m), b m := by
+  rw [Finset.prod_filter, Finset.prod_filter]
+  have hc : c i = ∏ m : Fin k, if m = i then c m else 1 := by simp
+  rw [hc, ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+  apply Finset.prod_congr rfl
+  intro m hm
+  by_cases hmi : m < i
+  · have him : ¬ i < m := not_lt_of_ge hmi.le
+    simp [hmi, him, ne_of_lt hmi]
+  by_cases him : i < m
+  · simp [hmi, him, ne_of_gt him]
+  have hEq : m = i := by omega
+  simp [hEq]
+
+/-- The terminal sandwich built from `H` has zero diagonal integral. -/
+theorem sandwichHMultiplier_terminalIntegral {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) (j : ℤ) (z : RealVector γ.k) :
+    (∫ p : RealVector γ.k,
+      sandwichKernel γ (hMultiplier γ) i j (z + p, p)) = 0 := by
+  classical
+  let A : Fin γ.k → ℝ → ℝ := fun m p =>
+    if m < i then gammaGaussian γ m j (z m + p, p) else
+      if i < m then gammaGaussian γ m (j - 1) (z m + p, p) else
+        hMultiplier γ i j (z m + p, p)
+  have hsandwich (p : RealVector γ.k) :
+      sandwichKernel γ (hMultiplier γ) i j (z + p, p) = ∏ m, A m (p m) := by
+    let a : Fin γ.k → ℝ := fun m => gammaGaussian γ m j (z m + p m, p m)
+    let b : Fin γ.k → ℝ := fun m => gammaGaussian γ m (j - 1) (z m + p m, p m)
+    let c : Fin γ.k → ℝ := fun m => hMultiplier γ i j (z m + p m, p m)
+    change
+      (∏ m ∈ Finset.univ.filter (fun m => m < i), a m) * c i *
+          ∏ m ∈ Finset.univ.filter (fun m => i < m), b m =
+        ∏ m, A m (p m)
+    symm
+    change (∏ m, if m < i then a m else if i < m then b m else c m) = _
+    exact aux_sandwichFactor_terminal i a b c
+  have hcenter : (∫ p : ℝ, A i p) = 0 := by
+    simpa [A] using hMultiplier_vanishing_integral γ i j (z i)
+  calc
+    (∫ p : RealVector γ.k,
+        sandwichKernel γ (hMultiplier γ) i j (z + p, p)) =
+        ∫ p : RealVector γ.k, ∏ m, A m (p m) := by
+      apply integral_congr_ae
+      filter_upwards [] with p
+      exact hsandwich p
+    _ = ∏ m, ∫ p : ℝ, A m p := by
+      simpa only using MeasureTheory.integral_fintype_prod_volume_eq_prod A
+    _ = 0 := by
+      exact Finset.prod_eq_zero (Finset.mem_univ i) hcenter
 
 /-- Translation is continuous in ordinary `L¹` for one-dimensional Wiener functions. -/
 theorem aux_w0_translation_tendsto_integral_norm_oneDim
@@ -2460,6 +2946,157 @@ theorem aux_prismForm_finset_sum {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n)
     _ = ∑ a ∈ s, Codex.Preliminaries.MKernels.prismForm n k hk hkn (M a)
         (fun i => F i) := by rfl
 
+/-- The kernel-sequence seminorm is subadditive on Wiener kernel sequences. -/
+theorem kernelSequenceSeminorm_add_le {n k : Nat} (hk : 1 <= k) (hkn : k <= n)
+    (M N : KernelSequence k) (hM : MemKernelSequence k M) (hN : MemKernelSequence k N) :
+    kernelSequenceSeminorm n k hk hkn (fun j y => M j y + N j y) <=
+      kernelSequenceSeminorm n k hk hkn M + kernelSequenceSeminorm n k hk hkn N := by
+  classical
+  unfold kernelSequenceSeminorm
+  refine iSup_le fun J => ?_
+  refine iSup_le fun F => ?_
+  have hprism_add (A B : MKernel k) (hA : MemW0 A) (hB : MemW0 B) :
+      prismForm n k hk hkn (fun y => A y + B y) (fun i => F.1 i) =
+        prismForm n k hk hkn A (fun i => F.1 i) +
+          prismForm n k hk hkn B (fun i => F.1 i) := by
+    simpa [Fin.sum_univ_two] using
+      (aux_prismForm_finset_sum hk hkn (Finset.univ : Finset (Fin 2))
+        (fun q => if q = 0 then A else B)
+        (by
+          intro q hq
+          fin_cases q <;> simp_all)
+        F.1)
+  have hMlin :
+      prismForm n k hk hkn
+          (fun y => Finset.sum (Finset.range J.1) (fun j => M (j : Int) y))
+          (fun i => F.1 i) =
+        Finset.sum (Finset.range J.1) (fun j =>
+          prismForm n k hk hkn (M (j : Int)) (fun i => F.1 i)) := by
+    simpa using
+      (aux_prismForm_finset_sum hk hkn (Finset.range J.1)
+        (fun j : Nat => M (j : Int))
+        (by
+          intro j hj
+          exact hM (j : Int)) F.1)
+  have hNlin :
+      prismForm n k hk hkn
+          (fun y => Finset.sum (Finset.range J.1) (fun j => N (j : Int) y))
+          (fun i => F.1 i) =
+        Finset.sum (Finset.range J.1) (fun j =>
+          prismForm n k hk hkn (N (j : Int)) (fun i => F.1 i)) := by
+    simpa using
+      (aux_prismForm_finset_sum hk hkn (Finset.range J.1)
+        (fun j : Nat => N (j : Int))
+        (by
+          intro j hj
+          exact hN (j : Int)) F.1)
+  have hAddlin :
+      prismForm n k hk hkn
+          (fun y => Finset.sum (Finset.range J.1) (fun j =>
+            M (j : Int) y + N (j : Int) y))
+          (fun i => F.1 i) =
+        Finset.sum (Finset.range J.1) (fun j =>
+          prismForm n k hk hkn (fun y => M (j : Int) y + N (j : Int) y)
+            (fun i => F.1 i)) := by
+    simpa using
+      (aux_prismForm_finset_sum hk hkn (Finset.range J.1)
+        (fun j : Nat => fun y => M (j : Int) y + N (j : Int) y)
+        (by
+          intro j hj
+          exact aux_memW0_add (hM (j : Int)) (hN (j : Int))) F.1)
+  have hform :
+      prismForm n k hk hkn
+          (fun y => Finset.sum (Finset.range J.1) (fun j =>
+            M (j : Int) y + N (j : Int) y))
+          (fun i => F.1 i) =
+        prismForm n k hk hkn
+          (fun y => Finset.sum (Finset.range J.1) (fun j => M (j : Int) y))
+          (fun i => F.1 i) +
+        prismForm n k hk hkn
+          (fun y => Finset.sum (Finset.range J.1) (fun j => N (j : Int) y))
+          (fun i => F.1 i) := by
+    calc
+      _ = Finset.sum (Finset.range J.1) (fun j =>
+          prismForm n k hk hkn (fun y => M (j : Int) y + N (j : Int) y)
+            (fun i => F.1 i)) := hAddlin
+      _ = Finset.sum (Finset.range J.1) (fun j =>
+          prismForm n k hk hkn (M (j : Int)) (fun i => F.1 i) +
+            prismForm n k hk hkn (N (j : Int)) (fun i => F.1 i)) := by
+        apply Finset.sum_congr rfl
+        intro j hj
+        exact hprism_add (M (j : Int)) (N (j : Int)) (hM (j : Int)) (hN (j : Int))
+      _ = Finset.sum (Finset.range J.1) (fun j =>
+          prismForm n k hk hkn (M (j : Int)) (fun i => F.1 i)) +
+          Finset.sum (Finset.range J.1) (fun j =>
+            prismForm n k hk hkn (N (j : Int)) (fun i => F.1 i)) :=
+        Finset.sum_add_distrib
+      _ = _ := by rw [← hMlin, ← hNlin]
+  rw [hform]
+  let w : Real := min 1
+    (Real.rpow (J.1 : Real) (-1 + (2 : Real) ^ ((k : Int) - (n : Int) + 1)))
+  let a : Real := prismForm n k hk hkn
+    (fun y => Finset.sum (Finset.range J.1) (fun j => M (j : Int) y)) (fun i => F.1 i)
+  let b : Real := prismForm n k hk hkn
+    (fun y => Finset.sum (Finset.range J.1) (fun j => N (j : Int) y)) (fun i => F.1 i)
+  change ENNReal.ofReal (w * |a + b|) <= _
+  have hw : 0 <= w := by
+    dsimp [w]
+    exact le_min zero_le_one (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+  have hMbound : ENNReal.ofReal (w * |a|) <= kernelSequenceSeminorm n k hk hkn M := by
+    unfold kernelSequenceSeminorm
+    exact le_iSup_of_le J (le_iSup_of_le F le_rfl)
+  have hNbound : ENNReal.ofReal (w * |b|) <= kernelSequenceSeminorm n k hk hkn N := by
+    unfold kernelSequenceSeminorm
+    exact le_iSup_of_le J (le_iSup_of_le F le_rfl)
+  have htriangle : ENNReal.ofReal (w * |a + b|) <= ENNReal.ofReal (w * (|a| + |b|)) :=
+    ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (abs_add_le _ _) hw)
+  have hsplit : ENNReal.ofReal (w * (|a| + |b|)) =
+      ENNReal.ofReal (w * |a|) + ENNReal.ofReal (w * |b|) := by
+    rw [mul_add]
+    exact ENNReal.ofReal_add
+      (mul_nonneg hw (abs_nonneg _)) (mul_nonneg hw (abs_nonneg _))
+  exact htriangle.trans (hsplit.le.trans (add_le_add hMbound hNbound))
+
+/-- Finite subadditivity of the kernel-sequence seminorm. -/
+theorem aux_kernelSequenceSeminorm_finset_sum_le {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n)
+    {α : Type*} (s : Finset α) (M : α → KernelSequence k)
+    (hM : ∀ a ∈ s, MemKernelSequence k (M a)) :
+    kernelSequenceSeminorm n k hk hkn (fun j y => ∑ a ∈ s, M a j y) ≤
+      ∑ a ∈ s, kernelSequenceSeminorm n k hk hkn (M a) := by
+  classical
+  revert hM
+  induction s using Finset.induction_on with
+  | empty =>
+      intro hM
+      simp [kernelSequenceSeminorm, prismForm, mToK, prismBrascampLiebForm]
+  | insert a s ha ih =>
+      intro hM
+      have hMa : MemKernelSequence k (M a) := hM a (Finset.mem_insert_self _ _)
+      have hMs : ∀ b ∈ s, MemKernelSequence k (M b) := by
+        intro b hb
+        exact hM b (Finset.mem_insert_of_mem hb)
+      have hsum : MemKernelSequence k (fun j y => ∑ b ∈ s, M b j y) := by
+        intro j
+        apply aux_memW0_finset_sum
+        intro b hb
+        exact hMs b hb j
+      calc
+        kernelSequenceSeminorm n k hk hkn (fun j y => ∑ b ∈ insert a s, M b j y) =
+            kernelSequenceSeminorm n k hk hkn
+              (fun j y => M a j y + ∑ b ∈ s, M b j y) := by
+              congr 4
+              funext j y
+              simp [Finset.sum_insert, ha]
+        _ ≤ kernelSequenceSeminorm n k hk hkn (M a) +
+            kernelSequenceSeminorm n k hk hkn (fun j y => ∑ b ∈ s, M b j y) :=
+          kernelSequenceSeminorm_add_le hk hkn _ _ hMa hsum
+        _ ≤ kernelSequenceSeminorm n k hk hkn (M a) +
+            ∑ b ∈ s, kernelSequenceSeminorm n k hk hkn (M b) := by
+          gcongr
+          exact ih hMs
+        _ = ∑ b ∈ insert a s, kernelSequenceSeminorm n k hk hkn (M b) := by
+          simp [Finset.sum_insert, ha]
+
 noncomputable def prismMultiplierIndexPartialAbsoluteSum {n : ℕ}
     (γ : GeometricParameters n)
     (Mι : MultiplierIndex γ → Codex.Preliminaries.MKernels.MKernel γ.k)
@@ -2677,6 +3314,16 @@ noncomputable def sigmaMultiplier {n : ℕ} (γ : GeometricParameters n) (ι : M
       (smul_mem_A (shift_mem_A (γ.scales_spaced i 1) (-(geometricDelta γ : ℤ)))
         (zpow_pos (by norm_num) _)) j
 
+/-- The one-dimensional sigma multiplier is a Wiener function. -/
+theorem sigmaMultiplier_memW0 {n : ℕ} (γ : GeometricParameters n)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ) :
+    MemW0 (sigmaMultiplier γ ι i j) := by
+  unfold sigmaMultiplier
+  split_ifs with hzero hpositive
+  · exact squareRootGaussianDifference_memW0 _ j
+  · exact squareRootGaussianDifference_memW0 _ j
+  · exact squareRootGaussianDifference_memW0 _ j
+
 /-
 \begin{definition}[N multiplier]\label{N multiplier}
 For every $\iota\in\mathcal{I}_{\gamma}$ we define $N_{\gamma,\iota}= (N_{\gamma,\iota})_{i\in [k),j\in \Z}$ such that
@@ -2888,6 +3535,277 @@ theorem nMultiplierRho_memW0 {n : ℕ} (γ : GeometricParameters n)
     MemW0 (nMultiplierRho γ hkn ι i j) := by
   exact aux_memW0_re (nMultiplierRhoComplex_memW0 γ hkn ι i j)
 
+private theorem aux_standardBump_fourier_even (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)) (-xi) =
+      FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)) xi := by
+  have hneg := aux_standardBumpFiniteDensity_tendsto_fourier_standardBump (-xi)
+  have hpos := aux_standardBumpFiniteDensity_tendsto_fourier_standardBump xi
+  have hseq :
+      (fun n : ℕ => (aux_standardBumpFiniteDensity (n + 1) (-xi) : ℂ)) =
+        fun n : ℕ => (aux_standardBumpFiniteDensity (n + 1) xi : ℂ) := by
+    funext n
+    rw [aux_standardBumpFiniteDensity_even]
+  rw [hseq] at hneg
+  exact tendsto_nhds_unique hneg hpos
+
+private theorem aux_fourScaleGaussianRhoFrequency_even
+    (muMinus muPlus lambdaMinus lambdaPlus nu xi : ℝ) :
+    fourScaleGaussianRhoFrequency
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        muMinus muPlus lambdaMinus lambdaPlus nu (-xi) =
+      fourScaleGaussianRhoFrequency
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        muMinus muPlus lambdaMinus lambdaPlus nu xi := by
+  unfold fourScaleGaussianRhoFrequency
+  have hlamMinus : lambdaMinus * -xi = -(lambdaMinus * xi) := by ring
+  have hlamPlus : lambdaPlus * -xi = -(lambdaPlus * xi) := by ring
+  have hmuMinus : muMinus * -xi = -(muMinus * xi) := by ring
+  have hmuPlus : muPlus * -xi = -(muPlus * xi) := by ring
+  rw [hlamMinus, hlamPlus, hmuMinus, hmuPlus,
+    aux_standardBump_fourier_even,
+    aux_standardBump_fourier_even,
+    aux_gaussian_neg,
+    aux_gaussian_neg]
+
+private theorem aux_fourScaleGaussianRhoFrequency_real
+    (muMinus muPlus lambdaMinus lambdaPlus nu xi : ℝ) :
+    ∃ r : ℝ,
+      fourScaleGaussianRhoFrequency
+          (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+          muMinus muPlus lambdaMinus lambdaPlus nu xi = r := by
+  rcases aux_fourier_standardBump_range (lambdaMinus * xi) with ⟨a, ha, hfa⟩
+  rcases aux_fourier_standardBump_range (lambdaPlus * xi) with ⟨b, hb, hfb⟩
+  refine ⟨(a - b) * Real.rpow
+    (Codex.Preliminaries.Gaussians.gaussian (muMinus * xi) -
+      Codex.Preliminaries.Gaussians.gaussian (muPlus * xi)) nu, ?_⟩
+  unfold fourScaleGaussianRhoFrequency
+  rw [hfa, hfb]
+  norm_cast
+
+private theorem aux_fourierReal_re_fourierInv_of_real_even
+    (f : ℝ → ℂ) (hcont : Continuous f) (hint : Integrable f)
+    (hinvint : Integrable (FourierTransformInv.fourierInv f))
+    (hreal : ∀ xi : ℝ, ∃ r : ℝ, f xi = r)
+    (heven : ∀ xi : ℝ, f (-xi) = f xi) (xi : ℝ) :
+    aux_fourierReal (fun q => (FourierTransformInv.fourierInv f q).re) xi = f xi := by
+  let g : ℝ → ℝ := fun q => (f q).re
+  have hfg : f = fun q => (g q : ℂ) := by
+    funext q
+    rcases hreal q with ⟨r, hr⟩
+    calc
+      f q = (r : ℂ) := hr
+      _ = ((f q).re : ℂ) := by
+        congr 1
+        rw [hr]
+        simp
+      _ = (g q : ℂ) := by rfl
+  have hgint : Integrable g := by
+    change Integrable (fun q => RCLike.re (f q))
+    exact hint.re
+  have hgeven : ∀ q : ℝ, g (-q) = g q := by
+    intro q
+    dsimp [g]
+    exact congrArg Complex.re (heven q)
+  have him (q : ℝ) : (FourierTransformInv.fourierInv f q).im = 0 := by
+    rw [hfg]
+    exact aux_diagonalSquareRoot_inverseFourier_real_of_even g hgint hgeven q
+  have hinvreal : FourierTransformInv.fourierInv f =
+      fun q => ((FourierTransformInv.fourierInv f q).re : ℂ) := by
+    funext q
+    apply Complex.ext <;> simp [him q]
+  have hinv_eq_fourier : FourierTransformInv.fourierInv f =
+      FourierTransform.fourier f := by
+    rw [Real.fourierInv_eq_fourier_comp_neg]
+    funext q
+    apply Real.fourier_congr_ae
+    filter_upwards [] with x
+    exact heven x
+  have hfourierint : Integrable (FourierTransform.fourier f) := by
+    rw [← hinv_eq_fourier]
+    exact hinvint
+  rw [aux_fourierReal_eq_fourier]
+  rw [← hinvreal]
+  exact congrFun (hcont.fourier_fourierInv_eq hint hfourierint) xi
+
+/-- The raw Fourier transform of the real four-scale Gaussian representative. -/
+theorem aux_fourierReal_re_fourScaleGaussianRho
+    {muMinus muPlus lambdaMinus lambdaPlus nu : ℝ}
+    (hmuMinus : 0 < muMinus) (hmuPlus : 0 < muPlus)
+    (hlambdaMinus : 0 < lambdaMinus) (hlambdaPlus : 0 < lambdaPlus)
+    (hscales : 2 * muMinus ≤ 2 * lambdaMinus ∧ 2 * lambdaMinus ≤ lambdaPlus ∧
+      lambdaPlus ≤ muPlus)
+    (hnu : nu ∈ Set.Ico (-1 : ℝ) 0) (xi : ℝ) :
+    aux_fourierReal (fun q =>
+      (fourScaleGaussianRho
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        muMinus muPlus lambdaMinus lambdaPlus nu q).re) xi =
+      fourScaleGaussianRhoFrequency
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        muMinus muPlus lambdaMinus lambdaPlus nu xi := by
+  apply aux_fourierReal_re_fourierInv_of_real_even
+  · exact aux_gaussianBumpDecomposition_rhoFrequency_continuous
+      _ aux_standardBumpComplex_fourier_contDiff.continuous
+      (standardBumpProperties_fourierShape).2.2 hmuMinus hscales
+  · apply Continuous.integrable_of_hasCompactSupport
+      (aux_gaussianBumpDecomposition_rhoFrequency_continuous
+        _ aux_standardBumpComplex_fourier_contDiff.continuous
+        (standardBumpProperties_fourierShape).2.2 hmuMinus hscales)
+    exact aux_gaussianBumpDecomposition_rhoFrequency_compactSupport _
+      hlambdaMinus hlambdaPlus
+      (closure_minimal (standardBumpProperties_fourierShape).2.1 isClosed_Icc)
+      muMinus muPlus nu
+  · change Integrable (fourScaleGaussianRho
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        muMinus muPlus lambdaMinus lambdaPlus nu)
+    exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      (aux_fourScaleGaussianRho_memW0 hmuMinus hmuPlus hlambdaMinus hlambdaPlus hscales hnu)
+  · exact aux_fourScaleGaussianRhoFrequency_real
+      muMinus muPlus lambdaMinus lambdaPlus nu
+  · exact aux_fourScaleGaussianRhoFrequency_even
+      muMinus muPlus lambdaMinus lambdaPlus nu
+
+/-- The raw Fourier transform of the central-band N kernel. -/
+theorem aux_fourierReal_nMultiplierRho_vertical {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hzero : ι.1.1 = 0) (u : ℝ) :
+    aux_fourierReal (nMultiplierRho γ hkn ι i j) u =
+      fourScaleGaussianRhoFrequency
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        (γ.scales i 1 (j + ι.1.2 - 1)) (γ.scales i 1 (j + ι.1.2))
+        (γ.scales i 1 (j + ι.1.2 - 1)) (γ.scales i 1 (j + ι.1.2))
+        (nMultiplierFourScaleExponent γ) u := by
+  let r : ℤ := j + ι.1.2
+  let a : ℤ → ℝ := γ.scales i 1
+  have hmuMinus : 0 < a (r - 1) := (γ.scales_spaced i 1 (r - 1)).1
+  have hmuPlus : 0 < a r := (γ.scales_spaced i 1 r).1
+  have hscales : 2 * a (r - 1) ≤ 2 * a (r - 1) ∧
+      2 * a (r - 1) ≤ a r ∧ a r ≤ a r := by
+    refine ⟨le_rfl, ?_, le_rfl⟩
+    dsimp [a]
+    convert (γ.scales_spaced i 1 (r - 1)).2 using 1 <;> ring
+  have hraw := aux_fourierReal_re_fourScaleGaussianRho
+    hmuMinus hmuPlus hmuMinus hmuPlus hscales
+    (nMultiplierFourScaleExponent_memIco γ) u
+  have hrepr : nMultiplierRhoComplex γ hkn ι i j =
+      fourScaleGaussianRho
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        (γ.scales i 1 (j + ι.1.2 - 1)) (γ.scales i 1 (j + ι.1.2))
+        (γ.scales i 1 (j + ι.1.2 - 1)) (γ.scales i 1 (j + ι.1.2))
+        (nMultiplierFourScaleExponent γ) := by
+    simp [nMultiplierRhoComplex, hzero]
+  change aux_fourierReal (fun x => (nMultiplierRhoComplex γ hkn ι i j x).re) u = _
+  rw [hrepr]
+  simpa [r, a] using hraw
+
+/-- The raw Fourier transform of the positive-band N kernel. -/
+theorem aux_fourierReal_nMultiplierRho_positive {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1) (u : ℝ) :
+    aux_fourierReal (nMultiplierRho γ hkn ι i j) u =
+      fourScaleGaussianRhoFrequency
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ) - 1))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ)))
+        ((2 : ℝ) ^ (ι.1.1 - 1) * γ.scales i 1 (j + (geometricDelta γ : ℤ)))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ)))
+        (nMultiplierFourScaleExponent γ) u := by
+  let r : ℤ := j + (geometricDelta γ : ℤ)
+  let h : ℤ := ι.1.1
+  let a : ℤ → ℝ := γ.scales i 1
+  have hpow : (2 : ℝ) ^ h = 2 * (2 : ℝ) ^ (h - 1) := by
+    rw [show h = (h - 1) + 1 by omega, zpow_add₀ (by norm_num), zpow_one]
+    ring
+  have hmuMinus : 0 < (2 : ℝ) ^ h * a (r - 1) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 (r - 1)).1
+  have hmuPlus : 0 < (2 : ℝ) ^ h * a r :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 r).1
+  have hlambdaMinus : 0 < (2 : ℝ) ^ (h - 1) * a r :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 r).1
+  have hscales :
+      2 * ((2 : ℝ) ^ h * a (r - 1)) ≤ 2 * ((2 : ℝ) ^ (h - 1) * a r) ∧
+        2 * ((2 : ℝ) ^ (h - 1) * a r) ≤ (2 : ℝ) ^ h * a r ∧
+          (2 : ℝ) ^ h * a r ≤ (2 : ℝ) ^ h * a r := by
+    refine ⟨?_, ?_, le_rfl⟩
+    · calc
+        2 * ((2 : ℝ) ^ h * a (r - 1)) =
+            (2 * (2 : ℝ) ^ (h - 1)) * (2 * a (r - 1)) := by rw [hpow]; ring
+        _ ≤ (2 * (2 : ℝ) ^ (h - 1)) * a r :=
+          mul_le_mul_of_nonneg_left (by
+            dsimp [a]
+            simpa only [sub_add_cancel] using (γ.scales_spaced i 1 (r - 1)).2)
+            (by positivity)
+        _ = 2 * ((2 : ℝ) ^ (h - 1) * a r) := by ring
+    · rw [hpow]
+      apply le_of_eq
+      ring
+  have hraw := aux_fourierReal_re_fourScaleGaussianRho
+    hmuMinus hmuPlus hlambdaMinus hmuPlus hscales
+    (nMultiplierFourScaleExponent_memIco γ) u
+  have hrepr : nMultiplierRhoComplex γ hkn ι i j =
+      fourScaleGaussianRho
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ) - 1))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ)))
+        ((2 : ℝ) ^ (ι.1.1 - 1) * γ.scales i 1 (j + (geometricDelta γ : ℤ)))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ)))
+        (nMultiplierFourScaleExponent γ) := by
+    simp [nMultiplierRhoComplex, hzero, hpositive]
+  change aux_fourierReal (fun x => (nMultiplierRhoComplex γ hkn ι i j x).re) u = _
+  rw [hrepr]
+  simpa [r, h, a] using hraw
+
+/-- The raw Fourier transform of the negative-band N kernel. -/
+theorem aux_fourierReal_nMultiplierRho_negative {n : ℕ}
+    (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
+    (i : Fin γ.k) (j : ℤ) (hzero : ι.1.1 ≠ 0) (hnegative : ι.1.1 < 0) (u : ℝ) :
+    aux_fourierReal (nMultiplierRho γ hkn ι i j) u =
+      fourScaleGaussianRhoFrequency
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ)))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1))
+        ((2 : ℝ) ^ (ι.1.1 + 1) * γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1))
+        (nMultiplierFourScaleExponent γ) u := by
+  let r : ℤ := j - (geometricDelta γ : ℤ) - 1
+  let h : ℤ := ι.1.1
+  let a : ℤ → ℝ := γ.scales i 1
+  have hpow : (2 : ℝ) ^ (h + 1) = (2 : ℝ) ^ h * 2 := by
+    rw [zpow_add₀ (by norm_num), zpow_one]
+  have hmuMinus : 0 < (2 : ℝ) ^ h * a r :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 r).1
+  have hmuPlus : 0 < (2 : ℝ) ^ h * a (r + 1) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 (r + 1)).1
+  have hlambdaPlus : 0 < (2 : ℝ) ^ (h + 1) * a r :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 r).1
+  have hscales :
+      2 * ((2 : ℝ) ^ h * a r) ≤ 2 * ((2 : ℝ) ^ h * a r) ∧
+        2 * ((2 : ℝ) ^ h * a r) ≤ (2 : ℝ) ^ (h + 1) * a r ∧
+          (2 : ℝ) ^ (h + 1) * a r ≤ (2 : ℝ) ^ h * a (r + 1) := by
+    refine ⟨le_rfl, ?_, ?_⟩
+    · rw [hpow]
+      apply le_of_eq
+      ring
+    · calc
+        (2 : ℝ) ^ (h + 1) * a r = (2 : ℝ) ^ h * (2 * a r) := by rw [hpow]; ring
+        _ ≤ (2 : ℝ) ^ h * a (r + 1) :=
+          mul_le_mul_of_nonneg_left (γ.scales_spaced i 1 r).2 (by positivity)
+  have hraw := aux_fourierReal_re_fourScaleGaussianRho
+    hmuMinus hmuPlus hmuMinus hlambdaPlus hscales
+    (nMultiplierFourScaleExponent_memIco γ) u
+  have hnotpositive : ¬ 0 < ι.1.1 := not_lt_of_ge hnegative.le
+  have hrepr : nMultiplierRhoComplex γ hkn ι i j =
+      fourScaleGaussianRho
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ)))
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1))
+        ((2 : ℝ) ^ (ι.1.1 + 1) * γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1))
+        (nMultiplierFourScaleExponent γ) := by
+    simp [nMultiplierRhoComplex, hzero, hnotpositive]
+  change aux_fourierReal (fun x => (nMultiplierRhoComplex γ hkn ι i j x).re) u = _
+  rw [hrepr]
+  simpa [r, h, a] using hraw
+
 /-- The convolution representative of the N multiplier. -/
 noncomputable def nMultiplier {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
     (ι : MultiplierIndex γ) : DoubleSequence γ.k := fun i j v =>
@@ -2906,6 +3824,894 @@ theorem nKernelWellDefinedness {n : ℕ} (γ : GeometricParameters n)
   funext v
   rcases v with ⟨v₁, v₂⟩
   simp [smul_eq_mul, sub_eq_add_neg]
+
+
+private theorem aux_fourierReal_realConvolution (f g : ℝ → ℝ)
+    (hf : MemW0 f) (hg : MemW0 g) (u : ℝ) :
+    aux_fourierReal (realConvolution f g) u =
+      aux_fourierReal f u * aux_fourierReal g u := by
+  have hfint : Integrable (fun x : ℝ => (f x : ℂ)) :=
+    (aux_memW0_integrable_of_addHaar hf).ofReal
+  have hgint : Integrable (fun x : ℝ => (g x : ℂ)) :=
+    (aux_memW0_integrable_of_addHaar hg).ofReal
+  have hcomplex : (fun x : ℝ => (realConvolution f g x : ℂ)) =
+      (fun x : ℝ => (f x : ℂ)) ⋆[ContinuousLinearMap.mul ℂ ℂ]
+        (fun x : ℝ => (g x : ℂ)) := by
+    funext x
+    rw [convolution_eq_swap]
+    unfold realConvolution
+    calc
+      ((∫ q : ℝ, f (x - q) * g q : ℝ) : ℂ) =
+          ∫ q : ℝ, ((f (x - q) * g q : ℝ) : ℂ) :=
+        (integral_ofReal (μ := volume) (𝕜 := ℂ)
+          (f := fun q : ℝ => f (x - q) * g q)).symm
+      _ = ∫ q : ℝ, (f (x - q) : ℂ) * (g q : ℂ) := by
+        apply integral_congr_ae
+        filter_upwards [] with q
+        rw [Complex.ofReal_mul]
+  rw [aux_fourierReal_eq_fourier, hcomplex,
+    Real.fourier_mul_convolution_eq hfint hgint,
+    ← aux_fourierReal_eq_fourier f,
+    ← aux_fourierReal_eq_fourier g]
+
+private theorem aux_rpow_neg_half_mul_sqrt (g : ℝ) (hg : 0 < g) :
+    g ^ (-(1 / 2 : ℝ)) * Real.sqrt g = 1 := by
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_add hg]
+  norm_num
+
+private theorem aux_fourScale_rpow_sqrt_cancel (c : ℂ) (g : ℝ)
+    (hg : 0 ≤ g) (hzero : g = 0 → c = 0) :
+    (c * ((g ^ (-(1 / 2 : ℝ)) : ℝ) : ℂ)) * (Real.sqrt g : ℂ) = c := by
+  by_cases hgzero : g = 0
+  · rw [hzero hgzero]
+    simp
+  · have hgpos : 0 < g := lt_of_le_of_ne hg (Ne.symm hgzero)
+    have hscalar : g ^ (-(1 / 2 : ℝ)) * Real.sqrt g = 1 :=
+      aux_rpow_neg_half_mul_sqrt g hgpos
+    have hscalarC : ((g ^ (-(1 / 2 : ℝ)) * Real.sqrt g : ℝ) : ℂ) = 1 := by
+      exact_mod_cast hscalar
+    calc
+      (c * ((g ^ (-(1 / 2 : ℝ)) : ℝ) : ℂ)) * (Real.sqrt g : ℂ) =
+          c * ((g ^ (-(1 / 2 : ℝ)) * Real.sqrt g : ℝ) : ℂ) := by
+            push_cast
+            ring
+      _ = c := by rw [hscalarC, mul_one]
+
+/-- The interior four-scale frequency is cancelled by one square-root Gaussian factor. -/
+private theorem aux_fourScaleFrequency_mul_sqrt_eq_phiDifference
+    (phiHat : ℝ → ℂ) (muMinus muPlus lambdaMinus lambdaPlus u : ℝ)
+    (hmuMinus : 0 < muMinus) (hmuScale : 2 * muMinus ≤ muPlus) :
+    fourScaleGaussianRhoFrequency phiHat muMinus muPlus lambdaMinus lambdaPlus
+        (-(1 / 2 : ℝ)) u *
+      (Real.sqrt (Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
+        Codex.Preliminaries.Gaussians.gaussian (muPlus * u)) : ℂ) =
+      phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u) := by
+  let g : ℝ := Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
+    Codex.Preliminaries.Gaussians.gaussian (muPlus * u)
+  let c : ℂ := phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u)
+  have hg : 0 ≤ g := by
+    dsimp [g]
+    exact aux_diagonalSquareRootFrequency_nonneg (by linarith) hmuScale u
+  have hzero : g = 0 → c = 0 := by
+    intro hgzero
+    by_cases hu : u = 0
+    · simp [c, hu]
+    · exfalso
+      have hpos := aux_gaussianBumpDecomposition_gaussianDifference_pos
+        hmuMinus hmuScale hu
+      exact (ne_of_gt hpos) hgzero
+  change (c * ((g ^ (-(1 / 2 : ℝ)) : ℝ) : ℂ)) * (Real.sqrt g : ℂ) = c
+  exact aux_fourScale_rpow_sqrt_cancel c g hg hzero
+
+private theorem aux_fourScale_rpow_neg_one_mul_sqrt_sq_cancel (c : ℂ) (g : ℝ)
+    (hg : 0 ≤ g) (hzero : g = 0 → c = 0) :
+    (c * ((g ^ (-1 : ℝ) : ℝ) : ℂ)) * (Real.sqrt g : ℂ) * (Real.sqrt g : ℂ) = c := by
+  by_cases hgzero : g = 0
+  · rw [hzero hgzero]
+    simp
+  · have hgpos : 0 < g := lt_of_le_of_ne hg (Ne.symm hgzero)
+    have hsq : Real.sqrt g * Real.sqrt g = g := by
+      calc
+        Real.sqrt g * Real.sqrt g = Real.sqrt g ^ 2 := by ring
+        _ = g := Real.sq_sqrt hg
+    have hscalar : g ^ (-1 : ℝ) * Real.sqrt g * Real.sqrt g = 1 := by
+      calc
+        g ^ (-1 : ℝ) * Real.sqrt g * Real.sqrt g =
+            g ^ (-1 : ℝ) * (Real.sqrt g * Real.sqrt g) := by ring
+        _ = g⁻¹ * g := by rw [Real.rpow_neg_one, hsq]
+        _ = 1 := inv_mul_cancel₀ (ne_of_gt hgpos)
+    have hscalarC : ((g ^ (-1 : ℝ) * Real.sqrt g * Real.sqrt g : ℝ) : ℂ) = 1 := by
+      exact_mod_cast hscalar
+    calc
+      (c * ((g ^ (-1 : ℝ) : ℝ) : ℂ)) * (Real.sqrt g : ℂ) * (Real.sqrt g : ℂ) =
+          c * ((g ^ (-1 : ℝ) * Real.sqrt g * Real.sqrt g : ℝ) : ℂ) := by
+        push_cast
+        ring
+      _ = c := by rw [hscalarC, mul_one]
+
+/-- The endpoint four-scale frequency is cancelled by two square-root Gaussian factors. -/
+private theorem aux_fourScaleFrequency_mul_sqrt_sq_eq_phiDifference
+    (phiHat : ℝ → ℂ) (muMinus muPlus lambdaMinus lambdaPlus u : ℝ)
+    (hmuMinus : 0 < muMinus) (hmuScale : 2 * muMinus ≤ muPlus) :
+    fourScaleGaussianRhoFrequency phiHat muMinus muPlus lambdaMinus lambdaPlus (-1 : ℝ) u *
+      (Real.sqrt (Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
+        Codex.Preliminaries.Gaussians.gaussian (muPlus * u)) : ℂ) *
+      (Real.sqrt (Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
+        Codex.Preliminaries.Gaussians.gaussian (muPlus * u)) : ℂ) =
+      phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u) := by
+  let g : ℝ := Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
+    Codex.Preliminaries.Gaussians.gaussian (muPlus * u)
+  let c : ℂ := phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u)
+  have hg : 0 ≤ g := by
+    dsimp [g]
+    exact aux_diagonalSquareRootFrequency_nonneg (by linarith) hmuScale u
+  have hzero : g = 0 → c = 0 := by
+    intro hgzero
+    by_cases hu : u = 0
+    · simp [c, hu]
+    · exfalso
+      have hpos := aux_gaussianBumpDecomposition_gaussianDifference_pos
+        hmuMinus hmuScale hu
+      exact (ne_of_gt hpos) hgzero
+  change (c * ((g ^ (-1 : ℝ) : ℝ) : ℂ)) * (Real.sqrt g : ℂ) * (Real.sqrt g : ℂ) = c
+  exact aux_fourScale_rpow_neg_one_mul_sqrt_sq_cancel c g hg hzero
+
+
+private theorem aux_fourierReal_sigmaMultiplier_vertical {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 = 0) (u : ℝ) :
+    aux_fourierReal (sigmaMultiplier γ ι i j) u =
+      (Real.sqrt (Codex.Preliminaries.Notation.gaussian
+        (γ.scales i 1 (j + ι.1.2 - 1) * u) -
+        Codex.Preliminaries.Notation.gaussian (γ.scales i 1 (j + ι.1.2) * u)) : ℂ) := by
+  rw [sigmaMultiplier, dif_pos hzero]
+  convert aux_squareRootGaussianDifference_fourier
+    (shift_mem_A (γ.scales_spaced i 1) ι.1.2) j u using 1 <;> ring
+
+private theorem aux_fourierReal_sigmaMultiplier_positive {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1) (u : ℝ) :
+    aux_fourierReal (sigmaMultiplier γ ι i j) u =
+      (Real.sqrt (Codex.Preliminaries.Notation.gaussian
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ) - 1) * u) -
+        Codex.Preliminaries.Notation.gaussian
+          ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ)) * u)) : ℂ) := by
+  rw [sigmaMultiplier, dif_neg hzero, dif_pos hpositive]
+  let a : ℤ → ℝ := fun r => (2 : ℝ) ^ ι.1.1 *
+    γ.scales i 1 (r + (geometricDelta γ : ℤ))
+  have ha : SpacedSequence a := by
+    dsimp [a]
+    exact smul_mem_A (shift_mem_A (γ.scales_spaced i 1) (geometricDelta γ : ℤ))
+      (zpow_pos (by norm_num) ι.1.1)
+  convert aux_squareRootGaussianDifference_fourier ha j u using 1 <;>
+    dsimp [a] <;> ring
+
+private theorem aux_fourierReal_sigmaMultiplier_negative {n : ℕ}
+    (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hnegative : ι.1.1 < 0) (u : ℝ) :
+    aux_fourierReal (sigmaMultiplier γ ι i j) u =
+      (Real.sqrt (Codex.Preliminaries.Notation.gaussian
+        ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1) * u) -
+        Codex.Preliminaries.Notation.gaussian
+          ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ)) * u)) : ℂ) := by
+  have hnotpositive : ¬ 0 < ι.1.1 := not_lt_of_ge hnegative.le
+  rw [sigmaMultiplier, dif_neg hzero, dif_neg hnotpositive]
+  let a : ℤ → ℝ := fun r => (2 : ℝ) ^ ι.1.1 *
+    γ.scales i 1 (r - (geometricDelta γ : ℤ))
+  have ha : SpacedSequence a := by
+    dsimp [a]
+    exact smul_mem_A (shift_mem_A (γ.scales_spaced i 1) (-(geometricDelta γ : ℤ)))
+      (zpow_pos (by norm_num) ι.1.1)
+  convert aux_squareRootGaussianDifference_fourier ha j u using 1 <;>
+    dsimp [a] <;> ring
+
+
+private theorem aux_fourierReal_realConvolution_nRho_sigma_vertical
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 = 0) (hk : γ.k < n - 1) (u : ℝ) :
+    aux_fourierReal
+      (realConvolution (nMultiplierRho γ hkn ι i j) (sigmaMultiplier γ ι i j)) u =
+      FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (γ.scales i 1 (j + ι.1.2 - 1) * u) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (γ.scales i 1 (j + ι.1.2) * u) := by
+  have hmuMinus : 0 < γ.scales i 1 (j + ι.1.2 - 1) :=
+    (γ.scales_spaced i 1 _).1
+  have hmuScale : 2 * γ.scales i 1 (j + ι.1.2 - 1) ≤
+      γ.scales i 1 (j + ι.1.2) := by
+    convert (γ.scales_spaced i 1 (j + ι.1.2 - 1)).2 using 1 <;> ring
+  rw [aux_fourierReal_realConvolution _ _
+    (nMultiplierRho_memW0 γ hkn ι i j) (sigmaMultiplier_memW0 γ ι i j) u,
+    aux_fourierReal_nMultiplierRho_vertical γ hkn ι i j hzero u,
+    aux_fourierReal_sigmaMultiplier_vertical γ ι i j hzero u,
+    nMultiplierFourScaleExponent, if_pos hk]
+  exact aux_fourScaleFrequency_mul_sqrt_eq_phiDifference _ _ _ _ _ _ hmuMinus hmuScale
+
+/-- Raw Fourier identity for the interior positive-band one-dimensional convolution. -/
+private theorem aux_fourierReal_realConvolution_nRho_sigma_positive
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1) (hk : γ.k < n - 1) (u : ℝ) :
+    aux_fourierReal
+      (realConvolution (nMultiplierRho γ hkn ι i j) (sigmaMultiplier γ ι i j)) u =
+      FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ (ι.1.1 - 1) * γ.scales i 1
+            (j + (geometricDelta γ : ℤ))) * u) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+            (j + (geometricDelta γ : ℤ))) * u) := by
+  let r : ℤ := j + (geometricDelta γ : ℤ)
+  let p : ℝ := (2 : ℝ) ^ ι.1.1
+  have hp : 0 < p := zpow_pos (by norm_num) _
+  have hmuMinus : 0 < p * γ.scales i 1 (r - 1) :=
+    mul_pos hp (γ.scales_spaced i 1 _).1
+  have hmuScale : 2 * (p * γ.scales i 1 (r - 1)) ≤ p * γ.scales i 1 r := by
+    calc
+      2 * (p * γ.scales i 1 (r - 1)) = p * (2 * γ.scales i 1 (r - 1)) := by ring
+      _ ≤ p * γ.scales i 1 r := mul_le_mul_of_nonneg_left
+        (by
+          simpa only [sub_add_cancel] using (γ.scales_spaced i 1 (r - 1)).2)
+        hp.le
+  rw [aux_fourierReal_realConvolution _ _
+    (nMultiplierRho_memW0 γ hkn ι i j) (sigmaMultiplier_memW0 γ ι i j) u,
+    aux_fourierReal_nMultiplierRho_positive γ hkn ι i j hzero hpositive u,
+    aux_fourierReal_sigmaMultiplier_positive γ ι i j hzero hpositive u,
+    nMultiplierFourScaleExponent, if_pos hk]
+  dsimp [r, p] at hmuMinus hmuScale ⊢
+  exact aux_fourScaleFrequency_mul_sqrt_eq_phiDifference _ _ _ _ _ _ hmuMinus hmuScale
+
+/-- Raw Fourier identity for the interior negative-band one-dimensional convolution. -/
+private theorem aux_fourierReal_realConvolution_nRho_sigma_negative
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hnegative : ι.1.1 < 0) (hk : γ.k < n - 1) (u : ℝ) :
+    aux_fourierReal
+      (realConvolution (nMultiplierRho γ hkn ι i j) (sigmaMultiplier γ ι i j)) u =
+      FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+            (j - (geometricDelta γ : ℤ) - 1)) * u) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ (ι.1.1 + 1) * γ.scales i 1
+            (j - (geometricDelta γ : ℤ) - 1)) * u) := by
+  let r : ℤ := j - (geometricDelta γ : ℤ) - 1
+  let p : ℝ := (2 : ℝ) ^ ι.1.1
+  have hp : 0 < p := zpow_pos (by norm_num) _
+  have hmuMinus : 0 < p * γ.scales i 1 r :=
+    mul_pos hp (γ.scales_spaced i 1 _).1
+  have hmuScale' : 2 * (p * γ.scales i 1 r) ≤ p * γ.scales i 1 (r + 1) := by
+    calc
+      2 * (p * γ.scales i 1 r) = p * (2 * γ.scales i 1 r) := by ring
+      _ ≤ p * γ.scales i 1 (r + 1) := mul_le_mul_of_nonneg_left
+        (γ.scales_spaced i 1 r).2 hp.le
+  have hmuScale : 2 * (p * γ.scales i 1 r) ≤
+      p * γ.scales i 1 (j - (geometricDelta γ : ℤ)) := by
+    convert hmuScale' using 1 <;> dsimp [r] <;> ring
+  rw [aux_fourierReal_realConvolution _ _
+    (nMultiplierRho_memW0 γ hkn ι i j) (sigmaMultiplier_memW0 γ ι i j) u,
+    aux_fourierReal_nMultiplierRho_negative γ hkn ι i j hzero hnegative u,
+    aux_fourierReal_sigmaMultiplier_negative γ ι i j hzero hnegative u,
+    nMultiplierFourScaleExponent, if_pos hk]
+  dsimp [r, p] at hmuMinus hmuScale ⊢
+  exact aux_fourScaleFrequency_mul_sqrt_eq_phiDifference _ _ _ _ _ _ hmuMinus hmuScale
+
+private theorem aux_standardBumpFourier_integrable :
+    Integrable (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))) := by
+  apply Continuous.integrable_of_hasCompactSupport
+  · exact aux_standardBumpComplex_fourier_contDiff.continuous
+  · apply isCompact_Icc.of_isClosed_subset isClosed_closure
+    exact closure_minimal aux_fourier_standardBump_support isClosed_Icc
+
+private theorem aux_fourierReal_standardBumpRescale_sub_integrable
+    (s t : ℝ) (hs : 0 < s) (ht : 0 < t) :
+    Integrable (fun u => aux_fourierReal
+      (fun x => standardBumpRescale s x - standardBumpRescale t x) u) := by
+  let phiHat : ℝ → ℂ := FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+  have hphi : Integrable phiHat := by
+    exact aux_standardBumpFourier_integrable
+  have hsint : Integrable (fun u => phiHat (s * u)) :=
+    hphi.comp_mul_left' (ne_of_gt hs)
+  have htint : Integrable (fun u => phiHat (t * u)) :=
+    hphi.comp_mul_left' (ne_of_gt ht)
+  apply (hsint.sub htint).congr
+  filter_upwards [] with u
+  simpa [phiHat] using
+    (aux_fourierReal_standardBumpRescale_sub s t u hs ht).symm
+
+private theorem aux_real_eq_of_aux_fourierReal_eq (f g : ℝ → ℝ)
+    (hf : MemW0 f) (hg : MemW0 g)
+    (hfourierInt : Integrable (fun u => aux_fourierReal g u))
+    (hfourier : ∀ u : ℝ, aux_fourierReal f u = aux_fourierReal g u) : f = g := by
+  have hfint : Integrable (fun x : ℝ => (f x : ℂ)) :=
+    (aux_memW0_integrable_of_addHaar hf).ofReal
+  have hgint : Integrable (fun x : ℝ => (g x : ℂ)) :=
+    (aux_memW0_integrable_of_addHaar hg).ofReal
+  have hfc : Continuous (fun x : ℝ => (f x : ℂ)) :=
+    Complex.continuous_ofReal.comp hf.1
+  have hgc : Continuous (fun x : ℝ => (g x : ℂ)) :=
+    Complex.continuous_ofReal.comp hg.1
+  have hFG : FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) =
+      FourierTransform.fourier (fun x : ℝ => (g x : ℂ)) := by
+    funext u
+    rw [← aux_fourierReal_eq_fourier f, ← aux_fourierReal_eq_fourier g]
+    exact hfourier u
+  have hGFourierInt : Integrable (FourierTransform.fourier (fun x : ℝ => (g x : ℂ))) := by
+    apply hfourierInt.congr
+    filter_upwards [] with u
+    exact aux_fourierReal_eq_fourier g u
+  have hFFourierInt : Integrable (FourierTransform.fourier (fun x : ℝ => (f x : ℂ))) := by
+    rw [hFG]
+    exact hGFourierInt
+  have hinvF : FourierTransformInv.fourierInv
+      (FourierTransform.fourier (fun x : ℝ => (f x : ℂ))) = fun x => (f x : ℂ) :=
+    hfc.fourierInv_fourier_eq hfint hFFourierInt
+  have hinvG : FourierTransformInv.fourierInv
+      (FourierTransform.fourier (fun x : ℝ => (g x : ℂ))) = fun x => (g x : ℂ) :=
+    hgc.fourierInv_fourier_eq hgint hGFourierInt
+  have hfgC : (fun x : ℝ => (f x : ℂ)) = fun x => (g x : ℂ) := by
+    calc
+      (fun x : ℝ => (f x : ℂ)) = FourierTransformInv.fourierInv
+          (FourierTransform.fourier (fun x : ℝ => (f x : ℂ))) := hinvF.symm
+      _ = FourierTransformInv.fourierInv
+          (FourierTransform.fourier (fun x : ℝ => (g x : ℂ))) := by rw [hFG]
+      _ = fun x => (g x : ℂ) := hinvG
+  funext x
+  exact_mod_cast congrFun hfgC x
+
+/-- The interior central N-rho convolved with sigma reconstructs the L bump difference. -/
+private theorem aux_realConvolution_nRho_sigma_vertical_eq
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 = 0) (hk : γ.k < n - 1) :
+    realConvolution (nMultiplierRho γ hkn ι i j) (sigmaMultiplier γ ι i j) =
+      fun x => standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) x -
+        standardBumpRescale (γ.scales i 1 (j + ι.1.2)) x := by
+  apply aux_real_eq_of_aux_fourierReal_eq
+  · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
+      (sigmaMultiplier_memW0 γ ι i j)
+  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+      (aux_standardBumpRescale_memW0 (γ.scales_spaced i 1 _ |>.1))
+      (aux_standardBumpRescale_memW0 (γ.scales_spaced i 1 _ |>.1))
+  · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _
+      (γ.scales_spaced i 1 _ |>.1) (γ.scales_spaced i 1 _ |>.1)
+  · intro u
+    calc
+      aux_fourierReal
+          (realConvolution (nMultiplierRho γ hkn ι i j) (sigmaMultiplier γ ι i j)) u =
+          FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+            (γ.scales i 1 (j + ι.1.2 - 1) * u) -
+            FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+              (γ.scales i 1 (j + ι.1.2) * u) :=
+        aux_fourierReal_realConvolution_nRho_sigma_vertical γ hkn ι i j hzero hk u
+      _ = aux_fourierReal (fun x =>
+          standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) x -
+            standardBumpRescale (γ.scales i 1 (j + ι.1.2)) x) u :=
+        (aux_fourierReal_standardBumpRescale_sub _ _ u
+          (γ.scales_spaced i 1 _ |>.1) (γ.scales_spaced i 1 _ |>.1)).symm
+
+/-- The interior positive N-rho convolved with sigma reconstructs the L bump difference. -/
+private theorem aux_realConvolution_nRho_sigma_positive_eq
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1) (hk : γ.k < n - 1) :
+    realConvolution (nMultiplierRho γ hkn ι i j) (sigmaMultiplier γ ι i j) =
+      fun x => standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
+        γ.scales i 1 (j + (geometricDelta γ : ℤ))) x -
+        standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+          γ.scales i 1 (j + (geometricDelta γ : ℤ))) x := by
+  have hs : 0 < (2 : ℝ) ^ (ι.1.1 - 1) *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ)) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 _ |>.1)
+  have ht : 0 < (2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ)) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 _ |>.1)
+  apply aux_real_eq_of_aux_fourierReal_eq
+  · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
+      (sigmaMultiplier_memW0 γ ι i j)
+  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+      (aux_standardBumpRescale_memW0 hs) (aux_standardBumpRescale_memW0 ht)
+  · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _ hs ht
+  · intro u
+    calc
+      aux_fourierReal
+          (realConvolution (nMultiplierRho γ hkn ι i j) (sigmaMultiplier γ ι i j)) u =
+          FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+            (((2 : ℝ) ^ (ι.1.1 - 1) * γ.scales i 1
+              (j + (geometricDelta γ : ℤ))) * u) -
+            FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+              (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+                (j + (geometricDelta γ : ℤ))) * u) :=
+        aux_fourierReal_realConvolution_nRho_sigma_positive γ hkn ι i j
+          hzero hpositive hk u
+      _ = aux_fourierReal (fun x =>
+          standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
+            γ.scales i 1 (j + (geometricDelta γ : ℤ))) x -
+          standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+            γ.scales i 1 (j + (geometricDelta γ : ℤ))) x) u :=
+        (aux_fourierReal_standardBumpRescale_sub _ _ u hs ht).symm
+
+/-- The interior negative N-rho convolved with sigma reconstructs the L bump difference. -/
+private theorem aux_realConvolution_nRho_sigma_negative_eq
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hnegative : ι.1.1 < 0) (hk : γ.k < n - 1) :
+    realConvolution (nMultiplierRho γ hkn ι i j) (sigmaMultiplier γ ι i j) =
+      fun x => standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+        γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x -
+        standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
+          γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x := by
+  have hs : 0 < (2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 _ |>.1)
+  have ht : 0 < (2 : ℝ) ^ (ι.1.1 + 1) *
+      γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 _ |>.1)
+  apply aux_real_eq_of_aux_fourierReal_eq
+  · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
+      (sigmaMultiplier_memW0 γ ι i j)
+  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+      (aux_standardBumpRescale_memW0 hs) (aux_standardBumpRescale_memW0 ht)
+  · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _ hs ht
+  · intro u
+    calc
+      aux_fourierReal
+          (realConvolution (nMultiplierRho γ hkn ι i j) (sigmaMultiplier γ ι i j)) u =
+          FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+            (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+              (j - (geometricDelta γ : ℤ) - 1)) * u) -
+            FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+              (((2 : ℝ) ^ (ι.1.1 + 1) * γ.scales i 1
+                (j - (geometricDelta γ : ℤ) - 1)) * u) :=
+        aux_fourierReal_realConvolution_nRho_sigma_negative γ hkn ι i j
+          hzero hnegative hk u
+      _ = aux_fourierReal (fun x =>
+          standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+            γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x -
+          standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
+            γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x) u :=
+        (aux_fourierReal_standardBumpRescale_sub _ _ u hs ht).symm
+
+/-- Raw Fourier identity for the endpoint central-band double convolution. -/
+
+
+private theorem aux_fourierReal_realConvolution_nRho_sigmaSq_vertical
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 = 0) (hk : ¬ γ.k < n - 1) (u : ℝ) :
+    aux_fourierReal
+      (realConvolution (nMultiplierRho γ hkn ι i j)
+        (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j))) u =
+      FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (γ.scales i 1 (j + ι.1.2 - 1) * u) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (γ.scales i 1 (j + ι.1.2) * u) := by
+  have hmuMinus : 0 < γ.scales i 1 (j + ι.1.2 - 1) :=
+    (γ.scales_spaced i 1 _).1
+  have hmuScale : 2 * γ.scales i 1 (j + ι.1.2 - 1) ≤
+      γ.scales i 1 (j + ι.1.2) := by
+    convert (γ.scales_spaced i 1 (j + ι.1.2 - 1)).2 using 1 <;> ring
+  rw [aux_fourierReal_realConvolution _ _
+    (nMultiplierRho_memW0 γ hkn ι i j)
+    (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
+      (sigmaMultiplier_memW0 γ ι i j)) u,
+    aux_fourierReal_realConvolution _ _
+      (sigmaMultiplier_memW0 γ ι i j) (sigmaMultiplier_memW0 γ ι i j) u,
+    aux_fourierReal_nMultiplierRho_vertical γ hkn ι i j hzero u,
+    aux_fourierReal_sigmaMultiplier_vertical γ ι i j hzero u,
+    nMultiplierFourScaleExponent, if_neg hk]
+  rw [← mul_assoc]
+  exact aux_fourScaleFrequency_mul_sqrt_sq_eq_phiDifference _ _ _ _ _ _ hmuMinus hmuScale
+
+/-- Raw Fourier identity for the endpoint positive-band double convolution. -/
+private theorem aux_fourierReal_realConvolution_nRho_sigmaSq_positive
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1)
+    (hk : ¬ γ.k < n - 1) (u : ℝ) :
+    aux_fourierReal
+      (realConvolution (nMultiplierRho γ hkn ι i j)
+        (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j))) u =
+      FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ (ι.1.1 - 1) * γ.scales i 1
+            (j + (geometricDelta γ : ℤ))) * u) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+            (j + (geometricDelta γ : ℤ))) * u) := by
+  let r : ℤ := j + (geometricDelta γ : ℤ)
+  let p : ℝ := (2 : ℝ) ^ ι.1.1
+  have hp : 0 < p := zpow_pos (by norm_num) _
+  have hmuMinus : 0 < p * γ.scales i 1 (r - 1) :=
+    mul_pos hp (γ.scales_spaced i 1 _).1
+  have hmuScale : 2 * (p * γ.scales i 1 (r - 1)) ≤ p * γ.scales i 1 r := by
+    calc
+      2 * (p * γ.scales i 1 (r - 1)) = p * (2 * γ.scales i 1 (r - 1)) := by ring
+      _ ≤ p * γ.scales i 1 r := mul_le_mul_of_nonneg_left
+        (by simpa only [sub_add_cancel] using (γ.scales_spaced i 1 (r - 1)).2) hp.le
+  rw [aux_fourierReal_realConvolution _ _
+    (nMultiplierRho_memW0 γ hkn ι i j)
+    (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
+      (sigmaMultiplier_memW0 γ ι i j)) u,
+    aux_fourierReal_realConvolution _ _
+      (sigmaMultiplier_memW0 γ ι i j) (sigmaMultiplier_memW0 γ ι i j) u,
+    aux_fourierReal_nMultiplierRho_positive γ hkn ι i j hzero hpositive u,
+    aux_fourierReal_sigmaMultiplier_positive γ ι i j hzero hpositive u,
+    nMultiplierFourScaleExponent, if_neg hk]
+  dsimp [r, p] at hmuMinus hmuScale ⊢
+  rw [← mul_assoc]
+  exact aux_fourScaleFrequency_mul_sqrt_sq_eq_phiDifference _ _ _ _ _ _ hmuMinus hmuScale
+
+/-- Raw Fourier identity for the endpoint negative-band double convolution. -/
+private theorem aux_fourierReal_realConvolution_nRho_sigmaSq_negative
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hnegative : ι.1.1 < 0)
+    (hk : ¬ γ.k < n - 1) (u : ℝ) :
+    aux_fourierReal
+      (realConvolution (nMultiplierRho γ hkn ι i j)
+        (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j))) u =
+      FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+            (j - (geometricDelta γ : ℤ) - 1)) * u) -
+        FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+          (((2 : ℝ) ^ (ι.1.1 + 1) * γ.scales i 1
+            (j - (geometricDelta γ : ℤ) - 1)) * u) := by
+  let r : ℤ := j - (geometricDelta γ : ℤ) - 1
+  let p : ℝ := (2 : ℝ) ^ ι.1.1
+  have hp : 0 < p := zpow_pos (by norm_num) _
+  have hmuMinus : 0 < p * γ.scales i 1 r :=
+    mul_pos hp (γ.scales_spaced i 1 _).1
+  have hmuScale' : 2 * (p * γ.scales i 1 r) ≤ p * γ.scales i 1 (r + 1) := by
+    calc
+      2 * (p * γ.scales i 1 r) = p * (2 * γ.scales i 1 r) := by ring
+      _ ≤ p * γ.scales i 1 (r + 1) := mul_le_mul_of_nonneg_left
+        (γ.scales_spaced i 1 r).2 hp.le
+  have hmuScale : 2 * (p * γ.scales i 1 r) ≤
+      p * γ.scales i 1 (j - (geometricDelta γ : ℤ)) := by
+    convert hmuScale' using 1 <;> dsimp [r] <;> ring
+  rw [aux_fourierReal_realConvolution _ _
+    (nMultiplierRho_memW0 γ hkn ι i j)
+    (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
+      (sigmaMultiplier_memW0 γ ι i j)) u,
+    aux_fourierReal_realConvolution _ _
+      (sigmaMultiplier_memW0 γ ι i j) (sigmaMultiplier_memW0 γ ι i j) u,
+    aux_fourierReal_nMultiplierRho_negative γ hkn ι i j hzero hnegative u,
+    aux_fourierReal_sigmaMultiplier_negative γ ι i j hzero hnegative u,
+    nMultiplierFourScaleExponent, if_neg hk]
+  dsimp [r, p] at hmuMinus hmuScale ⊢
+  rw [← mul_assoc]
+  exact aux_fourScaleFrequency_mul_sqrt_sq_eq_phiDifference _ _ _ _ _ _ hmuMinus hmuScale
+
+/-- The endpoint central N-rho convolved with two sigma factors reconstructs L. -/
+private theorem aux_realConvolution_nRho_sigmaSq_vertical_eq
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 = 0) (hk : ¬ γ.k < n - 1) :
+    realConvolution (nMultiplierRho γ hkn ι i j)
+      (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j)) =
+      fun x => standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) x -
+        standardBumpRescale (γ.scales i 1 (j + ι.1.2)) x := by
+  apply aux_real_eq_of_aux_fourierReal_eq
+  · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
+      (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
+        (sigmaMultiplier_memW0 γ ι i j))
+  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+      (aux_standardBumpRescale_memW0 (γ.scales_spaced i 1 _ |>.1))
+      (aux_standardBumpRescale_memW0 (γ.scales_spaced i 1 _ |>.1))
+  · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _
+      (γ.scales_spaced i 1 _ |>.1) (γ.scales_spaced i 1 _ |>.1)
+  · intro u
+    calc
+      aux_fourierReal (realConvolution (nMultiplierRho γ hkn ι i j)
+          (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j))) u =
+          FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+            (γ.scales i 1 (j + ι.1.2 - 1) * u) -
+            FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+              (γ.scales i 1 (j + ι.1.2) * u) :=
+        aux_fourierReal_realConvolution_nRho_sigmaSq_vertical γ hkn ι i j hzero hk u
+      _ = aux_fourierReal (fun x =>
+          standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) x -
+            standardBumpRescale (γ.scales i 1 (j + ι.1.2)) x) u :=
+        (aux_fourierReal_standardBumpRescale_sub _ _ u
+          (γ.scales_spaced i 1 _ |>.1) (γ.scales_spaced i 1 _ |>.1)).symm
+
+/-- The endpoint positive N-rho convolved with two sigma factors reconstructs L. -/
+private theorem aux_realConvolution_nRho_sigmaSq_positive_eq
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1) (hk : ¬ γ.k < n - 1) :
+    realConvolution (nMultiplierRho γ hkn ι i j)
+      (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j)) =
+      fun x => standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
+        γ.scales i 1 (j + (geometricDelta γ : ℤ))) x -
+        standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+          γ.scales i 1 (j + (geometricDelta γ : ℤ))) x := by
+  have hs : 0 < (2 : ℝ) ^ (ι.1.1 - 1) *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ)) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 _ |>.1)
+  have ht : 0 < (2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j + (geometricDelta γ : ℤ)) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 _ |>.1)
+  apply aux_real_eq_of_aux_fourierReal_eq
+  · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
+      (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
+        (sigmaMultiplier_memW0 γ ι i j))
+  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+      (aux_standardBumpRescale_memW0 hs) (aux_standardBumpRescale_memW0 ht)
+  · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _ hs ht
+  · intro u
+    calc
+      aux_fourierReal (realConvolution (nMultiplierRho γ hkn ι i j)
+          (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j))) u =
+          FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+            (((2 : ℝ) ^ (ι.1.1 - 1) * γ.scales i 1
+              (j + (geometricDelta γ : ℤ))) * u) -
+            FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+              (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+                (j + (geometricDelta γ : ℤ))) * u) :=
+        aux_fourierReal_realConvolution_nRho_sigmaSq_positive γ hkn ι i j
+          hzero hpositive hk u
+      _ = aux_fourierReal (fun x =>
+          standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
+            γ.scales i 1 (j + (geometricDelta γ : ℤ))) x -
+          standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+            γ.scales i 1 (j + (geometricDelta γ : ℤ))) x) u :=
+        (aux_fourierReal_standardBumpRescale_sub _ _ u hs ht).symm
+
+/-- The endpoint negative N-rho convolved with two sigma factors reconstructs L. -/
+private theorem aux_realConvolution_nRho_sigmaSq_negative_eq
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
+    (hzero : ι.1.1 ≠ 0) (hnegative : ι.1.1 < 0) (hk : ¬ γ.k < n - 1) :
+    realConvolution (nMultiplierRho γ hkn ι i j)
+      (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j)) =
+      fun x => standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+        γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x -
+        standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
+          γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x := by
+  have hs : 0 < (2 : ℝ) ^ ι.1.1 *
+      γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 _ |>.1)
+  have ht : 0 < (2 : ℝ) ^ (ι.1.1 + 1) *
+      γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1) :=
+    mul_pos (zpow_pos (by norm_num) _) (γ.scales_spaced i 1 _ |>.1)
+  apply aux_real_eq_of_aux_fourierReal_eq
+  · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
+      (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
+        (sigmaMultiplier_memW0 γ ι i j))
+  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+      (aux_standardBumpRescale_memW0 hs) (aux_standardBumpRescale_memW0 ht)
+  · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _ hs ht
+  · intro u
+    calc
+      aux_fourierReal (realConvolution (nMultiplierRho γ hkn ι i j)
+          (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j))) u =
+          FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+            (((2 : ℝ) ^ ι.1.1 * γ.scales i 1
+              (j - (geometricDelta γ : ℤ) - 1)) * u) -
+            FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
+              (((2 : ℝ) ^ (ι.1.1 + 1) * γ.scales i 1
+                (j - (geometricDelta γ : ℤ) - 1)) * u) :=
+        aux_fourierReal_realConvolution_nRho_sigmaSq_negative γ hkn ι i j
+          hzero hnegative hk u
+      _ = aux_fourierReal (fun x =>
+          standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+            γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x -
+          standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
+            γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x) u :=
+        (aux_fourierReal_standardBumpRescale_sub _ _ u hs ht).symm
+
+
+
+/-- Fubini reassociation for two diagonal convolutions in product-plane coordinates. -/
+theorem aux_diagonalConvolution_assoc
+    (F : RealPlane → ℝ) (rho sigma : ℝ → ℝ)
+    (hF : MemW0 F) (hrho : MemW0 rho) (hsigma : MemW0 sigma) (v : RealPlane) :
+    (∫ p : ℝ, (∫ q : ℝ, F (v.1 - p - q, v.2 - p - q) * rho q) * sigma p) =
+      ∫ r : ℝ, F (v.1 - r, v.2 - r) * realConvolution rho sigma r := by
+  letI : Measure.IsAddHaarMeasure (volume : Measure RealPlane) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure (volume : Measure ((RealPlane × ℝ) × ℝ)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × (ℝ × ℝ))) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  let diag : RealPlane := ((1 : ℝ), (1 : ℝ))
+  let shift₁ : ((RealPlane × ℝ) ≃L[ℝ] (RealPlane × ℝ)) :=
+    aux_convolutionAlongShear diag
+  let shift₂ : (((RealPlane × ℝ) × ℝ) ≃L[ℝ] ((RealPlane × ℝ) × ℝ)) :=
+    aux_convolutionAlongShear (diag, (0 : ℝ))
+  let T : (((RealPlane × ℝ) × ℝ) ≃L[ℝ] ((RealPlane × ℝ) × ℝ)) :=
+    (shift₁.prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)).trans shift₂
+  let P : (RealPlane × ℝ) × ℝ → ℝ := fun x => F x.1.1 * rho x.1.2 * sigma x.2
+  have hP : MemW0 P := by
+    simpa [P] using (hF.aux_mul_prod hrho).aux_mul_prod hsigma
+  let assoc := (ContinuousLinearEquiv.prodAssoc ℝ RealPlane ℝ ℝ).symm
+  let H : ℝ × ℝ → ℝ := fun qp =>
+    F (v.1 - qp.1 - qp.2, v.2 - qp.1 - qp.2) * rho qp.1 * sigma qp.2
+  have hH_w0 : MemW0 H := by
+    have hPT : MemW0 (P ∘ T) :=
+      Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP T
+    have hPTA : MemW0 ((P ∘ T) ∘ assoc) :=
+      Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hPT assoc
+    have hslice := hPTA.aux_memW0_slice_of_addHaar v
+    convert hslice using 1
+    funext qp
+    rcases qp with ⟨q, p⟩
+    dsimp [H, P, T, shift₁, shift₂, assoc, diag, aux_convolutionAlongShear]
+    have hv : (v.1 - q - p, v.2 - q - p) =
+        v - (q * (1 : ℝ), q * (1 : ℝ)) - (p * (1 : ℝ), p * (1 : ℝ)) := by
+      ext <;> dsimp <;> ring
+    rw [hv]
+    ring
+  have hH : Integrable H :=
+    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hH_w0
+  have hLeft :
+      (∫ p : ℝ, (∫ q : ℝ, F (v.1 - p - q, v.2 - p - q) * rho q) * sigma p) =
+        ∫ p : ℝ, ∫ q : ℝ, H (q, p) := by
+    apply integral_congr_ae
+    filter_upwards [] with p
+    rw [← integral_mul_const]
+    apply integral_congr_ae
+    filter_upwards [] with q
+    dsimp [H]
+    ring
+  have hH_swap : (∫ p : ℝ, ∫ q : ℝ, H (q, p)) = ∫ qp : ℝ × ℝ, H qp := by
+    calc
+      (∫ p : ℝ, ∫ q : ℝ, H (q, p)) = ∫ q : ℝ, ∫ p : ℝ, H (q, p) := by
+        simpa only using (integral_integral_swap hH).symm
+      _ = ∫ qp : ℝ × ℝ, H qp := by
+        simpa only [Measure.volume_eq_prod] using (integral_prod H hH).symm
+  let G : ℝ × ℝ → ℝ := fun rp =>
+    F (v.1 - rp.1, v.2 - rp.1) * rho (rp.1 - rp.2) * sigma rp.2
+  let shear : RealPlane ≃ᵐ RealPlane :=
+    { toFun := fun rp => (rp.1 - rp.2, rp.2)
+      invFun := fun qp => (qp.1 + qp.2, qp.2)
+      left_inv := by
+        rintro ⟨r, p⟩
+        ext <;> ring
+      right_inv := by
+        rintro ⟨q, p⟩
+        ext <;> ring
+      measurable_toFun := (measurable_fst.sub measurable_snd).prodMk measurable_snd
+      measurable_invFun := (measurable_fst.add measurable_snd).prodMk measurable_snd }
+  have hShear : MeasurePreserving shear volume volume :=
+    by
+      change MeasurePreserving (fun rp : RealPlane => (rp.1 - rp.2, rp.2))
+        ((volume : Measure ℝ).prod (volume : Measure ℝ))
+        ((volume : Measure ℝ).prod (volume : Measure ℝ))
+      exact measurePreserving_sub_prod (volume : Measure ℝ) (volume : Measure ℝ)
+  have hG_eq : G = H ∘ shear := by
+    funext rp
+    rcases rp with ⟨r, p⟩
+    dsimp [G, H, shear]
+    ring
+  have hG : Integrable G := by
+    rw [hG_eq]
+    exact hShear.integrable_comp_of_integrable hH
+  have hChange : (∫ qp : ℝ × ℝ, H qp) = ∫ rp : ℝ × ℝ, G rp := by
+    rw [hG_eq]
+    exact (hShear.integral_comp' H).symm
+  have hRight :
+      (∫ r : ℝ, F (v.1 - r, v.2 - r) * realConvolution rho sigma r) =
+        ∫ r : ℝ, ∫ p : ℝ, G (r, p) := by
+    apply integral_congr_ae
+    filter_upwards [] with r
+    unfold realConvolution
+    rw [← integral_const_mul]
+    apply integral_congr_ae
+    filter_upwards [] with p
+    dsimp [G]
+    ring
+  have hG_fubini : (∫ r : ℝ, ∫ p : ℝ, G (r, p)) = ∫ rp : ℝ × ℝ, G rp := by
+    simpa only [Measure.volume_eq_prod] using (integral_prod G hG).symm
+  calc
+    (∫ p : ℝ, (∫ q : ℝ, F (v.1 - p - q, v.2 - p - q) * rho q) * sigma p) =
+        ∫ p : ℝ, ∫ q : ℝ, H (q, p) := hLeft
+    _ = ∫ qp : ℝ × ℝ, H qp := hH_swap
+    _ = ∫ rp : ℝ × ℝ, G rp := hChange
+    _ = ∫ r : ℝ, ∫ p : ℝ, G (r, p) := hG_fubini.symm
+    _ = ∫ r : ℝ, F (v.1 - r, v.2 - r) * realConvolution rho sigma r := hRight.symm
+
+
+
+/-- A one-dimensional reconstruction turns directly into its diagonal-convolution form. -/
+private theorem aux_lMultiplier_eq_nMultiplier_diagonalConvolution_of_reconstruction
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ) (v : RealPlane)
+    (kappa bump : ℝ → ℝ) (hkappa : MemW0 kappa)
+    (hL : lMultiplier γ ι i j v =
+      ∫ r : ℝ, hMultiplier γ i j (v.1 - r, v.2 - r) * bump r)
+    (hrecon : realConvolution (nMultiplierRho γ hkn ι i j) kappa = bump) :
+    lMultiplier γ ι i j v =
+      ∫ p : ℝ, nMultiplier γ hkn ι i j (v.1 - p, v.2 - p) * kappa p := by
+  rw [hL]
+  unfold nMultiplier
+  rw [aux_diagonalConvolution_assoc (hMultiplier γ i j)
+    (nMultiplierRho γ hkn ι i j) kappa
+    (hMultiplier_memDoubleSequence γ i j) (nMultiplierRho_memW0 γ hkn ι i j) hkappa v,
+    hrecon]
+
+
+
+/-- In an interior coordinate, `L` is the diagonal convolution of `N` and one sigma factor. -/
+theorem lMultiplier_eq_nMultiplier_diagonalConvolution
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ) (hk : γ.k < n - 1) :
+    lMultiplier γ ι i j = fun v =>
+      ∫ p : ℝ, nMultiplier γ hkn ι i j (v.1 - p, v.2 - p) * sigmaMultiplier γ ι i j p := by
+  funext v
+  by_cases hzero : ι.1.1 = 0
+  · exact aux_lMultiplier_eq_nMultiplier_diagonalConvolution_of_reconstruction
+      γ hkn ι i j v (sigmaMultiplier γ ι i j)
+      (fun x => standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) x -
+        standardBumpRescale (γ.scales i 1 (j + ι.1.2)) x)
+      (sigmaMultiplier_memW0 γ ι i j)
+      (by simp [lMultiplier, hzero])
+      (aux_realConvolution_nRho_sigma_vertical_eq γ hkn ι i j hzero hk)
+  · by_cases hpositive : 0 < ι.1.1
+    · exact aux_lMultiplier_eq_nMultiplier_diagonalConvolution_of_reconstruction
+        γ hkn ι i j v (sigmaMultiplier γ ι i j)
+        (fun x => standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
+          γ.scales i 1 (j + (geometricDelta γ : ℤ))) x -
+          standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+            γ.scales i 1 (j + (geometricDelta γ : ℤ))) x)
+        (sigmaMultiplier_memW0 γ ι i j)
+        (by simp [lMultiplier, hzero, hpositive])
+        (aux_realConvolution_nRho_sigma_positive_eq γ hkn ι i j hzero hpositive hk)
+    · have hnegative : ι.1.1 < 0 := by omega
+      exact aux_lMultiplier_eq_nMultiplier_diagonalConvolution_of_reconstruction
+        γ hkn ι i j v (sigmaMultiplier γ ι i j)
+        (fun x => standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+          γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x -
+          standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
+            γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x)
+        (sigmaMultiplier_memW0 γ ι i j)
+        (by simp [lMultiplier, hzero, hpositive])
+        (aux_realConvolution_nRho_sigma_negative_eq γ hkn ι i j hzero hnegative hk)
+
+/-- At the terminal coordinate, `L` is the diagonal convolution of `N` and two sigma factors. -/
+theorem lMultiplier_eq_nMultiplier_diagonalConvolution_endpoint
+    {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
+    (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ) (hk : ¬ γ.k < n - 1) :
+    lMultiplier γ ι i j = fun v =>
+      ∫ p : ℝ, nMultiplier γ hkn ι i j (v.1 - p, v.2 - p) *
+        realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j) p := by
+  funext v
+  by_cases hzero : ι.1.1 = 0
+  · exact aux_lMultiplier_eq_nMultiplier_diagonalConvolution_of_reconstruction
+      γ hkn ι i j v
+      (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j))
+      (fun x => standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) x -
+        standardBumpRescale (γ.scales i 1 (j + ι.1.2)) x)
+      (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
+        (sigmaMultiplier_memW0 γ ι i j))
+      (by simp [lMultiplier, hzero])
+      (aux_realConvolution_nRho_sigmaSq_vertical_eq γ hkn ι i j hzero hk)
+  · by_cases hpositive : 0 < ι.1.1
+    · exact aux_lMultiplier_eq_nMultiplier_diagonalConvolution_of_reconstruction
+        γ hkn ι i j v
+        (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j))
+        (fun x => standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
+          γ.scales i 1 (j + (geometricDelta γ : ℤ))) x -
+          standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+            γ.scales i 1 (j + (geometricDelta γ : ℤ))) x)
+        (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
+          (sigmaMultiplier_memW0 γ ι i j))
+        (by simp [lMultiplier, hzero, hpositive])
+        (aux_realConvolution_nRho_sigmaSq_positive_eq γ hkn ι i j hzero hpositive hk)
+    · have hnegative : ι.1.1 < 0 := by omega
+      exact aux_lMultiplier_eq_nMultiplier_diagonalConvolution_of_reconstruction
+        γ hkn ι i j v
+        (realConvolution (sigmaMultiplier γ ι i j) (sigmaMultiplier γ ι i j))
+        (fun x => standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
+          γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x -
+          standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
+            γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) x)
+        (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
+          (sigmaMultiplier_memW0 γ ι i j))
+        (by simp [lMultiplier, hzero, hpositive])
+        (aux_realConvolution_nRho_sigmaSq_negative_eq γ hkn ι i j hzero hnegative hk)
 
 /-- Diagonal cancellation rewrites the convolution representative of an N multiplier using a
 difference of its one-dimensional kernel. -/

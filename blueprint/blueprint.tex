@@ -4680,6 +4680,8 @@ Theorem \ref{induct positive terms theorem} below follows by induction on $k$.
 
 \begin{proposition}
 \label{vanishing diagonal implies induct positive terms}\uses{positive terms,telescoping terms}\usesdefs{geometric parameters,kernel sequences,sandwich kernel,auto:Gaussian-difference-kernel-definition,s multiplier,H multiplier,induct positive terms,vanishing diagonal}
+\lean{vanishingDiagonal_implies_inductPositiveTerms}
+\leanok
 Let $k\in\N$ with $1\le k\le n$ and $C\in [1,\infty)$.
 If $\VanishingDiagonal{k,C}$ holds, then $\InductPositiveTerms{k,kC+2}$ holds.
 \end{proposition}
@@ -4700,6 +4702,8 @@ $\le (kC+2) \Delta_\gamma^{2-2^{k-n+1}}$.
 
 \begin{proposition}
 \label{diagonal band implies vanishing diagonal}\uses{sum L multiplier convergence-L1,prism sum le sum prism-L1,sandwich sums L1}\usesdefs{kernel sequences,sandwich kernel,H multiplier,L multiplier,summation-definition,vanishing diagonal,diagonal band}
+\lean{diagonalBand_implies_vanishingDiagonal}
+\leanok
 Let $k\in\N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
 If $\DiagonalBand{k,C}$ holds, then $\VanishingDiagonal{k,C}$ holds.
 \end{proposition}
@@ -4712,6 +4716,8 @@ The claim follows from $\DiagonalBand{k,C}$.
 \end{proof}
 
 \begin{proposition}[vanishing kernel integral]\label{vanishing kernel integral}\uses{simplification 1 prism,H vanishing integral,M to K}\usesdefs{geometric parameters,kernel sequences,sandwich kernel,H multiplier,vanishing diagonal}
+\lean{vanishingKernelIntegral}
+\leanok
 Let $\gamma=(n,w,a)\in \Gamma$.
 For every $i\in [n)$,
 \begin{equation}\label{auto:terminal-H-prism-form-zero}

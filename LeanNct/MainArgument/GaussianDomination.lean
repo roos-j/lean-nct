@@ -591,6 +591,15 @@ theorem aux_dominatingGaussianTerm_nonneg (p : SequencePair)
     (aux_gaussianRescale_nonneg ((hp 0 j).1) _)
     (aux_gaussianRescale_nonneg ((hp 1 j).1) _)
 
+/-- Each Gaussian term in a domination series is a Wiener function. -/
+theorem aux_dominatingGaussianTerm_memW0 (p : SequencePair)
+    (hp : ∀ r : Fin 2, SpacedSequence (p r)) (u : Fin 2) (j : ℤ) :
+    MemW0 (aux_dominatingGaussianTerm p u j) := by
+  unfold aux_dominatingGaussianTerm
+  apply aux_twoDimensionalGaussian_memW0
+  intro r
+  exact aux_spacedSequence_pos (hp r) j
+
 /-- This auxiliary algebraic estimate expands the product of the two two-scale bounds used
 for the tensor-product term of the `H` multiplier. -/
 theorem aux_abs_mul_le_four_products {f g A u₀ u₁ v₀ v₁ : ℝ}
@@ -5369,6 +5378,192 @@ theorem aux_gaussianDominationWeight_summable :
       push_cast
       ring
     _ = _ := Real.rpow_add (by norm_num) _ _
+
+private theorem aux_gaussianWeightMoment_finTwo_tsum_product {f₀ f₁ : ℕ → ℝ}
+    (h₀nonneg : ∀ a, 0 ≤ f₀ a) (h₁nonneg : ∀ a, 0 ≤ f₁ a)
+    (h₀ : Summable f₀) (h₁ : Summable f₁) :
+    (∑' a : ℕ, f₀ a) * (∑' a : ℕ, f₁ a) =
+      ∑' m : Fin 2 → ℕ, f₀ (m 0) * f₁ (m 1) := by
+  have hprod : Summable (fun m : Fin 2 → ℕ => f₀ (m 0) * f₁ (m 1)) :=
+    aux_summable_finTwo_product h₀nonneg h₁nonneg h₀ h₁
+  have hprodPair : Summable (fun z : ℕ × ℕ => f₀ z.1 * f₁ z.2) := by
+    refine (aux_finTwoNatEquivProd.symm.summable_iff
+      (f := fun m : Fin 2 → ℕ => f₀ (m 0) * f₁ (m 1))).mpr ?_
+    exact hprod
+  calc
+    (∑' a : ℕ, f₀ a) * (∑' a : ℕ, f₁ a) =
+        ∑' z : ℕ × ℕ, f₀ z.1 * f₁ z.2 := h₀.tsum_mul_tsum h₁ hprodPair
+    _ = ∑' m : Fin 2 → ℕ, f₀ (m 0) * f₁ (m 1) := by
+      simpa [aux_finTwoNatEquivProd] using
+        (aux_finTwoNatEquivProd.symm.tsum_eq
+          (fun m : Fin 2 → ℕ => f₀ (m 0) * f₁ (m 1)))
+
+private theorem aux_gaussianWeightMoment_square_summable :
+    Summable (fun a : ℕ => ((a : ℝ) + 1) ^ (2 : ℕ) * (17 / 24 : ℝ) ^ a) := by
+  let r : ℝ := 17 / 24
+  have hr : ‖r‖ < 1 := by
+    dsimp [r]
+    norm_num [Real.norm_eq_abs]
+  have h₁ := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 1 hr
+  have h₂ := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 2 hr
+  have hsum := (h₂.mul_left (2 : ℝ)).sub h₁
+  apply hsum.summable.congr
+  intro a
+  norm_num [Nat.cast_choose_two]
+  ring
+
+private theorem aux_gaussianWeightMoment_square_tsum :
+    (∑' a : ℕ, ((a : ℝ) + 1) ^ (2 : ℕ) * (17 / 24 : ℝ) ^ a) =
+      23616 / 343 := by
+  let r : ℝ := 17 / 24
+  have hr : ‖r‖ < 1 := by
+    dsimp [r]
+    norm_num [Real.norm_eq_abs]
+  have h₁ := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 1 hr
+  have h₂ := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 2 hr
+  have hsum := (h₂.mul_left (2 : ℝ)).sub h₁
+  have hterm (a : ℕ) :
+      ((a : ℝ) + 1) ^ (2 : ℕ) * r ^ a =
+        2 * ((↑((a + 2).choose 2) : ℝ) * r ^ a) -
+          (↑((a + 1).choose 1) : ℝ) * r ^ a := by
+    rw [Nat.cast_choose_two]
+    simp
+    ring
+  calc
+    (∑' a : ℕ, ((a : ℝ) + 1) ^ (2 : ℕ) * (17 / 24 : ℝ) ^ a) =
+        2 * (1 / (1 - r) ^ (2 + 1)) - 1 / (1 - r) ^ (1 + 1) := by
+      rw [← hsum.tsum_eq]
+      apply tsum_congr
+      intro a
+      exact hterm a
+    _ = 23616 / 343 := by
+      dsimp [r]
+      norm_num
+
+private theorem aux_gaussianWeightMoment_half_le :
+    Real.rpow 2 (-(1 / 2 : ℝ)) ≤ (17 / 24 : ℝ) := by
+  change (2 : ℝ) ^ (-(1 / 2 : ℝ)) ≤ (17 / 24 : ℝ)
+  rw [Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2)]
+  rw [← Real.sqrt_eq_rpow]
+  apply (inv_le_iff_one_le_mul₀ (Real.sqrt_pos.2 (by norm_num : (0 : ℝ) < 2))).mpr
+  nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+
+/-- The dyadic two-parameter Gaussian weight has the second moment used in the
+main induction. -/
+theorem aux_gaussianDominationWeight_secondMoment_le_two_pow_ten :
+    (∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+      (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ)) ≤ (2 : ℝ) ^ (10 : ℕ) := by
+  let q : ℝ := Real.rpow 2 (-(1 / 2 : ℝ))
+  let r : ℝ := 17 / 24
+  let f₀ : ℕ → ℝ := fun a => r ^ a
+  let f₂ : ℕ → ℝ := fun a => ((a : ℝ) + 1) ^ (2 : ℕ) * r ^ a
+  have hrnonneg : 0 ≤ r := by dsimp [r]; norm_num
+  have hrlt : ‖r‖ < 1 := by dsimp [r]; norm_num [Real.norm_eq_abs]
+  have hf₀ : Summable f₀ := by
+    dsimp [f₀]
+    exact summable_geometric_of_norm_lt_one hrlt
+  have hf₂ : Summable f₂ := by
+    dsimp [f₂, r]
+    exact aux_gaussianWeightMoment_square_summable
+  have hf₀nonneg (a : ℕ) : 0 ≤ f₀ a := by
+    exact pow_nonneg hrnonneg a
+  have hf₂nonneg (a : ℕ) : 0 ≤ f₂ a := by
+    exact mul_nonneg (sq_nonneg _) (pow_nonneg hrnonneg a)
+  have hprod : Summable (fun m : Fin 2 → ℕ =>
+      2 * (f₂ (m 0) * f₀ (m 1) + f₀ (m 0) * f₂ (m 1))) := by
+    exact Summable.mul_left 2
+      ((aux_summable_finTwo_product hf₂nonneg hf₀nonneg hf₂ hf₀).add
+        (aux_summable_finTwo_product hf₀nonneg hf₂nonneg hf₀ hf₂))
+  have hmajorantPoint (m : Fin 2 → ℕ) :
+      r ^ (m 0 + m 1) * (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ) ≤
+        2 * (f₂ (m 0) * f₀ (m 1) + f₀ (m 0) * f₂ (m 1)) := by
+    have hpow : r ^ (m 0 + m 1) = r ^ (m 0) * r ^ (m 1) := by
+      rw [pow_add]
+    have hsq : (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ) ≤
+        2 * (((m 0 : ℝ) + 1) ^ (2 : ℕ)) +
+          2 * (((m 1 : ℝ) + 1) ^ (2 : ℕ)) := by
+      push_cast
+      have hb : 0 ≤ (m 1 : ℝ) := Nat.cast_nonneg _
+      nlinarith [sq_nonneg ((m 0 : ℝ) + 1 - (m 1 : ℝ))]
+    rw [hpow]
+    dsimp [f₀, f₂]
+    calc
+      r ^ m 0 * r ^ m 1 * (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ) ≤
+          r ^ m 0 * r ^ m 1 *
+            (2 * (((m 0 : ℝ) + 1) ^ (2 : ℕ)) +
+              2 * (((m 1 : ℝ) + 1) ^ (2 : ℕ))) :=
+        mul_le_mul_of_nonneg_left hsq
+          (mul_nonneg (pow_nonneg hrnonneg _) (pow_nonneg hrnonneg _))
+      _ = 2 * ((((m 0 : ℝ) + 1) ^ (2 : ℕ) * r ^ m 0) * r ^ m 1 +
+          r ^ m 0 * (((m 1 : ℝ) + 1) ^ (2 : ℕ) * r ^ m 1)) := by ring
+  have hmajorant : Summable (fun m : Fin 2 → ℕ =>
+      r ^ (m 0 + m 1) * (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ)) :=
+    Summable.of_nonneg_of_le (fun m => by
+      exact mul_nonneg (pow_nonneg hrnonneg _) (sq_nonneg _)) hmajorantPoint hprod
+  have hqnonneg : 0 ≤ q := by
+    dsimp [q]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hqle : q ≤ r := by
+    dsimp [q, r]
+    exact aux_gaussianWeightMoment_half_le
+  have hterm (a : ℕ) : q ^ a = Real.rpow 2 (-((a : ℝ) / 2)) := by
+    dsimp [q]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num)]
+    congr 1
+    ring
+  have hweight (m : Fin 2 → ℕ) :
+      aux_gaussianDominationWeight m = q ^ (m 0 + m 1) := by
+    unfold aux_gaussianDominationWeight aux_natPairWeight
+    convert (hterm (m 0 + m 1)).symm using 1
+    congr 1
+    ring
+  have hpoint (m : Fin 2 → ℕ) :
+      aux_gaussianDominationWeight m *
+          (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ) ≤
+        r ^ (m 0 + m 1) *
+          (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ) := by
+    rw [hweight]
+    simp only [aux_natPairWeight]
+    exact mul_le_mul_of_nonneg_right
+      (pow_le_pow_left₀ hqnonneg hqle _)
+      (sq_nonneg _)
+  have hsum := Summable.tsum_le_tsum hpoint
+    (Summable.of_nonneg_of_le (fun m => by
+      exact mul_nonneg (aux_gaussianDominationWeight_nonneg m) (sq_nonneg _))
+      hpoint hmajorant)
+    hmajorant
+  have h₀ : (∑' a : ℕ, f₀ a) = 24 / 7 := by
+    dsimp [f₀, r]
+    have hr : ‖(17 / 24 : ℝ)‖ < 1 := by norm_num [Real.norm_eq_abs]
+    rw [tsum_geometric_of_norm_lt_one hr]
+    norm_num
+  have h₂ : (∑' a : ℕ, f₂ a) = 23616 / 343 := by
+    dsimp [f₂, r]
+    exact aux_gaussianWeightMoment_square_tsum
+  have hproduct₂₀ := aux_gaussianWeightMoment_finTwo_tsum_product
+    hf₂nonneg hf₀nonneg hf₂ hf₀
+  have hproduct₀₂ := aux_gaussianWeightMoment_finTwo_tsum_product
+    hf₀nonneg hf₂nonneg hf₀ hf₂
+  calc
+    (∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
+        (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ)) ≤
+        ∑' m : Fin 2 → ℕ, r ^ (m 0 + m 1) *
+          (1 + ((m 0 + m 1 : ℕ) : ℝ)) ^ (2 : ℕ) := hsum
+    _ ≤ ∑' m : Fin 2 → ℕ,
+        2 * (f₂ (m 0) * f₀ (m 1) + f₀ (m 0) * f₂ (m 1)) :=
+      Summable.tsum_le_tsum hmajorantPoint hmajorant hprod
+    _ = 2 * ((∑' m : Fin 2 → ℕ, f₂ (m 0) * f₀ (m 1)) +
+        ∑' m : Fin 2 → ℕ, f₀ (m 0) * f₂ (m 1)) := by
+      rw [tsum_mul_left]
+      rw [Summable.tsum_add
+        (aux_summable_finTwo_product hf₂nonneg hf₀nonneg hf₂ hf₀)
+        (aux_summable_finTwo_product hf₀nonneg hf₂nonneg hf₀ hf₂)]
+    _ = 2 * ((∑' a : ℕ, f₂ a) * (∑' a : ℕ, f₀ a) +
+        (∑' a : ℕ, f₀ a) * (∑' a : ℕ, f₂ a)) := by
+      rw [← hproduct₂₀, ← hproduct₀₂]
+    _ ≤ (2 : ℝ) ^ (10 : ℕ) := by
+      rw [h₀, h₂]
+      norm_num
 
 theorem aux_dyadic_gaussian_term_measurable
     (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
