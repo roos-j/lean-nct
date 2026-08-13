@@ -274,10 +274,10 @@ Lean file: Reduction/BumpFunctions.lean
 
 \label{lem:ft_deriv_mul}: [Proof completed] (Lean: fourierDerivativeMul) (2026-08-12 11:35:51 EDT)
 \label{lem:widebump}: [Proof completed] (Lean: wideBump) (2026-08-12 11:40:49 EDT)
-\label{lem:thetat_offcenter}: [Statement completed] (Lean: thetaTOffcenter) (2026-08-12 08:32:42 EDT)
-\label{constant off center bump}: [Statement completed] (Lean: constantOffCenterBump) (2026-08-12 08:32:42 EDT)
-\label{lem:int_fct}: [Statement completed] (Lean: integralFct) (2026-08-12 08:32:42 EDT)
-\label{lem:Phipos_v2}: [Statement completed] (Lean: phiPosV2) (2026-08-12 08:32:42 EDT)
+\label{lem:thetat_offcenter}: [Proof completed] (Lean: thetaTOffcenter) (2026-08-12 17:29:38 PDT)
+\label{constant off center bump}: [Proof completed] (Lean: constantOffCenterBump) (2026-08-12 17:45:41 PDT)
+\label{lem:int_fct}: [Proof completed] (Lean: integralFct) (2026-08-12 22:22:46 PDT)
+\label{lem:Phipos_v2}: [Proof completed] (Lean: phiPosV2) (2026-08-12 22:22:46 PDT)
 
 ### Further preliminaries for the reduction / Windows and pairs
 
@@ -292,7 +292,7 @@ Lean file: Reduction/WindowsAndPairs.lean
 
 #### Theorems
 
-\label{lem:cpair}: [Statement completed] (Lean: existsUniversalPair) (2026-08-12 08:32:42 EDT)
+\label{lem:cpair}: [Proof completed] (Lean: existsUniversalPair) (2026-08-13 07:20:57 PDT)
 
 ### Further preliminaries for the reduction / A smoothing decomposition
 
@@ -304,9 +304,9 @@ Lean file: Reduction/SmoothingDecomposition.lean
 
 #### Theorems
 
-\label{lem:bumpbasic}: [Statement completed] (Lean: bumpBasic) (2026-08-12 08:32:42 EDT)
-\label{lem:chardecomp}: [Statement completed] (Lean: charDecomp) (2026-08-12 08:32:42 EDT)
-\label{lem:smoothingdecomp}: [Statement completed] (Lean: smoothingDecomp) (2026-08-12 08:32:42 EDT)
+\label{lem:bumpbasic}: [Proof completed] (Lean: bumpBasic) (2026-08-13 07:25:45 PDT)
+\label{lem:chardecomp}: [Proof completed] (Lean: charDecomp) (2026-08-13 08:02:56 PDT)
+\label{lem:smoothingdecomp}: [Proof completed] (Lean: smoothingDecomp) (2026-08-13 08:44:24 PDT)
 \label{lem:theta_decay}: [Statement completed] (Lean: thetaDecay) (2026-08-12 08:32:42 EDT)
 \label{constant theta decay}: [Statement completed] (Lean: constantThetaDecay) (2026-08-12 08:32:42 EDT)
 \label{lem:ft_phi3_eq}: [Statement completed] (Lean: fourierPhiThreeEq) (2026-08-12 08:32:42 EDT)
