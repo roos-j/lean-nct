@@ -1799,6 +1799,70 @@ theorem smoothingDecomp (b : windowBasedBumpFunctions) :
       hrearrange]
     exact eLpNorm_sub_le (hA.sub hIcc).aestronglyMeasurable hB.aestronglyMeasurable (by norm_num)
 
+private theorem aux_thetaDecay_phi0 (b : windowBasedBumpFunctions) (N : ℕ)
+    (hN_one : 1 ≤ N) (hN_three : N ≤ 3) (u : ℝ) :
+    |b.phi0 u| ≤ (2 : ℝ) ^ (N + 2) * C_uniPair * bracketBump u ^ N := by
+  let g : ℝ → ℂ := FourierTransform.fourier (fun x : ℝ => (b.phi0 x : ℂ))
+  have hwin : cnWindow C_uniPair N_uniPair b.phi0 := b.universalPair.1
+  have hgCont : ContDiff ℝ N g := by
+    let phiC : SchwartzMap ℝ ℂ :=
+      b.phi0.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
+    have hs : ContDiff ℝ N (FourierTransform.fourier phiC : ℝ → ℂ) :=
+      (FourierTransform.fourier phiC).smooth N
+    have hphiC : (phiC : ℝ → ℂ) = fun x : ℝ => (b.phi0 x : ℂ) := by
+      funext x
+      simp [phiC, SchwartzMap.postcompCLM_apply]
+    rw [SchwartzMap.fourier_coe, hphiC] at hs
+    exact hs
+  have hgsupp : tsupport g ⊆ Set.Icc (-1 : ℝ) 1 := by
+    dsimp [g]
+    exact closure_minimal hwin.2.2.1 isClosed_Icc
+  have hgcompact : HasCompactSupport g :=
+    isCompact_Icc.of_isClosed_subset isClosed_closure hgsupp
+  have hNwindow : N ≤ N_uniPair := by
+    simpa [N_uniPair] using hN_three
+  have hgprofile : ∀ k : ℕ, k ≤ N → ∀ xi : ℝ,
+      ‖iteratedDeriv k g xi‖ ≤ C_uniPair := by
+    intro k hk xi
+    by_cases hxi : xi ∈ Set.Icc (-1 : ℝ) 1
+    · exact hwin.2.2.2.2 xi hxi k (hk.trans hNwindow)
+    · have hderivSupp : Function.support (iteratedDeriv k g) ⊆ Set.Icc (-1 : ℝ) 1 :=
+        (subset_tsupport _).trans
+          ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset g k).trans
+            hgsupp)
+      have hzero : iteratedDeriv k g xi = 0 := by
+        apply Function.notMem_support.mp
+        intro hxiSupp
+        exact hxi (hderivSupp hxiSupp)
+      rw [hzero, norm_zero]
+      norm_num [C_uniPair]
+  have hphiCont : Continuous (fun x : ℝ => (b.phi0 x : ℂ)) :=
+    Complex.ofRealCLM.continuous.comp b.phi0.continuous
+  have hphiInt : Integrable (fun x : ℝ => (b.phi0 x : ℂ)) :=
+    b.phi0.integrable.ofReal
+  have hgInt : Integrable g :=
+    hgCont.continuous.integrable_of_hasCompactSupport hgcompact
+  have hinv : FourierTransformInv.fourierInv g = fun x : ℝ => (b.phi0 x : ℂ) := by
+    dsimp [g]
+    exact hphiCont.fourierInv_fourier_eq hphiInt hgInt
+  have hdecay :=
+    Codex.Preliminaries.BumpsAndEstimates.aux_fourierProfile_decay_pos N hN_one
+      g C_uniPair (by norm_num [C_uniPair]) hgCont hgsupp hgprofile u
+  rw [hinv, Complex.norm_real, Real.norm_eq_abs] at hdecay
+  exact hdecay
+
+private theorem aux_thetaDecay_bracket_half (u : ℝ) :
+    bracketBump (u / 2) ≤ 2 * bracketBump u := by
+  rw [bracketBump, bracketBump]
+  rw [show |u / 2| = |u| / 2 by
+    rw [abs_div]
+    norm_num]
+  rw [show (1 + |u| / 2)⁻¹ = 1 / (1 + |u| / 2) by field_simp,
+    show 2 * (1 + |u|)⁻¹ = 2 / (1 + |u|) by field_simp]
+  apply (div_le_div_iff₀ (by positivity : 0 < 1 + |u| / 2)
+    (by positivity : 0 < 1 + |u|)).2
+  nlinarith [abs_nonneg u]
+
 /--
 \begin{lemma}\label{lem:theta_decay}
 For $1\le N\le3$ and every $u\in\mathbb R$,
@@ -1810,7 +1874,72 @@ theorem thetaDecay (b : windowBasedBumpFunctions) (N : ℕ)
     (hN_one : 1 ≤ N) (hN_three : N ≤ 3) :
     ∀ u : ℝ, |windowBasedBumpFunctions.theta b u| ≤
       C_thetaDecay N * bracketBump u ^ N := by
-  sorry
+  intro u
+  have hphi := aux_thetaDecay_phi0 b N hN_one hN_three
+  have hphi_u := hphi u
+  have hphi_half := hphi (u / 2)
+  have hbracket := aux_thetaDecay_bracket_half u
+  have hBnonneg : 0 ≤ bracketBump u := by
+    rw [bracketBump]
+    positivity
+  have hhalfPow : bracketBump (u / 2) ^ N ≤
+      (2 : ℝ) ^ N * bracketBump u ^ N := by
+    calc
+      bracketBump (u / 2) ^ N ≤ (2 * bracketBump u) ^ N :=
+        pow_le_pow_left₀ (a := bracketBump (u / 2)) (b := 2 * bracketBump u)
+          (by rw [bracketBump]; positivity) hbracket N
+      _ = (2 : ℝ) ^ N * bracketBump u ^ N := by rw [mul_pow]
+  have hC : 0 ≤ C_uniPair := by norm_num [C_uniPair]
+  have hA : 0 ≤ (2 : ℝ) ^ (N + 2) * C_uniPair := by positivity
+  have hpowtwo : (2 : ℝ) ≤ 2 ^ N := by
+    calc
+      (2 : ℝ) = (2 : ℝ) ^ (1 : ℕ) := by norm_num
+      _ ≤ (2 : ℝ) ^ N :=
+        pow_le_pow_right₀ (a := (2 : ℝ)) (by norm_num) hN_one
+  have hcoeff : 1 + (2 : ℝ) ^ N / 2 ≤ (2 : ℝ) ^ N := by
+    nlinarith
+  have hfinalcoeff :
+      (2 : ℝ) ^ (N + 2) * C_uniPair *
+        (1 + (2 : ℝ) ^ N / 2) * bracketBump u ^ N ≤
+      C_thetaDecay N * bracketBump u ^ N := by
+    rw [C_thetaDecay]
+    have hBpow : 0 ≤ bracketBump u ^ N := pow_nonneg hBnonneg _
+    calc
+      (2 : ℝ) ^ (N + 2) * C_uniPair *
+          (1 + (2 : ℝ) ^ N / 2) * bracketBump u ^ N ≤
+        (2 : ℝ) ^ (N + 2) * C_uniPair * (2 : ℝ) ^ N *
+          bracketBump u ^ N := by
+          gcongr
+      _ = (2 : ℝ) ^ (2 * N + 2) * C_uniPair * bracketBump u ^ N := by
+        calc
+          (2 : ℝ) ^ (N + 2) * C_uniPair * (2 : ℝ) ^ N * bracketBump u ^ N =
+              ((2 : ℝ) ^ (N + 2) * (2 : ℝ) ^ N) * C_uniPair *
+                bracketBump u ^ N := by ring
+          _ = (2 : ℝ) ^ (2 * N + 2) * C_uniPair * bracketBump u ^ N := by
+            rw [← pow_add]
+            congr 3
+            omega
+  unfold windowBasedBumpFunctions.theta
+  unfold aux_realRescaled
+  have hinput : (2 : ℝ)⁻¹ * u = u / 2 := by ring
+  rw [hinput]
+  calc
+    |b.phi0 u - (2 : ℝ)⁻¹ * b.phi0 (u / 2)| ≤
+        |b.phi0 u| + |(2 : ℝ)⁻¹ * b.phi0 (u / 2)| := abs_sub _ _
+    _ = |b.phi0 u| + (1 / 2 : ℝ) * |b.phi0 (u / 2)| := by
+      rw [abs_mul, abs_inv]
+      norm_num
+    _ ≤ (2 : ℝ) ^ (N + 2) * C_uniPair * bracketBump u ^ N +
+        (1 / 2 : ℝ) * ((2 : ℝ) ^ (N + 2) * C_uniPair *
+          bracketBump (u / 2) ^ N) := by
+      gcongr
+    _ ≤ (2 : ℝ) ^ (N + 2) * C_uniPair * bracketBump u ^ N +
+        (1 / 2 : ℝ) * ((2 : ℝ) ^ (N + 2) * C_uniPair *
+          ((2 : ℝ) ^ N * bracketBump u ^ N)) := by
+      gcongr
+    _ = (2 : ℝ) ^ (N + 2) * C_uniPair *
+        (1 + (2 : ℝ) ^ N / 2) * bracketBump u ^ N := by ring
+    _ ≤ C_thetaDecay N * bracketBump u ^ N := hfinalcoeff
 
 /--
 \begin{lemma}[constant $C_{\ref{lem:theta_decay},N}$ \auto]
@@ -1820,7 +1949,17 @@ For $1\le N\le3$, $C_{\ref{lem:theta_decay},N}\le2^{2N+17}$.
 -/
 theorem constantThetaDecay (N : ℕ) (hN_one : 1 ≤ N) (hN_three : N ≤ 3) :
     C_thetaDecay N ≤ (2 : ℝ) ^ (2 * N + 17) := by
-  sorry
+  rw [C_thetaDecay, C_uniPair, ← pow_add]
+
+private theorem aux_smoothing_fourier_real_const_mul (c : ℝ) (f : ℝ → ℝ) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ => ((c * f x : ℝ) : ℂ)) xi =
+      (c : ℂ) * FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) xi := by
+  rw [Real.fourier_real_eq_integral_exp_smul,
+    Real.fourier_real_eq_integral_exp_smul, ← integral_const_mul]
+  apply integral_congr_ae
+  filter_upwards [] with x
+  push_cast
+  ring
 
 /--
 \begin{lemma}\label{lem:ft_phi3_eq}
@@ -1841,7 +1980,931 @@ theorem fourierPhiThreeEq (b : windowBasedBumpFunctions) (k : ℤ) (ξ : ℝ) :
           ((2 : ℝ) ^ (-k) * ξ) *
         FourierTransform.fourier
           (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ)) ξ := by
-  sorry
+  let I : ℝ → ℝ := aux_indicator (Set.Ico 0 1)
+  let K : ℝ → ℝ := fun x => b.phi0 x
+  let T : ℝ → ℝ := windowBasedBumpFunctions.theta b
+  let A : ℝ := (2 : ℝ) ^ k
+  let B : ℝ := (2 : ℝ) ^ (-k)
+  let G : ℝ → ℝ := fun x => aux_realConvolution I K x - K x
+  have hA : 0 < A := by dsimp [A]; positivity
+  have hB : 0 < B := by dsimp [B]; positivity
+  have hI : Integrable I := by
+    simpa [I] using aux_smoothing_indicator_Ico_integrable
+  have hK : Integrable K := by simpa [K] using b.phi0.integrable
+  have hT : Integrable T := by
+    change Integrable (fun x => b.phi0 x - aux_realRescaled 2 (fun y => b.phi0 y) x)
+    exact b.phi0.integrable.sub
+      (aux_bumpBasic_rescale_integrable b.phi0 2 (by norm_num))
+  have hBT : Integrable (aux_realRescaled A T) := by
+    unfold aux_realRescaled
+    convert (hT.comp_mul_left' (inv_ne_zero hA.ne')).const_mul A⁻¹ using 1
+  have hIK : Integrable (aux_realConvolution I K) :=
+    hI.integrable_convolution (ContinuousLinearMap.mul ℝ ℝ) hK
+  have hG : Integrable G := hIK.sub hK
+  have hscale : A * (B * ξ) = ξ := by
+    dsimp [A, B]
+    rw [← mul_assoc, ← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+    norm_num
+  change FourierTransform.fourier (fun x : ℝ =>
+      ((A * aux_realRescaled B (aux_realConvolution G (aux_realRescaled A T)) x : ℝ) : ℂ)) ξ = _
+  rw [aux_smoothing_fourier_real_const_mul A _ ξ,
+    aux_bumpBasic_rescale_fourier B hB]
+  rw [show (fun x : ℝ => (aux_realConvolution G (aux_realRescaled A T) x : ℂ)) =
+      ((fun x : ℝ => (G x : ℂ)) ⋆[ContinuousLinearMap.mul ℂ ℂ]
+        (fun x : ℝ => (aux_realRescaled A T x : ℂ))) by
+        funext x
+        exact aux_smoothing_realConvolution_complex G (aux_realRescaled A T) x,
+    Real.fourier_mul_convolution_eq (R := ℂ)
+      (f₁ := fun x : ℝ => (G x : ℂ))
+      (f₂ := fun x : ℝ => (aux_realRescaled A T x : ℂ)) hG.ofReal hBT.ofReal,
+    aux_bumpBasic_rescale_fourier A hA]
+  rw [hscale]
+  have hGform : FourierTransform.fourier (fun x : ℝ => (G x : ℂ)) (B * ξ) =
+      (FourierTransform.fourier (fun x : ℝ => (I x : ℂ)) (B * ξ) - 1) *
+        FourierTransform.fourier (fun x : ℝ => (K x : ℂ)) (B * ξ) := by
+    rw [show (fun x : ℝ => (G x : ℂ)) =
+      fun x : ℝ => ((aux_realConvolution I K x - K x : ℝ) : ℂ) by rfl,
+      aux_bumpBasic_fourier_sub_of_integrable _ _ hIK hK]
+    rw [show (fun x : ℝ => (aux_realConvolution I K x : ℂ)) =
+      ((fun x : ℝ => (I x : ℂ)) ⋆[ContinuousLinearMap.mul ℂ ℂ]
+        (fun x : ℝ => (K x : ℂ))) by
+          funext x
+          exact aux_smoothing_realConvolution_complex I K x,
+      Real.fourier_mul_convolution_eq (R := ℂ)
+        (f₁ := fun x : ℝ => (I x : ℂ)) (f₂ := fun x : ℝ => (K x : ℂ))
+        hI.ofReal hK.ofReal]
+    ring
+  rw [hGform]
+  simp only [I, K, T, A, B]
+  ring
+
+/-! ### Fourier derivative bounds for \(\varphi_{3,k}\) -/
+
+namespace aux_phiThree
+
+private def icoC : ℝ → ℂ := fun x => (aux_indicator (Set.Ico 0 1) x : ℂ)
+
+private theorem icoC_measurable : Measurable icoC := by
+  rw [show icoC = Set.indicator (Set.Ico (0 : ℝ) 1) (fun _ : ℝ => (1 : ℂ)) by
+    funext x
+    by_cases hx : x ∈ Set.Ico (0 : ℝ) 1 <;>
+      simp [icoC, aux_indicator, hx]]
+  exact measurable_const.indicator measurableSet_Ico
+
+private theorem icoC_moment_integrable (q : ℕ) :
+    Integrable (fun x : ℝ => x ^ q • icoC x) := by
+  rw [show (fun x : ℝ => x ^ q • icoC x) =
+      Set.indicator (Set.Ico (0 : ℝ) 1) (fun x => x ^ q • (1 : ℂ)) by
+        funext x
+        by_cases hx : x ∈ Set.Ico (0 : ℝ) 1 <;>
+          simp [icoC, aux_indicator, hx]
+    , MeasureTheory.integrable_indicator_iff measurableSet_Ico]
+  exact ((continuous_id.pow q).smul continuous_const).integrableOn_Icc.mono_set
+    Ico_subset_Icc_self
+
+private theorem icoC_moment (q : ℕ) :
+    ∫ x : ℝ, |x| ^ q * ‖icoC x‖ = 1 / (q + 1 : ℝ) := by
+  rw [show (fun x : ℝ => |x| ^ q * ‖icoC x‖) =
+      Set.indicator (Set.Ico (0 : ℝ) 1) (fun x => |x| ^ q) by
+        funext x
+        by_cases hx : x ∈ Set.Ico (0 : ℝ) 1 <;>
+          simp [icoC, aux_indicator, hx]
+    , MeasureTheory.integral_indicator measurableSet_Ico]
+  rw [← MeasureTheory.integral_Icc_eq_integral_Ico]
+  rw [MeasureTheory.integral_Icc_eq_integral_Ioc]
+  rw [← intervalIntegral.integral_of_le (by norm_num : (0 : ℝ) ≤ 1)]
+  calc
+    ∫ x : ℝ in (0 : ℝ)..1, |x| ^ q = ∫ x : ℝ in (0 : ℝ)..1, x ^ q := by
+      apply intervalIntegral.integral_congr
+      intro x hx
+      have hx' : x ∈ Set.Icc (0 : ℝ) 1 := by
+        simpa only [Set.uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1)] using hx
+      change |x| ^ q = x ^ q
+      rw [abs_of_nonneg hx'.1]
+    _ = 1 / (q + 1 : ℝ) := by
+      rw [integral_pow]
+      norm_num
+
+private theorem icoC_fourier_deriv_bound (q : ℕ) (x : ℝ) :
+    ‖iteratedDeriv q (FourierTransform.fourier icoC) x‖ ≤
+      (2 * Real.pi) ^ q / (q + 1 : ℝ) := by
+  apply (Codex.Preliminaries.BumpsAndEstimates.aux_norm_iteratedDeriv_fourier_le_moment
+    icoC q ?_ ?_ x).trans_eq ?_
+  · exact icoC_measurable.aestronglyMeasurable
+  · intro j hj
+    simpa only [norm_smul, Real.norm_eq_abs, abs_pow] using
+      (icoC_moment_integrable j).norm
+  · rw [icoC_moment]
+    ring
+
+private theorem icoC_fourier_contDiff (q : ℕ) :
+    ContDiff ℝ q (FourierTransform.fourier icoC) := by
+  apply Real.contDiff_fourier (N := q)
+  intro j hj
+  simpa only [Real.norm_eq_abs] using
+    (show Integrable (fun x : ℝ => |x| ^ j * ‖icoC x‖) from
+      (by simpa only [norm_smul, Real.norm_eq_abs, abs_pow] using
+        (icoC_moment_integrable j).norm))
+
+private theorem icoC_fourier_zero : FourierTransform.fourier icoC 0 = 1 := by
+  rw [Real.fourier_real_eq]
+  have hphasezero : (𝐞 (0 : ℝ) : Circle) = 1 := by
+    apply Subtype.ext
+    rw [Real.fourierChar_apply]
+    simp
+  simp only [mul_zero, neg_zero, hphasezero, one_smul]
+  rw [show icoC = Set.indicator (Set.Ico (0 : ℝ) 1) (fun _ : ℝ => (1 : ℂ)) by
+    funext x
+    by_cases hx : x ∈ Set.Ico (0 : ℝ) 1 <;>
+      simp [icoC, aux_indicator, hx],
+    MeasureTheory.integral_indicator measurableSet_Ico,
+    MeasureTheory.setIntegral_const]
+  norm_num [Real.volume_Ico]
+
+def factorA (k : ℤ) : ℝ → ℂ := fun x =>
+  (↑((2 : ℝ) ^ k) : ℂ) *
+    (FourierTransform.fourier icoC ((2 : ℝ) ^ (-k) * x) - 1)
+
+theorem factorA_contDiff (k : ℤ) (q : ℕ) :
+    ContDiff ℝ q (factorA k) := by
+  unfold factorA
+  apply contDiff_const.mul
+  apply ((icoC_fourier_contDiff q).comp (by fun_prop)).sub contDiff_const
+
+private theorem factorA_zero (k : ℤ) : factorA k 0 = 0 := by
+  simp [factorA, icoC_fourier_zero]
+
+private theorem iteratedDeriv_factorA_eq (k : ℤ) (q : ℕ) (hq : q ≠ 0) (x : ℝ) :
+    iteratedDeriv q (factorA k) x =
+      (↑((2 : ℝ) ^ k) : ℂ) *
+        ((2 : ℝ) ^ (-k)) ^ q •
+          iteratedDeriv q (FourierTransform.fourier icoC)
+            ((2 : ℝ) ^ (-k) * x) := by
+  let F : ℝ → ℂ := FourierTransform.fourier icoC
+  let s : ℝ := (2 : ℝ) ^ (-k)
+  let a : ℂ := (↑((2 : ℝ) ^ k) : ℂ)
+  have hF : ContDiff ℝ q F := icoC_fourier_contDiff q
+  have hlin : ContDiff ℝ q (fun x : ℝ => s * x) := by fun_prop
+  have hcomp : ContDiff ℝ q (fun x : ℝ => F (s * x)) := hF.comp hlin
+  have hsub : ContDiffAt ℝ q (fun x : ℝ => F (s * x) - 1) x :=
+    (hcomp.sub contDiff_const).contDiffAt
+  change iteratedDeriv q (fun x : ℝ => a * (F (s * x) - 1)) x = _
+  rw [iteratedDeriv_const_mul a hsub]
+  change a * iteratedDeriv q ((fun x : ℝ => F (s * x)) - fun _ : ℝ => (1 : ℂ)) x = _
+  rw [iteratedDeriv_sub hcomp.contDiffAt contDiff_const.contDiffAt,
+    iteratedDeriv_const]
+  simp only [hq, ↓reduceIte, sub_zero]
+  rw [show iteratedDeriv q (fun x : ℝ => F (s * x)) x =
+      s ^ q • iteratedDeriv q F (s * x) by
+        exact congrFun (iteratedDeriv_comp_const_smul hF s) x]
+
+private theorem norm_iteratedDeriv_factorA_le (k : ℤ) (q : ℕ) (hq : q ≠ 0) (x : ℝ) :
+    ‖iteratedDeriv q (factorA k) x‖ ≤
+      (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ q *
+        ((2 * Real.pi) ^ q / (q + 1 : ℝ)) := by
+  have hk : 0 < (2 : ℝ) ^ k := zpow_pos (by norm_num) _
+  have hmk : 0 < (2 : ℝ) ^ (-k) := zpow_pos (by norm_num) _
+  have hnormk : ‖(↑((2 : ℝ) ^ k) : ℂ)‖ = (2 : ℝ) ^ k := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos hk]
+  have hnorms : ‖((2 : ℝ) ^ (-k)) ^ q‖ = ((2 : ℝ) ^ (-k)) ^ q := by
+    rw [norm_pow, Real.norm_eq_abs, abs_of_pos hmk]
+  calc
+    ‖iteratedDeriv q (factorA k) x‖ =
+        (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ q *
+          ‖iteratedDeriv q (FourierTransform.fourier icoC) ((2 : ℝ) ^ (-k) * x)‖ := by
+      rw [iteratedDeriv_factorA_eq k q hq x, norm_mul, norm_smul, hnormk, hnorms]
+      ring
+    _ ≤ (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ q *
+          ((2 * Real.pi) ^ q / (q + 1 : ℝ)) := by
+      gcongr
+      exact icoC_fourier_deriv_bound q _
+
+private theorem factorA_scale_one (k : ℤ) :
+    (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (1 : ℕ) = 1 := by
+  rw [pow_one, ← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+  norm_num
+
+private theorem factorA_scale_two (k : ℤ) :
+    (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (2 : ℕ) = (2 : ℝ) ^ (-k) := by
+  rw [← zpow_natCast, ← zpow_mul, ← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+  congr 1
+  ring
+
+private theorem factorA_scale_three (k : ℤ) :
+    (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (3 : ℕ) = (2 : ℝ) ^ (-2 * k) := by
+  rw [← zpow_natCast, ← zpow_mul, ← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+  congr 1
+  ring
+
+private theorem factorA_scale_two_le (k : ℤ) (hk : (-2 : ℤ) ≤ k) :
+    (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (2 : ℕ) ≤ 4 := by
+  rw [factorA_scale_two]
+  calc
+    (2 : ℝ) ^ (-k) ≤ (2 : ℝ) ^ (2 : ℤ) := by
+      apply zpow_le_zpow_right₀ (by norm_num)
+      omega
+    _ = 4 := by norm_num
+
+private theorem factorA_scale_three_le (k : ℤ) (hk : (-2 : ℤ) ≤ k) :
+    (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (3 : ℕ) ≤ 16 := by
+  rw [factorA_scale_three]
+  calc
+    (2 : ℝ) ^ (-2 * k) ≤ (2 : ℝ) ^ (4 : ℤ) := by
+      apply zpow_le_zpow_right₀ (by norm_num)
+      omega
+    _ = 16 := by norm_num
+
+theorem factorA_deriv_one_le (k : ℤ) (x : ℝ) :
+    ‖iteratedDeriv 1 (factorA k) x‖ ≤ 4 := by
+  calc
+    ‖iteratedDeriv 1 (factorA k) x‖ ≤
+        (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (1 : ℕ) *
+          ((2 * Real.pi) ^ (1 : ℕ) / ((1 : ℕ) + 1 : ℝ)) := by
+      simpa only using norm_iteratedDeriv_factorA_le k 1 (by norm_num) x
+    _ = Real.pi := by rw [factorA_scale_one]; ring
+    _ ≤ 4 := Real.pi_le_four
+
+theorem factorA_deriv_two_le (k : ℤ) (hk : (-2 : ℤ) ≤ k) (x : ℝ) :
+    ‖iteratedDeriv 2 (factorA k) x‖ ≤ 86 := by
+  have hpi : 2 * Real.pi ≤ 8 := by nlinarith [Real.pi_le_four]
+  have hpi2 : (2 * Real.pi) ^ (2 : ℕ) ≤ 64 := by
+    calc
+      (2 * Real.pi) ^ (2 : ℕ) ≤ (8 : ℝ) ^ (2 : ℕ) :=
+        pow_le_pow_left₀ (by positivity) hpi 2
+      _ = 64 := by norm_num
+  calc
+    ‖iteratedDeriv 2 (factorA k) x‖ ≤
+        (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (2 : ℕ) *
+          ((2 * Real.pi) ^ (2 : ℕ) / ((2 : ℕ) + 1 : ℝ)) := by
+      simpa only using norm_iteratedDeriv_factorA_le k 2 (by norm_num) x
+    _ = (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (2 : ℕ) *
+          ((2 * Real.pi) ^ (2 : ℕ) / 3) := by norm_num
+    _ ≤ 4 * ((2 * Real.pi) ^ (2 : ℕ) / 3) := by
+      apply mul_le_mul_of_nonneg_right (factorA_scale_two_le k hk)
+      positivity
+    _ ≤ 4 * (64 / 3) := by
+      apply mul_le_mul_of_nonneg_left
+      · exact div_le_div_of_nonneg_right hpi2 (by norm_num)
+      · norm_num
+    _ = 4 * 64 / 3 := by ring
+    _ ≤ 86 := by norm_num
+
+theorem factorA_deriv_three_le (k : ℤ) (hk : (-2 : ℤ) ≤ k) (x : ℝ) :
+    ‖iteratedDeriv 3 (factorA k) x‖ ≤ 2048 := by
+  have hpi : 2 * Real.pi ≤ 8 := by nlinarith [Real.pi_le_four]
+  have hpi3 : (2 * Real.pi) ^ (3 : ℕ) ≤ 512 := by
+    calc
+      (2 * Real.pi) ^ (3 : ℕ) ≤ (8 : ℝ) ^ (3 : ℕ) :=
+        pow_le_pow_left₀ (by positivity) hpi 3
+      _ = 512 := by norm_num
+  calc
+    ‖iteratedDeriv 3 (factorA k) x‖ ≤
+        (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (3 : ℕ) *
+          ((2 * Real.pi) ^ (3 : ℕ) / ((3 : ℕ) + 1 : ℝ)) := by
+      simpa only using norm_iteratedDeriv_factorA_le k 3 (by norm_num) x
+    _ = (2 : ℝ) ^ k * ((2 : ℝ) ^ (-k)) ^ (3 : ℕ) *
+          ((2 * Real.pi) ^ (3 : ℕ) / 4) := by norm_num
+    _ ≤ 16 * ((2 * Real.pi) ^ (3 : ℕ) / 4) := by
+      apply mul_le_mul_of_nonneg_right (factorA_scale_three_le k hk)
+      positivity
+    _ ≤ 16 * (512 / 4) := by
+      apply mul_le_mul_of_nonneg_left
+      · exact div_le_div_of_nonneg_right hpi3 (by norm_num)
+      · norm_num
+    _ = 16 * 512 / 4 := by ring
+    _ = 2048 := by norm_num
+
+theorem factorA_deriv_zero_le (k : ℤ) (x : ℝ) (hx : |x| ≤ 1) :
+    ‖iteratedDeriv 0 (factorA k) x‖ ≤ 4 := by
+  rw [iteratedDeriv_zero]
+  have hdiff : ∀ y ∈ (Set.univ : Set ℝ), DifferentiableAt ℝ (factorA k) y := by
+    intro y hy
+    exact (factorA_contDiff k 1).differentiable (by norm_num) |>.differentiableAt
+  have hderiv : ∀ y ∈ (Set.univ : Set ℝ), ‖deriv (factorA k) y‖ ≤ 4 := by
+    intro y hy
+    simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using factorA_deriv_one_le k y
+  have hmv := (convex_univ : Convex ℝ (Set.univ : Set ℝ)).norm_image_sub_le_of_norm_deriv_le
+    hdiff hderiv (by simp) (by simp) (x := (0 : ℝ)) (y := x)
+  calc
+    ‖factorA k x‖ = ‖factorA k x - factorA k 0‖ := by rw [factorA_zero]; simp
+    _ ≤ 4 * ‖x - 0‖ := hmv
+    _ = 4 * |x| := by rw [sub_zero, Real.norm_eq_abs]
+    _ ≤ 4 * 1 := mul_le_mul_of_nonneg_left hx (by norm_num)
+    _ = 4 := by norm_num
+
+
+end aux_phiThree
+
+namespace aux_phiThreeBC
+
+open MeasureTheory Filter Set
+open scoped BigOperators FourierTransform Real ENNReal
+open Codex.Reduction.WindowsAndPairs
+open Codex.Reduction.SmoothingDecomposition
+
+noncomputable section
+
+def F (b : windowBasedBumpFunctions) : ℝ → ℂ :=
+  FourierTransform.fourier (fun x : ℝ => (b.phi0 x : ℂ))
+
+private theorem F_contDiff (b : windowBasedBumpFunctions) : ContDiff ℝ 3 (F b) := by
+  let phiC : SchwartzMap ℝ ℂ :=
+    b.phi0.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
+  have hs : ContDiff ℝ 3 (FourierTransform.fourier phiC : ℝ → ℂ) :=
+    (FourierTransform.fourier phiC).smooth 3
+  have hphiC : (phiC : ℝ → ℂ) = fun x : ℝ => (b.phi0 x : ℂ) := by
+    funext x
+    simp [phiC, SchwartzMap.postcompCLM_apply]
+  rw [SchwartzMap.fourier_coe, hphiC] at hs
+  exact hs
+
+private theorem F_deriv_bound (b : windowBasedBumpFunctions) (m : ℕ)
+    (hm : m ≤ 3) (x : ℝ) : ‖iteratedDeriv m (F b) x‖ ≤ C_uniPair := by
+  have hwin : cnWindow C_uniPair N_uniPair b.phi0 := b.universalPair.1
+  have hFsupp : Function.support (F b) ⊆ Set.Icc (-1 : ℝ) 1 := hwin.2.2.1
+  have hFtsupp : tsupport (F b) ⊆ Set.Icc (-1 : ℝ) 1 :=
+    closure_minimal hFsupp isClosed_Icc
+  by_cases hx : x ∈ Set.Icc (-1 : ℝ) 1
+  · exact hwin.2.2.2.2 x hx m (by simpa [N_uniPair] using hm)
+  · have hderivSupp : Function.support (iteratedDeriv m (F b)) ⊆ Set.Icc (-1 : ℝ) 1 :=
+      (subset_tsupport _).trans
+        ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset (F b) m).trans
+          hFtsupp)
+    have hzero : iteratedDeriv m (F b) x = 0 := by
+      apply Function.notMem_support.mp
+      intro hsupp
+      exact hx (hderivSupp hsupp)
+    rw [hzero, norm_zero]
+    norm_num [C_uniPair]
+
+def B (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℂ :=
+  fun x => F b ((2 : ℝ) ^ (-k) * x)
+
+theorem B_contDiff (b : windowBasedBumpFunctions) (k : ℤ) :
+    ContDiff ℝ 3 (B b k) := by
+  exact (F_contDiff b).comp (contDiff_const.mul contDiff_id)
+
+theorem B_zero_bound (b : windowBasedBumpFunctions) (k : ℤ) (x : ℝ) :
+    ‖iteratedDeriv 0 (B b k) x‖ ≤ 1 := by
+  have hwin : cnWindow C_uniPair N_uniPair b.phi0 := b.universalPair.1
+  rcases hwin.2.1 ((2 : ℝ) ^ (-k) * x) with ⟨r, hr, hEq⟩
+  rw [iteratedDeriv_zero, show B b k x = r by exact hEq]
+  rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hr.1]
+  exact hr.2
+
+theorem B_deriv_bound (b : windowBasedBumpFunctions) (m : ℕ)
+    (hm : m ≤ 3) (k : ℤ) (hk : -2 ≤ k) (x : ℝ) :
+    ‖iteratedDeriv m (B b k) x‖ ≤ (4 : ℝ) ^ m * C_uniPair := by
+  have hF : ContDiff ℝ m (F b) :=
+    (F_contDiff b).of_le (show (m : WithTop ℕ∞) ≤ 3 by exact_mod_cast hm)
+  rw [show B b k = fun x => F b ((2 : ℝ) ^ (-k) * x) by rfl,
+    congrFun (iteratedDeriv_comp_const_smul hF ((2 : ℝ) ^ (-k))) x,
+    norm_smul, Real.norm_eq_abs,
+    abs_of_nonneg (pow_nonneg (zpow_nonneg (by norm_num) _) _)]
+  have hscale : (2 : ℝ) ^ (-k) ≤ 4 := by
+    have hneg : -k ≤ 2 := by omega
+    calc
+      (2 : ℝ) ^ (-k) ≤ (2 : ℝ) ^ (2 : ℤ) :=
+        zpow_le_zpow_right₀ (by norm_num) hneg
+      _ = 4 := by norm_num
+  have hpow : ((2 : ℝ) ^ (-k)) ^ m ≤ (4 : ℝ) ^ m :=
+    pow_le_pow_left₀ (zpow_nonneg (by norm_num) _) hscale m
+  have hderiv := F_deriv_bound b m hm ((2 : ℝ) ^ (-k) * x)
+  calc
+    ((2 : ℝ) ^ (-k)) ^ m *
+        ‖iteratedDeriv m (F b) ((2 : ℝ) ^ (-k) * x)‖ ≤
+        (4 : ℝ) ^ m * C_uniPair := by
+          calc
+            ((2 : ℝ) ^ (-k)) ^ m *
+                ‖iteratedDeriv m (F b) ((2 : ℝ) ^ (-k) * x)‖ ≤
+                (4 : ℝ) ^ m *
+                  ‖iteratedDeriv m (F b) ((2 : ℝ) ^ (-k) * x)‖ :=
+              mul_le_mul_of_nonneg_right hpow (norm_nonneg _)
+            _ ≤ (4 : ℝ) ^ m * C_uniPair :=
+              mul_le_mul_of_nonneg_left hderiv (pow_nonneg (by norm_num) _)
+
+private theorem rescale_integrable (f : SchwartzMap ℝ ℝ) (t : ℝ)
+    (ht : 0 < t) :
+    Integrable (aux_realRescaled t (fun x ↦ f x)) := by
+  unfold aux_realRescaled
+  convert (f.integrable.comp_mul_left' (inv_ne_zero ht.ne')).const_mul t⁻¹ using 1
+
+private theorem fourier_sub (f g : ℝ → ℝ) (hf : Integrable f) (hg : Integrable g) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ ↦ ((f x - g x : ℝ) : ℂ)) xi =
+      FourierTransform.fourier (fun x : ℝ ↦ (f x : ℂ)) xi -
+        FourierTransform.fourier (fun x : ℝ ↦ (g x : ℂ)) xi := by
+  let e : ℝ → ℂ := fun x ↦ Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I)
+  have he : Continuous e := by dsimp [e]; fun_prop
+  have he_bound : ∀ x, ‖e x‖ ≤ (1 : ℝ) := by
+    intro x
+    rw [show e x = Complex.exp (((-2 * Real.pi * x * xi : ℝ) : ℂ) * Complex.I) by rfl,
+      Complex.norm_exp]
+    norm_num
+  have hf' : Integrable (fun x : ℝ ↦ e x * (f x : ℂ)) :=
+    hf.ofReal.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)
+  have hg' : Integrable (fun x : ℝ ↦ e x * (g x : ℂ)) :=
+    hg.ofReal.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)
+  rw [Real.fourier_real_eq_integral_exp_smul,
+    Real.fourier_real_eq_integral_exp_smul,
+    Real.fourier_real_eq_integral_exp_smul]
+  change (∫ x : ℝ, e x * ((f x - g x : ℝ) : ℂ)) = _
+  calc
+    (∫ x : ℝ, e x * ((f x - g x : ℝ) : ℂ)) =
+      ∫ x : ℝ, (e x * (f x : ℂ) - e x * (g x : ℂ)) := by
+        apply integral_congr_ae
+        filter_upwards [] with x
+        push_cast
+        ring
+    _ = (∫ x : ℝ, e x * (f x : ℂ)) - ∫ x : ℝ, e x * (g x : ℂ) :=
+      integral_sub hf' hg'
+    _ = _ := by rfl
+
+private theorem rescale_fourier (t : ℝ) (ht : 0 < t)
+    (f : ℝ → ℝ) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ => (aux_realRescaled t f x : ℂ)) xi =
+      FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) (t * xi) := by
+  rw [Real.fourier_real_eq_integral_exp_smul,
+    Real.fourier_real_eq_integral_exp_smul]
+  let g : ℝ → ℂ := fun q => (f q : ℂ) *
+    Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * (q : ℂ) * ((t * xi : ℝ) : ℂ)))
+  calc
+    (∫ x : ℝ, Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I) •
+        (aux_realRescaled t f x : ℂ)) = ∫ x : ℝ, (t⁻¹ : ℂ) * g (t⁻¹ * x) := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      dsimp [g, aux_realRescaled]
+      have hphase : Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I) =
+          Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * ((t⁻¹ * x : ℝ) : ℂ) *
+            ((t * xi : ℝ) : ℂ))) := by
+        congr 1
+        push_cast
+        field_simp [ne_of_gt ht]
+      rw [hphase]
+      push_cast
+      ring
+    _ = (t⁻¹ : ℂ) * ∫ x : ℝ, g (t⁻¹ * x) := by rw [integral_const_mul]
+    _ = (t⁻¹ : ℂ) * (|t| • ∫ y : ℝ, g y) := by
+      rw [Measure.integral_comp_inv_mul_left]
+    _ = ∫ y : ℝ, g y := by
+      rw [abs_of_pos ht]
+      field_simp [ne_of_gt ht]
+      rw [Complex.real_smul]
+    _ = ∫ x : ℝ, Complex.exp (↑(-2 * Real.pi * x * (t * xi)) * Complex.I) •
+        (f x : ℂ) := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      dsimp [g]
+      push_cast
+      ring
+
+private theorem theta_formula (b : windowBasedBumpFunctions) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ)) xi =
+      F b xi - F b (2 * xi) := by
+  rw [show (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ)) =
+      (fun x : ℝ ↦ (((fun y ↦ b.phi0 y) x -
+        aux_realRescaled 2 (fun y ↦ b.phi0 y) x : ℝ) : ℂ)) by rfl,
+    fourier_sub _ _ b.phi0.integrable (rescale_integrable b.phi0 2 (by norm_num)),
+    rescale_fourier 2 (by norm_num)]
+  rfl
+
+def C (b : windowBasedBumpFunctions) : ℝ → ℂ :=
+  FourierTransform.fourier (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ))
+
+private theorem C_eq (b : windowBasedBumpFunctions) : C b = fun x => F b x - F b (2*x) := by
+  funext x
+  exact theta_formula b x
+
+theorem C_contDiff (b : windowBasedBumpFunctions) : ContDiff ℝ 3 (C b) := by
+  rw [C_eq]
+  exact (F_contDiff b).sub ((F_contDiff b).comp (contDiff_const.mul contDiff_id))
+
+theorem C_zero_bound (b : windowBasedBumpFunctions) (x : ℝ) :
+    ‖iteratedDeriv 0 (C b) x‖ ≤ 1 := by
+  have hwin : cnWindow C_uniPair N_uniPair b.phi0 := b.universalPair.1
+  rw [iteratedDeriv_zero, C_eq]
+  change ‖F b x - F b (2*x)‖ ≤ 1
+  change ‖FourierTransform.fourier (fun x : ℝ => (b.phi0 x : ℂ)) x -
+      FourierTransform.fourier (fun x : ℝ => (b.phi0 x : ℂ)) (2*x)‖ ≤ 1
+  rcases hwin.2.1 x with ⟨r, hr, hF⟩
+  rcases hwin.2.1 (2*x) with ⟨s, hs, hFs⟩
+  rw [hF, hFs]
+  have : ‖(r - s : ℝ)‖ ≤ 1 := by
+    rw [Real.norm_eq_abs]
+    exact abs_sub_le_iff.mpr ⟨by linarith [hr.2, hs.1], by linarith [hs.2, hr.1]⟩
+  have hcast : (r : ℂ) - (s : ℂ) = ((r - s : ℝ) : ℂ) := by push_cast; ring
+  rw [hcast, Complex.norm_real]
+  exact this
+
+theorem C_deriv_bound (b : windowBasedBumpFunctions) (m : ℕ)
+    (hm : m ≤ 3) (x : ℝ) :
+    ‖iteratedDeriv m (C b) x‖ ≤ (1 + (2:ℝ)^m) * C_uniPair := by
+  rw [C_eq]
+  change ‖iteratedDeriv m ((F b) - (fun x : ℝ => F b (2*x))) x‖ ≤ _
+  have hF : ContDiff ℝ m (F b) :=
+    (F_contDiff b).of_le (show (m : WithTop ℕ∞) ≤ 3 by exact_mod_cast hm)
+  have hcomp : ContDiff ℝ m (fun x : ℝ => F b (2*x)) :=
+    hF.comp (contDiff_const.mul contDiff_id)
+  rw [iteratedDeriv_sub hF.contDiffAt hcomp.contDiffAt,
+    congrFun (iteratedDeriv_comp_const_smul hF 2) x]
+  have h1 := F_deriv_bound b m hm x
+  have h2 := F_deriv_bound b m hm (2*x)
+  calc
+    ‖iteratedDeriv m (F b) x - (2:ℝ) ^ m • iteratedDeriv m (F b) (2 * x)‖ ≤
+        ‖iteratedDeriv m (F b) x‖ + ‖(2:ℝ) ^ m • iteratedDeriv m (F b) (2 * x)‖ :=
+      norm_sub_le _ _
+    _ = ‖iteratedDeriv m (F b) x‖ + (2:ℝ)^m * ‖iteratedDeriv m (F b) (2 * x)‖ := by
+      rw [norm_smul, Real.norm_eq_abs,
+        abs_of_nonneg (pow_nonneg (by norm_num) _)]
+    _ ≤
+        C_uniPair + (2:ℝ)^m * C_uniPair := by gcongr
+    _ = (1 + (2:ℝ)^m) * C_uniPair := by ring
+
+end
+end aux_phiThreeBC
+
+namespace aux_phiThreeProduct
+
+open MeasureTheory Filter Set
+open scoped BigOperators FourierTransform Real ENNReal
+open Codex.Reduction.WindowsAndPairs
+
+noncomputable section
+
+
+def D (c : ℝ) : ℕ → ℝ
+  | 0 => 4
+  | 1 => 28 * c + 4
+  | 2 => 96 * c ^ 2 + 140 * c + 86
+  | 3 => 69 * (2 : ℝ) ^ 4 * c ^ 2 + 47 * 2 * 5 ^ 2 * c + 2 ^ 11
+  | _ + 4 => 0
+
+private theorem pair_profile_bounds (c : ℝ) (A B : ℝ → ℂ)
+    (hA : ContDiff ℝ 3 A) (hB : ContDiff ℝ 3 B) (x : ℝ)
+    (hA0 : ‖iteratedDeriv 0 A x‖ ≤ 4)
+    (hA1 : ‖iteratedDeriv 1 A x‖ ≤ 4)
+    (hA2 : ‖iteratedDeriv 2 A x‖ ≤ 86)
+    (hA3 : ‖iteratedDeriv 3 A x‖ ≤ 2048)
+    (hB0 : ‖iteratedDeriv 0 B x‖ ≤ 1)
+    (hB1 : ‖iteratedDeriv 1 B x‖ ≤ 4*c)
+    (hB2 : ‖iteratedDeriv 2 B x‖ ≤ 16*c)
+    (hB3 : ‖iteratedDeriv 3 B x‖ ≤ 64*c) :
+    ‖iteratedDeriv 0 (A * B) x‖ ≤ 4 ∧
+      ‖iteratedDeriv 1 (A * B) x‖ ≤ 4 + 16*c ∧
+      ‖iteratedDeriv 2 (A * B) x‖ ≤ 96*c + 86 ∧
+      ‖iteratedDeriv 3 (A * B) x‖ ≤ 1480*c + 2048 := by
+  have hAat : DifferentiableAt ℝ A x :=
+    (hA.differentiable (by norm_num)).differentiableAt
+  have hBat : DifferentiableAt ℝ B x :=
+    (hB.differentiable (by norm_num)).differentiableAt
+  have hA2at : ContDiffAt ℝ 2 A x :=
+    (hA.of_le (show (2 : WithTop ℕ∞) ≤ 3 by norm_num)).contDiffAt
+  have hB2at : ContDiffAt ℝ 2 B x :=
+    (hB.of_le (show (2 : WithTop ℕ∞) ≤ 3 by norm_num)).contDiffAt
+  have hA3at : ContDiffAt ℝ 3 A x := hA.contDiffAt
+  have hB3at : ContDiffAt ℝ 3 B x := hB.contDiffAt
+  have hA0' : ‖A x‖ ≤ 4 := by simpa only [iteratedDeriv_zero] using hA0
+  have hA1' : ‖deriv A x‖ ≤ 4 := by
+    simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hA1
+  have hB0' : ‖B x‖ ≤ 1 := by simpa only [iteratedDeriv_zero] using hB0
+  have hB1' : ‖deriv B x‖ ≤ 4*c := by
+    simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hB1
+  constructor
+  · change ‖A x * B x‖ ≤ 4
+    rw [norm_mul]
+    calc
+      ‖A x‖ * ‖B x‖ ≤ 4 * 1 := by gcongr
+      _ = 4 := by ring
+  constructor
+  · rw [iteratedDeriv_succ, iteratedDeriv_zero, deriv_mul hAat hBat]
+    calc
+      ‖deriv A x * B x + A x * deriv B x‖ ≤
+          ‖deriv A x * B x‖ + ‖A x * deriv B x‖ := norm_add_le _ _
+      _ = ‖deriv A x‖ * ‖B x‖ + ‖A x‖ * ‖deriv B x‖ := by rw [norm_mul, norm_mul]
+      _ ≤ 4 * 1 + 4 * (4*c) := by gcongr
+      _ = 4 + 16*c := by ring
+  constructor
+  · rw [iteratedDeriv_mul hA2at hB2at]
+    norm_num [Finset.sum_range_succ]
+    calc
+      ‖A x * iteratedDeriv 2 B x + 2 * deriv A x * deriv B x +
+          iteratedDeriv 2 A x * B x‖ ≤
+          ‖A x * iteratedDeriv 2 B x‖ + ‖2 * deriv A x * deriv B x‖ +
+            ‖iteratedDeriv 2 A x * B x‖ := by
+        calc
+          _ ≤ ‖A x * iteratedDeriv 2 B x + 2 * deriv A x * deriv B x‖ +
+              ‖iteratedDeriv 2 A x * B x‖ := norm_add_le _ _
+          _ ≤ _ := by gcongr; exact norm_add_le _ _
+      _ = ‖A x‖ * ‖iteratedDeriv 2 B x‖ + 2 * ‖deriv A x‖ * ‖deriv B x‖ +
+          ‖iteratedDeriv 2 A x‖ * ‖B x‖ := by norm_num [norm_mul]
+      _ ≤ 4 * (16*c) + 2 * 4 * (4*c) + 86 * 1 := by gcongr
+      _ = 96*c + 86 := by ring
+  · rw [iteratedDeriv_mul hA3at hB3at]
+    norm_num [Finset.sum_range_succ]
+    calc
+      ‖A x * iteratedDeriv 3 B x + 3 * deriv A x * iteratedDeriv 2 B x +
+          3 * iteratedDeriv 2 A x * deriv B x + iteratedDeriv 3 A x * B x‖ ≤
+          ‖A x * iteratedDeriv 3 B x‖ + ‖3 * deriv A x * iteratedDeriv 2 B x‖ +
+          ‖3 * iteratedDeriv 2 A x * deriv B x‖ + ‖iteratedDeriv 3 A x * B x‖ := by
+        calc
+          _ ≤ ‖A x * iteratedDeriv 3 B x + 3 * deriv A x * iteratedDeriv 2 B x +
+              3 * iteratedDeriv 2 A x * deriv B x‖ +
+              ‖iteratedDeriv 3 A x * B x‖ := norm_add_le _ _
+          _ ≤ (‖A x * iteratedDeriv 3 B x +
+              3 * deriv A x * iteratedDeriv 2 B x‖ +
+              ‖3 * iteratedDeriv 2 A x * deriv B x‖) +
+              ‖iteratedDeriv 3 A x * B x‖ := by
+                gcongr
+                exact norm_add_le _ _
+          _ ≤ _ := by gcongr; exact norm_add_le _ _
+      _ = ‖A x‖ * ‖iteratedDeriv 3 B x‖ +
+          3 * ‖deriv A x‖ * ‖iteratedDeriv 2 B x‖ +
+          3 * ‖iteratedDeriv 2 A x‖ * ‖deriv B x‖ +
+          ‖iteratedDeriv 3 A x‖ * ‖B x‖ := by norm_num [norm_mul]
+      _ ≤ 4 * (64*c) + 3 * 4 * (16*c) + 3 * 86 * (4*c) + 2048 * 1 := by
+        gcongr
+      _ = 1480*c + 2048 := by ring
+
+theorem triple_profile_bound (c : ℝ) (hc : 1 ≤ c)
+    (A B C : ℝ → ℂ) (hA : ContDiff ℝ 3 A) (hB : ContDiff ℝ 3 B)
+    (hC : ContDiff ℝ 3 C) (x : ℝ)
+    (hA0 : ‖iteratedDeriv 0 A x‖ ≤ 4)
+    (hA1 : ‖iteratedDeriv 1 A x‖ ≤ 4)
+    (hA2 : ‖iteratedDeriv 2 A x‖ ≤ 86)
+    (hA3 : ‖iteratedDeriv 3 A x‖ ≤ 2048)
+    (hB0 : ‖iteratedDeriv 0 B x‖ ≤ 1)
+    (hB1 : ‖iteratedDeriv 1 B x‖ ≤ 4*c)
+    (hB2 : ‖iteratedDeriv 2 B x‖ ≤ 16*c)
+    (hB3 : ‖iteratedDeriv 3 B x‖ ≤ 64*c)
+    (hC0 : ‖iteratedDeriv 0 C x‖ ≤ 1)
+    (hC1 : ‖iteratedDeriv 1 C x‖ ≤ 3*c)
+    (hC2 : ‖iteratedDeriv 2 C x‖ ≤ 5*c)
+    (hC3 : ‖iteratedDeriv 3 C x‖ ≤ 9*c) :
+    ∀ m : ℕ, m < 4 → ‖iteratedDeriv m (A * B * C) x‖ ≤ D c m := by
+  intro m hm
+  interval_cases m
+  · simp only [iteratedDeriv_zero]
+    calc
+      ‖(A * B * C) x‖ = ‖A x‖ * ‖B x‖ * ‖C x‖ := by
+        simp only [Pi.mul_apply, norm_mul]
+      _ ≤ 4 * 1 * 1 := by
+        have hA0' : ‖A x‖ ≤ 4 := by simpa only [iteratedDeriv_zero] using hA0
+        have hB0' : ‖B x‖ ≤ 1 := by simpa only [iteratedDeriv_zero] using hB0
+        have hC0' : ‖C x‖ ≤ 1 := by simpa only [iteratedDeriv_zero] using hC0
+        gcongr
+      _ = D c 0 := by simp [D]
+  · have hAB : ContDiffAt ℝ 1 (A * B) x :=
+      ((hA.of_le (by norm_num)).mul (hB.of_le (by norm_num))).contDiffAt
+    have hC1' : ContDiffAt ℝ 1 C x := (hC.of_le (by norm_num)).contDiffAt
+    rw [iteratedDeriv_mul hAB hC1']
+    norm_num [Finset.sum_range_succ]
+    have hAat : DifferentiableAt ℝ A x :=
+      (hA.differentiable (by norm_num)).differentiableAt
+    have hBat : DifferentiableAt ℝ B x :=
+      (hB.differentiable (by norm_num)).differentiableAt
+    rw [deriv_mul hAat hBat]
+    have hA0' : ‖A x‖ ≤ 4 := by simpa only [iteratedDeriv_zero] using hA0
+    have hA1' : ‖deriv A x‖ ≤ 4 := by
+      simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hA1
+    have hB0' : ‖B x‖ ≤ 1 := by simpa only [iteratedDeriv_zero] using hB0
+    have hB1' : ‖deriv B x‖ ≤ 4*c := by
+      simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hB1
+    have hC0' : ‖C x‖ ≤ 1 := by simpa only [iteratedDeriv_zero] using hC0
+    have hC1' : ‖deriv C x‖ ≤ 3*c := by
+      simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hC1
+    have hexpand :
+        A x * B x * deriv C x + (deriv A x * B x + A x * deriv B x) * C x =
+          A x * B x * deriv C x + deriv A x * B x * C x + A x * deriv B x * C x := by
+      ring
+    rw [hexpand]
+    calc
+      ‖A x * B x * deriv C x + deriv A x * B x * C x + A x * deriv B x * C x‖ ≤
+          ‖A x * B x * deriv C x‖ + ‖deriv A x * B x * C x‖ +
+            ‖A x * deriv B x * C x‖ := by
+          calc
+            _ ≤ ‖A x * B x * deriv C x + deriv A x * B x * C x‖ +
+                ‖A x * deriv B x * C x‖ := norm_add_le _ _
+            _ ≤ _ := by gcongr; exact norm_add_le _ _
+      _ = ‖A x‖ * ‖B x‖ * ‖deriv C x‖ + ‖deriv A x‖ * ‖B x‖ * ‖C x‖ +
+            ‖A x‖ * ‖deriv B x‖ * ‖C x‖ := by
+          rw [norm_mul, norm_mul, norm_mul, norm_mul, norm_mul, norm_mul]
+      _ ≤ 4 * 1 * (3*c) + 4 * 1 * 1 + 4 * (4*c) * 1 := by gcongr
+      _ = D c 1 := by simp [D]; ring
+  · have hAB : ContDiffAt ℝ 2 (A * B) x :=
+      ((hA.of_le (show (2 : WithTop ℕ∞) ≤ 3 by norm_num)).mul
+        (hB.of_le (show (2 : WithTop ℕ∞) ≤ 3 by norm_num))).contDiffAt
+    have hC2' : ContDiffAt ℝ 2 C x :=
+      (hC.of_le (show (2 : WithTop ℕ∞) ≤ 3 by norm_num)).contDiffAt
+    rw [iteratedDeriv_mul hAB hC2']
+    norm_num [Finset.sum_range_succ]
+    have hAat : DifferentiableAt ℝ A x :=
+      (hA.differentiable (by norm_num)).differentiableAt
+    have hBat : DifferentiableAt ℝ B x :=
+      (hB.differentiable (by norm_num)).differentiableAt
+    have hA2at : ContDiffAt ℝ 2 A x :=
+      (hA.of_le (show (2 : WithTop ℕ∞) ≤ 3 by norm_num)).contDiffAt
+    have hB2at : ContDiffAt ℝ 2 B x :=
+      (hB.of_le (show (2 : WithTop ℕ∞) ≤ 3 by norm_num)).contDiffAt
+    rw [deriv_mul hAat hBat, iteratedDeriv_mul hA2at hB2at]
+    norm_num [Finset.sum_range_succ]
+    have hA0' : ‖A x‖ ≤ 4 := by simpa only [iteratedDeriv_zero] using hA0
+    have hA1' : ‖deriv A x‖ ≤ 4 := by
+      simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hA1
+    have hA2' : ‖iteratedDeriv 2 A x‖ ≤ 86 := hA2
+    have hB0' : ‖B x‖ ≤ 1 := by simpa only [iteratedDeriv_zero] using hB0
+    have hB1' : ‖deriv B x‖ ≤ 4*c := by
+      simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hB1
+    have hB2' : ‖iteratedDeriv 2 B x‖ ≤ 16*c := hB2
+    have hC0' : ‖C x‖ ≤ 1 := by simpa only [iteratedDeriv_zero] using hC0
+    have hC1' : ‖deriv C x‖ ≤ 3*c := by
+      simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hC1
+    have hC2' : ‖iteratedDeriv 2 C x‖ ≤ 5*c := hC2
+    have hexpand :
+        A x * B x * iteratedDeriv 2 C x +
+          2 * (deriv A x * B x + A x * deriv B x) * deriv C x +
+          (A x * iteratedDeriv 2 B x + 2 * deriv A x * deriv B x +
+            iteratedDeriv 2 A x * B x) * C x =
+        A x * B x * iteratedDeriv 2 C x +
+          2 * deriv A x * B x * deriv C x +
+          2 * A x * deriv B x * deriv C x +
+          A x * iteratedDeriv 2 B x * C x +
+          2 * deriv A x * deriv B x * C x +
+          iteratedDeriv 2 A x * B x * C x := by ring
+    rw [hexpand]
+    calc
+      ‖A x * B x * iteratedDeriv 2 C x +
+          2 * deriv A x * B x * deriv C x +
+          2 * A x * deriv B x * deriv C x +
+          A x * iteratedDeriv 2 B x * C x +
+          2 * deriv A x * deriv B x * C x +
+          iteratedDeriv 2 A x * B x * C x‖ ≤
+          ‖A x * B x * iteratedDeriv 2 C x‖ +
+          ‖2 * deriv A x * B x * deriv C x‖ +
+          ‖2 * A x * deriv B x * deriv C x‖ +
+          ‖A x * iteratedDeriv 2 B x * C x‖ +
+          ‖2 * deriv A x * deriv B x * C x‖ +
+          ‖iteratedDeriv 2 A x * B x * C x‖ := by
+        calc
+          _ ≤ ‖A x * B x * iteratedDeriv 2 C x +
+              2 * deriv A x * B x * deriv C x +
+              2 * A x * deriv B x * deriv C x +
+              A x * iteratedDeriv 2 B x * C x +
+              2 * deriv A x * deriv B x * C x‖ +
+              ‖iteratedDeriv 2 A x * B x * C x‖ := norm_add_le _ _
+          _ ≤ (‖A x * B x * iteratedDeriv 2 C x +
+              2 * deriv A x * B x * deriv C x +
+              2 * A x * deriv B x * deriv C x +
+              A x * iteratedDeriv 2 B x * C x‖ +
+              ‖2 * deriv A x * deriv B x * C x‖) +
+              ‖iteratedDeriv 2 A x * B x * C x‖ := by
+                gcongr
+                exact norm_add_le _ _
+          _ ≤ ((‖A x * B x * iteratedDeriv 2 C x +
+              2 * deriv A x * B x * deriv C x +
+              2 * A x * deriv B x * deriv C x‖ +
+              ‖A x * iteratedDeriv 2 B x * C x‖) +
+              ‖2 * deriv A x * deriv B x * C x‖) +
+              ‖iteratedDeriv 2 A x * B x * C x‖ := by
+                gcongr
+                exact norm_add_le _ _
+          _ ≤ (((‖A x * B x * iteratedDeriv 2 C x +
+              2 * deriv A x * B x * deriv C x‖ +
+              ‖2 * A x * deriv B x * deriv C x‖) +
+              ‖A x * iteratedDeriv 2 B x * C x‖) +
+              ‖2 * deriv A x * deriv B x * C x‖) +
+              ‖iteratedDeriv 2 A x * B x * C x‖ := by
+                gcongr
+                exact norm_add_le _ _
+          _ ≤ _ := by gcongr; exact norm_add_le _ _
+      _ = ‖A x‖ * ‖B x‖ * ‖iteratedDeriv 2 C x‖ +
+          2 * ‖deriv A x‖ * ‖B x‖ * ‖deriv C x‖ +
+          2 * ‖A x‖ * ‖deriv B x‖ * ‖deriv C x‖ +
+          ‖A x‖ * ‖iteratedDeriv 2 B x‖ * ‖C x‖ +
+          2 * ‖deriv A x‖ * ‖deriv B x‖ * ‖C x‖ +
+          ‖iteratedDeriv 2 A x‖ * ‖B x‖ * ‖C x‖ := by
+            norm_num [norm_mul]
+      _ ≤ 4 * 1 * (5*c) + 2 * 4 * 1 * (3*c) + 2 * 4 * (4*c) * (3*c) +
+          4 * (16*c) * 1 + 2 * 4 * (4*c) * 1 + 86 * 1 * 1 := by
+            gcongr
+      _ = D c 2 := by simp [D]; ring
+  · rcases pair_profile_bounds c A B hA hB x hA0 hA1 hA2 hA3 hB0 hB1 hB2 hB3 with
+      ⟨hAB0, hAB1, hAB2, hAB3⟩
+    have hAB3at : ContDiffAt ℝ 3 (A * B) x := (hA.mul hB).contDiffAt
+    have hC3at : ContDiffAt ℝ 3 C x := hC.contDiffAt
+    rw [iteratedDeriv_mul hAB3at hC3at]
+    norm_num [Finset.sum_range_succ]
+    have hAB0' : ‖(A * B) x‖ ≤ 4 := by
+      simpa only [iteratedDeriv_zero] using hAB0
+    have hAB1' : ‖deriv (A * B) x‖ ≤ 4 + 16 * c := by
+      simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hAB1
+    have hAB2' : ‖iteratedDeriv 2 (A * B) x‖ ≤ 96 * c + 86 := hAB2
+    have hAB3' : ‖iteratedDeriv 3 (A * B) x‖ ≤ 1480 * c + 2048 := hAB3
+    have hC0' : ‖C x‖ ≤ 1 := by simpa only [iteratedDeriv_zero] using hC0
+    have hC1' : ‖deriv C x‖ ≤ 3*c := by
+      simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using hC1
+    have hC2' : ‖iteratedDeriv 2 C x‖ ≤ 5*c := hC2
+    have hC3' : ‖iteratedDeriv 3 C x‖ ≤ 9*c := hC3
+    calc
+      ‖(A * B) x * iteratedDeriv 3 C x +
+          3 * deriv (A * B) x * iteratedDeriv 2 C x +
+          3 * iteratedDeriv 2 (A * B) x * deriv C x +
+          iteratedDeriv 3 (A * B) x * C x‖ ≤
+          ‖(A * B) x * iteratedDeriv 3 C x‖ +
+          ‖3 * deriv (A * B) x * iteratedDeriv 2 C x‖ +
+          ‖3 * iteratedDeriv 2 (A * B) x * deriv C x‖ +
+          ‖iteratedDeriv 3 (A * B) x * C x‖ := by
+        calc
+          _ ≤ ‖(A * B) x * iteratedDeriv 3 C x +
+              3 * deriv (A * B) x * iteratedDeriv 2 C x +
+              3 * iteratedDeriv 2 (A * B) x * deriv C x‖ +
+              ‖iteratedDeriv 3 (A * B) x * C x‖ := norm_add_le _ _
+          _ ≤ (‖(A * B) x * iteratedDeriv 3 C x +
+              3 * deriv (A * B) x * iteratedDeriv 2 C x‖ +
+              ‖3 * iteratedDeriv 2 (A * B) x * deriv C x‖) +
+              ‖iteratedDeriv 3 (A * B) x * C x‖ := by
+                gcongr
+                exact norm_add_le _ _
+          _ ≤ _ := by
+            gcongr
+            exact norm_add_le _ _
+      _ = ‖(A * B) x‖ * ‖iteratedDeriv 3 C x‖ +
+          3 * ‖deriv (A * B) x‖ * ‖iteratedDeriv 2 C x‖ +
+          3 * ‖iteratedDeriv 2 (A * B) x‖ * ‖deriv C x‖ +
+          ‖iteratedDeriv 3 (A * B) x‖ * ‖C x‖ := by
+            norm_num [norm_mul]
+      _ ≤ 4 * (9*c) + 3 * (4 + 16*c) * (5*c) +
+          3 * (96*c + 86) * (3*c) + (1480*c + 2048) * 1 := by
+            gcongr
+      _ = D c 3 := by simp [D]; ring
+
+end
+end aux_phiThreeProduct
+
+namespace aux_phiThreeSmall
+
+open MeasureTheory Filter Set
+open scoped BigOperators FourierTransform Real ENNReal
+open Codex.Reduction.WindowsAndPairs
+open Codex.Reduction.SmoothingDecomposition
+
+noncomputable section
+
+def F (b : windowBasedBumpFunctions) : ℝ → ℂ :=
+  FourierTransform.fourier (fun x : ℝ => (b.phi0 x : ℂ))
+def B (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℂ :=
+  fun x => F b ((2 : ℝ) ^ (-k) * x)
+def C (b : windowBasedBumpFunctions) : ℝ → ℂ :=
+  FourierTransform.fourier (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ))
+
+private theorem C_support (b : windowBasedBumpFunctions) :
+    Function.support (C b) ⊆ aux_frequencyAnnulus := by
+  exact bumpBasic b |>.1
+
+private theorem annulus_abs_lower {x : ℝ} (hx : x ∈ aux_frequencyAnnulus) :
+    1 / 4 ≤ |x| := by
+  rcases hx with hx | hx
+  · change x ∈ Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) at hx
+    rw [abs_of_nonpos (by linarith [hx.2])]
+    linarith [hx.2]
+  · change x ∈ Set.Icc (1 / 4 : ℝ) 1 at hx
+    rw [abs_of_nonneg (by linarith [hx.1])]
+    exact hx.1
+
+private theorem scaled_outside (k : ℤ) (hk : k < -2) (x : ℝ)
+    (hx : 1 / 4 ≤ |x|) :
+    (2 : ℝ) ^ (-k) * x ∉ Set.Icc (-1 : ℝ) 1 := by
+  have hk' : 2 < -k := by omega
+  have hscale : (4 : ℝ) < (2 : ℝ) ^ (-k) := by
+    calc
+      (4 : ℝ) = (2 : ℝ) ^ (2 : ℤ) := by norm_num
+      _ < (2 : ℝ) ^ (-k) := by
+        exact zpow_lt_zpow_right₀ (by norm_num) hk'
+  have hpos : 0 < (2 : ℝ) ^ (-k) := zpow_pos (by norm_num) _
+  intro hmem
+  have hupper : |(2 : ℝ) ^ (-k) * x| ≤ 1 := by
+    exact abs_le.2 hmem
+  rw [abs_mul, abs_of_pos hpos] at hupper
+  nlinarith
+
+theorem B_mul_C_zero (b : windowBasedBumpFunctions) (k : ℤ) (hk : k < -2) :
+    B b k * C b = 0 := by
+  funext x
+  by_cases hc : C b x = 0
+  · simp [hc]
+  · have hcmem : x ∈ Function.support (C b) := Function.mem_support.mpr hc
+    have hann : x ∈ aux_frequencyAnnulus := C_support b hcmem
+    have habs : 1 / 4 ≤ |x| := annulus_abs_lower hann
+    have hout : (2 : ℝ) ^ (-k) * x ∉ Set.Icc (-1 : ℝ) 1 :=
+      scaled_outside k hk x habs
+    have hwin : cnWindow C_uniPair N_uniPair b.phi0 := b.universalPair.1
+    have hB : B b k x = 0 := by
+      apply Function.notMem_support.mp
+      intro hsupp
+      exact hout (hwin.2.2.1 hsupp)
+    simp [hB]
+
+end
+end aux_phiThreeSmall
+
 
 /--
 \begin{lemma}\label{lem:abs_deriv_ft_phi3_le}
@@ -1857,7 +2920,58 @@ theorem absDerivFourierPhiThreeLe (b : windowBasedBumpFunctions) (m : ℕ)
       (FourierTransform.fourier
         (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ))) ξ‖ ≤
       C_absDerivFourierPhiThreeLe m := by
-  sorry
+  have hformula : FourierTransform.fourier
+      (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ)) =
+      aux_phiThree.factorA k * aux_phiThreeBC.B b k * aux_phiThreeBC.C b := by
+    funext x
+    rw [fourierPhiThreeEq]
+    rfl
+  by_cases hk : (-2 : ℤ) ≤ k
+  · rw [hformula]
+    change ‖iteratedDeriv m
+      (aux_phiThree.factorA k * aux_phiThreeBC.B b k * aux_phiThreeBC.C b) ξ‖ ≤
+      aux_phiThreeProduct.D C_uniPair m
+    have hC : (1 : ℝ) ≤ C_uniPair := by norm_num [C_uniPair]
+    refine aux_phiThreeProduct.triple_profile_bound C_uniPair hC
+      (aux_phiThree.factorA k) (aux_phiThreeBC.B b k) (aux_phiThreeBC.C b)
+      (aux_phiThree.factorA_contDiff k 3) (aux_phiThreeBC.B_contDiff b k)
+      (aux_phiThreeBC.C_contDiff b)
+      ξ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ m hm
+    · exact aux_phiThree.factorA_deriv_zero_le k ξ hξ
+    · simpa only using aux_phiThree.factorA_deriv_one_le k ξ
+    · exact aux_phiThree.factorA_deriv_two_le k hk ξ
+    · exact aux_phiThree.factorA_deriv_three_le k hk ξ
+    · exact aux_phiThreeBC.B_zero_bound b k ξ
+    · have h := aux_phiThreeBC.B_deriv_bound b 1 (by omega) k hk ξ
+      norm_num at h ⊢
+      exact h
+    · have h := aux_phiThreeBC.B_deriv_bound b 2 (by omega) k hk ξ
+      norm_num at h ⊢
+      exact h
+    · have h := aux_phiThreeBC.B_deriv_bound b 3 (by omega) k hk ξ
+      norm_num at h ⊢
+      exact h
+    · exact aux_phiThreeBC.C_zero_bound b ξ
+    · have h := aux_phiThreeBC.C_deriv_bound b 1 (by omega) ξ
+      norm_num at h ⊢
+      exact h
+    · have h := aux_phiThreeBC.C_deriv_bound b 2 (by omega) ξ
+      norm_num at h ⊢
+      exact h
+    · have h := aux_phiThreeBC.C_deriv_bound b 3 (by omega) ξ
+      norm_num at h ⊢
+      exact h
+  · have hk' : k < -2 := by omega
+    have hBeq : aux_phiThreeBC.B b k = aux_phiThreeSmall.B b k := by rfl
+    have hCeq : aux_phiThreeBC.C b = aux_phiThreeSmall.C b := by rfl
+    have hBC : aux_phiThreeBC.B b k * aux_phiThreeBC.C b = 0 := by
+      rw [hBeq, hCeq]
+      exact aux_phiThreeSmall.B_mul_C_zero b k hk'
+    have hprod : aux_phiThree.factorA k * aux_phiThreeBC.B b k * aux_phiThreeBC.C b = 0 := by
+      rw [mul_assoc, hBC]
+      simp
+    rw [hformula, hprod]
+    interval_cases m <;> norm_num [C_absDerivFourierPhiThreeLe, C_uniPair]
 
 /--
 \begin{lemma}[constant $C_{\ref{lem:abs_deriv_ft_phi3_le},m}$ \auto]
@@ -1871,7 +2985,361 @@ theorem constantPhiThreeDerivative :
     C_absDerivFourierPhiThreeLe 1 < (2 : ℝ) ^ 20 ∧
     C_absDerivFourierPhiThreeLe 2 < (2 : ℝ) ^ 37 ∧
     C_absDerivFourierPhiThreeLe 3 < (2 : ℝ) ^ 41 := by
-  sorry
+  norm_num [C_absDerivFourierPhiThreeLe, C_uniPair]
+
+private theorem aux_TphiThree_indicator_Ico_integrable :
+    Integrable (aux_indicator (Set.Ico (0 : ℝ) 1)) := by
+  rw [show aux_indicator (Set.Ico (0 : ℝ) 1) =
+      Set.indicator (Set.Ico (0 : ℝ) 1) (fun _ : ℝ ↦ 1) by rfl,
+    MeasureTheory.integrable_indicator_iff measurableSet_Ico]
+  exact (continuous_const.integrableOn_Icc (a := (0 : ℝ)) (b := 1)).mono_set
+    Ico_subset_Icc_self
+
+private theorem aux_TphiThree_indicator_fourier_contDiff :
+    ContDiff ℝ (⊤ : ℕ∞)
+      (FourierTransform.fourier
+        (fun x : ℝ ↦ (aux_indicator (Set.Ico (0 : ℝ) 1) x : ℂ))) := by
+  apply Real.contDiff_fourier
+  intro n hn
+  have hI_meas : Measurable (aux_indicator (Set.Ico (0 : ℝ) 1)) := by
+    unfold aux_indicator
+    exact measurable_const.indicator measurableSet_Ico
+  have hpow_meas : Measurable (fun x : ℝ => ‖x‖ ^ n) := by
+    simpa using (measurable_id.norm.pow (measurable_const : Measurable fun _ : ℝ => n))
+  apply Integrable.mono' aux_TphiThree_indicator_Ico_integrable
+  · exact (hpow_meas.mul
+      (Complex.ofRealCLM.continuous.measurable.comp hI_meas).norm).aestronglyMeasurable
+  filter_upwards [] with x
+  by_cases hx : x ∈ Set.Ico (0 : ℝ) 1
+  · simp [aux_indicator, hx]
+    have hxabs : |x| ≤ 1 := by
+      rw [abs_of_nonneg hx.1]
+      exact hx.2.le
+    have hpow : |x| ^ n ≤ 1 := pow_le_one₀ (abs_nonneg x) hxabs
+    simpa [Real.norm_eq_abs] using hpow
+  · simp [aux_indicator, hx]
+
+private theorem aux_TphiThree_rescale_fourier (t : ℝ) (ht : 0 < t)
+    (f : ℝ → ℝ) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ => (aux_realRescaled t f x : ℂ)) xi =
+      FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) (t * xi) := by
+  rw [Real.fourier_real_eq_integral_exp_smul,
+    Real.fourier_real_eq_integral_exp_smul]
+  let g : ℝ → ℂ := fun q => (f q : ℂ) *
+    Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * (q : ℂ) * ((t * xi : ℝ) : ℂ)))
+  calc
+    (∫ x : ℝ, Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I) •
+        (aux_realRescaled t f x : ℂ)) = ∫ x : ℝ, (t⁻¹ : ℂ) * g (t⁻¹ * x) := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      dsimp [g, aux_realRescaled]
+      have hphase : Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I) =
+          Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * ((t⁻¹ * x : ℝ) : ℂ) *
+            ((t * xi : ℝ) : ℂ))) := by
+        congr 1
+        push_cast
+        field_simp [ne_of_gt ht]
+      rw [hphase]
+      push_cast
+      ring
+    _ = (t⁻¹ : ℂ) * ∫ x : ℝ, g (t⁻¹ * x) := by rw [integral_const_mul]
+    _ = (t⁻¹ : ℂ) * (|t| • ∫ y : ℝ, g y) := by
+      rw [Measure.integral_comp_inv_mul_left]
+    _ = ∫ y : ℝ, g y := by
+      rw [abs_of_pos ht]
+      field_simp [ne_of_gt ht]
+      rw [Complex.real_smul]
+    _ = ∫ x : ℝ, Complex.exp (↑(-2 * Real.pi * x * (t * xi)) * Complex.I) •
+        (f x : ℂ) := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      dsimp [g]
+      push_cast
+      ring
+
+private theorem aux_TphiThree_fourier_sub (f g : ℝ → ℝ)
+    (hf : Integrable f) (hg : Integrable g) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ ↦ ((f x - g x : ℝ) : ℂ)) xi =
+      FourierTransform.fourier (fun x : ℝ ↦ (f x : ℂ)) xi -
+        FourierTransform.fourier (fun x : ℝ ↦ (g x : ℂ)) xi := by
+  let e : ℝ → ℂ := fun x ↦ Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I)
+  have he : Continuous e := by
+    dsimp [e]
+    fun_prop
+  have he_bound : ∀ x, ‖e x‖ ≤ (1 : ℝ) := by
+    intro x
+    rw [show e x = Complex.exp (((-2 * Real.pi * x * xi : ℝ) : ℂ) * Complex.I) by rfl,
+      Complex.norm_exp]
+    norm_num
+  have hf' : Integrable (fun x : ℝ ↦ e x * (f x : ℂ)) :=
+    hf.ofReal.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)
+  have hg' : Integrable (fun x : ℝ ↦ e x * (g x : ℂ)) :=
+    hg.ofReal.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)
+  rw [Real.fourier_real_eq_integral_exp_smul,
+    Real.fourier_real_eq_integral_exp_smul,
+    Real.fourier_real_eq_integral_exp_smul]
+  change (∫ x : ℝ, e x * ((f x - g x : ℝ) : ℂ)) = _
+  calc
+    (∫ x : ℝ, e x * ((f x - g x : ℝ) : ℂ)) =
+      ∫ x : ℝ, (e x * (f x : ℂ) - e x * (g x : ℂ)) := by
+        apply integral_congr_ae
+        filter_upwards [] with x
+        push_cast
+        ring
+    _ = (∫ x : ℝ, e x * (f x : ℂ)) - ∫ x : ℝ, e x * (g x : ℂ) :=
+      integral_sub hf' hg'
+    _ = _ := by rfl
+
+private theorem aux_TphiThree_theta_fourier_eq (b : windowBasedBumpFunctions) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ)) xi =
+      FourierTransform.fourier (fun x : ℝ ↦ (b.phi0 x : ℂ)) xi -
+        FourierTransform.fourier (fun x : ℝ ↦ (b.phi0 x : ℂ)) (2 * xi) := by
+  have hrescale : Integrable (aux_realRescaled 2 (fun y ↦ b.phi0 y)) := by
+    unfold aux_realRescaled
+    convert (b.phi0.integrable.comp_mul_left'
+      (by norm_num : (2 : ℝ)⁻¹ ≠ 0)).const_mul (2 : ℝ)⁻¹ using 1
+  rw [show (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ)) =
+      (fun x : ℝ ↦ (((fun y ↦ b.phi0 y) x -
+        aux_realRescaled 2 (fun y ↦ b.phi0 y) x : ℝ) : ℂ)) by rfl,
+    aux_TphiThree_fourier_sub _ _ b.phi0.integrable hrescale xi,
+    aux_TphiThree_rescale_fourier 2 (by norm_num)]
+
+private theorem aux_TphiThree_phi0_fourier_contDiff (b : windowBasedBumpFunctions) :
+    ContDiff ℝ (⊤ : ℕ∞)
+      (FourierTransform.fourier (fun x : ℝ ↦ (b.phi0 x : ℂ))) := by
+  let phiC : SchwartzMap ℝ ℂ :=
+    b.phi0.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
+  have hs : ContDiff ℝ (⊤ : ℕ∞) (FourierTransform.fourier phiC : ℝ → ℂ) :=
+    (FourierTransform.fourier phiC).smooth (⊤ : ℕ∞)
+  have hphiC : (phiC : ℝ → ℂ) = fun x : ℝ => (b.phi0 x : ℂ) := by
+    funext x
+    simp [phiC, SchwartzMap.postcompCLM_apply]
+  rw [SchwartzMap.fourier_coe, hphiC] at hs
+  exact hs
+
+private theorem aux_TphiThree_theta_fourier_contDiff (b : windowBasedBumpFunctions) :
+    ContDiff ℝ (⊤ : ℕ∞)
+      (FourierTransform.fourier (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ))) := by
+  rw [show FourierTransform.fourier (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ)) =
+      fun xi ↦ FourierTransform.fourier (fun x : ℝ ↦ (b.phi0 x : ℂ)) xi -
+        FourierTransform.fourier (fun x : ℝ ↦ (b.phi0 x : ℂ)) (2 * xi) by
+      funext xi
+      exact aux_TphiThree_theta_fourier_eq b xi]
+  exact (aux_TphiThree_phi0_fourier_contDiff b).sub
+    ((aux_TphiThree_phi0_fourier_contDiff b).comp (by fun_prop))
+
+private theorem aux_TphiThree_phiThree_fourier_contDiff
+    (b : windowBasedBumpFunctions) (k : ℤ) :
+    ContDiff ℝ (⊤ : ℕ∞)
+      (FourierTransform.fourier
+        (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ))) := by
+  rw [show FourierTransform.fourier
+      (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ)) =
+      fun xi ↦ (↑((2 : ℝ) ^ k) : ℂ) *
+        (FourierTransform.fourier
+          (fun x : ℝ ↦ (aux_indicator (Set.Ico 0 1) x : ℂ))
+          ((2 : ℝ) ^ (-k) * xi) - 1) *
+        FourierTransform.fourier (fun x : ℝ ↦ (b.phi0 x : ℂ))
+          ((2 : ℝ) ^ (-k) * xi) *
+        FourierTransform.fourier
+          (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ)) xi by
+      funext xi
+      exact fourierPhiThreeEq b k xi]
+  exact ((contDiff_const.mul
+    ((aux_TphiThree_indicator_fourier_contDiff.comp (by fun_prop)).sub contDiff_const)).mul
+      ((aux_TphiThree_phi0_fourier_contDiff b).comp (by fun_prop))).mul
+        (aux_TphiThree_theta_fourier_contDiff b)
+
+private theorem aux_TphiThree_phiThree_fourier_support
+    (b : windowBasedBumpFunctions) (k : ℤ) :
+    Function.support (FourierTransform.fourier
+      (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ))) ⊆
+      aux_frequencyAnnulus := by
+  intro xi hxi
+  by_contra hxi_ann
+  apply Function.mem_support.mp hxi
+  rw [fourierPhiThreeEq]
+  have htheta : FourierTransform.fourier
+      (fun x : ℝ ↦ (windowBasedBumpFunctions.theta b x : ℂ)) xi = 0 := by
+    by_contra htheta
+    exact hxi_ann ((bumpBasic b).1 (Function.mem_support.mpr htheta))
+  rw [htheta]
+  ring
+
+private theorem aux_TphiThree_phiThree_fourier_compact
+    (b : windowBasedBumpFunctions) (k : ℤ) :
+    HasCompactSupport (FourierTransform.fourier
+      (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ))) := by
+  apply HasCompactSupport.of_support_subset_isCompact
+    (isCompact_Icc.union isCompact_Icc)
+  exact aux_TphiThree_phiThree_fourier_support b k
+
+private noncomputable def aux_TphiThree_G (b : windowBasedBumpFunctions) : ℝ → ℝ :=
+  fun x ↦ aux_realConvolution (aux_indicator (Set.Ico 0 1))
+    (fun y ↦ b.phi0 y) x - b.phi0 x
+
+private theorem aux_TphiThree_theta_integrable (b : windowBasedBumpFunctions) :
+    Integrable (windowBasedBumpFunctions.theta b) := by
+  have hrescale : Integrable (aux_realRescaled 2 (fun y ↦ b.phi0 y)) := by
+    unfold aux_realRescaled
+    convert (b.phi0.integrable.comp_mul_left'
+      (by norm_num : (2 : ℝ)⁻¹ ≠ 0)).const_mul (2 : ℝ)⁻¹ using 1
+  change Integrable (fun x ↦ b.phi0 x - aux_realRescaled 2 (fun y ↦ b.phi0 y) x)
+  exact b.phi0.integrable.sub hrescale
+
+private theorem aux_TphiThree_theta_continuous (b : windowBasedBumpFunctions) :
+    Continuous (windowBasedBumpFunctions.theta b) := by
+  unfold windowBasedBumpFunctions.theta aux_realRescaled
+  fun_prop
+
+private theorem aux_TphiThree_rescale_integrable (f : ℝ → ℝ) (hf : Integrable f)
+    (t : ℝ) (ht : t ≠ 0) :
+    Integrable (aux_realRescaled t f) := by
+  unfold aux_realRescaled
+  convert (hf.comp_mul_left' (inv_ne_zero ht)).const_mul t⁻¹ using 1
+
+private theorem aux_TphiThree_G_integrable (b : windowBasedBumpFunctions) :
+    Integrable (aux_TphiThree_G b) := by
+  have hconv : Integrable (aux_realConvolution (aux_indicator (Set.Ico (0 : ℝ) 1))
+      (fun y ↦ b.phi0 y)) := by
+    change Integrable ((aux_indicator (Set.Ico (0 : ℝ) 1) ⋆[
+      ContinuousLinearMap.mul ℝ ℝ, volume] fun y ↦ b.phi0 y) : ℝ → ℝ)
+    exact aux_TphiThree_indicator_Ico_integrable.integrable_convolution
+      (ContinuousLinearMap.mul ℝ ℝ) b.phi0.integrable
+  exact hconv.sub b.phi0.integrable
+
+private theorem aux_TphiThree_G_continuous (b : windowBasedBumpFunctions) :
+    Continuous (aux_TphiThree_G b) := by
+  have hKBound : BddAbove (Set.range fun x ↦ ‖b.phi0 x‖) := by
+    refine ⟨SchwartzMap.seminorm ℝ 0 0 b.phi0, ?_⟩
+    rintro _ ⟨x, rfl⟩
+    simpa [Real.norm_eq_abs] using SchwartzMap.norm_le_seminorm ℝ b.phi0 x
+  change Continuous (fun x ↦
+    aux_realConvolution (aux_indicator (Set.Ico (0 : ℝ) 1))
+      (fun y ↦ b.phi0 y) x - b.phi0 x)
+  exact (BddAbove.continuous_convolution_right_of_integrable
+    (ContinuousLinearMap.mul ℝ ℝ) hKBound aux_TphiThree_indicator_Ico_integrable
+      b.phi0.continuous).sub b.phi0.continuous
+
+private theorem aux_TphiThree_theta_bddAbove (b : windowBasedBumpFunctions) :
+    BddAbove (Set.range fun x ↦ ‖windowBasedBumpFunctions.theta b x‖) := by
+  let S : ℝ := SchwartzMap.seminorm ℝ 0 0 b.phi0
+  refine ⟨(3 / 2 : ℝ) * S, ?_⟩
+  rintro _ ⟨x, rfl⟩
+  unfold windowBasedBumpFunctions.theta aux_realRescaled
+  calc
+    ‖b.phi0 x - (2 : ℝ)⁻¹ * b.phi0 ((2 : ℝ)⁻¹ * x)‖ ≤
+        ‖b.phi0 x‖ + ‖(2 : ℝ)⁻¹ * b.phi0 ((2 : ℝ)⁻¹ * x)‖ := norm_sub_le _ _
+    _ ≤ S + (1 / 2 : ℝ) * S := by
+      rw [norm_mul, Real.norm_eq_abs]
+      norm_num
+      gcongr
+      · simpa [S, Real.norm_eq_abs] using SchwartzMap.norm_le_seminorm ℝ b.phi0 x
+      · simpa [S, Real.norm_eq_abs] using
+          SchwartzMap.norm_le_seminorm ℝ b.phi0 ((2 : ℝ)⁻¹ * x)
+    _ = (3 / 2 : ℝ) * S := by ring
+
+private theorem aux_TphiThree_rescaled_theta_bddAbove
+    (b : windowBasedBumpFunctions) (t : ℝ) :
+    BddAbove (Set.range fun x ↦
+      ‖aux_realRescaled t (windowBasedBumpFunctions.theta b) x‖) := by
+  rcases aux_TphiThree_theta_bddAbove b with ⟨C, hC⟩
+  refine ⟨‖t⁻¹‖ * C, ?_⟩
+  rintro _ ⟨x, rfl⟩
+  unfold aux_realRescaled
+  change ‖t⁻¹ * windowBasedBumpFunctions.theta b (t⁻¹ * x)‖ ≤ ‖t⁻¹‖ * C
+  rw [norm_mul]
+  gcongr
+  exact hC ⟨t⁻¹ * x, rfl⟩
+
+private theorem aux_TphiThree_phiZero_integrable (b : windowBasedBumpFunctions) (k : ℤ) :
+    Integrable (windowBasedBumpFunctions.phiZero b k) := by
+  have hA : (2 : ℝ) ^ k ≠ 0 := by positivity
+  have htheta := aux_TphiThree_rescale_integrable (windowBasedBumpFunctions.theta b)
+    (aux_TphiThree_theta_integrable b) ((2 : ℝ) ^ k) hA
+  change Integrable ((aux_TphiThree_G b ⋆[ContinuousLinearMap.mul ℝ ℝ, volume]
+    aux_realRescaled ((2 : ℝ) ^ k) (windowBasedBumpFunctions.theta b)) : ℝ → ℝ)
+  exact (aux_TphiThree_G_integrable b).integrable_convolution
+    (ContinuousLinearMap.mul ℝ ℝ) htheta
+
+private theorem aux_TphiThree_phiZero_continuous (b : windowBasedBumpFunctions) (k : ℤ) :
+    Continuous (windowBasedBumpFunctions.phiZero b k) := by
+  have htheta : Continuous (aux_realRescaled ((2 : ℝ) ^ k)
+      (windowBasedBumpFunctions.theta b)) := by
+    unfold aux_realRescaled
+    exact continuous_const.mul
+      ((aux_TphiThree_theta_continuous b).comp (continuous_const.mul continuous_id))
+  change Continuous (aux_realConvolution (aux_TphiThree_G b)
+    (aux_realRescaled ((2 : ℝ) ^ k) (windowBasedBumpFunctions.theta b)))
+  exact BddAbove.continuous_convolution_right_of_integrable
+    (ContinuousLinearMap.mul ℝ ℝ)
+    (aux_TphiThree_rescaled_theta_bddAbove b ((2 : ℝ) ^ k))
+    (aux_TphiThree_G_integrable b) htheta
+
+private theorem aux_TphiThree_phiThree_integrable (b : windowBasedBumpFunctions) (k : ℤ) :
+    Integrable (windowBasedBumpFunctions.phiThree b k) := by
+  have hB : (2 : ℝ) ^ (-k) ≠ 0 := by positivity
+  change Integrable (fun x ↦ (2 : ℝ) ^ k *
+    aux_realRescaled ((2 : ℝ) ^ (-k)) (windowBasedBumpFunctions.phiZero b k) x)
+  exact (aux_TphiThree_rescale_integrable (windowBasedBumpFunctions.phiZero b k)
+    (aux_TphiThree_phiZero_integrable b k) ((2 : ℝ) ^ (-k)) hB).const_mul _
+
+private theorem aux_TphiThree_phiThree_continuous (b : windowBasedBumpFunctions) (k : ℤ) :
+    Continuous (windowBasedBumpFunctions.phiThree b k) := by
+  unfold windowBasedBumpFunctions.phiThree aux_realRescaled
+  have hinner : Continuous (fun x : ℝ => ((2 : ℝ) ^ (-k))⁻¹ * x) :=
+    continuous_const.mul continuous_id
+  have hrescaled : Continuous (fun x : ℝ => ((2 : ℝ) ^ (-k))⁻¹ *
+      windowBasedBumpFunctions.phiZero b k (((2 : ℝ) ^ (-k))⁻¹ * x)) :=
+    continuous_const.mul ((aux_TphiThree_phiZero_continuous b k).comp hinner)
+  exact continuous_const.mul hrescaled
+
+private theorem aux_TphiThree_phiThree_schwartz
+    (b : windowBasedBumpFunctions) (k : ℤ) :
+    ∃ Phi : SchwartzMap ℝ ℂ, ∀ x : ℝ,
+      Phi x = (windowBasedBumpFunctions.phiThree b k x : ℂ) := by
+  let F : ℝ → ℂ := FourierTransform.fourier
+    (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ))
+  let H : SchwartzMap ℝ ℂ :=
+    (aux_TphiThree_phiThree_fourier_compact b k).toSchwartzMap
+      (aux_TphiThree_phiThree_fourier_contDiff b k)
+  let Phi : SchwartzMap ℝ ℂ := FourierTransformInv.fourierInv H
+  refine ⟨Phi, ?_⟩
+  intro x
+  have hH : (H : ℝ → ℂ) = F := by
+    funext xi
+    rfl
+  have hH_int : Integrable (H : ℝ → ℂ) := H.integrable
+  have hF_int : Integrable F := by
+    rw [← hH]
+    exact hH_int
+  have hphi : Integrable (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ)) :=
+    (aux_TphiThree_phiThree_integrable b k).ofReal
+  have hphi_cont : Continuous (fun x : ℝ ↦
+      (windowBasedBumpFunctions.phiThree b k x : ℂ)) :=
+    Complex.ofRealCLM.continuous.comp (aux_TphiThree_phiThree_continuous b k)
+  change FourierTransformInv.fourierInv H x = _
+  rw [SchwartzMap.fourierInv_coe]
+  rw [hH]
+  exact congrFun (hphi_cont.fourierInv_fourier_eq hphi hF_int) x
+
+private theorem aux_TphiThree_aux_T_cast_eq (f : ℝ → ℝ) (hf : ContDiff ℝ 1 f) :
+    (fun x : ℝ ↦ (aux_T f x : ℂ)) =
+      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ (f x : ℂ)) := by
+  funext x
+  have hdiff : DifferentiableAt ℝ (fun y : ℝ => y * f y) x := by
+    exact ((contDiff_id.mul hf).contDiffAt).differentiableAt (by norm_num)
+  have hcast :
+      deriv (fun y : ℝ => ((y * f y : ℝ) : ℂ)) x =
+        ((deriv (fun y : ℝ => y * f y) x : ℝ) : ℂ) := by
+    simpa using ((hasDerivAt_const x Complex.ofRealCLM).clm_apply hdiff.hasDerivAt).deriv
+  have hfun : (fun y : ℝ => ((y * f y : ℝ) : ℂ)) =
+      Codex.Reduction.BumpFunctions.multiplicationOperatorX
+        (fun y : ℝ => (f y : ℂ)) := by
+    funext y
+    simp [Codex.Reduction.BumpFunctions.multiplicationOperatorX]
+  unfold aux_T Codex.Reduction.BumpFunctions.aux_T
+  rw [← hfun, hcast]
 
 /--
 \begin{lemma}\label{lem:abs_deriv_ft_Tphi3_le}
@@ -1889,7 +3357,52 @@ theorem absDerivFourierTPhiThreeLe (b : windowBasedBumpFunctions) (m : ℕ)
       (FourierTransform.fourier
         (fun x : ℝ ↦ (aux_T (windowBasedBumpFunctions.phiThree b k) x : ℂ))) ξ‖ ≤
       C_absDerivFourierTPhiThreeLe m := by
-  sorry
+  rcases aux_TphiThree_phiThree_schwartz b k with ⟨Phi, hPhi⟩
+  have hphi_fun : (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ)) = Phi := by
+    funext x
+    exact (hPhi x).symm
+  have hreal : (fun x : ℝ => windowBasedBumpFunctions.phiThree b k x) =
+      fun x : ℝ => (Phi x).re := by
+    funext x
+    rw [hPhi]
+    simp
+  have hsmooth : ContDiff ℝ 1 (windowBasedBumpFunctions.phiThree b k) := by
+    change ContDiff ℝ 1 (fun x : ℝ => windowBasedBumpFunctions.phiThree b k x)
+    rw [hreal]
+    exact Complex.reCLM.contDiff.comp (Phi.smooth 1)
+  have hT : (fun x : ℝ ↦ (aux_T (windowBasedBumpFunctions.phiThree b k) x : ℂ)) =
+      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ Phi x) := by
+    rw [aux_TphiThree_aux_T_cast_eq _ hsmooth, hphi_fun]
+  rw [hT, Codex.Reduction.BumpFunctions.fourierDerivativeMul]
+  have hm1 : m + 1 < 4 := by omega
+  have h0 := absDerivFourierPhiThreeLe b m (by omega) k ξ hξ
+  have h1 := absDerivFourierPhiThreeLe b (m + 1) hm1 k ξ hξ
+  rw [hphi_fun] at h0 h1
+  rw [norm_neg]
+  calc
+    ‖(m : ℂ) * iteratedDeriv m (FourierTransform.fourier (Phi : ℝ → ℂ)) ξ +
+        (ξ : ℂ) * iteratedDeriv (m + 1)
+          (FourierTransform.fourier (Phi : ℝ → ℂ)) ξ‖ ≤
+        ‖(m : ℂ) * iteratedDeriv m (FourierTransform.fourier (Phi : ℝ → ℂ)) ξ‖ +
+          ‖(ξ : ℂ) * iteratedDeriv (m + 1)
+            (FourierTransform.fourier (Phi : ℝ → ℂ)) ξ‖ := norm_add_le _ _
+    _ = (m : ℝ) * ‖iteratedDeriv m (FourierTransform.fourier (Phi : ℝ → ℂ)) ξ‖ +
+          |ξ| * ‖iteratedDeriv (m + 1)
+            (FourierTransform.fourier (Phi : ℝ → ℂ)) ξ‖ := by
+          rw [norm_mul, norm_mul, norm_natCast, Complex.norm_real, Real.norm_eq_abs]
+    _ ≤ m * C_absDerivFourierPhiThreeLe m +
+          C_absDerivFourierPhiThreeLe (m + 1) := by
+          apply add_le_add
+          · exact mul_le_mul_of_nonneg_left h0 (by positivity)
+          · calc
+              |ξ| * ‖iteratedDeriv (m + 1)
+                  (FourierTransform.fourier (Phi : ℝ → ℂ)) ξ‖ ≤
+                  1 * ‖iteratedDeriv (m + 1)
+                    (FourierTransform.fourier (Phi : ℝ → ℂ)) ξ‖ := by
+                    gcongr
+              _ ≤ C_absDerivFourierPhiThreeLe (m + 1) := by simpa using h1
+    _ = C_absDerivFourierTPhiThreeLe m := by
+      rw [C_absDerivFourierTPhiThreeLe]
 
 /--
 \begin{lemma}[constant $C_{\ref{lem:abs_deriv_ft_Tphi3_le},m}$ \auto]
@@ -1902,7 +3415,696 @@ theorem constantTPhiThreeDerivative :
     C_absDerivFourierTPhiThreeLe 0 < (2 : ℝ) ^ 20 ∧
     C_absDerivFourierTPhiThreeLe 1 < (2 : ℝ) ^ 37 ∧
     C_absDerivFourierTPhiThreeLe 2 < (2 : ℝ) ^ 41 := by
-  sorry
+  norm_num [C_absDerivFourierTPhiThreeLe,
+    C_absDerivFourierPhiThreeLe, WindowsAndPairs.C_uniPair]
+
+/-- Auxiliary bounds for the physical-side primitive in `thetaPrimitive`. -/
+private theorem aux_thetaPrimitive_bracket_le_two_of_abs_le_twice (x z : ℝ)
+    (h : |x| ≤ 2 * |z|) :
+    bracketBump z ≤ 2 * bracketBump x := by
+  rw [bracketBump, bracketBump]
+  rw [show (1 + |z|)⁻¹ = 1 / (1 + |z|) by field_simp,
+    show 2 * (1 + |x|)⁻¹ = 2 / (1 + |x|) by field_simp]
+  apply (div_le_div_iff₀ (by positivity : 0 < 1 + |z|)
+    (by positivity : 0 < 1 + |x|)).2
+  nlinarith [abs_nonneg z]
+
+/-- A third-order physical decay bound for `phi0`, reused in `thetaPrimitive`. -/
+private theorem aux_thetaPrimitive_phi0_decay_three (b : windowBasedBumpFunctions) (u : ℝ) :
+    |b.phi0 u| ≤ (2 : ℝ) ^ (3 + 2) * C_uniPair * bracketBump u ^ 3 := by
+  let g : ℝ → ℂ := FourierTransform.fourier (fun x : ℝ => (b.phi0 x : ℂ))
+  have hwin : cnWindow C_uniPair N_uniPair b.phi0 := b.universalPair.1
+  have hgCont : ContDiff ℝ 3 g := by
+    let phiC : SchwartzMap ℝ ℂ :=
+      b.phi0.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
+    have hs : ContDiff ℝ 3 (FourierTransform.fourier phiC : ℝ → ℂ) :=
+      (FourierTransform.fourier phiC).smooth 3
+    have hphiC : (phiC : ℝ → ℂ) = fun x : ℝ => (b.phi0 x : ℂ) := by
+      funext x
+      simp [phiC, SchwartzMap.postcompCLM_apply]
+    rw [SchwartzMap.fourier_coe, hphiC] at hs
+    exact hs
+  have hgsupp : tsupport g ⊆ Set.Icc (-1 : ℝ) 1 := by
+    dsimp [g]
+    exact closure_minimal hwin.2.2.1 isClosed_Icc
+  have hgprofile : ∀ k : ℕ, k ≤ 3 → ∀ xi : ℝ,
+      ‖iteratedDeriv k g xi‖ ≤ C_uniPair := by
+    intro k hk xi
+    by_cases hxi : xi ∈ Set.Icc (-1 : ℝ) 1
+    · exact hwin.2.2.2.2 xi hxi k (by simpa [N_uniPair] using hk)
+    · have hderivSupp : Function.support (iteratedDeriv k g) ⊆ Set.Icc (-1 : ℝ) 1 :=
+        (subset_tsupport _).trans
+          ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset g k).trans
+            hgsupp)
+      have hzero : iteratedDeriv k g xi = 0 := by
+        apply Function.notMem_support.mp
+        intro hxiSupp
+        exact hxi (hderivSupp hxiSupp)
+      rw [hzero, norm_zero]
+      norm_num [C_uniPair]
+  have hphiCont : Continuous (fun x : ℝ => (b.phi0 x : ℂ)) :=
+    Complex.ofRealCLM.continuous.comp b.phi0.continuous
+  have hphiInt : Integrable (fun x : ℝ => (b.phi0 x : ℂ)) :=
+    b.phi0.integrable.ofReal
+  have hgcompact : HasCompactSupport g :=
+    isCompact_Icc.of_isClosed_subset isClosed_closure hgsupp
+  have hgInt : Integrable g :=
+    hgCont.continuous.integrable_of_hasCompactSupport hgcompact
+  have hinv : FourierTransformInv.fourierInv g = fun x : ℝ => (b.phi0 x : ℂ) := by
+    dsimp [g]
+    exact hphiCont.fourierInv_fourier_eq hphiInt hgInt
+  have hdecay :=
+    Codex.Preliminaries.BumpsAndEstimates.aux_fourierProfile_decay_pos 3 (by omega)
+      g C_uniPair (by norm_num [C_uniPair]) hgCont hgsupp hgprofile u
+  rw [hinv, Complex.norm_real, Real.norm_eq_abs] at hdecay
+  exact hdecay
+
+/-- The cancellation in `theta` turns its half-line primitive into a finite interval integral. -/
+private theorem aux_thetaPrimitive_conv_theta_eq_interval (f : SchwartzMap ℝ ℝ) (x : ℝ) :
+    aux_realConvolution (aux_indicator (Set.Ici 0))
+      (fun z : ℝ => f z - aux_realRescaled 2 (fun w : ℝ => f w) z) x =
+      ∫ z : ℝ in x / 2..x, f z := by
+  let θ : ℝ → ℝ := fun z => f z - aux_realRescaled 2 (fun w : ℝ => f w) z
+  have hθ : Integrable θ := by
+    dsimp [θ]
+    exact f.integrable.sub
+      ((f.integrable.comp_mul_left' (by norm_num : (2 : ℝ)⁻¹ ≠ 0)).const_mul _)
+  have hfirst :
+      aux_realConvolution (aux_indicator (Set.Ici 0)) θ x =
+        ∫ z : ℝ in Set.Iic x, θ z := by
+    unfold aux_realConvolution aux_indicator
+    rw [← MeasureTheory.integral_indicator measurableSet_Iic]
+    rw [← integral_sub_left_eq_self (fun z : ℝ => (Set.Iic x).indicator θ z) volume x]
+    apply integral_congr_ae
+    filter_upwards [] with y
+    by_cases hy : y ∈ Set.Ici (0 : ℝ)
+    · have hmem : x - y ∈ Set.Iic x := by
+        change x - y ≤ x
+        exact sub_le_self x hy
+      simp [hy, hmem]
+    · have hnot : x - y ∉ Set.Iic x := by
+        change ¬ x - y ≤ x
+        intro h
+        apply hy
+        change 0 ≤ y
+        linarith
+      simp [hy, hnot]
+  rw [show (fun z : ℝ => f z - aux_realRescaled 2 (fun w : ℝ => f w) z) = θ by rfl,
+    hfirst]
+  have hφIic (a : ℝ) : IntegrableOn (fun z : ℝ => f z) (Set.Iic a) :=
+    f.integrable.integrableOn
+  have hscaled :
+      (∫ z : ℝ in Set.Iic x, aux_realRescaled 2 (fun w : ℝ => f w) z) =
+        ∫ z : ℝ in Set.Iic (x / 2), f z := by
+    let g : ℝ → ℝ := (Set.Iic (x / 2)).indicator (fun z : ℝ => f z)
+    have hchange := Measure.integral_comp_inv_mul_left g (2 : ℝ)
+    have hfun : (fun z : ℝ => (Set.Iic x).indicator
+          (aux_realRescaled 2 (fun w : ℝ => f w)) z) =
+        fun z : ℝ => (2 : ℝ)⁻¹ * g ((2 : ℝ)⁻¹ * z) := by
+      funext z
+      simp only [aux_realRescaled, g, Set.indicator_apply]
+      by_cases hz : z ≤ x
+      · have hz' : (2 : ℝ)⁻¹ * z ≤ x / 2 := by nlinarith
+        simp [hz, hz']
+      · have hz' : ¬ (2 : ℝ)⁻¹ * z ≤ x / 2 := by
+          intro h
+          apply hz
+          nlinarith
+        simp [hz, hz']
+    rw [← MeasureTheory.integral_indicator measurableSet_Iic, hfun,
+      MeasureTheory.integral_const_mul, hchange]
+    simp only [abs_of_pos (by norm_num : (0 : ℝ) < 2), smul_eq_mul]
+    rw [show (2 : ℝ)⁻¹ * (2 * ∫ y : ℝ, g y) = ∫ y : ℝ, g y by ring,
+      MeasureTheory.integral_indicator measurableSet_Iic]
+  change (∫ z : ℝ in Set.Iic x,
+      f z - aux_realRescaled 2 (fun w : ℝ => f w) z) = _
+  have hrescaleIic : IntegrableOn
+      (aux_realRescaled 2 (fun w : ℝ => f w)) (Set.Iic x) := by
+    exact ((f.integrable.comp_mul_left' (by norm_num : (2 : ℝ)⁻¹ ≠ 0)).const_mul _).integrableOn
+  rw [MeasureTheory.integral_sub (hφIic x) hrescaleIic, hscaled]
+  exact intervalIntegral.integral_Iic_sub_Iic (hφIic (x / 2)) (hφIic x)
+
+private theorem aux_thetaPrimitive_tilde_eq_interval
+    (b : windowBasedBumpFunctions) (x : ℝ) :
+    windowBasedBumpFunctions.thetaTilde b x =
+      ∫ z : ℝ in x / 2..x, b.phi0 z := by
+  change aux_realConvolution (aux_indicator (Set.Ici 0))
+    (fun z : ℝ => b.phi0 z - aux_realRescaled 2 (fun w : ℝ => b.phi0 w) z) x = _
+  exact aux_thetaPrimitive_conv_theta_eq_interval b.phi0 x
+
+private theorem aux_thetaPrimitive_abs_le_two_abs_of_mem_uIcc_half (x z : ℝ)
+    (hz : z ∈ Set.uIcc (x / 2) x) :
+    |x| ≤ 2 * |z| := by
+  rcases Set.mem_uIcc.mp hz with hz | hz
+  · have hxnonneg : 0 ≤ x := by linarith
+    have hznonneg : 0 ≤ z := le_trans (by linarith [hxnonneg]) hz.1
+    rw [abs_of_nonneg hxnonneg, abs_of_nonneg hznonneg]
+    linarith
+  · have hxnonpos : x ≤ 0 := by linarith
+    have hznonpos : z ≤ 0 := le_trans hz.2 (by linarith [hxnonpos])
+    rw [abs_of_nonpos hxnonpos, abs_of_nonpos hznonpos]
+    linarith
+
+private theorem aux_thetaPrimitive_tilde_decay_two_sharp (b : windowBasedBumpFunctions) (u : ℝ) :
+    |windowBasedBumpFunctions.thetaTilde b u| ≤
+      (2 : ℝ) ^ 7 * C_uniPair * bracketBump u ^ 2 := by
+  rw [aux_thetaPrimitive_tilde_eq_interval]
+  have hphi := aux_thetaPrimitive_phi0_decay_three b
+  have hBnonneg : 0 ≤ bracketBump u := by
+    rw [bracketBump]
+    positivity
+  have hpoint (z : ℝ) (hz : z ∈ Set.uIcc (u / 2) u) :
+      |b.phi0 z| ≤ (2 : ℝ) ^ (3 + 2) * C_uniPair *
+        (2 * bracketBump u) ^ 3 := by
+    have hbr : bracketBump z ≤ 2 * bracketBump u :=
+      aux_thetaPrimitive_bracket_le_two_of_abs_le_twice u z
+        (aux_thetaPrimitive_abs_le_two_abs_of_mem_uIcc_half u z hz)
+    have hbrpow : bracketBump z ^ 3 ≤ (2 * bracketBump u) ^ 3 :=
+      pow_le_pow_left₀ (by rw [bracketBump]; positivity) hbr 3
+    calc
+      |b.phi0 z| ≤ (2 : ℝ) ^ (3 + 2) * C_uniPair * bracketBump z ^ 3 := hphi z
+      _ ≤ (2 : ℝ) ^ (3 + 2) * C_uniPair * (2 * bracketBump u) ^ 3 :=
+        mul_le_mul_of_nonneg_left hbrpow (by norm_num [C_uniPair])
+  have hint :
+      ‖∫ z : ℝ in u / 2..u, b.phi0 z‖ ≤
+        ((2 : ℝ) ^ (3 + 2) * C_uniPair * (2 * bracketBump u) ^ 3) *
+          |u - u / 2| := by
+    apply intervalIntegral.norm_integral_le_of_norm_le_const
+    intro z hz
+    simpa only [Real.norm_eq_abs] using hpoint z (uIoc_subset_uIcc hz)
+  have huB : |u| * bracketBump u ≤ 1 := by
+    rw [bracketBump, show |u| * (1 + |u|)⁻¹ = |u| / (1 + |u|) by field_simp]
+    have hden : 0 < 1 + |u| := by positivity
+    exact (div_le_one₀ hden).2 (by linarith [abs_nonneg u])
+  rw [← Real.norm_eq_abs] at hint
+  calc
+    ‖∫ z : ℝ in u / 2..u, b.phi0 z‖ ≤
+        ((2 : ℝ) ^ (3 + 2) * C_uniPair * (2 * bracketBump u) ^ 3) *
+          |u - u / 2| := hint
+    _ = (2 : ℝ) ^ 7 * C_uniPair * (|u| * bracketBump u) *
+        bracketBump u ^ 2 := by
+      rw [show |u - u / 2| = |u| / 2 by
+          rw [show u - u / 2 = u / 2 by ring, abs_div]
+          norm_num,
+        mul_pow]
+      ring
+    _ ≤ (2 : ℝ) ^ 7 * C_uniPair * bracketBump u ^ 2 := by
+      have hcoeff : 0 ≤ (2 : ℝ) ^ 7 * C_uniPair := by norm_num [C_uniPair]
+      have hpow : 0 ≤ bracketBump u ^ 2 := pow_nonneg hBnonneg _
+      nlinarith [mul_nonneg hcoeff hpow]
+    _ = (2 : ℝ) ^ 7 * C_uniPair * bracketBump u ^ 2 := by rfl
+
+private theorem aux_thetaPrimitive_tilde_decay_two (b : windowBasedBumpFunctions) (u : ℝ) :
+    |windowBasedBumpFunctions.thetaTilde b u| ≤
+      C_thetaPrimitive 2 * bracketBump u ^ 2 := by
+  calc
+    |windowBasedBumpFunctions.thetaTilde b u| ≤
+        (2 : ℝ) ^ 7 * C_uniPair * bracketBump u ^ 2 :=
+      aux_thetaPrimitive_tilde_decay_two_sharp b u
+    _ ≤ C_thetaPrimitive 2 * bracketBump u ^ 2 := by
+      rw [C_thetaPrimitive]
+      have hpow : 0 ≤ bracketBump u ^ 2 := by
+        exact pow_nonneg (by rw [bracketBump]; positivity) _
+      gcongr <;> norm_num [C_uniPair]
+
+private theorem aux_thetaPrimitive_tilde_eq_primitive_difference
+    (b : windowBasedBumpFunctions) (x : ℝ) :
+    windowBasedBumpFunctions.thetaTilde b x =
+      (∫ z : ℝ in 0..x, b.phi0 z) - ∫ z : ℝ in 0..x / 2, b.phi0 z := by
+  rw [aux_thetaPrimitive_tilde_eq_interval]
+  symm
+  exact intervalIntegral.integral_interval_sub_left
+    b.phi0.integrable.intervalIntegrable b.phi0.integrable.intervalIntegrable
+
+private theorem aux_thetaPrimitive_tilde_continuous (b : windowBasedBumpFunctions) :
+    Continuous (windowBasedBumpFunctions.thetaTilde b) := by
+  let F : ℝ → ℝ := fun x => ∫ z : ℝ in 0..x, b.phi0 z
+  have hF : Continuous F := b.phi0.integrable.continuous_primitive 0
+  have hcomp : Continuous (fun x : ℝ => F (x / 2)) := by fun_prop
+  rw [show windowBasedBumpFunctions.thetaTilde b =
+      fun x : ℝ => F x - F (x / 2) by
+        funext x
+        exact aux_thetaPrimitive_tilde_eq_primitive_difference b x]
+  exact hF.sub hcomp
+
+private theorem aux_thetaPrimitive_tilde_hasDerivAt (b : windowBasedBumpFunctions) (x : ℝ) :
+    HasDerivAt (windowBasedBumpFunctions.thetaTilde b)
+      (windowBasedBumpFunctions.theta b x) x := by
+  let F : ℝ → ℝ := fun x => ∫ z : ℝ in 0..x, b.phi0 z
+  have hFderiv (y : ℝ) : HasDerivAt F (b.phi0 y) y := by
+    exact intervalIntegral.integral_hasDerivAt_right b.phi0.integrable.intervalIntegrable
+      (b.phi0.continuous.stronglyMeasurableAtFilter volume (nhds y))
+      b.phi0.continuous.continuousAt
+  have hhalf : HasDerivAt (fun y : ℝ => y / 2) (1 / 2 : ℝ) x := by
+    simpa [div_eq_mul_inv] using (hasDerivAt_id x).mul_const (1 / 2 : ℝ)
+  rw [show windowBasedBumpFunctions.thetaTilde b =
+      fun y : ℝ => F y - F (y / 2) by
+        funext y
+        exact aux_thetaPrimitive_tilde_eq_primitive_difference b y]
+  have hd := (hFderiv x).sub ((hFderiv (x / 2)).comp x hhalf)
+  have hfun : (F - F ∘ fun y : ℝ => y / 2) =
+      fun y : ℝ => F y - F (y / 2) := by
+    funext y
+    rfl
+  rw [hfun] at hd
+  simpa [windowBasedBumpFunctions.theta, aux_realRescaled, div_eq_mul_inv, mul_comm] using hd
+
+private theorem aux_thetaPrimitive_tilde_integrable (b : windowBasedBumpFunctions) :
+    Integrable (windowBasedBumpFunctions.thetaTilde b) := by
+  apply Integrable.mono' (integrable_inv_one_add_sq.const_mul (C_thetaPrimitive 2))
+  · exact (aux_thetaPrimitive_tilde_continuous b).aestronglyMeasurable
+  · filter_upwards [] with x
+    have hdecay := aux_thetaPrimitive_tilde_decay_two b x
+    rw [Real.norm_eq_abs]
+    calc
+      |windowBasedBumpFunctions.thetaTilde b x| ≤
+          C_thetaPrimitive 2 * bracketBump x ^ 2 := hdecay
+      _ ≤ C_thetaPrimitive 2 * (1 + x ^ 2)⁻¹ := by
+        apply mul_le_mul_of_nonneg_left ?_ (by norm_num [C_thetaPrimitive, C_uniPair])
+        change (1 + |x|)⁻¹ ^ 2 ≤ (1 + x ^ 2)⁻¹
+        have hsq : 1 + x ^ 2 ≤ (1 + |x|) ^ 2 := by
+          calc
+            1 + x ^ 2 = 1 + |x| ^ 2 := by rw [sq_abs]
+            _ ≤ (1 + |x|) ^ 2 := by nlinarith [abs_nonneg x]
+        have hleft : 0 < 1 + x ^ 2 := by positivity
+        have hright : 0 < (1 + |x|) ^ 2 := by positivity
+        rw [show (1 + |x|)⁻¹ ^ 2 = ((1 + |x|) ^ 2)⁻¹ by
+          rw [← inv_pow]]
+        exact (inv_le_inv₀ hright hleft).mpr hsq
+
+private theorem aux_thetaPrimitive_theta_continuous (b : windowBasedBumpFunctions) :
+    Continuous (windowBasedBumpFunctions.theta b) := by
+  unfold windowBasedBumpFunctions.theta aux_realRescaled
+  exact b.phi0.continuous.sub
+    (continuous_const.mul (b.phi0.continuous.comp (continuous_const.mul continuous_id)))
+
+private theorem aux_thetaPrimitive_theta_integrable (b : windowBasedBumpFunctions) :
+    Integrable (windowBasedBumpFunctions.theta b) := by
+  apply Integrable.mono' (integrable_inv_one_add_sq.const_mul (C_thetaDecay 3))
+  · exact (aux_thetaPrimitive_theta_continuous b).aestronglyMeasurable
+  · filter_upwards [] with x
+    have hdecay := thetaDecay b 3 (by omega) (by omega) x
+    rw [Real.norm_eq_abs]
+    calc
+      |windowBasedBumpFunctions.theta b x| ≤
+          C_thetaDecay 3 * bracketBump x ^ 3 := hdecay
+      _ ≤ C_thetaDecay 3 * bracketBump x ^ 2 := by
+        apply mul_le_mul_of_nonneg_left ?_ (by norm_num [C_thetaDecay, C_uniPair])
+        have hB : 0 ≤ bracketBump x := by rw [bracketBump]; positivity
+        have hBle : bracketBump x ≤ 1 := by
+          rw [bracketBump]
+          rw [show (1 + |x|)⁻¹ = 1 / (1 + |x|) by field_simp]
+          exact (div_le_one₀ (by positivity)).2 (by linarith [abs_nonneg x])
+        calc
+          bracketBump x ^ 3 = bracketBump x ^ 2 * bracketBump x := by ring
+          _ ≤ bracketBump x ^ 2 * 1 := by gcongr
+          _ = bracketBump x ^ 2 := by ring
+      _ ≤ C_thetaDecay 3 * (1 + x ^ 2)⁻¹ := by
+        apply mul_le_mul_of_nonneg_left ?_ (by norm_num [C_thetaDecay, C_uniPair])
+        change (1 + |x|)⁻¹ ^ 2 ≤ (1 + x ^ 2)⁻¹
+        have hsq : 1 + x ^ 2 ≤ (1 + |x|) ^ 2 := by
+          calc
+            1 + x ^ 2 = 1 + |x| ^ 2 := by rw [sq_abs]
+            _ ≤ (1 + |x|) ^ 2 := by nlinarith [abs_nonneg x]
+        have hleft : 0 < 1 + x ^ 2 := by positivity
+        have hright : 0 < (1 + |x|) ^ 2 := by positivity
+        rw [show (1 + |x|)⁻¹ ^ 2 = ((1 + |x|) ^ 2)⁻¹ by rw [← inv_pow]]
+        exact (inv_le_inv₀ hright hleft).mpr hsq
+
+private theorem aux_thetaPrimitive_x_theta_integrable (b : windowBasedBumpFunctions) :
+    Integrable (fun x : ℝ => x * windowBasedBumpFunctions.theta b x) := by
+  apply Integrable.mono' (integrable_inv_one_add_sq.const_mul (C_thetaDecay 3))
+  · exact (continuous_id.mul
+      (aux_thetaPrimitive_theta_continuous b)).aestronglyMeasurable
+  · filter_upwards [] with x
+    have hdecay := thetaDecay b 3 (by omega) (by omega) x
+    rw [Real.norm_eq_abs, abs_mul]
+    calc
+      |x| * |windowBasedBumpFunctions.theta b x| ≤
+          |x| * (C_thetaDecay 3 * bracketBump x ^ 3) := by gcongr
+      _ = C_thetaDecay 3 * (|x| * bracketBump x) * bracketBump x ^ 2 := by ring
+      _ ≤ C_thetaDecay 3 * bracketBump x ^ 2 := by
+        have hxB : |x| * bracketBump x ≤ 1 := by
+          rw [bracketBump,
+            show |x| * (1 + |x|)⁻¹ = |x| / (1 + |x|) by field_simp]
+          exact (div_le_one₀ (by positivity)).2 (by linarith [abs_nonneg x])
+        have hC : 0 ≤ C_thetaDecay 3 := by norm_num [C_thetaDecay, C_uniPair]
+        have hB2 : 0 ≤ bracketBump x ^ 2 := by
+          exact pow_nonneg (by rw [bracketBump]; positivity) _
+        nlinarith [mul_nonneg hC hB2]
+      _ ≤ C_thetaDecay 3 * (1 + x ^ 2)⁻¹ := by
+        apply mul_le_mul_of_nonneg_left ?_ (by norm_num [C_thetaDecay, C_uniPair])
+        change (1 + |x|)⁻¹ ^ 2 ≤ (1 + x ^ 2)⁻¹
+        have hsq : 1 + x ^ 2 ≤ (1 + |x|) ^ 2 := by
+          calc
+            1 + x ^ 2 = 1 + |x| ^ 2 := by rw [sq_abs]
+            _ ≤ (1 + |x|) ^ 2 := by nlinarith [abs_nonneg x]
+        have hleft : 0 < 1 + x ^ 2 := by positivity
+        have hright : 0 < (1 + |x|) ^ 2 := by positivity
+        rw [show (1 + |x|)⁻¹ ^ 2 = ((1 + |x|) ^ 2)⁻¹ by rw [← inv_pow]]
+        exact (inv_le_inv₀ hright hleft).mpr hsq
+
+private theorem aux_thetaPrimitive_tilde_complex_deriv
+    (b : windowBasedBumpFunctions) (x : ℝ) :
+    deriv (fun y : ℝ => (windowBasedBumpFunctions.thetaTilde b y : ℂ)) x =
+      (windowBasedBumpFunctions.theta b x : ℂ) := by
+  simpa using (aux_thetaPrimitive_tilde_hasDerivAt b x).ofReal_comp.deriv
+
+private theorem aux_thetaPrimitive_tilde_complex_differentiable
+    (b : windowBasedBumpFunctions) :
+    Differentiable ℝ (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) := by
+  intro x
+  exact (aux_thetaPrimitive_tilde_hasDerivAt b x).ofReal_comp.differentiableAt
+
+private theorem aux_thetaPrimitive_tilde_fourier_deriv (b : windowBasedBumpFunctions) :
+    FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.theta b x : ℂ)) =
+      fun xi : ℝ => (2 * Real.pi * Complex.I * (xi : ℂ)) •
+        FourierTransform.fourier
+          (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) xi := by
+  let f : ℝ → ℂ := fun x => (windowBasedBumpFunctions.thetaTilde b x : ℂ)
+  have hf : Integrable f := (aux_thetaPrimitive_tilde_integrable b).ofReal
+  have hdiff : Differentiable ℝ f :=
+    aux_thetaPrimitive_tilde_complex_differentiable b
+  have hf' : Integrable (deriv f) := by
+    apply Integrable.congr (aux_thetaPrimitive_theta_integrable b).ofReal
+    filter_upwards [] with x
+    exact (aux_thetaPrimitive_tilde_complex_deriv b x).symm
+  have hmain := Real.fourier_deriv hf hdiff hf'
+  have hderiv : deriv f = fun x : ℝ => (windowBasedBumpFunctions.theta b x : ℂ) := by
+    funext x
+    exact aux_thetaPrimitive_tilde_complex_deriv b x
+  simpa [f, hderiv] using hmain
+
+private theorem aux_thetaPrimitive_tilde_fourier_continuous (b : windowBasedBumpFunctions) :
+    Continuous (FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ))) := by
+  have hf : Integrable (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) :=
+    (aux_thetaPrimitive_tilde_integrable b).ofReal
+  have hcont : ContDiff ℝ 0 (FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ))) := by
+    apply Real.contDiff_fourier (N := (0 : ℕ∞))
+    intro n hn
+    have hn0 : n = 0 := by
+      apply Nat.eq_zero_of_le_zero
+      exact_mod_cast hn
+    subst n
+    simpa using hf.norm
+  exact hcont.continuous
+
+private theorem aux_thetaPrimitive_tilde_fourier_zero_of_not_annulus
+    (b : windowBasedBumpFunctions) (xi : ℝ) (hxi : xi ∉ aux_frequencyAnnulus)
+    (hxi0 : xi ≠ 0) :
+    FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) xi = 0 := by
+  have hthetaSupp : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.theta b x : ℂ))) ⊆ aux_frequencyAnnulus :=
+    (bumpBasic b).1
+  have hthetaZero : FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.theta b x : ℂ)) xi = 0 := by
+    apply Function.notMem_support.mp
+    intro hmem
+    exact hxi (hthetaSupp hmem)
+  rw [aux_thetaPrimitive_tilde_fourier_deriv b] at hthetaZero
+  change (2 * Real.pi * Complex.I * (xi : ℂ)) *
+      FourierTransform.fourier
+        (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) xi = 0 at hthetaZero
+  apply (mul_eq_zero.mp hthetaZero).resolve_left
+  apply mul_ne_zero
+  · apply mul_ne_zero
+    · apply mul_ne_zero
+      · norm_num
+      · exact_mod_cast Real.pi_ne_zero
+    · exact Complex.I_ne_zero
+  · exact_mod_cast hxi0
+
+private theorem aux_thetaPrimitive_tilde_fourier_zero_at_zero (b : windowBasedBumpFunctions) :
+    FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) 0 = 0 := by
+  let F : ℝ → ℂ := FourierTransform.fourier
+    (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ))
+  let a : ℕ → ℝ := fun n => 1 / ((n : ℝ) + 1)
+  have ha : Tendsto a atTop (nhds 0) := by
+    simpa [a] using (tendsto_one_div_add_atTop_nhds_zero_nat :
+      Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) atTop (nhds 0))
+  have hcont : Continuous F := by
+    simpa [F] using aux_thetaPrimitive_tilde_fourier_continuous b
+  have hlim : Tendsto (fun n : ℕ => F (a n)) atTop (nhds (F 0)) :=
+    hcont.continuousAt.tendsto.comp ha
+  have hzeroevent : (fun n : ℕ => F (a n)) =ᶠ[atTop] fun _ => 0 := by
+    filter_upwards [eventually_ge_atTop 4] with n hn
+    have hnreal : (4 : ℝ) ≤ n := by exact_mod_cast hn
+    have hpos : 0 < a n := by
+      dsimp [a]
+      positivity
+    have hlt : a n < 1 / 4 := by
+      dsimp [a]
+      rw [div_lt_iff₀ (by positivity : (0 : ℝ) < (n : ℝ) + 1)]
+      nlinarith
+    apply aux_thetaPrimitive_tilde_fourier_zero_of_not_annulus b (a n) ?_
+      (ne_of_gt hpos)
+    intro hmem
+    rcases hmem with hmem | hmem
+    · linarith [hmem.2]
+    · linarith [hmem.1]
+  have hzero : Tendsto (fun n : ℕ => F (a n)) atTop (nhds 0) :=
+    (tendsto_congr' hzeroevent).2 tendsto_const_nhds
+  exact tendsto_nhds_unique hlim hzero
+
+private theorem aux_thetaPrimitive_tilde_fourier_support (b : windowBasedBumpFunctions) :
+    Function.support (FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ))) ⊆
+      aux_frequencyAnnulus := by
+  intro xi hmem
+  by_contra hxi
+  apply Function.mem_support.mp hmem
+  by_cases hxi0 : xi = 0
+  · subst xi
+    exact aux_thetaPrimitive_tilde_fourier_zero_at_zero b
+  · exact aux_thetaPrimitive_tilde_fourier_zero_of_not_annulus b xi hxi hxi0
+
+private theorem aux_thetaPrimitive_fourier_complex_const_mul
+    (c : ℂ) (f : ℝ → ℂ) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ => c * f x) xi =
+      c * FourierTransform.fourier f xi := by
+  rw [Real.fourier_real_eq_integral_exp_smul, Real.fourier_real_eq_integral_exp_smul,
+    ← integral_const_mul]
+  apply integral_congr_ae
+  filter_upwards [] with x
+  ring
+
+private theorem aux_thetaPrimitive_fourier_add_of_integrable (f g : ℝ → ℂ)
+    (hf : Integrable f) (hg : Integrable g) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ => f x + g x) xi =
+      FourierTransform.fourier f xi + FourierTransform.fourier g xi := by
+  rw [Real.fourier_real_eq_integral_exp_smul, Real.fourier_real_eq_integral_exp_smul,
+    Real.fourier_real_eq_integral_exp_smul]
+  let e : ℝ → ℂ := fun x => Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I)
+  have he : Continuous e := by
+    dsimp [e]
+    fun_prop
+  have he_bound : ∀ x, ‖e x‖ ≤ (1 : ℝ) := by
+    intro x
+    rw [show e x = Complex.exp (((-2 * Real.pi * x * xi : ℝ) : ℂ) * Complex.I) by
+      rfl, Complex.norm_exp]
+    norm_num
+  have hfi : Integrable (fun x : ℝ => e x • f x) :=
+    hf.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)
+  have hgi : Integrable (fun x : ℝ => e x • g x) :=
+    hg.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)
+  rw [← integral_add hfi hgi]
+  apply integral_congr_ae
+  filter_upwards [] with x
+  change e x • (f x + g x) = e x • f x + e x • g x
+  rw [smul_add]
+
+private theorem aux_thetaPrimitive_theta_fourier_deriv (b : windowBasedBumpFunctions) :
+    deriv (FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.theta b x : ℂ))) =
+      FourierTransform.fourier
+        (fun x : ℝ => (-2 * Real.pi * Complex.I * (x : ℂ)) *
+          (windowBasedBumpFunctions.theta b x : ℂ)) := by
+  let f : ℝ → ℂ := fun x => (windowBasedBumpFunctions.theta b x : ℂ)
+  have hf : Integrable f := (aux_thetaPrimitive_theta_integrable b).ofReal
+  have hmoment : Integrable (fun x : ℝ => x • f x) := by
+    convert (aux_thetaPrimitive_x_theta_integrable b).ofReal using 1
+    funext x
+    dsimp [f]
+    push_cast
+    simp only [smul_eq_mul]
+  have hmain := Real.deriv_fourier hf hmoment
+  simpa [f, smul_eq_mul] using hmain
+
+private theorem aux_thetaPrimitive_theta_fourier_deriv_zero_of_not_annulus
+    (b : windowBasedBumpFunctions) (xi : ℝ) (hxi : xi ∉ aux_frequencyAnnulus) :
+    deriv (FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.theta b x : ℂ))) xi = 0 := by
+  let F : ℝ → ℂ := FourierTransform.fourier
+    (fun x : ℝ => (windowBasedBumpFunctions.theta b x : ℂ))
+  have hsupp : Function.support F ⊆ aux_frequencyAnnulus := by
+    simpa [F] using (bumpBasic b).1
+  have htsupp : tsupport F ⊆ aux_frequencyAnnulus :=
+    closure_minimal hsupp (by
+      change IsClosed (Set.Icc (-1 : ℝ) (-(1 / 4)) ∪ Set.Icc (1 / 4) 1)
+      exact isClosed_Icc.union isClosed_Icc)
+  have hnot : xi ∉ tsupport F := fun hx => hxi (htsupp hx)
+  simpa [F] using (deriv_of_notMem_tsupport hnot)
+
+private theorem aux_thetaPrimitive_x_theta_fourier_zero_of_not_annulus
+    (b : windowBasedBumpFunctions) (xi : ℝ) (hxi : xi ∉ aux_frequencyAnnulus) :
+    FourierTransform.fourier
+      (fun x : ℝ => (x * windowBasedBumpFunctions.theta b x : ℂ)) xi = 0 := by
+  have hd := congrFun (aux_thetaPrimitive_theta_fourier_deriv b) xi
+  rw [aux_thetaPrimitive_theta_fourier_deriv_zero_of_not_annulus b xi hxi] at hd
+  rw [show (fun x : ℝ => (-2 * Real.pi * Complex.I * (x : ℂ)) *
+      (windowBasedBumpFunctions.theta b x : ℂ)) =
+      fun x : ℝ => (-2 * Real.pi * Complex.I) *
+        ((x * windowBasedBumpFunctions.theta b x : ℝ) : ℂ) by
+          funext x
+          push_cast
+          ring,
+    aux_thetaPrimitive_fourier_complex_const_mul] at hd
+  have hresult : FourierTransform.fourier
+      (fun x : ℝ => ((x * windowBasedBumpFunctions.theta b x : ℝ) : ℂ)) xi = 0 :=
+    (mul_eq_zero.mp hd.symm).resolve_left (by
+      apply mul_ne_zero
+      · apply mul_ne_zero
+        · norm_num
+        · exact_mod_cast Real.pi_ne_zero
+      · exact Complex.I_ne_zero)
+  have heq : (fun x : ℝ => (x : ℂ) * (windowBasedBumpFunctions.theta b x : ℂ)) =
+      fun x : ℝ => ((x * windowBasedBumpFunctions.theta b x : ℝ) : ℂ) := by
+    funext x
+    push_cast
+    ring
+  rw [heq]
+  exact hresult
+
+private theorem aux_thetaPrimitive_T_tilde_eq (b : windowBasedBumpFunctions) :
+    aux_T (windowBasedBumpFunctions.thetaTilde b) =
+      fun x : ℝ => windowBasedBumpFunctions.thetaTilde b x +
+        x * windowBasedBumpFunctions.theta b x := by
+  funext x
+  unfold aux_T
+  have hd := ((hasDerivAt_id x).mul
+    (aux_thetaPrimitive_tilde_hasDerivAt b x)).deriv
+  have hfun : id * windowBasedBumpFunctions.thetaTilde b =
+      fun y : ℝ => y * windowBasedBumpFunctions.thetaTilde b y := by
+    funext y
+    simp
+  rw [hfun] at hd
+  simpa using hd
+
+private theorem aux_thetaPrimitive_T_tilde_fourier_support (b : windowBasedBumpFunctions) :
+    Function.support (FourierTransform.fourier
+      (fun x : ℝ => (aux_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) ⊆
+      aux_frequencyAnnulus := by
+  intro xi hmem
+  by_contra hxi
+  apply Function.mem_support.mp hmem
+  rw [aux_thetaPrimitive_T_tilde_eq]
+  dsimp
+  have hsum : (fun x : ℝ =>
+      ((windowBasedBumpFunctions.thetaTilde b x +
+        x * windowBasedBumpFunctions.theta b x : ℝ) : ℂ)) =
+      fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ) +
+        ((x * windowBasedBumpFunctions.theta b x : ℝ) : ℂ) := by
+    funext x
+    push_cast
+    ring
+  rw [hsum]
+  exact (aux_thetaPrimitive_fourier_add_of_integrable _ _
+    (aux_thetaPrimitive_tilde_integrable b).ofReal
+    (aux_thetaPrimitive_x_theta_integrable b).ofReal xi).trans (by
+      have hA : FourierTransform.fourier
+          (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) xi = 0 :=
+        Function.notMem_support.mp (fun h =>
+          hxi (aux_thetaPrimitive_tilde_fourier_support b h))
+      have hB := aux_thetaPrimitive_x_theta_fourier_zero_of_not_annulus b xi hxi
+      have hB' : FourierTransform.fourier
+          (fun x : ℝ => ((x * windowBasedBumpFunctions.theta b x : ℝ) : ℂ)) xi = 0 := by
+        have heq : (fun x : ℝ => (x : ℂ) *
+            (windowBasedBumpFunctions.theta b x : ℂ)) =
+            fun x : ℝ => ((x * windowBasedBumpFunctions.theta b x : ℝ) : ℂ) := by
+          funext x
+          push_cast
+          ring
+        rw [heq] at hB
+        exact hB
+      change FourierTransform.fourier
+          (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) xi +
+        FourierTransform.fourier
+          (fun x : ℝ => ((x * windowBasedBumpFunctions.theta b x : ℝ) : ℂ)) xi = 0
+      rw [hA, hB']
+      simp)
+
+private theorem aux_thetaPrimitive_frequencyAnnulus_subset_annulusOne :
+    aux_frequencyAnnulus ⊆ aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+  intro xi hxi
+  change 1 / ((2 : ℝ) ^ 2) ≤ |xi| ∧ |xi| ≤ (2 : ℝ) ^ 2 * 1
+  rcases hxi with hxi | hxi
+  · constructor
+    · rw [abs_of_nonpos (by linarith [hxi.2])]
+      norm_num
+      linarith [hxi.2]
+    · rw [abs_of_nonpos (by linarith [hxi.2])]
+      norm_num
+      linarith [hxi.1]
+  · constructor
+    · rw [abs_of_nonneg (by linarith [hxi.1])]
+      norm_num
+      linarith [hxi.1]
+    · rw [abs_of_nonneg (by linarith [hxi.1])]
+      norm_num
+      linarith [hxi.2]
+
+private theorem aux_thetaPrimitive_tilde_decay_N (b : windowBasedBumpFunctions) (N : ℕ)
+    (hN_two : 2 ≤ N) (hN_uni : N < N_uniPair) (u : ℝ) :
+    |windowBasedBumpFunctions.thetaTilde b u| ≤
+      C_thetaPrimitive N * bracketBump u ^ N := by
+  have hN : N = 2 := by
+    simp only [N_uniPair] at hN_uni
+    omega
+  subst N
+  exact aux_thetaPrimitive_tilde_decay_two b u
+
+private theorem aux_thetaPrimitive_T_tilde_decay_N (b : windowBasedBumpFunctions) (N : ℕ)
+    (hN_two : 2 ≤ N) (hN_uni : N < N_uniPair) (u : ℝ) :
+    |aux_T (windowBasedBumpFunctions.thetaTilde b) u| ≤
+      C_thetaPrimitive N * bracketBump u ^ N := by
+  have hN : N = 2 := by
+    simp only [N_uniPair] at hN_uni
+    omega
+  subst N
+  rw [aux_thetaPrimitive_T_tilde_eq]
+  have htilde := aux_thetaPrimitive_tilde_decay_two_sharp b u
+  have htheta := thetaDecay b 3 (by omega) (by omega) u
+  have hB : 0 ≤ bracketBump u := by rw [bracketBump]; positivity
+  have hxB : |u| * bracketBump u ≤ 1 := by
+    rw [bracketBump,
+      show |u| * (1 + |u|)⁻¹ = |u| / (1 + |u|) by field_simp]
+    exact (div_le_one₀ (by positivity)).2 (by linarith [abs_nonneg u])
+  calc
+    |windowBasedBumpFunctions.thetaTilde b u +
+        u * windowBasedBumpFunctions.theta b u| ≤
+      |windowBasedBumpFunctions.thetaTilde b u| +
+      |u * windowBasedBumpFunctions.theta b u| := abs_add_le _ _
+    _ ≤ (2 : ℝ) ^ 7 * C_uniPair * bracketBump u ^ 2 +
+        |u| * (C_thetaDecay 3 * bracketBump u ^ 3) := by
+      rw [abs_mul]
+      gcongr
+    _ = ((2 : ℝ) ^ 7 + (2 : ℝ) ^ 8 * (|u| * bracketBump u)) *
+        C_uniPair * bracketBump u ^ 2 := by
+      rw [C_thetaDecay]
+      ring
+    _ ≤ ((2 : ℝ) ^ 7 + (2 : ℝ) ^ 8) * C_uniPair * bracketBump u ^ 2 := by
+      have hC : 0 ≤ C_uniPair := by norm_num [C_uniPair]
+      have hB2 : 0 ≤ bracketBump u ^ 2 := pow_nonneg hB _
+      nlinarith [mul_nonneg hC hB2]
+    _ ≤ C_thetaPrimitive 2 * bracketBump u ^ 2 := by
+      rw [C_thetaPrimitive]
+      have hB2 : 0 ≤ bracketBump u ^ 2 := pow_nonneg hB _
+      gcongr <;> norm_num [C_uniPair]
 
 /--
 \begin{lemma}\label{lem:theta_prim}
@@ -1925,7 +4127,12 @@ theorem thetaPrimitive (b : windowBasedBumpFunctions) (N : ℕ)
       C_thetaPrimitive N * bracketBump u ^ N) ∧
     ∀ u : ℝ, |aux_T (windowBasedBumpFunctions.thetaTilde b) u| ≤
       C_thetaPrimitive N * bracketBump u ^ N := by
-  sorry
+  exact ⟨⟨aux_thetaPrimitive_tilde_fourier_support b,
+      aux_thetaPrimitive_frequencyAnnulus_subset_annulusOne⟩,
+    ⟨aux_thetaPrimitive_T_tilde_fourier_support b,
+      aux_thetaPrimitive_frequencyAnnulus_subset_annulusOne⟩,
+    aux_thetaPrimitive_tilde_decay_N b N hN_two hN_uni,
+    aux_thetaPrimitive_T_tilde_decay_N b N hN_two hN_uni⟩
 
 /--
 \begin{lemma}[constant $C_{\ref{lem:theta_prim},N}$ \auto]
@@ -1938,7 +4145,122 @@ $C_{\ref{lem:theta_prim},2}\le2^{31}$.
 theorem constantThetaPrimitive (N : ℕ) (hN_two : 2 ≤ N) (hN_uni : N < N_uniPair) :
     C_thetaPrimitive N ≤ (2 : ℝ) ^ (5 * N + 21) ∧
     C_thetaPrimitive 2 ≤ (2 : ℝ) ^ 31 := by
-  sorry
+  constructor
+  · rw [C_thetaPrimitive, C_uniPair, ← pow_add]
+  · norm_num [C_thetaPrimitive, C_uniPair]
+
+private theorem aux_phiFour_fourier_translate
+    (f : ℝ → ℂ) (a xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ => f (x - a)) xi =
+      Real.fourierChar (-(xi * a)) • FourierTransform.fourier f xi := by
+  change FourierTransform.fourier (f ∘ fun x : ℝ => x + (-a)) xi = _
+  change VectorFourier.fourierIntegral Real.fourierChar volume (innerₗ ℝ)
+      (f ∘ fun x : ℝ => x + (-a)) xi =
+    Real.fourierChar (-(xi * a)) •
+      VectorFourier.fourierIntegral Real.fourierChar volume (innerₗ ℝ) f xi
+  simpa using congrFun
+    (VectorFourier.fourierIntegral_comp_add_right Real.fourierChar volume
+      (innerₗ ℝ) f (-a)) xi
+
+private theorem aux_phiFour_real_scaled_translated_support
+    (c a : ℝ) (f : ℝ → ℝ) (s : Set ℝ)
+    (hs : Function.support
+      (FourierTransform.fourier (fun x : ℝ => (f x : ℂ))) ⊆ s) :
+    Function.support (FourierTransform.fourier
+      (fun x : ℝ => ((c * f (x - a) : ℝ) : ℂ))) ⊆ s := by
+  intro xi hmem
+  by_contra hxi
+  apply Function.mem_support.mp hmem
+  rw [show (fun x : ℝ => ((c * f (x - a) : ℝ) : ℂ)) =
+      fun x : ℝ => (c : ℂ) * (f (x - a) : ℂ) by
+        funext x
+        push_cast
+        ring,
+    aux_thetaPrimitive_fourier_complex_const_mul,
+    aux_phiFour_fourier_translate (fun x : ℝ => (f x : ℂ)) a xi]
+  have hzero : FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) xi = 0 :=
+    Function.notMem_support.mp (fun hx => hxi (hs hx))
+  rw [hzero]
+  simp
+
+private theorem aux_phiFour_sum_scaled_translated_support
+    (c d a : ℝ) (f g : ℝ → ℝ) (s : Set ℝ)
+    (hf : Integrable f) (hg : Integrable g)
+    (hfs : Function.support
+      (FourierTransform.fourier (fun x : ℝ => (f x : ℂ))) ⊆ s)
+    (hgs : Function.support
+      (FourierTransform.fourier (fun x : ℝ => (g x : ℂ))) ⊆ s) :
+    Function.support (FourierTransform.fourier
+      (fun x : ℝ => ((c * f (x - a) + d * g (x - a) : ℝ) : ℂ))) ⊆ s := by
+  intro xi hmem
+  by_contra hxi
+  apply Function.mem_support.mp hmem
+  rw [show (fun x : ℝ =>
+      ((c * f (x - a) + d * g (x - a) : ℝ) : ℂ)) =
+      fun x : ℝ => (c : ℂ) * (f (x - a) : ℂ) +
+        (d : ℂ) * (g (x - a) : ℂ) by
+          funext x
+          push_cast
+          ring,
+    aux_thetaPrimitive_fourier_add_of_integrable
+      (fun x : ℝ => (c : ℂ) * (f (x - a) : ℂ))
+      (fun x : ℝ => (d : ℂ) * (g (x - a) : ℂ)) ?_ ?_ xi,
+    aux_thetaPrimitive_fourier_complex_const_mul,
+    aux_thetaPrimitive_fourier_complex_const_mul,
+    aux_phiFour_fourier_translate (fun x : ℝ => (f x : ℂ)) a xi,
+    aux_phiFour_fourier_translate (fun x : ℝ => (g x : ℂ)) a xi]
+  · have hfzero : FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) xi = 0 :=
+      Function.notMem_support.mp (fun hx => hxi (hfs hx))
+    have hgzero : FourierTransform.fourier (fun x : ℝ => (g x : ℂ)) xi = 0 :=
+      Function.notMem_support.mp (fun hx => hxi (hgs hx))
+    rw [hfzero, hgzero]
+    simp
+  · exact ((hf.comp_sub_right a).ofReal.const_mul _)
+  · exact ((hg.comp_sub_right a).ofReal.const_mul _)
+
+private theorem aux_phiFour_TthetaTilde_integrable (b : windowBasedBumpFunctions) :
+    Integrable (aux_T (windowBasedBumpFunctions.thetaTilde b)) := by
+  rw [aux_thetaPrimitive_T_tilde_eq]
+  exact (aux_thetaPrimitive_tilde_integrable b).add
+    (aux_thetaPrimitive_x_theta_integrable b)
+
+private theorem aux_phiFour_T_eq (b : windowBasedBumpFunctions) (k : ℤ) :
+    aux_T (windowBasedBumpFunctions.phiFour b k) =
+      fun x : ℝ => (2 : ℝ) ^ k *
+        (aux_T (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+          (2 : ℝ) ^ (-k) *
+            windowBasedBumpFunctions.theta b (x - (2 : ℝ) ^ (-k))) := by
+  funext x
+  change deriv (fun y : ℝ => y * ((2 : ℝ) ^ k *
+      windowBasedBumpFunctions.thetaTilde b (y - (2 : ℝ) ^ (-k)))) x =
+    (2 : ℝ) ^ k *
+      (aux_T (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+        (2 : ℝ) ^ (-k) *
+          windowBasedBumpFunctions.theta b (x - (2 : ℝ) ^ (-k)))
+  have hshift : HasDerivAt (fun y : ℝ => y - (2 : ℝ) ^ (-k)) 1 x := by
+    simpa using (hasDerivAt_id x).sub_const ((2 : ℝ) ^ (-k))
+  have hbase := aux_thetaPrimitive_tilde_hasDerivAt b (x - (2 : ℝ) ^ (-k))
+  have hraw := hbase.comp x hshift
+  have htranslate : HasDerivAt
+      (fun y : ℝ => windowBasedBumpFunctions.thetaTilde b (y - (2 : ℝ) ^ (-k)))
+      (windowBasedBumpFunctions.theta b (x - (2 : ℝ) ^ (-k))) x := by
+    simpa [Function.comp_def] using hraw
+  have hderiv := ((hasDerivAt_id x).mul
+    ((hasDerivAt_const x ((2 : ℝ) ^ k)).mul htranslate)).deriv
+  change deriv (id * ((fun _ : ℝ => (2 : ℝ) ^ k) *
+      fun y : ℝ => windowBasedBumpFunctions.thetaTilde b
+        (y - (2 : ℝ) ^ (-k)))) x = _
+  have hderiv' :
+      deriv (id * ((fun _ : ℝ => (2 : ℝ) ^ k) *
+        fun y : ℝ => windowBasedBumpFunctions.thetaTilde b
+          (y - (2 : ℝ) ^ (-k)))) x =
+        (2 : ℝ) ^ k * windowBasedBumpFunctions.thetaTilde b
+          (x - (2 : ℝ) ^ (-k)) +
+        x * ((2 : ℝ) ^ k * windowBasedBumpFunctions.theta b
+          (x - (2 : ℝ) ^ (-k))) := by
+    simpa only [Pi.mul_apply, id_eq, zero_mul, zero_add, one_mul] using hderiv
+  rw [aux_thetaPrimitive_T_tilde_eq]
+  exact hderiv'.trans (by ring)
 
 /--
 \begin{lemma}\label{lem:phi4_supp}
@@ -1954,7 +4276,40 @@ theorem phiFourSupport (b : windowBasedBumpFunctions) (k : ℤ) :
     Function.support (FourierTransform.fourier
       (fun x : ℝ ↦ (aux_T (windowBasedBumpFunctions.phiFour b k) x : ℂ))) ⊆
         aux_frequencyAnnulus := by
-  sorry
+  have hprim := thetaPrimitive b 2 (by omega) (by norm_num [N_uniPair])
+  constructor
+  · unfold windowBasedBumpFunctions.phiFour
+    exact aux_phiFour_real_scaled_translated_support
+      ((2 : ℝ) ^ k) ((2 : ℝ) ^ (-k))
+      (windowBasedBumpFunctions.thetaTilde b) aux_frequencyAnnulus hprim.1.1
+  · rw [aux_phiFour_T_eq]
+    have htheta : Function.support (FourierTransform.fourier
+        (fun x : ℝ => (windowBasedBumpFunctions.theta b x : ℂ))) ⊆
+        aux_frequencyAnnulus := (bumpBasic b).1
+    have hsum := aux_phiFour_sum_scaled_translated_support
+      ((2 : ℝ) ^ k) ((2 : ℝ) ^ k * (2 : ℝ) ^ (-k))
+      ((2 : ℝ) ^ (-k))
+      (aux_T (windowBasedBumpFunctions.thetaTilde b))
+      (windowBasedBumpFunctions.theta b)
+      aux_frequencyAnnulus
+      (aux_phiFour_TthetaTilde_integrable b)
+      (aux_thetaPrimitive_theta_integrable b)
+      hprim.2.1.1 htheta
+    have hform :
+        (fun x : ℝ => ((2 : ℝ) ^ k *
+          (aux_T (windowBasedBumpFunctions.thetaTilde b)
+            (x - (2 : ℝ) ^ (-k)) +
+            (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
+              (x - (2 : ℝ) ^ (-k))) : ℝ)) =
+        fun x : ℝ => (2 : ℝ) ^ k *
+          aux_T (windowBasedBumpFunctions.thetaTilde b)
+            (x - (2 : ℝ) ^ (-k)) +
+          ((2 : ℝ) ^ k * (2 : ℝ) ^ (-k)) *
+            windowBasedBumpFunctions.theta b (x - (2 : ℝ) ^ (-k)) := by
+      funext x
+      ring
+    rw [hform]
+    exact hsum
 
 end
 
