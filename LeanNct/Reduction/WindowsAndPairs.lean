@@ -119,35 +119,59 @@ private theorem aux_fourier_re_fourierInv_of_real_even
   rw [← hinvreal]
   exact congrFun (hcont.fourier_fourierInv_eq hint hfourierint) xi
 
-/-- For `existsUniversalPair`, construct a real Schwartz function with a prescribed real-even,
-compactly supported smooth Fourier profile. -/
-private theorem aux_exists_real_schwartz_fourier_eq
+/-- An even real-valued Fourier profile has an even inverse Fourier transform. -/
+private theorem aux_fourierInv_even_of_even (H : ℝ → ℂ)
+    (heven : ∀ x : ℝ, H (-x) = H x) (x : ℝ) :
+    FourierTransformInv.fourierInv H (-x) = FourierTransformInv.fourierInv H x := by
+  have hfourier : FourierTransform.fourier H (-x) = FourierTransform.fourier H x := by
+    change FourierTransform.fourier H ((LinearIsometryEquiv.neg ℝ) x) = _
+    rw [← Real.fourier_comp_linearIsometry (LinearIsometryEquiv.neg ℝ) H x]
+    apply Real.fourier_congr_ae
+    filter_upwards [] with y
+    simpa [Function.comp_def] using heven y
+  rw [Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_neg]
+  simpa only [neg_neg] using hfourier.symm
+
+/-- Construct a real even Schwartz function with a prescribed real-even, compactly supported
+smooth Fourier profile. -/
+theorem exists_real_even_schwartz_fourier_eq
     (H : ℝ → ℂ) (hcompact : HasCompactSupport H)
     (hsmooth : ContDiff ℝ (⊤ : ℕ∞) H)
     (hreal : ∀ x : ℝ, ∃ r : ℝ, H x = r)
     (heven : ∀ x : ℝ, H (-x) = H x) :
-    ∃ phi : SchwartzMap ℝ ℝ, ∀ xi : ℝ,
-      FourierTransform.fourier (fun x : ℝ => (phi x : ℂ)) xi = H xi := by
+    ∃ phi : SchwartzMap ℝ ℝ,
+      (∀ xi : ℝ, FourierTransform.fourier (fun x : ℝ => (phi x : ℂ)) xi = H xi) ∧
+      ∀ x : ℝ, phi (-x) = phi x := by
   let HC : SchwartzMap ℝ ℂ := hcompact.toSchwartzMap hsmooth
   let G : SchwartzMap ℝ ℂ := FourierTransformInv.fourierInv HC
   let phi : SchwartzMap ℝ ℝ := G.postcompCLM (𝕜 := ℝ) Complex.reCLM
-  refine ⟨phi, ?_⟩
-  intro xi
-  have hHC : (HC : ℝ → ℂ) = H := by
-    funext x
-    rfl
-  have hG : (G : ℝ → ℂ) = FourierTransformInv.fourierInv H := by
-    change (FourierTransformInv.fourierInv HC : ℝ → ℂ) = _
-    rw [SchwartzMap.fourierInv_coe, hHC]
-  change FourierTransform.fourier (fun x : ℝ => ((G x).re : ℂ)) xi = H xi
-  rw [hG]
-  apply aux_fourier_re_fourierInv_of_real_even
-  · exact hsmooth.continuous
-  · exact hsmooth.continuous.integrable_of_hasCompactSupport hcompact
-  · rw [← hG]
-    exact G.integrable
-  · exact hreal
-  · exact heven
+  refine ⟨phi, ?_, ?_⟩
+  · intro xi
+    have hHC : (HC : ℝ → ℂ) = H := by
+      funext x
+      rfl
+    have hG : (G : ℝ → ℂ) = FourierTransformInv.fourierInv H := by
+      change (FourierTransformInv.fourierInv HC : ℝ → ℂ) = _
+      rw [SchwartzMap.fourierInv_coe, hHC]
+    change FourierTransform.fourier (fun x : ℝ => ((G x).re : ℂ)) xi = H xi
+    rw [hG]
+    apply aux_fourier_re_fourierInv_of_real_even
+    · exact hsmooth.continuous
+    · exact hsmooth.continuous.integrable_of_hasCompactSupport hcompact
+    · rw [← hG]
+      exact G.integrable
+    · exact hreal
+    · exact heven
+  · intro x
+    have hHC : (HC : ℝ → ℂ) = H := by
+      funext y
+      rfl
+    have hG : (G : ℝ → ℂ) = FourierTransformInv.fourierInv H := by
+      change (FourierTransformInv.fourierInv HC : ℝ → ℂ) = _
+      rw [SchwartzMap.fourierInv_coe, hHC]
+    change (G (-x)).re = (G x).re
+    rw [hG]
+    exact congrArg Complex.re (aux_fourierInv_even_of_even H heven x)
 
 /-- For `existsUniversalPair`, package two suitable frequency profiles into a `(c,N)`-pair. -/
 private theorem aux_exists_cPair_of_profiles
@@ -168,11 +192,11 @@ private theorem aux_exists_cPair_of_profiles
       ‖iteratedDeriv m B xi‖ ≤ c)
     (hpartition : ∀ xi : ℝ, A xi ^ 2 + (1 - B xi) ^ 2 = 1) :
     ∃ phi0 phi1 : SchwartzMap ℝ ℝ, cPair c N phi0 phi1 := by
-  obtain ⟨phi0, hphi0⟩ := aux_exists_real_schwartz_fourier_eq A hAcompact hAsmooth
+  obtain ⟨phi0, hphi0, _⟩ := exists_real_even_schwartz_fourier_eq A hAcompact hAsmooth
     (fun xi => by
       rcases hAreal xi with ⟨r, _, hr⟩
       exact ⟨r, hr⟩) hAeven
-  obtain ⟨phi1, hphi1⟩ := aux_exists_real_schwartz_fourier_eq B hBcompact hBsmooth
+  obtain ⟨phi1, hphi1, _⟩ := exists_real_even_schwartz_fourier_eq B hBcompact hBsmooth
     (fun xi => by
       rcases hBreal xi with ⟨r, _, hr⟩
       exact ⟨r, hr⟩) hBeven

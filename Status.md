@@ -307,16 +307,16 @@ Lean file: Reduction/SmoothingDecomposition.lean
 \label{lem:bumpbasic}: [Proof completed] (Lean: bumpBasic) (2026-08-13 07:25:45 PDT)
 \label{lem:chardecomp}: [Proof completed] (Lean: charDecomp) (2026-08-13 08:02:56 PDT)
 \label{lem:smoothingdecomp}: [Proof completed] (Lean: smoothingDecomp) (2026-08-13 08:44:24 PDT)
-\label{lem:theta_decay}: [Statement completed] (Lean: thetaDecay) (2026-08-12 08:32:42 EDT)
-\label{constant theta decay}: [Statement completed] (Lean: constantThetaDecay) (2026-08-12 08:32:42 EDT)
-\label{lem:ft_phi3_eq}: [Statement completed] (Lean: fourierPhiThreeEq) (2026-08-12 08:32:42 EDT)
-\label{lem:abs_deriv_ft_phi3_le}: [Statement completed] (Lean: absDerivFourierPhiThreeLe) (2026-08-12 08:32:42 EDT)
-\label{constant phi three derivative}: [Statement completed] (Lean: constantPhiThreeDerivative) (2026-08-12 08:32:42 EDT)
-\label{lem:abs_deriv_ft_Tphi3_le}: [Statement completed] (Lean: absDerivFourierTPhiThreeLe) (2026-08-12 08:32:42 EDT)
-\label{constant T phi three derivative}: [Statement completed] (Lean: constantTPhiThreeDerivative) (2026-08-12 08:32:42 EDT)
-\label{lem:theta_prim}: [Statement completed] (Lean: thetaPrimitive) (2026-08-12 08:32:42 EDT)
-\label{constant theta primitive}: [Statement completed] (Lean: constantThetaPrimitive) (2026-08-12 08:32:42 EDT)
-\label{lem:phi4_supp}: [Statement completed] (Lean: phiFourSupport) (2026-08-12 08:32:42 EDT)
+\label{lem:theta_decay}: [Proof completed] (Lean: thetaDecay) (2026-08-13 09:02:35 PDT)
+\label{constant theta decay}: [Proof completed] (Lean: constantThetaDecay) (2026-08-13 09:06:04 PDT)
+\label{lem:ft_phi3_eq}: [Proof completed] (Lean: fourierPhiThreeEq) (2026-08-13 09:14:16 PDT)
+\label{lem:abs_deriv_ft_phi3_le}: [Proof completed] (Lean: absDerivFourierPhiThreeLe) (2026-08-13 10:02:27 PDT)
+\label{constant phi three derivative}: [Proof completed] (Lean: constantPhiThreeDerivative) (2026-08-13 09:15:16 PDT)
+\label{lem:abs_deriv_ft_Tphi3_le}: [Proof completed] (Lean: absDerivFourierTPhiThreeLe) (2026-08-13 10:40:13 PDT)
+\label{constant T phi three derivative}: [Proof completed] (Lean: constantTPhiThreeDerivative) (2026-08-13 09:18:37 PDT)
+\label{lem:theta_prim}: [Proof completed] (Lean: thetaPrimitive) (2026-08-13 10:00:00 PDT)
+\label{constant theta primitive}: [Proof completed] (Lean: constantThetaPrimitive) (2026-08-13 10:00:00 PDT)
+\label{lem:phi4_supp}: [Proof completed] (Lean: phiFourSupport) (2026-08-13 10:42:02 PDT)
 
 ### Further preliminaries for the reduction / Miscellany
 
@@ -324,13 +324,13 @@ Lean file: Reduction/Miscellany.lean
 
 #### Theorems
 
-\label{lem:rescaling}: [Statement completed] (Lean: rescaling) (2026-08-12 08:32:42 EDT)
-\label{lem:norm_A_sum_le_sum}: [Statement completed] (Lean: normASumLeSum) (2026-08-12 08:32:42 EDT)
-\label{lem:form_pos}: [Statement completed] (Lean: formPos) (2026-08-12 08:32:42 EDT)
-\label{lem:ftc_ATphi}: [Statement completed] (Lean: ftcATphi) (2026-08-12 08:32:42 EDT)
-\label{lem:Phij_prop}: [Statement completed] (Lean: phiJProperties) (2026-08-12 08:32:42 EDT)
-\label{constant Phij proposition}: [Statement completed] (Lean: constantPhiJProposition) (2026-08-12 08:32:42 EDT)
-\label{lem:bootstrap}: [Statement completed] (Lean: bootstrap) (2026-08-12 08:32:42 EDT)
+\label{lem:rescaling}: [Proof completed] (Lean: rescaling) (2026-08-13 10:49:06 PDT)
+\label{lem:norm_A_sum_le_sum}: [Proof completed] (Lean: normASumLeSum) (2026-08-13 12:12:09 PDT)
+\label{lem:form_pos}: [Proof completed] (Lean: formPos) (2026-08-13 11:44:15 PDT)
+\label{lem:ftc_ATphi}: [Proof completed] (Lean: ftcATphi) (2026-08-13 12:40:41 PDT)
+\label{lem:Phij_prop}: [Proof completed] (Lean: phiJProperties) (2026-08-13 15:17:44 PDT)
+\label{constant Phij proposition}: [Proof completed] (Lean: constantPhiJProposition) (2026-08-13 15:17:44 PDT)
+\label{lem:bootstrap}: [Proof completed] (Lean: bootstrap) (2026-08-13 15:17:44 PDT)
 
 ### On-diagonal from main argument
 

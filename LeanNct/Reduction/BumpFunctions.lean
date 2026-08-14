@@ -1597,6 +1597,107 @@ theorem phiPosV2 (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
     rw [Real.fourier_eq, integral_undef hphase]
     norm_num
 
+/-- The coordinate swap as a linear isometry, for Fourier-symmetry arguments. -/
+private noncomputable def aux_swapTwoLinearIsometry :
+    EuclideanSpace ℝ (Fin 2) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 2) :=
+  LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.swap 0 1)
+
+private theorem aux_swapTwoLinearIsometry_apply (u : EuclideanSpace ℝ (Fin 2)) :
+    aux_swapTwoLinearIsometry u = aux_swapTwo u := by
+  ext i
+  fin_cases i <;> simp [aux_swapTwoLinearIsometry, aux_swapTwo, Equiv.piCongrLeft']
+
+/-- The Fourier transform of a real-valued function has conjugate symmetry. -/
+private theorem aux_fourier_conj_of_real (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
+    (w : EuclideanSpace ℝ (Fin 2)) :
+    FourierTransform.fourier (fun u => (Psi u : ℂ)) (-w) =
+      (starRingEnd ℂ) (FourierTransform.fourier (fun u => (Psi u : ℂ)) w) := by
+  rw [Real.fourier_eq, Real.fourier_eq, ← integral_conj]
+  change (∫ v : EuclideanSpace ℝ (Fin 2),
+      𝐞 (-inner ℝ v (-w)) • (Psi v : ℂ)) =
+    ∫ v : EuclideanSpace ℝ (Fin 2),
+      star (𝐞 (-inner ℝ v w) • (Psi v : ℂ))
+  apply integral_congr_ae
+  filter_upwards [] with u
+  rw [Circle.smul_def, Circle.smul_def, Real.fourierChar_apply,
+    Real.fourierChar_apply]
+  change Complex.exp (↑(2 * Real.pi * (-inner ℝ u (-w))) * Complex.I) * (Psi u : ℂ) =
+    (starRingEnd ℂ) (Complex.exp (↑(2 * Real.pi * (-inner ℝ u w)) * Complex.I) * (Psi u : ℂ))
+  rw [map_mul]
+  congr 1
+  · rw [← Complex.exp_conj]
+    rw [inner_neg_right]
+    simp only [map_neg, map_mul, Complex.conj_I, Complex.ofReal_neg,
+      Complex.conj_ofReal]
+    congr 1
+    push_cast
+    ring
+  · simp
+
+private theorem aux_fourier_diagonal_even_of_swap (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
+    (hsym : ∀ u, Psi u = Psi (aux_swapTwoLinearIsometry u)) (xi : ℝ) :
+    FourierTransform.fourier (fun u => (Psi u : ℂ)) (WithLp.toLp 2 ![-xi, xi]) =
+      FourierTransform.fourier (fun u => (Psi u : ℂ)) (WithLp.toLp 2 ![xi, -xi]) := by
+  calc
+    FourierTransform.fourier (fun u => (Psi u : ℂ)) (WithLp.toLp 2 ![-xi, xi]) =
+        FourierTransform.fourier (fun u => (Psi u : ℂ))
+          (aux_swapTwoLinearIsometry (WithLp.toLp 2 ![xi, -xi])) := by
+            rw [show aux_swapTwoLinearIsometry (WithLp.toLp 2 ![xi, -xi]) =
+                WithLp.toLp 2 ![-xi, xi] by
+              ext i
+              fin_cases i <;>
+                simp [aux_swapTwoLinearIsometry, Equiv.piCongrLeft']]
+    _ = FourierTransform.fourier ((fun u => (Psi u : ℂ)) ∘ aux_swapTwoLinearIsometry)
+          (WithLp.toLp 2 ![xi, -xi]) := by
+            exact (Real.fourier_comp_linearIsometry aux_swapTwoLinearIsometry _ _).symm
+    _ = FourierTransform.fourier (fun u => (Psi u : ℂ))
+          (WithLp.toLp 2 ![xi, -xi]) := by
+            apply Real.fourier_congr_ae
+            filter_upwards [] with u
+            change (Psi (aux_swapTwoLinearIsometry u) : ℂ) = (Psi u : ℂ)
+            rw [← hsym u]
+
+/-- For a real coordinate-symmetric two-dimensional function, its Fourier transform on the
+anti-diagonal is real and even. -/
+theorem fourierDiagonalRealEven (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
+    (hsym : ∀ u : EuclideanSpace ℝ (Fin 2), Psi u = Psi (aux_swapTwo u)) :
+    (∀ xi : ℝ, ∃ r : ℝ,
+      FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![xi, -xi]) = r) ∧
+    ∀ xi : ℝ,
+      FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![-xi, xi]) =
+      FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![xi, -xi]) := by
+  have hsym' : ∀ u, Psi u = Psi (aux_swapTwoLinearIsometry u) := by
+    intro u
+    rw [hsym u, aux_swapTwoLinearIsometry_apply]
+  constructor
+  · intro xi
+    let p : ℂ := FourierTransform.fourier (fun u => (Psi u : ℂ))
+      (WithLp.toLp 2 ![xi, -xi])
+    have hneg : -(WithLp.toLp 2 ![xi, -xi] : EuclideanSpace ℝ (Fin 2)) =
+        WithLp.toLp 2 ![-xi, xi] := by
+      ext i
+      fin_cases i <;> simp
+    have hconj : FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![-xi, xi]) = starRingEnd ℂ p := by
+      rw [← hneg]
+      simpa [p] using aux_fourier_conj_of_real Psi (WithLp.toLp 2 ![xi, -xi])
+    have heven : FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![-xi, xi]) = p := by
+      simpa [p] using aux_fourier_diagonal_even_of_swap Psi hsym' xi
+    have hstar : p = starRingEnd ℂ p := heven.symm.trans hconj
+    refine ⟨p.re, ?_⟩
+    change p = (p.re : ℂ)
+    apply Complex.ext
+    · simp
+    · have him : p.im = -p.im := by
+        simpa using congrArg Complex.im hstar
+      simp only [Complex.ofReal_im]
+      linarith
+  · exact aux_fourier_diagonal_even_of_swap Psi hsym'
+
 end
 
 end Codex.Reduction.BumpFunctions
