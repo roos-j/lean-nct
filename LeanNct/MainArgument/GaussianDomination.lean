@@ -2900,6 +2900,12 @@ private theorem aux_caseOne_scaledBracketBumpReal_simul_rescale (N c s x : ℝ) 
         (c * (c * s)⁻¹) * (1 + |s⁻¹ * x|).rpow (-N) := by ring
     _ = s⁻¹ * (1 + |s⁻¹ * x|).rpow (-N) := by rw [hinv]
 
+/-- A simultaneous spatial-and-scale rescaling leaves a real-exponent bracket bump
+invariant after its natural prefactor. -/
+theorem aux_scaledBracketBumpReal_simul_rescale (N c s x : ℝ) (hc : 0 < c) :
+    c * scaledBracketBumpReal N (c * s) (c * x) = scaledBracketBumpReal N s x :=
+  aux_caseOne_scaledBracketBumpReal_simul_rescale N c s x hc
+
 /-- A concrete scalar form of the orthogonal-coordinate dichotomy needed in case one.
 It is deliberately stated directly in the `W₁` coordinates, avoiding an auxiliary
 identification of `ℝ × ℝ` with Euclidean space. -/

@@ -1,6 +1,7 @@
 import Mathlib
 import LeanNct.Preliminaries.Notation
 import LeanNct.Reduction.TwistedAverages
+import LeanNct.Reduction.FinalReduction
 
 /-!
 # Introduction
@@ -58,6 +59,8 @@ theorem mainTwistedTheorem {n : ℕ} (hn : 2 ≤ n) :
             2 volume ^ 2 ≤
           ENNReal.ofReal C * ENNReal.ofReal
             ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) := by
-  sorry
+  simpa only [twistedAverageAtScale,
+    Codex.Reduction.FinalReduction.unitIntervalIndicator] using
+    Codex.Reduction.FinalReduction.mainTwistedTheoremReduction hn
 
 end Codex.Introduction

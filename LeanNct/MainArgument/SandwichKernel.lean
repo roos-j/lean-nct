@@ -1265,6 +1265,69 @@ theorem aux_kernelSequenceSeminorm_le_two {n k : ℕ} (hk : 1 ≤ k) (hkn : k �
     _ ≤ 1 * 2 := by gcongr
     _ = 2 := by norm_num
 
+/-- A telescoping kernel sequence is controlled by two uniformly `L¹`-bounded
+boundary terms. -/
+theorem aux_kernelSequenceSeminorm_le_of_telescope
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n) (C : ℝ) (hC : 0 ≤ C)
+    (B : ℤ → MKernel k) (M : KernelSequence k)
+    (hB : ∀ j, MemW0 (B j))
+    (hBnorm : ∀ j, eLpNorm (B j) 1 volume ≤ ENNReal.ofReal C)
+    (htel : ∀ J y, (∑ j ∈ Finset.range J, M (j : ℤ) y) =
+      B (-1) y - B ((J : ℤ) - 1) y) :
+    kernelSequenceSeminorm n k hk hkn M ≤ ENNReal.ofReal (2 * C) := by
+  unfold kernelSequenceSeminorm
+  refine iSup_le fun J => ?_
+  refine iSup_le fun F => ?_
+  let D : MKernel k := fun y => B (-1) y - B ((J.1 : ℤ) - 1) y
+  have hD : MemW0 D := by
+    exact aux_memW0_sub (hB (-1)) (hB ((J.1 : ℤ) - 1))
+  have hK : MemW0 (mToK k hk D) :=
+    mToK_memW0 n k hk hkn D hD
+  have hDnorm : eLpNorm D 1 volume ≤ ENNReal.ofReal (2 * C) := by
+    calc
+      eLpNorm D 1 volume ≤ eLpNorm (B (-1)) 1 volume +
+          eLpNorm (B ((J.1 : ℤ) - 1)) 1 volume := by
+        exact eLpNorm_sub_le (hB (-1)).1.aestronglyMeasurable
+          (hB ((J.1 : ℤ) - 1)).1.aestronglyMeasurable le_rfl
+      _ ≤ ENNReal.ofReal C + ENNReal.ofReal C := by
+        gcongr
+        · exact hBnorm (-1)
+        · exact hBnorm ((J.1 : ℤ) - 1)
+      _ = ENNReal.ofReal (2 * C) := by
+        rw [← ENNReal.ofReal_add hC hC]
+        congr 1
+        ring
+  have hKnorm : eLpNorm (mToK k hk D) 1 volume ≤ ENNReal.ofReal (2 * C) :=
+    (mToK_eLpNorm_one_le n k hk hkn D hD).trans hDnorm
+  have hprism : ‖prismForm n k hk hkn D (fun i => F.1 i)‖ₑ ≤
+      ENNReal.ofReal (2 * C) := by
+    change ‖prismBrascampLiebForm n k hk hkn (mToK k hk D)
+      (fun i x => F.1 i x)‖ₑ ≤ _
+    exact (prismBLInequality n k hk hkn (mToK k hk D) hK F.1 F.2).trans hKnorm
+  have hform :
+      prismForm n k hk hkn (fun y => ∑ j ∈ Finset.range J.1, M (j : ℤ) y)
+        (fun i => F.1 i) = prismForm n k hk hkn D (fun i => F.1 i) := by
+    congr 1
+    funext y
+    exact htel J.1 y
+  rw [hform]
+  have hmin : 0 ≤ min 1
+      (Real.rpow (J.1 : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1))) :=
+    le_min zero_le_one (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+  calc
+    ENNReal.ofReal
+        (min 1 (Real.rpow (J.1 : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1))) *
+          |prismForm n k hk hkn D (fun i => F.1 i)|) =
+        ENNReal.ofReal (min 1
+          (Real.rpow (J.1 : ℝ) (-1 + (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)))) *
+          ‖prismForm n k hk hkn D (fun i => F.1 i)‖ₑ := by
+      rw [ENNReal.ofReal_mul hmin, ← Real.enorm_eq_ofReal_abs]
+    _ ≤ 1 * ‖prismForm n k hk hkn D (fun i => F.1 i)‖ₑ := by
+      gcongr
+      exact ENNReal.ofReal_le_one.mpr (min_le_left _ _)
+    _ ≤ 1 * ENNReal.ofReal (2 * C) := by gcongr
+    _ = ENNReal.ofReal (2 * C) := by simp
+
 /--
 \begin{proposition}[telescoping terms]\label{telescoping terms}
 Let $\gamma=(k,u,a)\in \Gamma$. Then $Y_\gamma\in \mathcal X_k$ and

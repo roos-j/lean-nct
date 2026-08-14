@@ -893,6 +893,7 @@ private theorem aux_realRescaled_fourier (t : ℝ) (ht : 0 < t) (f : ℝ → ℝ
       rw [hphase]
       push_cast
       ring
+
     _ = (t⁻¹ : ℂ) * ∫ x : ℝ, g (t⁻¹ * x) := by rw [integral_const_mul]
     _ = (t⁻¹ : ℂ) * (|t| • ∫ y : ℝ, g y) := by
       rw [Measure.integral_comp_inv_mul_left]
@@ -907,6 +908,178 @@ private theorem aux_realRescaled_fourier (t : ℝ) (ht : 0 < t) (f : ℝ → ℝ
       dsimp [g]
       push_cast
       ring
+
+/-! ### Smooth compact parameter integrals
+
+The scale variable in `integralFctKernel` ranges over `[1, 2]`.  The following
+private calculus helpers keep the differentiation-under-the-integral argument
+local, while avoiding an unnecessary Bochner integral in Schwartz space. -/
+
+universe u
+
+private noncomputable def aux_partialFDeriv
+    {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (F : E → ℝ → V) : E → ℝ → E →L[ℝ] V :=
+  fun x t => (fderiv ℝ F.uncurry (x, t)).comp (ContinuousLinearMap.inl ℝ E ℝ)
+
+private theorem aux_partialFDeriv_contDiffOn
+    {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (F : E → ℝ → V) (N : ℕ)
+    (hF : ContDiffOn ℝ (N + 1) F.uncurry (univ ×ˢ Ioi (0 : ℝ))) :
+    ContDiffOn ℝ N (aux_partialFDeriv F).uncurry (univ ×ˢ Ioi (0 : ℝ)) := by
+  let L : (E × ℝ →L[ℝ] V) →L[ℝ] E →L[ℝ] V :=
+    (ContinuousLinearMap.compL ℝ E (E × ℝ) V).flip
+      (ContinuousLinearMap.inl ℝ E ℝ)
+  have hopen : IsOpen ((univ : Set E) ×ˢ Ioi (0 : ℝ)) :=
+    isOpen_univ.prod isOpen_Ioi
+  have hderiv : ContDiffOn ℝ N (fderiv ℝ F.uncurry) (univ ×ˢ Ioi (0 : ℝ)) :=
+    hF.fderiv_of_isOpen hopen (m := N) (by norm_num)
+  have hcomp : ContDiffOn ℝ N (fun p : E × ℝ => L (fderiv ℝ F.uncurry p))
+      (univ ×ˢ Ioi (0 : ℝ)) :=
+    L.contDiff.comp_contDiffOn hderiv
+  change ContDiffOn ℝ N (fun p : E × ℝ =>
+    (fderiv ℝ F.uncurry p).comp (ContinuousLinearMap.inl ℝ E ℝ))
+    (univ ×ˢ Ioi (0 : ℝ))
+  exact hcomp
+
+private theorem aux_partialFDeriv_hasFDerivAt_of_contDiffOn
+    {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (F : E → ℝ → V)
+    (hF : ContDiffOn ℝ 1 F.uncurry (univ ×ˢ Ioi (0 : ℝ)))
+    (x : E) (t : ℝ) (ht : 0 < t) :
+    HasFDerivAt (fun y => F y t) (aux_partialFDeriv F x t) x := by
+  have hopen : IsOpen ((univ : Set E) ×ˢ Ioi (0 : ℝ)) :=
+    isOpen_univ.prod isOpen_Ioi
+  have hpt : (x, t) ∈ (univ : Set E) ×ˢ Ioi (0 : ℝ) := ⟨mem_univ _, ht⟩
+  have hd : DifferentiableAt ℝ F.uncurry (x, t) :=
+    (hF.differentiableOn one_ne_zero).differentiableAt (hopen.mem_nhds hpt)
+  have htotal : HasFDerivAt F.uncurry (fderiv ℝ F.uncurry (x, t)) (x, t) :=
+    hd.hasFDerivAt
+  have hin : HasFDerivAt (fun y : E => (y, t))
+      (ContinuousLinearMap.inl ℝ E ℝ) x := by
+    simpa using ((ContinuousLinearMap.inl ℝ E ℝ).hasFDerivAt (x := x)).add_const (0, t)
+  change HasFDerivAt (fun y => F y t)
+    ((fderiv ℝ F.uncurry (x, t)).comp (ContinuousLinearMap.inl ℝ E ℝ)) x
+  convert htotal.comp x hin using 1
+  funext y
+  rfl
+
+private theorem aux_hasFDerivAt_setIntegral_Icc_of_continuousOn
+    {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (F : E → ℝ → V) (D : E → ℝ → E →L[ℝ] V)
+    (hF : ContinuousOn F.uncurry (univ ×ˢ Ioi (0 : ℝ)))
+    (hD : ContinuousOn D.uncurry (univ ×ˢ Ioi (0 : ℝ)))
+    (hderiv : ∀ x t, 0 < t → HasFDerivAt (fun y => F y t) (D x t) x)
+    (x : E) :
+    HasFDerivAt (fun y => ∫ t : ℝ in Icc (1 : ℝ) 2, F y t)
+      (∫ t : ℝ in Icc (1 : ℝ) 2, D x t) x := by
+  have hsliceF (y : E) : ContinuousOn (F y) (Icc (1 : ℝ) 2) := by
+    refine hF.comp (continuous_const.prodMk continuous_id).continuousOn ?_
+    intro t ht
+    exact ⟨mem_univ _, lt_of_lt_of_le zero_lt_one ht.1⟩
+  have hsliceD (y : E) : ContinuousOn (D y) (Icc (1 : ℝ) 2) := by
+    refine hD.comp (continuous_const.prodMk continuous_id).continuousOn ?_
+    intro t ht
+    exact ⟨mem_univ _, lt_of_lt_of_le zero_lt_one ht.1⟩
+  have hsub : (Metric.closedBall x 1 : Set E) ×ˢ Icc (1 : ℝ) 2 ⊆
+      (univ : Set E) ×ˢ Ioi (0 : ℝ) := by
+    rintro ⟨y, t⟩ ⟨hy, ht⟩
+    exact ⟨mem_univ _, lt_of_lt_of_le zero_lt_one ht.1⟩
+  obtain ⟨C, hC⟩ :=
+    ((ProperSpace.isCompact_closedBall x 1).prod isCompact_Icc).bddAbove_image
+      (hD.mono hsub).norm
+  let s : Set E := Metric.ball x 1
+  have hs : s ∈ nhds x := by
+    exact Metric.ball_mem_nhds _ zero_lt_one
+  have hFmeas : ∀ᶠ y in nhds x,
+      AEStronglyMeasurable (F y) (volume.restrict (Icc (1 : ℝ) 2)) := by
+    filter_upwards [] with y
+    exact (hsliceF y).aestronglyMeasurable measurableSet_Icc
+  have hFint : Integrable (F x) (volume.restrict (Icc (1 : ℝ) 2)) := by
+    exact (hsliceF x).integrableOn_compact isCompact_Icc
+  have hDmeas : AEStronglyMeasurable (D x) (volume.restrict (Icc (1 : ℝ) 2)) := by
+    exact (hsliceD x).aestronglyMeasurable measurableSet_Icc
+  have hbound : ∀ᵐ t : ℝ ∂(volume.restrict (Icc (1 : ℝ) 2)),
+      ∀ y ∈ s, ‖D y t‖ ≤ (fun _ : ℝ => C) t := by
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht y hy
+    apply hC
+    refine ⟨(y, t), ?_, ?_⟩
+    · constructor
+      · change dist y x < 1 at hy
+        exact Metric.mem_closedBall.mpr hy.le
+      · exact ht
+    · rfl
+  have hCint : Integrable (fun _ : ℝ => C) (volume.restrict (Icc (1 : ℝ) 2)) := by
+    exact continuous_const.integrableOn_Icc
+  have hdiff : ∀ᵐ t : ℝ ∂(volume.restrict (Icc (1 : ℝ) 2)),
+      ∀ y ∈ s, HasFDerivAt (fun y => F y t) (D y t) y := by
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht y hy
+    exact hderiv y t (lt_of_lt_of_le zero_lt_one ht.1)
+  exact hasFDerivAt_integral_of_dominated_of_fderiv_le hs hFmeas hFint hDmeas hbound hCint hdiff
+
+private theorem aux_contDiff_setIntegral_Icc_of_contDiffOn
+    {E V : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (F : E → ℝ → V) (N : ℕ)
+    (hF : ContDiffOn ℝ (N + 1) F.uncurry (univ ×ˢ Ioi (0 : ℝ))) :
+    ContDiff ℝ N (fun x => ∫ t : ℝ in Icc (1 : ℝ) 2, F x t) := by
+  induction N generalizing V with
+  | zero =>
+      have hderiv := aux_hasFDerivAt_setIntegral_Icc_of_continuousOn F
+        (aux_partialFDeriv F) hF.continuousOn
+        (aux_partialFDeriv_contDiffOn F 0 (by simpa using hF)).continuousOn
+        (aux_partialFDeriv_hasFDerivAt_of_contDiffOn F hF)
+      have hdiff : Differentiable ℝ
+          (fun x => ∫ t : ℝ in Icc (1 : ℝ) 2, F x t) :=
+        fun x => (hderiv x).differentiableAt
+      exact contDiff_zero.mpr hdiff.continuous
+  | succ N ih =>
+      have hFone : ContDiffOn ℝ 1 F.uncurry (univ ×ˢ Ioi (0 : ℝ)) :=
+        hF.of_le (by norm_num)
+      have hD : ContDiffOn ℝ (N + 1) (aux_partialFDeriv F).uncurry
+          (univ ×ˢ Ioi (0 : ℝ)) := by
+        exact aux_partialFDeriv_contDiffOn F (N + 1) (by
+          simpa [Nat.succ_eq_add_one, Nat.add_assoc] using hF)
+      have hIntD : ContDiff ℝ N
+          (fun x => ∫ t : ℝ in Icc (1 : ℝ) 2, aux_partialFDeriv F x t) :=
+        ih (aux_partialFDeriv F) hD
+      have hdiff : Differentiable ℝ
+          (fun x => ∫ t : ℝ in Icc (1 : ℝ) 2, F x t) := by
+        intro x
+        exact (aux_hasFDerivAt_setIntegral_Icc_of_continuousOn F (aux_partialFDeriv F)
+          hFone.continuousOn hD.continuousOn
+          (aux_partialFDeriv_hasFDerivAt_of_contDiffOn F hFone) x).differentiableAt
+      have hderiv : fderiv ℝ (fun x => ∫ t : ℝ in Icc (1 : ℝ) 2, F x t) =
+          fun x => ∫ t : ℝ in Icc (1 : ℝ) 2, aux_partialFDeriv F x t := by
+        funext x
+        exact (aux_hasFDerivAt_setIntegral_Icc_of_continuousOn F (aux_partialFDeriv F)
+          hFone.continuousOn hD.continuousOn
+          (aux_partialFDeriv_hasFDerivAt_of_contDiffOn F hFone) x).fderiv
+      have htarget : ContDiff ℝ ((N : WithTop ℕ∞) + 1)
+          (fun x => ∫ t : ℝ in Icc (1 : ℝ) 2, F x t) := by
+        rw [contDiff_succ_iff_fderiv]
+        refine ⟨hdiff, ?_, ?_⟩
+        · simp
+        · rw [hderiv]
+          exact hIntD
+      simpa only [Nat.cast_add, Nat.cast_one] using htarget
+
+private theorem aux_contDiff_infty_setIntegral_Icc_of_contDiffOn
+    {E V : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (F : E → ℝ → V)
+    (hF : ContDiffOn ℝ (⊤ : ℕ∞) F.uncurry (univ ×ˢ Ioi (0 : ℝ))) :
+    ContDiff ℝ (⊤ : ℕ∞)
+      (fun x => ∫ t : ℝ in Icc (1 : ℝ) 2, F x t) := by
+  rw [contDiff_infty]
+  intro N
+  have hN : (N + 1 : ℕ∞) ≤ ⊤ := le_top
+  exact aux_contDiff_setIntegral_Icc_of_contDiffOn F N
+    (hF.of_le (by exact_mod_cast hN))
 
 /-- The product Fourier factorization used in the support calculation of
 `integralFct` (Lemma \ref{lem:int_fct}). -/
@@ -958,6 +1131,16 @@ private theorem aux_fourier_tensor_two (f g : ℝ → ℝ) (xi : EuclideanSpace 
         filter_upwards [] with x
         push_cast
         ring
+
+/-- The Fourier transform of a two-coordinate tensor product factors into the
+two one-dimensional Fourier transforms.  This exposes the calculation used in
+the reduction argument without duplicating its Fubini proof. -/
+theorem aux_fourier_tensor_two_eq (f g : ℝ → ℝ) (xi : EuclideanSpace ℝ (Fin 2)) :
+    FourierTransform.fourier (fun u : EuclideanSpace ℝ (Fin 2) =>
+      (f (u 0) * g (u 1) : ℂ)) xi =
+    FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) (xi 0) *
+      FourierTransform.fourier (fun x : ℝ => (g x : ℂ)) (xi 1) := by
+  exact aux_fourier_tensor_two f g xi
 
 /-- Integrability of the three-variable Fubini integrand in the positivity part of
 `integralFct` (Lemma \ref{lem:int_fct}). -/
@@ -1085,6 +1268,16 @@ private theorem aux_integralFctKernelAtScale_eq
   simp only [aux_realRescaled]
   simp only [WithLp.ofLp_smul, PiLp.smul_apply, smul_eq_mul]
   field_simp [hs, ht0]
+
+/-- Expand a nonzero dilation of `integralFctKernel` into its defining compact
+scale integral.  This is the reusable scale/Fubini form of the kernel. -/
+theorem integralFctKernelAtScale_eq
+    (s : ℝ) (hs : s ≠ 0) (psi : ℝ → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
+    aux_integralFctKernelAtScale s psi u =
+      ∫ t : ℝ in Set.Icc 1 2,
+        aux_realRescaled (s * t) psi (u 0) *
+          aux_realRescaled (s * t) psi (u 1) * t⁻¹ :=
+  aux_integralFctKernelAtScale_eq s hs psi u
 
 /-- The product-square form of the Fubini integral in the positivity part of
 `integralFct` (Lemma \ref{lem:int_fct}) is nonnegative. -/
@@ -1342,6 +1535,17 @@ private theorem aux_integralFctKernelAtScale_triple_integrable
       (μ.prod volume) := hHE.ofReal
   simpa [μ, HE] using hHEC
 
+/-- Joint integrability of the scale parameter and spatial variables for the
+expanded `integralFctKernel` at a positive scale.  This is the Fubini input for
+parameterized Brascamp--Lieb forms. -/
+theorem integralFctKernelAtScale_triple_integrable
+    (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s) :
+    Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) =>
+      (aux_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
+        aux_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹ : ℂ))
+      ((volume.restrict (Set.Icc 1 2)).prod volume) :=
+  aux_integralFctKernelAtScale_triple_integrable psi s hs
+
 /-- Multiplication by a scalar commutes with the Fourier integral.  This
 form is used for the `dt/t` factor in `integralFct`. -/
 private theorem aux_fourier_mul_const
@@ -1355,6 +1559,281 @@ private theorem aux_fourier_mul_const
   apply integral_congr_ae
   filter_upwards [] with u
   simp [smul_eq_mul, mul_assoc]
+
+/-! ### Schwartz packaging of the scale-integrated kernel
+
+The physical kernel is defined by an ordinary compact parameter integral.  For
+the later Whitney arguments it is useful to have the same function bundled as a
+Schwartz map.  We first package its compactly supported Fourier-side profile,
+then invert the Schwartz Fourier transform. -/
+
+private noncomputable def aux_integralFctFourierKernel (psi : SchwartzMap ℝ ℝ) :
+    EuclideanSpace ℝ (Fin 2) → ℂ :=
+  fun xi => ∫ t : ℝ in Icc (1 : ℝ) 2,
+    FourierTransform.fourier (fun x : ℝ => (psi x : ℂ)) (t * xi 0) *
+      FourierTransform.fourier (fun x : ℝ => (psi x : ℂ)) (t * xi 1) *
+        ((t⁻¹ : ℝ) : ℂ)
+
+private theorem aux_integralFctFourierKernel_smooth (psi : SchwartzMap ℝ ℝ) :
+    ContDiff ℝ (⊤ : ℕ∞) (aux_integralFctFourierKernel psi) := by
+  let q : ℝ → ℂ := FourierTransform.fourier (fun x : ℝ => (psi x : ℂ))
+  have hq : ContDiff ℝ (⊤ : ℕ∞) q := by
+    let psiC : SchwartzMap ℝ ℂ :=
+      SchwartzMap.postcompCLM Complex.ofRealCLM psi
+    have hs : ContDiff ℝ (⊤ : ℕ∞) (FourierTransform.fourier psiC : ℝ → ℂ) :=
+      (FourierTransform.fourier psiC).smooth _
+    have hpsiC : (psiC : ℝ → ℂ) = fun x : ℝ => (psi x : ℂ) := by
+      funext x
+      simp [psiC, SchwartzMap.postcompCLM_apply]
+    rw [SchwartzMap.fourier_coe, hpsiC] at hs
+    exact hs
+  have hjoint : ContDiffOn ℝ (⊤ : ℕ∞)
+      (fun p : EuclideanSpace ℝ (Fin 2) × ℝ =>
+        q (p.2 * p.1 0) * q (p.2 * p.1 1) * ((p.2⁻¹ : ℝ) : ℂ))
+      (univ ×ˢ Ioi (0 : ℝ)) := by
+    have hne : ∀ p ∈ (univ : Set (EuclideanSpace ℝ (Fin 2))) ×ˢ Ioi (0 : ℝ),
+        p.2 ≠ 0 := by
+      rintro ⟨u, t⟩ ⟨-, ht⟩
+      exact ne_of_gt ht
+    have hcoord0 : ContDiffOn ℝ (⊤ : ℕ∞)
+        (fun p : EuclideanSpace ℝ (Fin 2) × ℝ => p.2 * p.1 0)
+        (univ ×ˢ Ioi (0 : ℝ)) := by fun_prop
+    have hcoord1 : ContDiffOn ℝ (⊤ : ℕ∞)
+        (fun p : EuclideanSpace ℝ (Fin 2) × ℝ => p.2 * p.1 1)
+        (univ ×ˢ Ioi (0 : ℝ)) := by fun_prop
+    have hinvR : ContDiffOn ℝ (⊤ : ℕ∞)
+        (fun p : EuclideanSpace ℝ (Fin 2) × ℝ => p.2⁻¹)
+        (univ ×ˢ Ioi (0 : ℝ)) := by
+      fun_prop
+    have hinvC : ContDiffOn ℝ (⊤ : ℕ∞)
+        (fun p : EuclideanSpace ℝ (Fin 2) × ℝ => ((p.2⁻¹ : ℝ) : ℂ))
+        (univ ×ˢ Ioi (0 : ℝ)) :=
+      Complex.ofRealCLM.contDiff.comp_contDiffOn hinvR
+    exact ((hq.comp_contDiffOn hcoord0).mul (hq.comp_contDiffOn hcoord1)).mul hinvC
+  change ContDiff ℝ (⊤ : ℕ∞)
+    (fun xi : EuclideanSpace ℝ (Fin 2) => ∫ t : ℝ in Icc (1 : ℝ) 2,
+      q (t * xi 0) * q (t * xi 1) * ((t⁻¹ : ℝ) : ℂ))
+  exact aux_contDiff_infty_setIntegral_Icc_of_contDiffOn _ hjoint
+
+private noncomputable def aux_integralFctFourierKernelPlaneEquiv :
+    EuclideanSpace ℝ (Fin 2) ≃L[ℝ] (ℝ × ℝ) :=
+  (EuclideanSpace.equiv (Fin 2) ℝ).trans
+    (ContinuousLinearEquiv.finTwoArrow ℝ ℝ)
+
+private theorem aux_integralFctFourierKernelPlaneEquiv_apply
+    (u : EuclideanSpace ℝ (Fin 2)) :
+    aux_integralFctFourierKernelPlaneEquiv u = (u 0, u 1) := by
+  simp [aux_integralFctFourierKernelPlaneEquiv]
+
+private theorem aux_integralFctFourierKernel_compact (psi : SchwartzMap ℝ ℝ)
+    (hsupp : Function.support
+      (FourierTransform.fourier (fun x : ℝ => (psi x : ℂ))) ⊆
+        aux_annulusOne 1 ((2 : ℝ) ^ 2)) :
+    HasCompactSupport (aux_integralFctFourierKernel psi) := by
+  let K : Set (EuclideanSpace ℝ (Fin 2)) :=
+    aux_integralFctFourierKernelPlaneEquiv ⁻¹'
+      (Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2) ×ˢ
+        Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2))
+  have hinterval : IsCompact (Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2)) := isCompact_Icc
+  have hK : IsCompact K := by
+    exact (aux_integralFctFourierKernelPlaneEquiv.toHomeomorph.isCompact_preimage).mpr
+      (hinterval.prod hinterval)
+  have hcoord_zero (x : ℝ) (hx : x ∉ Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2))
+      (t : ℝ) (ht : t ∈ Icc (1 : ℝ) 2) :
+      FourierTransform.fourier (fun y : ℝ => (psi y : ℂ)) (t * x) = 0 := by
+    apply Function.notMem_support.mp
+    intro hmem
+    apply hx
+    have hmem' := hsupp hmem
+    unfold aux_annulusOne at hmem'
+    have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+    have htx : |t * x| ≤ (2 : ℝ) ^ 2 := by
+      simpa using hmem'.2
+    have hxabs : |x| ≤ (2 : ℝ) ^ 2 := by
+      calc
+        |x| = 1 * |x| := by ring
+        _ ≤ t * |x| := mul_le_mul_of_nonneg_right ht.1 (abs_nonneg x)
+        _ = |t * x| := by rw [abs_mul, abs_of_pos htpos]
+        _ ≤ (2 : ℝ) ^ 2 := htx
+    exact abs_le.mp hxabs
+  apply HasCompactSupport.intro hK
+  intro u hu
+  have hu' : ¬ (u 0 ∈ Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2) ∧
+      u 1 ∈ Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2)) := by
+    intro huu
+    apply hu
+    change aux_integralFctFourierKernelPlaneEquiv u ∈
+      (Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2) ×ˢ
+        Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2))
+    rw [aux_integralFctFourierKernelPlaneEquiv_apply]
+    exact huu
+  unfold aux_integralFctFourierKernel
+  by_cases h0 : u 0 ∈ Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2)
+  · have h1 : u 1 ∉ Icc (-((2 : ℝ) ^ 2)) ((2 : ℝ) ^ 2) := fun h1 => hu' ⟨h0, h1⟩
+    apply integral_eq_zero_of_ae
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+    rw [hcoord_zero (u 1) h1 t ht]
+    simp
+  · apply integral_eq_zero_of_ae
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+    rw [hcoord_zero (u 0) h0 t ht]
+    simp
+
+private noncomputable def aux_integralFctFourierKernelSchwartz (psi : SchwartzMap ℝ ℝ)
+    (hsupp : Function.support
+      (FourierTransform.fourier (fun x : ℝ => (psi x : ℂ))) ⊆
+        aux_annulusOne 1 ((2 : ℝ) ^ 2)) :
+    SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℂ :=
+  (aux_integralFctFourierKernel_compact psi hsupp).toSchwartzMap
+    (aux_integralFctFourierKernel_smooth psi)
+
+private theorem aux_integralFctFourierKernelSchwartz_apply (psi : SchwartzMap ℝ ℝ)
+    (hsupp : Function.support
+      (FourierTransform.fourier (fun x : ℝ => (psi x : ℂ))) ⊆
+        aux_annulusOne 1 ((2 : ℝ) ^ 2))
+    (u : EuclideanSpace ℝ (Fin 2)) :
+    aux_integralFctFourierKernelSchwartz psi hsupp u =
+      aux_integralFctFourierKernel psi u := rfl
+
+private theorem aux_integralFctKernel_continuous (psi : SchwartzMap ℝ ℝ) :
+    Continuous (fun u : EuclideanSpace ℝ (Fin 2) =>
+      (integralFctKernel (fun x => psi x) u : ℂ)) := by
+  let F : EuclideanSpace ℝ (Fin 2) → ℝ → ℝ := fun u t =>
+    aux_realRescaled t (fun x => psi x) (u 0) *
+      aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹
+  have hF : ContDiffOn ℝ (⊤ : ℕ∞) F.uncurry
+      (univ ×ˢ Ioi (0 : ℝ)) := by
+    dsimp [F, aux_realRescaled]
+    have hne : ∀ p ∈ (univ : Set (EuclideanSpace ℝ (Fin 2))) ×ˢ Ioi (0 : ℝ),
+        p.2 ≠ 0 := by
+      rintro ⟨u, t⟩ ⟨-, ht⟩
+      exact ne_of_gt ht
+    fun_prop
+  have hcontR : Continuous (fun u : EuclideanSpace ℝ (Fin 2) =>
+      ∫ t : ℝ in Icc (1 : ℝ) 2, F u t) :=
+    (aux_contDiff_infty_setIntegral_Icc_of_contDiffOn F hF).continuous
+  have heq : (fun u : EuclideanSpace ℝ (Fin 2) =>
+      integralFctKernel (fun x => psi x) u) =
+      fun u => ∫ t : ℝ in Icc (1 : ℝ) 2, F u t := by
+    funext u
+    rfl
+  exact Complex.ofRealCLM.continuous.comp (by simpa [heq] using hcontR)
+
+private theorem aux_integralFctKernel_integrable (psi : SchwartzMap ℝ ℝ) :
+    Integrable (fun u : EuclideanSpace ℝ (Fin 2) =>
+      (integralFctKernel (fun x => psi x) u : ℂ)) := by
+  let k : ℝ → EuclideanSpace ℝ (Fin 2) → ℂ := fun t u =>
+    (aux_realRescaled t (fun x => psi x) (u 0) *
+      aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹ : ℂ)
+  have hk : Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) => k q.1 q.2)
+      ((volume.restrict (Icc (1 : ℝ) 2)).prod volume) := by
+    simpa [k] using aux_integralFctKernelAtScale_triple_integrable psi 1 (by norm_num)
+  have hkernel :
+      (fun u : EuclideanSpace ℝ (Fin 2) =>
+        (integralFctKernel (fun x => psi x) u : ℂ)) =
+        fun u => ∫ t : ℝ in Icc (1 : ℝ) 2, k t u := by
+    funext u
+    change (↑(∫ t : ℝ in Icc (1 : ℝ) 2,
+      aux_realRescaled t (fun x => psi x) (u 0) *
+        aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹) : ℂ) = _
+    simpa [k] using
+      (integral_ofReal (𝕜 := ℂ) (μ := volume.restrict (Icc (1 : ℝ) 2))
+        (f := fun t : ℝ =>
+          aux_realRescaled t (fun x => psi x) (u 0) *
+            aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹)).symm
+  rw [hkernel]
+  exact hk.integral_prod_right
+
+private theorem aux_integralFctKernel_fourier_eq (psi : SchwartzMap ℝ ℝ) :
+    FourierTransform.fourier
+      (fun u : EuclideanSpace ℝ (Fin 2) =>
+        (integralFctKernel (fun x => psi x) u : ℂ)) =
+      aux_integralFctFourierKernel psi := by
+  let k : ℝ → EuclideanSpace ℝ (Fin 2) → ℂ := fun t u =>
+    (aux_realRescaled t (fun x => psi x) (u 0) *
+      aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹ : ℂ)
+  have hk : Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) => k q.1 q.2)
+      ((volume.restrict (Icc (1 : ℝ) 2)).prod volume) := by
+    simpa [k] using aux_integralFctKernelAtScale_triple_integrable psi 1 (by norm_num)
+  have hkernel :
+      (fun u : EuclideanSpace ℝ (Fin 2) =>
+        (integralFctKernel (fun x => psi x) u : ℂ)) =
+        fun u => ∫ t : ℝ in Icc (1 : ℝ) 2, k t u := by
+    funext u
+    change (↑(∫ t : ℝ in Icc (1 : ℝ) 2,
+      aux_realRescaled t (fun x => psi x) (u 0) *
+        aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹) : ℂ) = _
+    simpa [k] using
+      (integral_ofReal (𝕜 := ℂ) (μ := volume.restrict (Icc (1 : ℝ) 2))
+        (f := fun t : ℝ =>
+          aux_realRescaled t (fun x => psi x) (u 0) *
+            aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹)).symm
+  funext xi
+  rw [hkernel, aux_fourier_setIntegral_swap_of_integrable k 1 2 xi hk]
+  apply integral_congr_ae
+  filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+  have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+  have hkt : k t = fun u =>
+      (aux_realRescaled t (fun x => psi x) (u 0) : ℂ) *
+        (aux_realRescaled t (fun x => psi x) (u 1) : ℂ) * (t⁻¹ : ℂ) := by
+    funext u
+    dsimp [k]
+    push_cast
+    ring
+  rw [hkt, aux_fourier_mul_const, aux_fourier_tensor_two,
+    aux_realRescaled_fourier t htpos, aux_realRescaled_fourier t htpos]
+  rw [Complex.ofReal_inv]
+
+/-- The Fourier transform of the compact scale-integrated tensor kernel.
+This explicit form makes the cancellation on the diagonal available to the
+short-variation estimates. -/
+theorem integralFctKernel_fourier_eq (psi : SchwartzMap ℝ ℝ) :
+    FourierTransform.fourier
+      (fun u : EuclideanSpace ℝ (Fin 2) =>
+        (integralFctKernel (fun x => psi x) u : ℂ)) =
+      fun xi => ∫ t : ℝ in Icc (1 : ℝ) 2,
+        FourierTransform.fourier (fun x : ℝ => (psi x : ℂ)) (t * xi 0) *
+          FourierTransform.fourier (fun x : ℝ => (psi x : ℂ)) (t * xi 1) *
+            ((t⁻¹ : ℝ) : ℂ) := by
+  exact aux_integralFctKernel_fourier_eq psi
+
+/-- A Schwartz realization of the compact scale-integrated tensor kernel.
+Its Fourier-side construction is identified with `integralFctKernel` by
+`integralFctKernelSchwartz_apply`. -/
+noncomputable def integralFctKernelSchwartz (psi : SchwartzMap ℝ ℝ)
+    (hsupp : Function.support
+      (FourierTransform.fourier (fun x : ℝ => (psi x : ℂ))) ⊆
+        aux_annulusOne 1 ((2 : ℝ) ^ 2)) :
+    SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ :=
+  SchwartzMap.postcompCLM Complex.reCLM
+    (FourierTransform.fourierInv (aux_integralFctFourierKernelSchwartz psi hsupp))
+
+/-- The coercion of `integralFctKernelSchwartz` is the original physical
+kernel. -/
+theorem integralFctKernelSchwartz_apply (psi : SchwartzMap ℝ ℝ)
+    (hsupp : Function.support
+      (FourierTransform.fourier (fun x : ℝ => (psi x : ℂ))) ⊆
+        aux_annulusOne 1 ((2 : ℝ) ^ 2))
+    (u : EuclideanSpace ℝ (Fin 2)) :
+    integralFctKernelSchwartz psi hsupp u = integralFctKernel (fun x => psi x) u := by
+  let f : EuclideanSpace ℝ (Fin 2) → ℂ := fun u =>
+    (integralFctKernel (fun x => psi x) u : ℂ)
+  let H : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℂ :=
+    aux_integralFctFourierKernelSchwartz psi hsupp
+  have hH : (H : EuclideanSpace ℝ (Fin 2) → ℂ) = FourierTransform.fourier f := by
+    funext xi
+    exact (aux_integralFctKernel_fourier_eq psi).symm ▸
+      (aux_integralFctFourierKernelSchwartz_apply psi hsupp xi)
+  have hhatint : Integrable (FourierTransform.fourier f) := by
+    rw [← hH]
+    exact H.integrable
+  have hinv := (aux_integralFctKernel_continuous psi).fourierInv_fourier_eq
+    (aux_integralFctKernel_integrable psi) hhatint
+  have hcomplex : FourierTransform.fourierInv H u = f u := by
+    rw [SchwartzMap.fourierInv_coe, hH]
+    exact congrFun hinv u
+  rw [integralFctKernelSchwartz, SchwartzMap.postcompCLM_apply]
+  simpa [f] using congrArg Complex.re hcomplex
 
 /-- The Fourier-support inclusion in the first part of the conclusion of
 `integralFct` (Lemma \ref{lem:int_fct}). -/
