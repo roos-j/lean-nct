@@ -8789,6 +8789,7 @@ C_{\ref{lem:leftbump}}
 
 \begin{lemma}\label{lem:leftbump1_short1}\uses{Extension of sequences,A to Lambda,lem:theta_prim,lem:thetat_offcenter,P:induct-positive-terms-reduction-whitney,lem:int_fct,lem:phi4_supp}\usesdefs{A_def,bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,defn:window based bump functions}
 \lean{leftBumpOneShortOne}
+\leanok
 Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
 \begin{equation}\label{auto:left-bump-one-short-one-bound}
 \sum_{j\in[J)}2^{-(1+\gamma)k}\int_1^2
@@ -8848,6 +8849,7 @@ Thus \eqref{p1-on-W_der} holds. Proposition \ref{P:induct-positive-terms-reducti
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1_short1}}$ \auto]\label{constant left bump one short one}\uses{constant Whitney reduction,constant theta primitive,constant off center bump,lem:leftbump1_short1}\usesdefs{}
 \lean{constantLeftBumpOneShortOne}
+\leanok
 \begin{equation}\label{constant left bump one short one bound}
 C_{\ref{lem:leftbump1_short1}}
 <2^{628}.
@@ -8865,6 +8867,7 @@ C_{\ref{lem:leftbump1_short1}}
 
 \begin{lemma}\label{lem:leftbump1_short2}\uses{Extension of sequences,A to Lambda,lem:theta_prim,lem:theta_decay,lem:thetat_offcenter,P:induct-positive-terms-reduction-whitney,lem:int_fct,lem:phi4_supp,lem:ft_deriv_mul}\usesdefs{A_def,bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,defn:window based bump functions}
 \lean{leftBumpOneShortTwo}
+\leanok
 Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
 \begin{equation}\label{auto:left-bump-one-short-two-bound}
 \sum_{j\in[J)}2^{(1-\gamma)k}\int_1^2
@@ -8935,6 +8938,7 @@ Thus \eqref{p1-on-W_der} holds, and Proposition \ref{P:induct-positive-terms-red
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1_short2}}$ \auto]\label{constant left bump one short two}\uses{lem:theta_prim,constant theta primitive,constant theta decay,constant Whitney reduction,constant off center bump,lem:leftbump1_short2}\usesdefs{}
 \lean{constantLeftBumpOneShortTwo}
+\leanok
 \begin{equation}\label{constant left bump one short two bound}
 C_{\ref{lem:leftbump1_short2}}
 <2^{630}.
@@ -8956,6 +8960,7 @@ C_{\ref{lem:leftbump1_short2}}
 
 \begin{lemma}\label{lem:leftbump1_long}\uses{lem:bootstrap,Extension of sequences,A to Lambda,lem:theta_prim,P:induct-positive-terms-reduction-whitney,lem:phi4_supp,lem:form_pos}\usesdefs{A_def,bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,defn:window based bump functions}
 \lean{leftBumpOneLong}
+\leanok
 Let $\gamma=\frac12$. For every $k\le-1$,
 \begin{equation}\label{auto:left-bump-one-long-bound}
 \|A_t(\varphi_{4,k})\|_{V_{2,J}(t\in2^\mathbb Z;L^2)}^2
@@ -9030,6 +9035,7 @@ Thus \eqref{p1-on-W_der} holds. Proposition \ref{P:induct-positive-terms-reducti
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1_long}}$ \auto]\label{constant left bump one long}\uses{constant Whitney reduction,constant theta primitive,lem:leftbump1_long}\usesdefs{}
 \lean{constantLeftBumpOneLong}
+\leanok
 \begin{equation}\label{constant left bump one long bound}
 C_{\ref{lem:leftbump1_long}}<2^{625}.
 \end{equation}
@@ -9041,6 +9047,7 @@ Use Lemmas \ref{constant Whitney reduction} and \ref{constant theta primitive} i
 
 \begin{lemma}\label{lem:leftbump1}\uses{lem:rescaling,lem:shortlongjumps,lem:leftbump1_long,lem:leftbump1_short1,lem:leftbump1_short2,lem:ftccs-R,lem:ftc_ATphi}\usesdefs{A_def,defn:window based bump functions}
 \lean{leftBumpOne}
+\leanok
 
 Let $\gamma=\frac12$. For every $k\le -1$,
 \begin{equation}\label{leftbump1}
@@ -9109,6 +9116,7 @@ where we used $(J+1)^{\alpha(n)}\le2J^{\alpha(n)}$. This shows \eqref{leftbump_s
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1}}$ \auto]\label{constant left bump one}\uses{constant left bump one short one,constant left bump one short two,constant left bump one long,lem:leftbump1}\usesdefs{}
 \lean{constantLeftBumpOne}
+\leanok
 \begin{equation}\label{constant left bump one bound}
 C_{\ref{lem:leftbump1}}<\tfrac{23}{32}2^{636}<2^{636}.
 \end{equation}

@@ -1560,6 +1560,73 @@ private theorem aux_shortLong_mainAuxOne_finset_pointwise {n : ℕ} (hn : 2 ≤ 
   · have hempty : kappa = ∅ := Finset.not_nonempty_iff_eq_empty.mp hkappa
     simp [hempty]
 
+private theorem aux_shortLong_finish_of_local {n : ℕ} (hn : 2 ≤ n)
+    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (B A : ℝ)
+    (hBnonneg : 0 ≤ B) (hAnonneg : 0 ≤ A)
+    (hA : aux_dyadicVariationBound A (fun x ↦ phi x) f.1)
+    (hlocal : ∀ (J : ℕ), 0 < J → ∀ κ : Finset ℤ, κ.card ≤ J + 1 →
+      ∑ k ∈ κ,
+        (finiteVariationSeminorm
+          (fun s : aux_dyadicInterval k ↦ aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+        ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) :
+    aux_variationBound (8 * B + 2 * A) (fun x ↦ phi x) f.1 := by
+  unfold aux_variationBound
+  intro J hJ t
+  let a : ℝ → Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ (Fin n))) :=
+    aux_shortLong_averageLp hn phi f
+  obtain ⟨κ, hκ, hsplit⟩ :=
+    (shortlongJumps a J 2 (by norm_num : (1 : ℝ) ≤ 2)).1 t.1 t.2.1.monotone t.2.2
+  let S : ℝ≥0∞ := ∑ k ∈ κ,
+    (finiteVariationSeminorm (fun s : aux_dyadicInterval k ↦ a s) 2 J) ^ (2 : ℝ)
+  let V : ℝ≥0∞ := finiteVariationSeminorm
+    (fun s : Set.range (fun k : ℤ ↦ (2 : ℝ) ^ k) ↦ a s) 2 J
+  have henergy :
+      (∑ j : Fin J,
+        (‖a (t.1 j.succ) - a (t.1 j.castSucc)‖₊ : ℝ≥0∞) ^ (2 : ℝ)) ≤
+        8 * S + 2 * V ^ (2 : ℝ) := by
+    exact aux_shortLong_energy_of_root_le _ S V hsplit
+  have hlocal' : S ≤ ENNReal.ofReal B *
+      ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+    have hcard : κ.card ≤ J + 1 :=
+      aux_shortLong_kappa_card_le t.1 t.2.2 κ hκ
+    dsimp [S, a]
+    exact hlocal J hJ κ hcard
+  have hlong' : V ^ (2 : ℝ) ≤
+      ENNReal.ofReal A * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+    dsimp [V, a]
+    exact aux_shortLong_long_variation_sq_le hn phi f J hJ A hA
+  have htarget :
+      8 * S + 2 * V ^ (2 : ℝ) ≤
+        ENNReal.ofReal (8 * B + 2 * A) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+    calc
+      8 * S + 2 * V ^ (2 : ℝ) ≤
+          8 * (ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) +
+          2 * (ENNReal.ofReal A * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) := by
+            gcongr
+      _ = (8 * ENNReal.ofReal B + 2 * ENNReal.ofReal A) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by ring
+      _ = ENNReal.ofReal (8 * B + 2 * A) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+        rw [ENNReal.ofReal_add]
+        · rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 8),
+            ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
+          norm_num
+        · exact mul_nonneg (by norm_num) hBnonneg
+        · exact mul_nonneg (by norm_num) hAnonneg
+  have hjump : aux_jumpEnergy (fun x ↦ phi x) f.1 J t =
+      ∑ j : Fin J,
+        (‖a (t.1 j.succ) - a (t.1 j.castSucc)‖₊ : ℝ≥0∞) ^ (2 : ℝ) := by
+    unfold aux_jumpEnergy twistedJumpEnergy
+    simp only [ENNReal.rpow_two]
+    apply Finset.sum_congr rfl
+    intro j _
+    simpa only [← enorm_eq_nnnorm, ENNReal.rpow_two] using
+      (congrArg (fun z : ℝ≥0∞ ↦ z ^ (2 : ℕ))
+        (aux_shortLong_averageLp_enorm_sub hn phi f (t.1 j.succ) (t.1 j.castSucc))).symm
+  rw [hjump]
+  exact henergy.trans htarget
+
 private theorem aux_shortLong_finish {n : ℕ} (hn : 2 ≤ n)
     (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (A : ℝ)
     (hApos : 0 < A) (hCnonneg : 0 ≤ C_mainAuxOne n)
@@ -4977,6 +5044,1580 @@ private theorem aux_leftBumpOneShort_continuous_aToLambda_integralFct
   simpa [prismForm, F] using hmain
 
 
+/-! ### First short-variation Whitney normalization -/
+
+open Codex.Preliminaries.Notation
+open Codex.MainArgument.MainInduction
+
+private theorem aux_leftBumpOneShort_bracket_inv_mul_le (t x : ℝ) (ht : 1 ≤ t) :
+    bracketBump (t⁻¹ * x) ≤ t * bracketBump x := by
+  have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht
+  change (1 + |t⁻¹ * x|)⁻¹ ≤ t * (1 + |x|)⁻¹
+  rw [abs_mul, abs_inv, abs_of_pos htpos]
+  rw [show (1 + t⁻¹ * |x|)⁻¹ = 1 / (1 + |x| / t) by
+    congr 2
+    field_simp [ne_of_gt htpos],
+    show t * (1 + |x|)⁻¹ = t / (1 + |x|) by field_simp]
+  apply (div_le_div_iff₀ (by positivity : 0 < 1 + |x| / t)
+    (by positivity : 0 < 1 + |x|)).2
+  field_simp [ne_of_gt htpos]
+  nlinarith [abs_nonneg x]
+
+private theorem aux_leftBumpOneShort_phiFour_rescaled_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (t u : ℝ)
+    (ht : t ∈ Set.Icc (1 : ℝ) 2) :
+    |Codex.Reduction.BumpFunctions.aux_realRescaled t
+        (windowBasedBumpFunctions.phiFour b k) u| ≤
+      (2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2 *
+        bracketBump (u - t * (2 : ℝ) ^ (-k)) ^ 2 := by
+  have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+  have htinv : 0 ≤ t⁻¹ := inv_nonneg.mpr htpos.le
+  have hkpos : 0 ≤ (2 : ℝ) ^ k := (zpow_pos (by norm_num) _).le
+  have hC : 0 ≤ C_thetaPrimitive 2 := by
+    norm_num [C_thetaPrimitive, C_uniPair]
+  let x : ℝ := u - t * (2 : ℝ) ^ (-k)
+  have harg : t⁻¹ * u - (2 : ℝ) ^ (-k) = t⁻¹ * x := by
+    dsimp [x]
+    field_simp [ne_of_gt htpos]
+  have htheta := (thetaPrimitive b 2 (by omega) (by norm_num [N_uniPair])).2.2.1
+    (t⁻¹ * x)
+  have hbr : bracketBump (t⁻¹ * x) ≤ t * bracketBump x :=
+    aux_leftBumpOneShort_bracket_inv_mul_le t x ht.1
+  have hbrsq : bracketBump (t⁻¹ * x) ^ 2 ≤ (t * bracketBump x) ^ 2 := by
+    exact pow_le_pow_left₀ (by rw [bracketBump]; positivity) hbr 2
+  have hB : 0 ≤ bracketBump x ^ 2 := by positivity
+  change |t⁻¹ * ((2 : ℝ) ^ k *
+      windowBasedBumpFunctions.thetaTilde b (t⁻¹ * u - (2 : ℝ) ^ (-k)))| ≤ _
+  rw [harg, abs_mul, abs_mul, abs_of_nonneg htinv,
+    abs_of_nonneg hkpos]
+  calc
+    t⁻¹ * ((2 : ℝ) ^ k * |windowBasedBumpFunctions.thetaTilde b (t⁻¹ * x)|) ≤
+        t⁻¹ * ((2 : ℝ) ^ k * (C_thetaPrimitive 2 *
+          bracketBump (t⁻¹ * x) ^ 2)) := by
+          gcongr
+    _ ≤ t⁻¹ * ((2 : ℝ) ^ k * (C_thetaPrimitive 2 *
+          (t * bracketBump x) ^ 2)) := by
+          gcongr
+    _ = (2 : ℝ) ^ k * C_thetaPrimitive 2 * t * bracketBump x ^ 2 := by
+          field_simp [ne_of_gt htpos]
+    _ ≤ (2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2 * bracketBump x ^ 2 := by
+          have htle : t ≤ 2 := ht.2
+          have hbase : (2 : ℝ) ^ k * t ≤ (2 : ℝ) ^ k * 2 :=
+            mul_le_mul_of_nonneg_left htle hkpos
+          have hmain : (2 : ℝ) ^ k * C_thetaPrimitive 2 * t * bracketBump x ^ 2 ≤
+              ((2 : ℝ) ^ k * 2) * C_thetaPrimitive 2 * bracketBump x ^ 2 := by
+            calc
+              (2 : ℝ) ^ k * C_thetaPrimitive 2 * t * bracketBump x ^ 2 =
+                  ((2 : ℝ) ^ k * t) * (C_thetaPrimitive 2 * bracketBump x ^ 2) := by
+                    ring
+              _ ≤ ((2 : ℝ) ^ k * 2) * (C_thetaPrimitive 2 * bracketBump x ^ 2) :=
+                mul_le_mul_of_nonneg_right hbase (mul_nonneg hC hB)
+              _ = ((2 : ℝ) ^ k * 2) * C_thetaPrimitive 2 * bracketBump x ^ 2 := by
+                ring
+          calc
+            (2 : ℝ) ^ k * C_thetaPrimitive 2 * t * bracketBump x ^ 2 ≤
+                ((2 : ℝ) ^ k * 2) * C_thetaPrimitive 2 * bracketBump x ^ 2 := hmain
+            _ = (2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2 * bracketBump x ^ 2 := by
+                rw [zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+                norm_num
+    _ = (2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2 *
+        bracketBump (u - t * (2 : ℝ) ^ (-k)) ^ 2 := by rfl
+
+private theorem aux_leftBumpOneShort_scalar_identity (k : ℤ) (C : ℝ) :
+    Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+      (((2 : ℝ) ^ (k + 1) * C) ^ 2) =
+      4 * C ^ 2 * Real.rpow 2 ((k : ℝ) / 2) := by
+  have htwo : 0 < (2 : ℝ) := by norm_num
+  rw [mul_pow]
+  rw [show (2 : ℝ) ^ (k + 1) = Real.rpow 2 ((k + 1 : ℤ) : ℝ) by
+    exact (Real.rpow_intCast 2 (k + 1)).symm]
+  have hpow : (Real.rpow 2 ((k + 1 : ℤ) : ℝ)) ^ 2 =
+      Real.rpow 2 (((k + 1 : ℤ) : ℝ) * 2) := by
+    rw [← Real.rpow_natCast]
+    exact (Real.rpow_mul htwo.le _ _).symm
+  rw [hpow]
+  calc
+    Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+        (Real.rpow 2 (((k + 1 : ℤ) : ℝ) * 2) * C ^ 2) =
+        (Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+          Real.rpow 2 (((k + 1 : ℤ) : ℝ) * 2)) * C ^ 2 := by ring
+    _ = Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2 +
+          ((k + 1 : ℤ) : ℝ) * 2) * C ^ 2 := by
+      congr 1
+      exact (Real.rpow_add htwo _ _).symm
+    _ = Real.rpow 2 (2 + (k : ℝ) / 2) * C ^ 2 := by
+      congr 2
+      push_cast
+      ring
+    _ = (Real.rpow 2 (2 : ℝ) * Real.rpow 2 ((k : ℝ) / 2)) * C ^ 2 := by
+      congr 1
+      exact Real.rpow_add htwo _ _
+    _ = 4 * C ^ 2 * Real.rpow 2 ((k : ℝ) / 2) := by
+      norm_num
+      ring
+
+private theorem aux_leftBumpOneShort_scaledBracket_one_eq_rpow (x : ℝ) :
+    scaledBracketBumpReal (3 / 2 : ℝ) 1 x =
+      Real.rpow (bracketBump x) (3 / 2 : ℝ) := by
+  unfold scaledBracketBumpReal bracketBump
+  norm_num only [inv_one, one_mul]
+  calc
+    Real.rpow (1 + |x|) (-(3 / 2 : ℝ)) =
+        (Real.rpow (1 + |x|) (3 / 2 : ℝ))⁻¹ :=
+      Real.rpow_neg (by positivity) _
+    _ = Real.rpow ((1 + |x|)⁻¹) (3 / 2 : ℝ) :=
+      (Real.inv_rpow (by positivity) _).symm
+
+private theorem aux_leftBumpOneShort_bracket_le_div_sqrt_two (x : ℝ) :
+    bracketBump x ≤ bracketBump (x / Real.sqrt 2) := by
+  have hsqrt_nonneg : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg _
+  have hsqrt_sq : (Real.sqrt 2) ^ 2 = (2 : ℝ) := by norm_num
+  have hsqrt : 1 ≤ Real.sqrt 2 := by nlinarith
+  have hsqrt_pos : 0 < Real.sqrt 2 := lt_of_lt_of_le zero_lt_one hsqrt
+  unfold bracketBump
+  rw [abs_div, abs_of_pos hsqrt_pos]
+  apply (inv_le_inv₀ (by positivity : 0 < 1 + |x|)
+    (by positivity : 0 < 1 + |x| / Real.sqrt 2)).mpr
+  have hdiv : |x| / Real.sqrt 2 ≤ |x| := by
+    apply (div_le_iff₀ hsqrt_pos).2
+    nlinarith [abs_nonneg x]
+  nlinarith
+
+private theorem aux_leftBumpOneShort_offcenter_second_term_le_whitney
+    (v : RealPlane) :
+    Real.rpow (bracketBump (v.1 + v.2)) (3 / 2 : ℝ) *
+      Real.rpow (bracketBump (v.1 - v.2)) (3 / 2 : ℝ) ≤
+      scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W (1 : Fin 2) v).1) *
+        scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W (1 : Fin 2) v).2) := by
+  have h0 : Real.rpow (bracketBump (v.1 + v.2)) (3 / 2 : ℝ) ≤
+      Real.rpow (bracketBump ((v.1 + v.2) / Real.sqrt 2)) (3 / 2 : ℝ) := by
+    exact Real.rpow_le_rpow (by rw [bracketBump]; positivity)
+      (aux_leftBumpOneShort_bracket_le_div_sqrt_two (v.1 + v.2)) (by norm_num)
+  have h1base : Real.rpow (bracketBump (v.1 - v.2)) (3 / 2 : ℝ) ≤
+      Real.rpow (bracketBump ((v.1 - v.2) / Real.sqrt 2)) (3 / 2 : ℝ) := by
+    exact Real.rpow_le_rpow (by rw [bracketBump]; positivity)
+      (aux_leftBumpOneShort_bracket_le_div_sqrt_two (v.1 - v.2)) (by norm_num)
+  have hneg : bracketBump ((v.1 - v.2) / Real.sqrt 2) =
+      bracketBump ((-v.1 + v.2) / Real.sqrt 2) := by
+    rw [show (-v.1 + v.2) / Real.sqrt 2 =
+        -((v.1 - v.2) / Real.sqrt 2) by ring]
+    unfold bracketBump
+    rw [abs_neg]
+  have h1 : Real.rpow (bracketBump (v.1 - v.2)) (3 / 2 : ℝ) ≤
+      Real.rpow (bracketBump ((-v.1 + v.2) / Real.sqrt 2)) (3 / 2 : ℝ) := by
+    rw [← hneg]
+    exact h1base
+  have h0nonneg : 0 ≤ Real.rpow (bracketBump (v.1 + v.2)) (3 / 2 : ℝ) :=
+    Real.rpow_nonneg (by rw [bracketBump]; positivity) _
+  have h1nonneg : 0 ≤ Real.rpow (bracketBump (v.1 - v.2)) (3 / 2 : ℝ) :=
+    Real.rpow_nonneg (by rw [bracketBump]; positivity) _
+  rw [W, if_neg (by decide : (1 : Fin 2) ≠ 0),
+    aux_leftBumpOneShort_scaledBracket_one_eq_rpow,
+    aux_leftBumpOneShort_scaledBracket_one_eq_rpow]
+  exact mul_le_mul h0 h1 h1nonneg
+    (Real.rpow_nonneg (by rw [bracketBump]; positivity) _)
+
+private theorem aux_leftBumpOneShort_offcenter_rhs_le_whitney (v : RealPlane) :
+    C_thetaTOffcenter *
+      (Real.rpow (bracketBump v.1) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump v.2) (3 / 2 : ℝ) +
+        Real.rpow (bracketBump (v.1 + v.2)) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump (v.1 - v.2)) (3 / 2 : ℝ)) ≤
+      C_thetaTOffcenter * ∑ u : Fin 2,
+        scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
+  have hfirst : Real.rpow (bracketBump v.1) (3 / 2 : ℝ) *
+      Real.rpow (bracketBump v.2) (3 / 2 : ℝ) =
+      scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W (0 : Fin 2) v).1) *
+        scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W (0 : Fin 2) v).2) := by
+    rw [W, if_pos rfl, aux_leftBumpOneShort_scaledBracket_one_eq_rpow,
+      aux_leftBumpOneShort_scaledBracket_one_eq_rpow]
+  rw [Fin.sum_univ_two, ← hfirst]
+  exact mul_le_mul_of_nonneg_left
+    (by
+      simpa [add_comm] using add_le_add_right
+        (aux_leftBumpOneShort_offcenter_second_term_le_whitney v)
+        (Real.rpow (bracketBump v.1) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump v.2) (3 / 2 : ℝ)))
+    (by norm_num [C_thetaTOffcenter])
+
+private theorem aux_leftBumpOneShort_integrand_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (t : ℝ)
+    (ht : t ∈ Set.Icc (1 : ℝ) 2) (v : RealPlane) :
+    |Codex.Reduction.BumpFunctions.aux_realRescaled t
+        (windowBasedBumpFunctions.phiFour b k) v.1 *
+      Codex.Reduction.BumpFunctions.aux_realRescaled t
+        (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| ≤
+      ((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) ^ 2 *
+        (bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 *
+          bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2) := by
+  have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+  have htinv : 0 ≤ t⁻¹ := inv_nonneg.mpr htpos.le
+  have htinvle : t⁻¹ ≤ 1 := (inv_le_one₀ htpos).2 ht.1
+  have h0 := aux_leftBumpOneShort_phiFour_rescaled_bound b k t v.1 ht
+  have h1 := aux_leftBumpOneShort_phiFour_rescaled_bound b k t v.2 ht
+  have hA : 0 ≤ (2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2 :=
+    mul_nonneg (zpow_pos (by norm_num) _).le
+      (by norm_num [C_thetaPrimitive, C_uniPair])
+  have hB0 : 0 ≤ bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 := by positivity
+  have hB1 : 0 ≤ bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2 := by positivity
+  rw [abs_mul, abs_mul, abs_of_nonneg htinv]
+  calc
+    |Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (windowBasedBumpFunctions.phiFour b k) v.1| *
+        |Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (windowBasedBumpFunctions.phiFour b k) v.2| * t⁻¹ ≤
+        (((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) *
+          bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2) *
+          (((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) *
+            bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2) * t⁻¹ := by
+          refine mul_le_mul_of_nonneg_right ?_ htinv
+          exact mul_le_mul h0 h1 (abs_nonneg _)
+            (mul_nonneg hA hB0)
+    _ ≤ (((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) *
+          bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2) *
+          (((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) *
+            bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2) * 1 := by
+          apply mul_le_mul_of_nonneg_left htinvle
+          positivity
+    _ = ((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) ^ 2 *
+        (bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 *
+          bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2) := by ring
+
+private theorem aux_leftBumpOneShort_kernel_decay
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1) (v : RealPlane) :
+    |Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+      integralFctKernel (windowBasedBumpFunctions.phiFour b k)
+        (WithLp.toLp 2 ![v.1, v.2])| ≤
+      (4 * C_thetaPrimitive 2 ^ 2 * C_thetaTOffcenter) *
+        ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
+  let A : ℝ := (2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2
+  let B : ℝ → ℝ := fun t =>
+    bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 *
+      bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2
+  have hBcont : Continuous B := by
+    dsimp [B]
+    have h0 : Continuous (fun t : ℝ =>
+        1 + |v.1 - t * (2 : ℝ) ^ (-k)|) := by fun_prop
+    have h1 : Continuous (fun t : ℝ =>
+        1 + |v.2 - t * (2 : ℝ) ^ (-k)|) := by fun_prop
+    have h0ne : ∀ t : ℝ, 1 + |v.1 - t * (2 : ℝ) ^ (-k)| ≠ 0 := by
+      intro t
+      positivity
+    have h1ne : ∀ t : ℝ, 1 + |v.2 - t * (2 : ℝ) ^ (-k)| ≠ 0 := by
+      intro t
+      positivity
+    change Continuous (fun t : ℝ =>
+      (1 + |v.1 - t * (2 : ℝ) ^ (-k)|)⁻¹ ^ 2 *
+        (1 + |v.2 - t * (2 : ℝ) ^ (-k)|)⁻¹ ^ 2)
+    exact ((h0.inv₀ h0ne).pow 2).mul ((h1.inv₀ h1ne).pow 2)
+  have hBint : IntegrableOn B (Set.Icc (1 : ℝ) 2) := hBcont.integrableOn_Icc
+  have hint : ∫ t : ℝ in Set.Icc (1 : ℝ) 2,
+      |Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (windowBasedBumpFunctions.phiFour b k) v.1 *
+        Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| ≤
+      A ^ 2 * ∫ t : ℝ in Set.Icc (1 : ℝ) 2, B t := by
+    calc
+      ∫ t : ℝ in Set.Icc (1 : ℝ) 2,
+          |Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (windowBasedBumpFunctions.phiFour b k) v.1 *
+            Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| ≤
+          ∫ t : ℝ in Set.Icc (1 : ℝ) 2, A ^ 2 * B t := by
+            apply MeasureTheory.setIntegral_mono_of_nonneg
+            · intro t ht
+              exact abs_nonneg _
+            · intro t ht
+              simpa only [A, B] using
+                aux_leftBumpOneShort_integrand_bound b k t ht v
+            · exact hBint.const_mul _
+      _ = A ^ 2 * ∫ t : ℝ in Set.Icc (1 : ℝ) 2, B t := by
+        rw [integral_const_mul]
+  have hc : 0 ≤ Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) :=
+    Real.rpow_nonneg (by norm_num) _
+  have hoff := thetaTOffcenter k hk v.1 v.2
+  change |Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+      ∫ t : ℝ in Set.Icc 1 2,
+        Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (windowBasedBumpFunctions.phiFour b k) v.1 *
+        Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| ≤ _
+  calc
+    |Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+        ∫ t : ℝ in Set.Icc 1 2,
+          Codex.Reduction.BumpFunctions.aux_realRescaled t
+            (windowBasedBumpFunctions.phiFour b k) v.1 *
+          Codex.Reduction.BumpFunctions.aux_realRescaled t
+            (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| =
+        Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+          |∫ t : ℝ in Set.Icc 1 2,
+            Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (windowBasedBumpFunctions.phiFour b k) v.1 *
+            Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| := by
+              rw [abs_mul, abs_of_nonneg hc]
+    _ ≤ Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+        ∫ t : ℝ in Set.Icc 1 2,
+          |Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (windowBasedBumpFunctions.phiFour b k) v.1 *
+            Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| :=
+      mul_le_mul_of_nonneg_left abs_integral_le_integral_abs hc
+    _ ≤ Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+        (A ^ 2 * ∫ t : ℝ in Set.Icc 1 2, B t) :=
+      mul_le_mul_of_nonneg_left hint hc
+    _ = 4 * C_thetaPrimitive 2 ^ 2 *
+        (Real.rpow 2 ((k : ℝ) / 2) *
+          ∫ t : ℝ in Set.Icc 1 2, B t) := by
+          dsimp [A]
+          calc
+            Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+                (((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) ^ 2 *
+                  ∫ t : ℝ in Set.Icc 1 2, B t) =
+                (Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+                  ((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) ^ 2) *
+                    ∫ t : ℝ in Set.Icc 1 2, B t := by ring
+            _ = (4 * C_thetaPrimitive 2 ^ 2 * Real.rpow 2 ((k : ℝ) / 2)) *
+                    ∫ t : ℝ in Set.Icc 1 2, B t := by
+                  rw [aux_leftBumpOneShort_scalar_identity]
+            _ = 4 * C_thetaPrimitive 2 ^ 2 *
+                (Real.rpow 2 ((k : ℝ) / 2) *
+                  ∫ t : ℝ in Set.Icc 1 2, B t) := by ring
+    _ ≤ 4 * C_thetaPrimitive 2 ^ 2 *
+        (C_thetaTOffcenter *
+          (Real.rpow (bracketBump v.1) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump v.2) (3 / 2 : ℝ) +
+            Real.rpow (bracketBump (v.1 + v.2)) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump (v.1 - v.2)) (3 / 2 : ℝ))) := by
+          apply mul_le_mul_of_nonneg_left
+          · simpa only [B] using hoff
+          · positivity
+    _ ≤ 4 * C_thetaPrimitive 2 ^ 2 *
+        (C_thetaTOffcenter * ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2)) := by
+          apply mul_le_mul_of_nonneg_left
+          exact aux_leftBumpOneShort_offcenter_rhs_le_whitney v
+          positivity
+    _ = (4 * C_thetaPrimitive 2 ^ 2 * C_thetaTOffcenter) *
+        ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by ring
+
+private noncomputable def aux_leftBumpOneShort_whitneyNormalizer : ℝ :=
+  4 * C_thetaPrimitive 2 ^ 2 * C_thetaTOffcenter
+
+private theorem aux_leftBumpOneShort_whitneyNormalizer_pos :
+    0 < aux_leftBumpOneShort_whitneyNormalizer := by
+  norm_num [aux_leftBumpOneShort_whitneyNormalizer, C_thetaPrimitive, C_uniPair,
+    C_thetaTOffcenter]
+
+private theorem aux_leftBumpOneShort_normalized_decay
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1) (v : RealPlane) :
+    |(aux_leftBumpOneShort_whitneyNormalizer)⁻¹ *
+      Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+      integralFctKernel (windowBasedBumpFunctions.phiFour b k)
+        (WithLp.toLp 2 ![v.1, v.2])| ≤
+      ∑ u : Fin 2,
+        scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
+  let D : ℝ := aux_leftBumpOneShort_whitneyNormalizer
+  let S : ℝ := ∑ u : Fin 2,
+    scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+      scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2)
+  have hD : 0 < D := aux_leftBumpOneShort_whitneyNormalizer_pos
+  have hraw : |Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+      integralFctKernel (windowBasedBumpFunctions.phiFour b k)
+        (WithLp.toLp 2 ![v.1, v.2])| ≤ D * S := by
+    dsimp [D, S, aux_leftBumpOneShort_whitneyNormalizer]
+    exact aux_leftBumpOneShort_kernel_decay b k hk v
+  change |D⁻¹ * Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+      integralFctKernel (windowBasedBumpFunctions.phiFour b k)
+        (WithLp.toLp 2 ![v.1, v.2])| ≤ S
+  calc
+    |D⁻¹ * Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+        integralFctKernel (windowBasedBumpFunctions.phiFour b k)
+          (WithLp.toLp 2 ![v.1, v.2])| =
+        |D⁻¹ * (Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+          integralFctKernel (windowBasedBumpFunctions.phiFour b k)
+            (WithLp.toLp 2 ![v.1, v.2]))| := by
+      rw [mul_assoc]
+    _ = D⁻¹ * |Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+          integralFctKernel (windowBasedBumpFunctions.phiFour b k)
+            (WithLp.toLp 2 ![v.1, v.2])| := by
+      rw [abs_mul, abs_of_pos (inv_pos.mpr hD)]
+    _ ≤ D⁻¹ * (D * S) :=
+      mul_le_mul_of_nonneg_left hraw (inv_nonneg.mpr hD.le)
+    _ = S := by field_simp [ne_of_gt hD]
+
+private theorem aux_leftBumpOneShort_planeFourier_const_mul
+    (c : ℝ) (M : RealPlane → ℝ) (xi : EuclideanSpace ℝ (Fin 2)) :
+    aux_planeFourier (fun v => c * M v) xi = c * aux_planeFourier M xi := by
+  unfold aux_planeFourier
+  rw [Real.fourier_eq, Real.fourier_eq, ← integral_const_mul]
+  apply integral_congr_ae
+  filter_upwards [] with v
+  push_cast
+  rw [Circle.smul_def, Circle.smul_def]
+  ring
+
+private theorem aux_leftBumpOneShort_planeFourier_normalize_diagonal
+    (D : ℝ) (hD : 0 < D) (M : RealPlane → ℝ)
+    (m : ℕ) (xi : ℝ)
+    (hraw : ‖iteratedDeriv m
+      (fun z : ℝ => aux_planeFourier M (WithLp.toLp 2 ![z, -z])) xi‖ ≤ D) :
+    ‖iteratedDeriv m
+      (fun z : ℝ => aux_planeFourier (fun v => D⁻¹ * M v)
+        (WithLp.toLp 2 ![z, -z])) xi‖ ≤ 1 := by
+  have hformula :
+      (fun z : ℝ => aux_planeFourier (fun v => D⁻¹ * M v)
+        (WithLp.toLp 2 ![z, -z])) =
+      fun z => (D⁻¹ : ℂ) * aux_planeFourier M (WithLp.toLp 2 ![z, -z]) := by
+    funext z
+    rw [aux_leftBumpOneShort_planeFourier_const_mul]
+    norm_cast
+  rw [hformula, iteratedDeriv_const_mul_field, norm_mul, norm_inv,
+    Complex.norm_real, Real.norm_eq_abs, abs_of_pos hD]
+  calc
+    D⁻¹ * ‖iteratedDeriv m
+        (fun z : ℝ => aux_planeFourier M (WithLp.toLp 2 ![z, -z])) xi‖ ≤
+        D⁻¹ * D :=
+      mul_le_mul_of_nonneg_left hraw (inv_nonneg.mpr hD.le)
+    _ = 1 := by field_simp [ne_of_gt hD]
+
+private theorem aux_leftBumpOneShort_integralFctKernel_plane_diagonal_fourier_eq
+    (psi : SchwartzMap ℝ ℝ) (z : ℝ) :
+    aux_planeFourier
+      (fun v : RealPlane => integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![v.1, v.2]))
+      (WithLp.toLp 2 ![z, -z]) =
+      ∫ t : ℝ in Set.Icc (1 : ℝ) 2,
+        FourierTransform.fourier (fun x : ℝ => (psi x : ℂ)) (t * z) *
+          FourierTransform.fourier (fun x : ℝ => (psi x : ℂ)) (-(t * z)) *
+            ((t⁻¹ : ℝ) : ℂ) := by
+  have hcoord : (fun u : EuclideanSpace ℝ (Fin 2) =>
+      (integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![u 0, u 1]) : ℂ)) =
+      fun u => (integralFctKernel (fun x : ℝ => psi x) u : ℂ) := by
+    funext u
+    congr 1
+  rw [aux_planeFourier, hcoord, integralFctKernel_fourier_eq]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, neg_mul]
+  congr 1
+  funext t
+  congr 3
+  ring
+
+private theorem aux_leftBumpOneShort_integralFct_plane_fourier_support
+    (psi : SchwartzMap ℝ ℝ)
+    (hband : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+        Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1) :
+    Function.support (aux_planeFourier
+      (fun v : RealPlane => integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![v.1, v.2]))) ⊆
+      {v : EuclideanSpace ℝ (Fin 2) |
+        v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+        v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)} := by
+  have hbase := integralFct psi hband 0
+  have hcoord : (fun u : EuclideanSpace ℝ (Fin 2) =>
+      (integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![u 0, u 1]) : ℂ)) =
+        fun u => (integralFctKernel (fun x : ℝ => psi x) u : ℂ) := by
+    funext u
+    congr 1
+  intro z hz
+  have hz' : z ∈ Function.support (FourierTransform.fourier
+      (fun u : EuclideanSpace ℝ (Fin 2) =>
+        (aux_integralFctKernelAtScale ((2 : ℝ) ^ (0 : ℤ))
+          (fun x : ℝ => psi x) u : ℂ))) := by
+    simpa [aux_planeFourier, hcoord, aux_integralFctKernelAtScale,
+      Codex.Preliminaries.Notation.rescaled] using hz
+  exact hbase.2.2.2 (hbase.2.2.1 hz')
+
+private theorem aux_leftBumpOneShort_integralFct_plane_fourier_support_smul
+    (psi : SchwartzMap ℝ ℝ)
+    (hband : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+        Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1)
+    (c : ℝ) :
+    Function.support (aux_planeFourier
+      (fun v : RealPlane => c * integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![v.1, v.2]))) ⊆
+      {v : EuclideanSpace ℝ (Fin 2) |
+        v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+        v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)} := by
+  intro z hz
+  have hne := Function.mem_support.mp hz
+  rw [aux_leftBumpOneShort_planeFourier_const_mul] at hne
+  have hbase : aux_planeFourier
+      (fun v : RealPlane => integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![v.1, v.2])) z ≠ 0 := by
+    intro hzero
+    simp [hzero] at hne
+  exact aux_leftBumpOneShort_integralFct_plane_fourier_support psi hband
+    (Function.mem_support.mpr hbase)
+
+private theorem aux_leftBumpOneShort_phiFourSchwartz_support
+    (b : windowBasedBumpFunctions) (k : ℤ) :
+    Function.support (FourierTransform.fourier
+      (fun x : ℝ => (phiFourSchwartz b k x : ℂ))) ⊆
+        Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+  intro xi hxi
+  have hraw : xi ∈ Function.support (FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.phiFour b k x : ℂ))) := by
+    simpa only [phiFourSchwartz_apply] using hxi
+  exact (thetaPrimitive b 2 (by omega) (by norm_num [N_uniPair])).1.2
+    ((phiFourSupport b k).1 hraw)
+
+private theorem aux_leftBumpOneShort_integralFct_base_symmetric
+    (psi : SchwartzMap ℝ ℝ)
+    (hband : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+        Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1)
+    (v : RealPlane) :
+    integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.1, v.2]) =
+      integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.2, v.1]) := by
+  have hsym := (integralFct psi hband 0).1
+  simpa [aux_integralFctKernelAtScale, Codex.Preliminaries.Notation.rescaled,
+    aux_swapTwo] using hsym (WithLp.toLp 2 ![v.1, v.2])
+
+private theorem aux_leftBumpOneShort_integralFct_base_positive
+    (psi : SchwartzMap ℝ ℝ)
+    (hband : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+        Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1)
+    (g : ℝ → ℝ) (hg : Codex.Reduction.BumpFunctions.aux_bounded g) :
+    0 ≤ ∫ u : EuclideanSpace ℝ (Fin 2),
+      g (u 0) * g (u 1) * integralFctKernel (fun x : ℝ => psi x) u := by
+  have hpos := (integralFct psi hband 0).2.1 g hg
+  simpa [aux_integralFctKernelAtScale, Codex.Preliminaries.Notation.rescaled] using hpos
+
+private noncomputable def aux_leftBumpOneShort_integralFctWhitneyData
+    (psi : SchwartzMap ℝ ℝ)
+    (hann : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+        Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2))
+    (hband : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+        Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1)
+    (c : ℝ) (hc : 0 ≤ c)
+    (hnonzero : (fun v : RealPlane =>
+      c * integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.1, v.2])) ≠ 0)
+    (hfourier : Function.support (aux_planeFourier
+      (fun v : RealPlane =>
+        c * integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.1, v.2]))) ⊆
+        {v : EuclideanSpace ℝ (Fin 2) |
+          v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+          v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)})
+    (hdiag : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
+      ‖iteratedDeriv m
+        (fun z : ℝ => aux_planeFourier
+          (fun v : RealPlane =>
+            c * integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.1, v.2]))
+          (WithLp.toLp 2 ![z, -z])) xi‖ ≤ 1)
+    (hdecay : ∀ v : RealPlane,
+      |c * integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.1, v.2])| ≤
+        ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2)) :
+    WhitneyKernelData where
+  kernel := fun v => c * integralFctKernel (fun x : ℝ => psi x)
+    (WithLp.toLp 2 ![v.1, v.2])
+  kernel_schwartz := c • integralFctKernelSchwartz psi hann
+  kernel_schwartz_eq := by
+    intro u
+    rw [SchwartzMap.smul_apply, integralFctKernelSchwartz_apply]
+    simp only [smul_eq_mul]
+    congr 2
+    ext i
+    fin_cases i <;> rfl
+  kernel_memW0 := by
+    let e : EuclideanSpace ℝ (Fin 2) ≃L[ℝ] RealPlane :=
+      (EuclideanSpace.equiv (Fin 2) ℝ).trans
+        (ContinuousLinearEquiv.finTwoArrow ℝ ℝ)
+    have hK : MemW0 (c • integralFctKernelSchwartz psi hann) := SchwartzMap.memW0 _
+    have hraw := aux_memW0_comp_continuousLinearEquiv hK e.symm
+    convert hraw using 1
+    funext v
+    simp only [Function.comp_apply]
+    rw [SchwartzMap.smul_apply, integralFctKernelSchwartz_apply]
+    simp only [smul_eq_mul]
+    change c * integralFctKernel (fun x : ℝ => psi x)
+      (WithLp.toLp 2 ![v.1, v.2]) = _
+    congr 2
+  kernel_nonzero := hnonzero
+  symmetric := by
+    intro v
+    dsimp
+    rw [aux_leftBumpOneShort_integralFct_base_symmetric psi hband]
+  positive := by
+    intro g hg
+    let e : EuclideanSpace ℝ (Fin 2) ≃ᵐ RealPlane :=
+      (MeasurableEquiv.toLp 2 (Fin 2 → ℝ)).symm.trans MeasurableEquiv.finTwoArrow
+    have he : MeasurePreserving e volume volume :=
+      (PiLp.volume_preserving_toLp (Fin 2)).symm.trans
+        (MeasureTheory.volume_preserving_finTwoArrow ℝ)
+    let G : RealPlane → ℝ := fun v =>
+      g v.1 * g v.2 * integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![v.1, v.2])
+    have hG : (fun u : EuclideanSpace ℝ (Fin 2) =>
+        g (u 0) * g (u 1) * integralFctKernel (fun x : ℝ => psi x) u) = G ∘ e := by
+      funext u
+      have hu : WithLp.toLp 2 ![u 0, u 1] = u := by
+        ext i
+        fin_cases i <;> rfl
+      dsimp [G, e]
+      simp only [MeasurableEquiv.trans_apply, MeasurableEquiv.toLp_symm_apply,
+        MeasurableEquiv.finTwoArrow_apply]
+      change g (u 0) * g (u 1) * integralFctKernel (fun x : ℝ => psi x) u =
+        g (u 0) * g (u 1) * integralFctKernel (fun x : ℝ => psi x)
+          (WithLp.toLp 2 ![u 0, u 1])
+      rw [hu]
+    have hbase := aux_leftBumpOneShort_integralFct_base_positive psi hband g hg
+    have hplane : 0 ≤ ∫ v : RealPlane, G v := by
+      rw [hG] at hbase
+      exact (he.integral_comp' G) ▸ hbase
+    rw [show (fun v : RealPlane =>
+        g v.1 * g v.2 *
+          (c * integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.1, v.2]))) =
+        fun v => c * G v by
+          funext v
+          simp [G]
+          ring, integral_const_mul]
+    exact mul_nonneg hc hplane
+  fourier_support := hfourier
+  diagonal_derivative := hdiag
+  decay := hdecay
+
+private noncomputable def aux_leftBumpOneShort_whitneyData
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (hnonzero : (fun v : RealPlane =>
+      (aux_leftBumpOneShort_whitneyNormalizer)⁻¹ *
+        Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+        integralFctKernel (windowBasedBumpFunctions.phiFour b k)
+          (WithLp.toLp 2 ![v.1, v.2])) ≠ 0)
+    (hdiag : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
+      ‖iteratedDeriv m
+        (fun z : ℝ => aux_planeFourier
+          (fun v : RealPlane =>
+            (aux_leftBumpOneShort_whitneyNormalizer)⁻¹ *
+              Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+              integralFctKernel (fun x : ℝ => phiFourSchwartz b k x)
+                (WithLp.toLp 2 ![v.1, v.2]))
+          (WithLp.toLp 2 ![z, -z])) xi‖ ≤ 1) :
+    WhitneyKernelData := by
+  let psi : SchwartzMap ℝ ℝ := phiFourSchwartz b k
+  let c : ℝ := (aux_leftBumpOneShort_whitneyNormalizer)⁻¹ *
+    Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2)
+  have hann : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+    dsimp [psi]
+    exact aux_leftBumpOneShort_phiFourSchwartz_support b k
+  have hband : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+        Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1 := by
+    intro xi hxi
+    have hraw : xi ∈ Function.support (FourierTransform.fourier
+        (fun x : ℝ => (windowBasedBumpFunctions.phiFour b k x : ℂ))) := by
+      simpa only [psi, phiFourSchwartz_apply] using hxi
+    simpa [aux_frequencyAnnulus] using (phiFourSupport b k).1 hraw
+  have hc : 0 ≤ c := by
+    dsimp [c]
+    exact mul_nonneg
+      (inv_nonneg.mpr aux_leftBumpOneShort_whitneyNormalizer_pos.le)
+      (Real.rpow_nonneg (by norm_num) _)
+  have hfourier : Function.support (aux_planeFourier
+      (fun v : RealPlane => c * integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![v.1, v.2]))) ⊆
+      {v : EuclideanSpace ℝ (Fin 2) |
+        v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+        v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)} :=
+    aux_leftBumpOneShort_integralFct_plane_fourier_support_smul psi hband c
+  have hdecay : ∀ v : RealPlane,
+      |c * integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![v.1, v.2])| ≤
+        ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
+    intro v
+    simpa only [c, psi, phiFourSchwartz_apply] using
+      aux_leftBumpOneShort_normalized_decay b k hk v
+  apply aux_leftBumpOneShort_integralFctWhitneyData psi hann hband c hc
+  · simpa only [c, psi, phiFourSchwartz_apply] using hnonzero
+  · exact hfourier
+  · simpa only [c, psi] using hdiag
+  · exact hdecay
+
+private theorem aux_leftBumpOneShort_pair_contDiff
+    (q : ℝ → ℂ) (hq : ContDiff ℝ 2 q) :
+    ContDiff ℝ 2 (fun z : ℝ => q z * q (-z)) := by
+  exact hq.mul (hq.comp (by fun_prop))
+
+private theorem aux_leftBumpOneShort_pair_deriv_bound
+    (q : ℝ → ℂ) (hq : ContDiff ℝ 2 q)
+    (C : ℝ) (hC : 0 ≤ C)
+    (hqbound : ∀ m : ℕ, m ≤ 2 → ∀ x : ℝ,
+      ‖iteratedDeriv m q x‖ ≤ C) :
+    ∀ m : ℕ, m ≤ 2 → ∀ x : ℝ,
+      ‖iteratedDeriv m (fun z : ℝ => q z * q (-z)) x‖ ≤ (2 : ℝ) ^ m * C ^ 2 := by
+  intro m hm x
+  have hneg : ContDiffAt ℝ (m : ℕ∞) (fun z : ℝ => q (-z)) x := by
+    apply ((hq.comp (by fun_prop)).of_le (m := (m : WithTop ℕ∞)) ?_).contDiffAt
+    apply WithTop.coe_le_coe.mpr
+    exact_mod_cast hm
+  have hpos : ContDiffAt ℝ (m : ℕ∞) q x := by
+    apply (hq.of_le (m := (m : WithTop ℕ∞)) ?_).contDiffAt
+    apply WithTop.coe_le_coe.mpr
+    exact_mod_cast hm
+  change ‖iteratedDeriv m (q * fun z : ℝ => q (-z)) x‖ ≤ _
+  rw [iteratedDeriv_mul hpos hneg]
+  calc
+    ‖∑ i ∈ Finset.range (m + 1),
+        (m.choose i : ℂ) * iteratedDeriv i q x *
+          iteratedDeriv (m - i) (fun z : ℝ => q (-z)) x‖ ≤
+        ∑ i ∈ Finset.range (m + 1),
+          ‖(m.choose i : ℂ) * iteratedDeriv i q x *
+            iteratedDeriv (m - i) (fun z : ℝ => q (-z)) x‖ :=
+      norm_sum_le _ _
+    _ ≤ ∑ i ∈ Finset.range (m + 1), (m.choose i : ℝ) * (C * C) := by
+      apply Finset.sum_le_sum
+      intro i hi
+      have him : i ≤ m := Nat.le_of_lt_succ (Finset.mem_range.mp hi)
+      have hmi : m - i ≤ m := Nat.sub_le _ _
+      have hq_i := hqbound i (le_trans him hm) x
+      have hq_neg : ‖iteratedDeriv (m - i) (fun z : ℝ => q (-z)) x‖ ≤ C := by
+        have hqmi : ContDiff ℝ ((m - i : ℕ) : WithTop ℕ∞) q := by
+          apply hq.of_le
+          apply WithTop.coe_le_coe.mpr
+          exact_mod_cast (le_trans hmi hm)
+        rw [show iteratedDeriv (m - i) (fun z : ℝ => q (-z)) x =
+            ((-1 : ℝ) ^ (m - i)) • iteratedDeriv (m - i) q ((-1 : ℝ) * x) by
+              convert congrFun (iteratedDeriv_comp_const_smul hqmi (-1 : ℝ)) x using 1 <;>
+                ring]
+        rw [norm_smul, Real.norm_eq_abs]
+        have hsign : |(-1 : ℝ) ^ (m - i)| = 1 := by
+          rw [abs_pow]
+          norm_num
+        rw [hsign, one_mul]
+        exact hqbound (m - i) (le_trans hmi hm) _
+      rw [norm_mul, norm_mul, Complex.norm_natCast]
+      have hchoose : 0 ≤ (m.choose i : ℝ) := Nat.cast_nonneg _
+      calc
+        ↑(m.choose i) * ‖iteratedDeriv i q x‖ *
+            ‖iteratedDeriv (m - i) (fun z => q (-z)) x‖ ≤
+            ↑(m.choose i) * C * C := by
+              gcongr
+        _ = (m.choose i : ℝ) * (C * C) := by ring
+    _ ≤ (2 : ℝ) ^ m * C ^ 2 := by
+      interval_cases m <;> norm_num [Finset.sum_range_succ, Nat.choose] <;>
+        ring_nf <;> exact le_rfl
+
+private theorem aux_leftBumpOneShort_integral_comp_inv_hasDeriv
+    (H : ℝ → ℂ) (hH : ContDiff ℝ 2 H) (C : ℝ)
+    (hHbound : ∀ y : ℝ, ‖deriv H y‖ ≤ C) (x : ℝ) :
+    HasDerivAt
+      (fun z : ℝ => ∫ t : ℝ in Icc (1 : ℝ) 2,
+        H (t * z) * ((t⁻¹ : ℝ) : ℂ))
+      (∫ t : ℝ in Icc (1 : ℝ) 2, deriv H (t * x)) x := by
+  let μ : Measure ℝ := volume.restrict (Icc (1 : ℝ) 2)
+  let F : ℝ → ℝ → ℂ := fun z t => H (t * z) * ((t⁻¹ : ℝ) : ℂ)
+  let F' : ℝ → ℝ → ℂ := fun z t => deriv H (t * z)
+  have hHcont : Continuous H := hH.continuous
+  have hderiv_cont : Continuous (deriv H) := by
+    rw [← iteratedDeriv_one]
+    exact hH.continuous_iteratedDeriv 1 (by norm_num)
+  have hHdiff : Differentiable ℝ H := hH.differentiable (by norm_num)
+  have hFmeas : ∀ᶠ z in nhds x, AEStronglyMeasurable (F z) μ := by
+    filter_upwards [] with z
+    dsimp [F, μ]
+    fun_prop
+  have hFint : Integrable (F x) μ := by
+    dsimp [F, μ]
+    apply ContinuousOn.integrableOn_Icc
+    apply (hHcont.comp_continuousOn (by fun_prop)).mul
+    apply Complex.ofRealCLM.continuous.comp_continuousOn
+    apply continuousOn_inv₀.mono
+    intro t ht
+    exact ne_of_gt (lt_of_lt_of_le zero_lt_one ht.1)
+  have hFprimeMeas : AEStronglyMeasurable (F' x) μ := by
+    dsimp [F', μ]
+    fun_prop
+  have hbound : ∀ᵐ t ∂μ, ∀ z ∈ Metric.ball x 1, ‖F' z t‖ ≤ C := by
+    filter_upwards [] with t z hz
+    dsimp [F']
+    exact hHbound _
+  have hCint : Integrable (fun _ : ℝ => C) μ := by
+    dsimp [μ]
+    exact integrableOn_const (isCompact_Icc.measure_lt_top.ne)
+  have hdiff : ∀ᵐ t ∂μ, ∀ z ∈ Metric.ball x 1,
+      HasDerivAt (fun w : ℝ => F w t) (F' z t) z := by
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht z hz
+    dsimp [F, F']
+    have hbase : HasDerivAt H (deriv H (t * z)) (t * z) :=
+      (hHdiff (t * z)).hasDerivAt
+    have htne : t ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one ht.1)
+    have hchain := HasDerivAt.const_smul (t⁻¹ : ℝ)
+      (HasDerivAt.scomp z hbase (hasDerivAt_const_mul t))
+    have hcancel : (t⁻¹ : ℝ) • (t • deriv H (t * z)) = deriv H (t * z) := by
+      rw [← mul_smul, inv_mul_cancel₀ htne, one_smul]
+    rw [hcancel] at hchain
+    have hfun : (t⁻¹ : ℝ) • (H ∘ fun w : ℝ => t * w) =
+        fun w : ℝ => H (t * w) * ((t⁻¹ : ℝ) : ℂ) := by
+      funext w
+      change ((t⁻¹ : ℝ) : ℂ) * H (t * w) = _
+      ring
+    rw [hfun] at hchain
+    exact hchain
+  obtain ⟨_, hmain⟩ := hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (bound := fun _ : ℝ => C) (F := F) (F' := F')
+    (Metric.ball_mem_nhds x zero_lt_one) hFmeas hFint hFprimeMeas hbound hCint hdiff
+  simpa [μ, F, F'] using hmain
+
+private theorem aux_leftBumpOneShort_integral_comp_hasDeriv
+    (H : ℝ → ℂ) (hH : ContDiff ℝ 1 H) (C : ℝ) (hC : 0 ≤ C)
+    (hHbound : ∀ y : ℝ, ‖deriv H y‖ ≤ C) (x : ℝ) :
+    HasDerivAt
+      (fun z : ℝ => ∫ t : ℝ in Icc (1 : ℝ) 2, H (t * z))
+      (∫ t : ℝ in Icc (1 : ℝ) 2, (t : ℝ) • deriv H (t * x)) x := by
+  let μ : Measure ℝ := volume.restrict (Icc (1 : ℝ) 2)
+  let F : ℝ → ℝ → ℂ := fun z t => H (t * z)
+  let F' : ℝ → ℝ → ℂ := fun z t => (t : ℝ) • deriv H (t * z)
+  have hHcont : Continuous H := hH.continuous
+  have hderiv_cont : Continuous (deriv H) := by
+    rw [← iteratedDeriv_one]
+    exact hH.continuous_iteratedDeriv 1 (by norm_num)
+  have hHdiff : Differentiable ℝ H := hH.differentiable (by norm_num)
+  have hFmeas : ∀ᶠ z in nhds x, AEStronglyMeasurable (F z) μ := by
+    filter_upwards [] with z
+    dsimp [F, μ]
+    fun_prop
+  have hFint : Integrable (F x) μ := by
+    dsimp [F, μ]
+    exact (hHcont.comp_continuousOn (by fun_prop)).integrableOn_Icc
+  have hFprimeMeas : AEStronglyMeasurable (F' x) μ := by
+    dsimp [F', μ]
+    fun_prop
+  have hbound : ∀ᵐ t ∂μ, ∀ z ∈ Metric.ball x 1, ‖F' z t‖ ≤ 2 * C := by
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht z hz
+    dsimp [F']
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (le_trans zero_lt_one.le ht.1)]
+    calc
+      t * ‖deriv H (t * z)‖ ≤ t * C :=
+        mul_le_mul_of_nonneg_left (hHbound _) (le_trans zero_lt_one.le ht.1)
+      _ ≤ 2 * C := mul_le_mul_of_nonneg_right ht.2 hC
+  have hCint : Integrable (fun _ : ℝ => 2 * C) μ := by
+    dsimp [μ]
+    exact integrableOn_const (isCompact_Icc.measure_lt_top.ne)
+  have hdiff : ∀ᵐ t ∂μ, ∀ z ∈ Metric.ball x 1,
+      HasDerivAt (fun w : ℝ => F w t) (F' z t) z := by
+    filter_upwards [] with t z hz
+    dsimp [F, F']
+    have hbase : HasDerivAt H (deriv H (t * z)) (t * z) :=
+      (hHdiff (t * z)).hasDerivAt
+    simpa [Function.comp_def] using
+      (HasDerivAt.scomp z hbase (hasDerivAt_const_mul t))
+  obtain ⟨_, hmain⟩ := hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (bound := fun _ : ℝ => 2 * C) (F := F) (F' := F')
+    (Metric.ball_mem_nhds x zero_lt_one) hFmeas hFint hFprimeMeas hbound hCint hdiff
+  simpa [μ, F, F'] using hmain
+
+private theorem aux_leftBumpOneShort_norm_setIntegral_Icc_le_const
+    (F : ℝ → ℂ) (A : ℝ) (hA : ∀ t ∈ Icc (1 : ℝ) 2, ‖F t‖ ≤ A) :
+    ‖∫ t : ℝ in Icc (1 : ℝ) 2, F t‖ ≤ A := by
+  calc
+    ‖∫ t : ℝ in Icc (1 : ℝ) 2, F t‖ ≤ A * volume.real (Icc (1 : ℝ) 2) :=
+      norm_setIntegral_le_of_norm_le_const_ae' measure_Icc_lt_top
+        (Filter.Eventually.of_forall hA)
+    _ = A := by norm_num [Real.volume_Icc]
+
+private theorem aux_leftBumpOneShort_pair_logIntegral_deriv_bound
+    (q : ℝ → ℂ) (hq : ContDiff ℝ 2 q) (C : ℝ) (hC : 0 ≤ C)
+    (hqbound : ∀ m : ℕ, m ≤ 2 → ∀ x : ℝ,
+      ‖iteratedDeriv m q x‖ ≤ C) :
+    ∀ m : ℕ, m < 3 → ∀ x : ℝ,
+      ‖iteratedDeriv m (fun z : ℝ =>
+        ∫ t : ℝ in Icc (1 : ℝ) 2,
+          q (t * z) * q (-(t * z)) * ((t⁻¹ : ℝ) : ℂ)) x‖ ≤ 8 * C ^ 2 := by
+  let H : ℝ → ℂ := fun z => q z * q (-z)
+  have hH : ContDiff ℝ 2 H := by
+    dsimp [H]
+    exact aux_leftBumpOneShort_pair_contDiff q hq
+  have hHbound : ∀ m : ℕ, m ≤ 2 → ∀ x : ℝ,
+      ‖iteratedDeriv m H x‖ ≤ (2 : ℝ) ^ m * C ^ 2 := by
+    intro m hm x
+    dsimp [H]
+    exact aux_leftBumpOneShort_pair_deriv_bound q hq C hC hqbound m hm x
+  have hC2 : 0 ≤ C ^ 2 := sq_nonneg C
+  have hH0 : ∀ x : ℝ, ‖H x‖ ≤ C ^ 2 := by
+    intro x
+    simpa only [iteratedDeriv_zero, pow_zero, one_mul] using hHbound 0 (by norm_num) x
+  have hH1 : ∀ x : ℝ, ‖deriv H x‖ ≤ 2 * C ^ 2 := by
+    intro x
+    rw [← iteratedDeriv_one]
+    simpa using hHbound 1 (by norm_num) x
+  have hH2 : ∀ x : ℝ, ‖deriv (deriv H) x‖ ≤ 4 * C ^ 2 := by
+    intro x
+    have heq : iteratedDeriv 2 H = deriv (deriv H) := by
+      rw [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ, iteratedDeriv_one]
+    rw [← heq]
+    convert hHbound 2 (by norm_num) x using 1 <;> norm_num
+  have hHtwo : ContDiff ℝ 2 H := hH
+  have hHderiv : ContDiff ℝ 1 (deriv H) := by simpa using hH.deriv'
+  let I0 : ℝ → ℂ := fun z => ∫ t : ℝ in Icc (1 : ℝ) 2,
+    H (t * z) * ((t⁻¹ : ℝ) : ℂ)
+  let I1 : ℝ → ℂ := fun z => ∫ t : ℝ in Icc (1 : ℝ) 2, deriv H (t * z)
+  let I2 : ℝ → ℂ := fun z => ∫ t : ℝ in Icc (1 : ℝ) 2,
+    (t : ℝ) • deriv (deriv H) (t * z)
+  have hD1 : ∀ x : ℝ, HasDerivAt I0 (I1 x) x := by
+    intro x
+    simpa only [I0, I1] using
+      aux_leftBumpOneShort_integral_comp_inv_hasDeriv H hHtwo (2 * C ^ 2) hH1 x
+  have hD2 : ∀ x : ℝ, HasDerivAt I1 (I2 x) x := by
+    intro x
+    simpa only [I1, I2] using
+      aux_leftBumpOneShort_integral_comp_hasDeriv (deriv H) hHderiv (4 * C ^ 2)
+        (by positivity) hH2 x
+  have hI1 : deriv I0 = I1 := by
+    funext x
+    exact (hD1 x).deriv
+  have hI2 : deriv I1 = I2 := by
+    funext x
+    exact (hD2 x).deriv
+  have hI0bound : ∀ x : ℝ, ‖I0 x‖ ≤ C ^ 2 := by
+    intro x
+    apply aux_leftBumpOneShort_norm_setIntegral_Icc_le_const
+    intro t ht
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (inv_nonneg.mpr (le_trans zero_lt_one.le ht.1))]
+    have htinvle : t⁻¹ ≤ 1 :=
+      (inv_le_one₀ (lt_of_lt_of_le zero_lt_one ht.1)).2 ht.1
+    calc
+      ‖H (t * x)‖ * t⁻¹ ≤ C ^ 2 * t⁻¹ :=
+        mul_le_mul_of_nonneg_right (hH0 _) (inv_nonneg.mpr (le_trans zero_lt_one.le ht.1))
+      _ ≤ C ^ 2 * 1 := mul_le_mul_of_nonneg_left htinvle hC2
+      _ = C ^ 2 := by ring
+  have hI1bound : ∀ x : ℝ, ‖I1 x‖ ≤ 2 * C ^ 2 := by
+    intro x
+    apply aux_leftBumpOneShort_norm_setIntegral_Icc_le_const
+    intro t ht
+    exact hH1 _
+  have hI2bound : ∀ x : ℝ, ‖I2 x‖ ≤ 8 * C ^ 2 := by
+    intro x
+    apply aux_leftBumpOneShort_norm_setIntegral_Icc_le_const
+    intro t ht
+    dsimp [I2]
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (le_trans zero_lt_one.le ht.1)]
+    calc
+      t * ‖deriv (deriv H) (t * x)‖ ≤ t * (4 * C ^ 2) :=
+        mul_le_mul_of_nonneg_left (hH2 _) (le_trans zero_lt_one.le ht.1)
+      _ ≤ 2 * (4 * C ^ 2) := mul_le_mul_of_nonneg_right ht.2 (by positivity)
+      _ = 8 * C ^ 2 := by ring
+  intro m hm x
+  interval_cases m
+  · rw [iteratedDeriv_zero]
+    change ‖I0 x‖ ≤ _
+    exact (hI0bound x).trans (by nlinarith [sq_nonneg C])
+  · rw [iteratedDeriv_one, hI1]
+    exact (hI1bound x).trans (by nlinarith [sq_nonneg C])
+  · rw [show 2 = 1 + 1 by norm_num, iteratedDeriv_succ,
+      iteratedDeriv_one, hI1, hI2]
+    exact hI2bound x
+
+private theorem aux_leftBumpOneShort_thetaTildeFourier_contDiff
+    (b : windowBasedBumpFunctions) :
+    ContDiff ℝ 3 (FourierTransform.fourier
+      (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ))) := by
+  let Theta : SchwartzMap ℝ ℂ :=
+    (thetaTildeSchwartz b).postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
+  have hTheta : (Theta : ℝ → ℂ) = fun x : ℝ =>
+      (windowBasedBumpFunctions.thetaTilde b x : ℂ) := by
+    funext x
+    simp [Theta, thetaTildeSchwartz_apply, SchwartzMap.postcompCLM_apply]
+  have hs : ContDiff ℝ 3 (FourierTransform.fourier Theta : ℝ → ℂ) :=
+    (FourierTransform.fourier Theta).smooth 3
+  rw [SchwartzMap.fourier_coe, hTheta] at hs
+  exact hs
+
+private theorem aux_leftBumpOneShort_thetaTilde_pair_logIntegral_bound
+    (b : windowBasedBumpFunctions) (m : ℕ) (hm : m < 3) (z : ℝ) :
+    ‖iteratedDeriv m (fun x : ℝ => ∫ t : ℝ in Icc (1 : ℝ) 2,
+      FourierTransform.fourier
+        (fun y : ℝ => (windowBasedBumpFunctions.thetaTilde b y : ℂ)) (t * x) *
+        FourierTransform.fourier
+          (fun y : ℝ => (windowBasedBumpFunctions.thetaTilde b y : ℂ)) (-(t * x)) *
+          ((t⁻¹ : ℝ) : ℂ)) z‖ ≤
+      8 * ((2 : ℝ) ^ 14 * C_uniPair) ^ 2 := by
+  exact aux_leftBumpOneShort_pair_logIntegral_deriv_bound
+    (fun x : ℝ => FourierTransform.fourier
+      (fun y : ℝ => (windowBasedBumpFunctions.thetaTilde b y : ℂ)) x)
+    ((aux_leftBumpOneShort_thetaTildeFourier_contDiff b).of_le (by norm_num))
+    ((2 : ℝ) ^ 14 * C_uniPair)
+    (by norm_num [C_uniPair])
+    (fun r hr x => thetaTildeFourier_deriv_bound b r (by omega) x)
+    m hm z
+
+private theorem aux_leftBumpOneShort_phiFour_integralFct_plane_diagonal_eq
+    (b : windowBasedBumpFunctions) (k : ℤ) (z : ℝ) :
+    aux_planeFourier
+      (fun v : RealPlane =>
+        integralFctKernel (fun x : ℝ => phiFourSchwartz b k x)
+          (WithLp.toLp 2 ![v.1, v.2]))
+      (WithLp.toLp 2 ![z, -z]) =
+      (((2 : ℝ) ^ (2 * k) : ℝ) : ℂ) *
+        ∫ t : ℝ in Icc (1 : ℝ) 2,
+          FourierTransform.fourier
+            (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) (t * z) *
+            FourierTransform.fourier
+              (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) (-(t * z)) *
+              ((t⁻¹ : ℝ) : ℂ) := by
+  rw [aux_leftBumpOneShort_integralFctKernel_plane_diagonal_fourier_eq
+    (phiFourSchwartz b k) z, ← integral_const_mul]
+  apply integral_congr_ae
+  filter_upwards [] with t
+  have hpair := phiFour_fourier_pair_eq b k (t * z)
+  simpa only [phiFourSchwartz_apply] using (show
+    FourierTransform.fourier
+        (fun x : ℝ => (windowBasedBumpFunctions.phiFour b k x : ℂ)) (t * z) *
+        FourierTransform.fourier
+          (fun x : ℝ => (windowBasedBumpFunctions.phiFour b k x : ℂ)) (-(t * z)) *
+          ((t⁻¹ : ℝ) : ℂ) =
+      (((2 : ℝ) ^ (2 * k) : ℝ) : ℂ) *
+        (FourierTransform.fourier
+          (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) (t * z) *
+          FourierTransform.fourier
+            (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) (-(t * z)) *
+          ((t⁻¹ : ℝ) : ℂ)) by
+        rw [hpair]
+        ring)
+
+private theorem aux_leftBumpOneShort_phiFour_base_diagonal_deriv_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (m : ℕ) (hm : m < 3) (z : ℝ) :
+    ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane =>
+          integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+            (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) z‖ ≤
+      (2 : ℝ) ^ (2 * k) * (8 * ((2 : ℝ) ^ 14 * C_uniPair) ^ 2) := by
+  let I : ℝ → ℂ := fun x => ∫ t : ℝ in Icc (1 : ℝ) 2,
+    FourierTransform.fourier
+      (fun y : ℝ => (windowBasedBumpFunctions.thetaTilde b y : ℂ)) (t * x) *
+      FourierTransform.fourier
+        (fun y : ℝ => (windowBasedBumpFunctions.thetaTilde b y : ℂ)) (-(t * x)) *
+        ((t⁻¹ : ℝ) : ℂ)
+  let s : ℝ := (2 : ℝ) ^ (2 * k)
+  have hs : 0 ≤ s := (zpow_pos (by norm_num : (0 : ℝ) < 2) _).le
+  have hformula :
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane =>
+          integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+            (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) =
+      fun x => (s : ℂ) * I x := by
+    funext x
+    exact aux_leftBumpOneShort_phiFour_integralFct_plane_diagonal_eq b k x
+  rw [hformula, iteratedDeriv_const_mul_field, norm_mul, Complex.norm_real,
+    Real.norm_eq_abs, abs_of_nonneg hs]
+  exact mul_le_mul_of_nonneg_left
+    (aux_leftBumpOneShort_thetaTilde_pair_logIntegral_bound b m hm z) hs
+
+private theorem aux_leftBumpOneShort_normalizer_dominates_thetaTilde_pair :
+    8 * ((2 : ℝ) ^ 14 * C_uniPair) ^ 2 ≤
+      aux_leftBumpOneShort_whitneyNormalizer := by
+  norm_num [aux_leftBumpOneShort_whitneyNormalizer, C_thetaPrimitive,
+    C_uniPair, C_thetaTOffcenter]
+
+private theorem aux_leftBumpOneShort_rpow_zpow_product_eq (k : ℤ) :
+    Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) * (2 : ℝ) ^ (2 * k) =
+      Real.rpow 2 ((k : ℝ) / 2) := by
+  have htwo : 0 < (2 : ℝ) := by norm_num
+  rw [show (2 : ℝ) ^ (2 * k) = Real.rpow 2 ((2 * k : ℤ) : ℝ) by
+    exact (Real.rpow_intCast 2 (2 * k)).symm]
+  calc
+    Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+        Real.rpow 2 ((2 * k : ℤ) : ℝ) =
+        Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2 + ((2 * k : ℤ) : ℝ)) :=
+      (Real.rpow_add htwo _ _).symm
+    _ = Real.rpow 2 ((k : ℝ) / 2) := by
+      congr 1
+      push_cast
+      ring
+
+private theorem aux_leftBumpOneShort_rpow_zpow_product_le_one
+    (k : ℤ) (hk : k ≤ -1) :
+    Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) * (2 : ℝ) ^ (2 * k) ≤ 1 := by
+  rw [aux_leftBumpOneShort_rpow_zpow_product_eq]
+  apply Real.rpow_le_one_of_one_le_of_nonpos (by norm_num)
+  have hkreal : (k : ℝ) ≤ -1 := by exact_mod_cast hk
+  linarith
+
+private theorem aux_leftBumpOneShort_raw_scaled_diagonal_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (m : ℕ) (hm : m < 3) (z : ℝ) :
+    ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane =>
+          Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+            integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+              (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) z‖ ≤
+      aux_leftBumpOneShort_whitneyNormalizer := by
+  let P : ℝ := Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2)
+  let s : ℝ := (2 : ℝ) ^ (2 * k)
+  let B : ℝ := 8 * ((2 : ℝ) ^ 14 * C_uniPair) ^ 2
+  have hP : 0 ≤ P := Real.rpow_nonneg (by norm_num) _
+  have hs : 0 ≤ s := (zpow_pos (by norm_num : (0 : ℝ) < 2) _).le
+  have hB : 0 ≤ B := by
+    dsimp [B]
+    positivity
+  have hbase := aux_leftBumpOneShort_phiFour_base_diagonal_deriv_bound b k m hm z
+  have hformula :
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane => P *
+          integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+            (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) =
+      fun x => (P : ℂ) * aux_planeFourier
+        (fun v : RealPlane =>
+          integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+            (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x]) := by
+    funext x
+    rw [aux_leftBumpOneShort_planeFourier_const_mul]
+  change ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane => P *
+          integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+            (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) z‖ ≤ _
+  rw [hformula, iteratedDeriv_const_mul_field, norm_mul, Complex.norm_real,
+    Real.norm_eq_abs, abs_of_nonneg hP]
+  have hbase' : ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane =>
+          integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+            (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) z‖ ≤ s * B := by
+    simpa only [s, B] using hbase
+  calc
+    P * ‖iteratedDeriv m
+        (fun x : ℝ => aux_planeFourier
+          (fun v : RealPlane =>
+            integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+              (WithLp.toLp 2 ![v.1, v.2]))
+          (WithLp.toLp 2 ![x, -x])) z‖ ≤ P * (s * B) :=
+      mul_le_mul_of_nonneg_left hbase' hP
+    _ = (P * s) * B := by ring
+    _ ≤ 1 * B := mul_le_mul_of_nonneg_right
+      (by simpa only [P, s] using
+        aux_leftBumpOneShort_rpow_zpow_product_le_one k hk) hB
+    _ = B := by ring
+    _ ≤ aux_leftBumpOneShort_whitneyNormalizer :=
+      aux_leftBumpOneShort_normalizer_dominates_thetaTilde_pair
+
+private theorem aux_leftBumpOneShort_normalized_diagonal_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (m : ℕ) (hm : m < 3) (z : ℝ) :
+    ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane =>
+          (aux_leftBumpOneShort_whitneyNormalizer)⁻¹ *
+            Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
+            integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+              (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) z‖ ≤ 1 := by
+  let D : ℝ := aux_leftBumpOneShort_whitneyNormalizer
+  let P : ℝ := Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2)
+  let M : RealPlane → ℝ := fun v => P *
+    integralFctKernel (fun y : ℝ => phiFourSchwartz b k y)
+      (WithLp.toLp 2 ![v.1, v.2])
+  have hraw : ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier M (WithLp.toLp 2 ![x, -x])) z‖ ≤ D := by
+    simpa only [D, P, M] using
+      aux_leftBumpOneShort_raw_scaled_diagonal_bound b k hk m hm z
+  have hnorm := aux_leftBumpOneShort_planeFourier_normalize_diagonal D
+    (by simpa only [D] using aux_leftBumpOneShort_whitneyNormalizer_pos)
+    M m z hraw
+  simpa only [D, P, M, mul_assoc] using hnorm
+
+private theorem aux_leftBumpOneShort_whitneySequence_integralM_eq
+    (c : ℝ) (psi : SchwartzMap ℝ ℝ) (a : ℤ → ℝ) :
+    aux_whitneySequence
+      (fun v : RealPlane => c * integralFctKernel (fun x => psi x)
+        (WithLp.toLp 2 ![v.1, v.2])) a =
+      fun j y => c * aux_leftBumpOneShort_integralM (a j) psi y := by
+  funext j y
+  let u : EuclideanSpace ℝ (Fin 2) := WithLp.toLp 2 ![y.1 0, y.2 0]
+  have hu0 : u 0 = y.1 0 := by simp [u]
+  have hu1 : u 1 = y.2 0 := by simp [u]
+  have hbase := planeRescale_integralFctKernel_eq (a j) (fun x => psi x) u
+  change (a j)⁻¹ ^ 2 *
+      (c * integralFctKernel (fun x => psi x)
+        (WithLp.toLp 2 ![(a j)⁻¹ * y.1 0, (a j)⁻¹ * y.2 0])) = _
+  rw [hu0, hu1] at hbase
+  have hbase' : (a j)⁻¹ ^ 2 *
+      integralFctKernel (fun x => psi x)
+        (WithLp.toLp 2 ![(a j)⁻¹ * y.1 0, (a j)⁻¹ * y.2 0]) =
+      aux_integralFctKernelAtScale (a j) (fun x => psi x) u := by
+    simpa [aux_planeRescale] using hbase
+  calc
+    (a j)⁻¹ ^ 2 *
+        (c * integralFctKernel (fun x => psi x)
+          (WithLp.toLp 2 ![(a j)⁻¹ * y.1 0, (a j)⁻¹ * y.2 0])) =
+        c * ((a j)⁻¹ ^ 2 * integralFctKernel (fun x => psi x)
+          (WithLp.toLp 2 ![(a j)⁻¹ * y.1 0, (a j)⁻¹ * y.2 0])) := by ring
+    _ = c * aux_integralFctKernelAtScale (a j) (fun x => psi x) u := by rw [hbase']
+    _ = c * aux_leftBumpOneShort_integralM (a j) psi y := by
+      simp [aux_leftBumpOneShort_integralM, u]
+
+private theorem aux_leftBumpOneShort_integralM_zero_of_kernel_zero
+    (c : ℝ) (hc : 0 < c) (psi : SchwartzMap ℝ ℝ)
+    (hzero : (fun v : RealPlane => c * integralFctKernel (fun x => psi x)
+      (WithLp.toLp 2 ![v.1, v.2])) = 0) (s : ℝ) :
+    aux_leftBumpOneShort_integralM s psi = 0 := by
+  have hbase : (fun v : RealPlane => integralFctKernel (fun x => psi x)
+      (WithLp.toLp 2 ![v.1, v.2])) = 0 := by
+    funext v
+    have hv := congrFun hzero v
+    exact (mul_eq_zero.mp hv).resolve_left hc.ne'
+  funext y
+  let u : EuclideanSpace ℝ (Fin 2) := WithLp.toLp 2 ![y.1 0, y.2 0]
+  have hplane := planeRescale_integralFctKernel_eq s (fun x => psi x) u
+  change aux_integralFctKernelAtScale s (fun x => psi x) u = 0
+  rw [← hplane]
+  change s⁻¹ ^ 2 * integralFctKernel (fun x => psi x)
+    (WithLp.toLp 2 ![s⁻¹ * u 0, s⁻¹ * u 1]) = 0
+  rw [show integralFctKernel (fun x => psi x)
+      (WithLp.toLp 2 ![s⁻¹ * u 0, s⁻¹ * u 1]) = 0 by
+        exact congrFun hbase (s⁻¹ * u 0, s⁻¹ * u 1)]
+  ring
+
+private theorem aux_leftBumpOneShort_prismForm_const_mul
+    {n : ℕ} (hn : 1 ≤ n) (c : ℝ) (M : MKernel 1)
+    (F : Fin n → RealVector n → ℝ) :
+    prismForm n 1 (by omega) hn (fun y => c * M y) F =
+      c * prismForm n 1 (by omega) hn M F := by
+  unfold prismForm prismBrascampLiebForm mToK
+  simp_rw [integral_const_mul]
+  rw [show (fun y : RealVector 1 × RealVector 1 =>
+      ∫ x : RealVector (n - 1 + 1),
+        (c * ∫ p : RealVector (1 - 1),
+          M (mToKPoint 1 (by omega)
+            (y.2 - y.1, Codex.Preliminaries.KKernels.coordinateSum y.1 +
+              Codex.Preliminaries.KKernels.coordinateSum x) p)) *
+          ∏ h : Fin 1 → Fin 2, ∏ i : Fin (n - 1 + 1),
+            F (prismIndex (by omega) hn i)
+              (prismPoint (by omega) hn y x h i)) =
+      fun y => c * ∫ x : RealVector (n - 1 + 1),
+        (∫ p : RealVector (1 - 1),
+          M (mToKPoint 1 (by omega)
+            (y.2 - y.1, Codex.Preliminaries.KKernels.coordinateSum y.1 +
+              Codex.Preliminaries.KKernels.coordinateSum x) p)) *
+          ∏ h : Fin 1 → Fin 2, ∏ i : Fin (n - 1 + 1),
+            F (prismIndex (by omega) hn i)
+              (prismPoint (by omega) hn y x h i) by
+    funext y
+    rw [← integral_const_mul]
+    apply integral_congr_ae
+    filter_upwards [] with x
+    ring]
+  rw [integral_const_mul]
+
+private theorem aux_leftBumpOneShort_prismForm_zero
+    {n : ℕ} (hn : 1 ≤ n) (F : Fin n → RealVector n → ℝ) :
+    prismForm n 1 (by omega) hn (0 : MKernel 1) F = 0 := by
+  unfold prismForm prismBrascampLiebForm mToK
+  simp
+
+private theorem aux_leftBumpOneShort_zero_energy_sum
+    {d J : ℕ} (c : ℝ) (hc : 0 < c) (psi : SchwartzMap ℝ ℝ)
+    (hzero : (fun v : RealPlane => c * integralFctKernel (fun x => psi x)
+      (WithLp.toLp 2 ![v.1, v.2])) = 0)
+    (a : ℤ → ℝ) (f : ReductionNormalizedTuple (d + 1))
+    (P : ℝ) (E : Fin J → ℝ≥0∞)
+    (henergy : ∀ j : Fin J,
+      E j = ENNReal.ofReal
+        (prismForm (d + 1) 1 (by omega) (by omega)
+          (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi)
+          (fun i x =>
+            Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1 i x))) :
+    ∑ j : Fin J, ENNReal.ofReal P * E j = 0 := by
+  apply Finset.sum_eq_zero
+  intro j _
+  rw [henergy j,
+    aux_leftBumpOneShort_integralM_zero_of_kernel_zero c hc psi hzero (a (j : ℤ))]
+  simp [aux_leftBumpOneShort_prismForm_zero]
+
+private theorem aux_leftBumpOneShort_planeRescale_memW0
+    (Psi : RealPlane → ℝ) (hPsi : MemW0 Psi) {t : ℝ} (ht : 0 < t) :
+    MemW0 (aux_planeRescale t Psi) := by
+  let e : RealPlane ≃L[ℝ] RealPlane :=
+    ContinuousLinearEquiv.smulLeft (Units.mk0 t⁻¹ (inv_ne_zero ht.ne'))
+  have hcomp : MemW0 (Psi ∘ e) := aux_memW0_comp_continuousLinearEquiv hPsi e
+  have hscale : 0 ≤ t⁻¹ ^ 2 := sq_nonneg _
+  have h := aux_memW0_const_mul_nonneg hcomp (t⁻¹ ^ 2) hscale
+  convert h using 1
+  funext v
+  change t⁻¹ ^ 2 * Psi (t⁻¹ * v.1, t⁻¹ * v.2) = t⁻¹ ^ 2 * Psi (t⁻¹ • v)
+  congr 2
+
+private theorem aux_leftBumpOneShort_liftPlaneKernel_memW0
+    (M : RealPlane → ℝ) (hM : MemW0 M) :
+    MemW0 (aux_liftPlaneKernel M) := by
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector 1 × RealVector 1)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure (volume : Measure RealPlane) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  let e : (RealVector 1 × RealVector 1) ≃L[ℝ] RealPlane :=
+    (ContinuousLinearEquiv.piUnique ℝ (fun _ : Fin 1 => ℝ)).prodCongr
+      (ContinuousLinearEquiv.piUnique ℝ (fun _ : Fin 1 => ℝ))
+  have hcomp : MemW0 (M ∘ e) := aux_memW0_comp_continuousLinearEquiv hM e
+  convert hcomp using 1
+  funext x
+  rfl
+
+private theorem aux_leftBumpOneShort_whitneySequence_memW0
+    (Psi : WhitneyKernelData) (a : ℤ → ℝ) (ha : SpacedSequence a) :
+    ∀ j : ℤ, MemW0 (aux_whitneySequence Psi.kernel a j) := by
+  intro j
+  dsimp [aux_whitneySequence]
+  exact aux_leftBumpOneShort_liftPlaneKernel_memW0 _
+    (aux_leftBumpOneShort_planeRescale_memW0 _ Psi.kernel_memW0 (ha j).1)
+
+private theorem aux_leftBumpOneShort_planeRescale_positive
+    (Psi : RealPlane → ℝ)
+    (hpos : ∀ g : ℝ → ℝ, aux_bounded g →
+      0 ≤ ∫ v : RealPlane, g v.1 * g v.2 * Psi v)
+    {t : ℝ} (ht : 0 < t) :
+    ∀ g : ℝ → ℝ, aux_bounded g →
+      0 ≤ ∫ v : RealPlane, g v.1 * g v.2 * aux_planeRescale t Psi v := by
+  intro g hg
+  let gt : ℝ → ℝ := fun x => g (t * x)
+  have hgt : aux_bounded gt := by
+    constructor
+    · exact hg.1.comp (by fun_prop)
+    · apply hg.2.subset
+      rintro y ⟨x, rfl⟩
+      exact ⟨t * x, rfl⟩
+  let F : RealPlane → ℝ := fun q => gt q.1 * gt q.2 * Psi q
+  have hbase : 0 ≤ ∫ q : RealPlane, F q := by
+    simpa [F] using hpos gt hgt
+  have hformula : (fun v : RealPlane => g v.1 * g v.2 * aux_planeRescale t Psi v) =
+      fun v : RealPlane => t⁻¹ ^ 2 * F (t⁻¹ • v) := by
+    funext v
+    have hscalev : t⁻¹ • v = (t⁻¹ * v.1, t⁻¹ * v.2) := rfl
+    rw [hscalev]
+    dsimp [aux_planeRescale, F, gt]
+    field_simp [ne_of_gt ht]
+  rw [hformula, integral_const_mul, Measure.integral_comp_inv_smul]
+  norm_num [Module.finrank_prod]
+  rw [← mul_assoc, inv_mul_cancel₀ (pow_ne_zero _ ht.ne'), one_mul]
+  exact hbase
+
+private theorem aux_leftBumpOneShort_whitney_lift_positive
+    (M : RealPlane → ℝ)
+    (hquad : ∀ g : ℝ → ℝ, aux_bounded g →
+      0 ≤ ∫ v : RealPlane, g v.1 * g v.2 * M v) :
+    ∀ g : ℝ → ℝ, aux_bounded g →
+      0 ≤ ∫ u : RealVector 1 × RealVector 1,
+        g (u.1 0) * g (u.2 0) * aux_liftPlaneKernel M u := by
+  intro g hg
+  let e1 : RealVector 1 ≃ᵐ ℝ := MeasurableEquiv.piUnique (fun _ : Fin 1 => ℝ)
+  let e : (RealVector 1 × RealVector 1) ≃ᵐ RealPlane := e1.prodCongr e1
+  have he1 : MeasurePreserving e1 volume volume := by
+    simpa [e1] using volume_preserving_piUnique (fun _ : Fin 1 => ℝ)
+  have he : MeasurePreserving e volume volume := by
+    change MeasurePreserving (Prod.map e1 e1) volume volume
+    simpa only [Measure.volume_eq_prod] using he1.prod he1
+  let G : RealPlane → ℝ := fun v => g v.1 * g v.2 * M v
+  calc
+    0 ≤ ∫ v : RealPlane, G v := by simpa [G] using hquad g hg
+    _ = ∫ u : RealVector 1 × RealVector 1, G (e u) := (he.integral_comp' G).symm
+    _ = ∫ u : RealVector 1 × RealVector 1,
+        g (u.1 0) * g (u.2 0) * aux_liftPlaneKernel M u := by
+      apply integral_congr_ae
+      filter_upwards [] with u
+      change G (e u) = _
+      dsimp [G, e, e1, aux_liftPlaneKernel]
+      rfl
+
+private theorem aux_leftBumpOneShort_whitneySequence_form_nonneg
+    {n : ℕ} (hn : 1 ≤ n) (Psi : WhitneyKernelData)
+    (a : ℤ → ℝ) (ha : SpacedSequence a) (j : ℤ)
+    (F : Fin n → SchwartzMap (RealVector n) ℝ) :
+    0 ≤ prismForm n 1 (by omega) hn (aux_whitneySequence Psi.kernel a j)
+      (fun i x => F i x) := by
+  apply formPos hn (aux_whitneySequence Psi.kernel a j)
+  · exact aux_leftBumpOneShort_whitneySequence_memW0 Psi a ha j
+  · dsimp [aux_whitneySequence]
+    exact aux_leftBumpOneShort_whitney_lift_positive _
+      (aux_leftBumpOneShort_planeRescale_positive Psi.kernel Psi.positive (ha j).1)
+
+private theorem aux_leftBumpOneShort_prismForm_finset_sum
+    {n J : ℕ} (hn : 1 ≤ n) (M : Fin J → MKernel 1)
+    (hM : ∀ j, MemW0 (M j))
+    (F : Fin n → SchwartzMap (RealVector n) ℝ) :
+    prismForm n 1 (by omega) hn (fun y => ∑ j, M j y) (fun i x => F i x) =
+      ∑ j, prismForm n 1 (by omega) hn (M j) (fun i x => F i x) := by
+  have hK (j : Fin J) : MemW0 (mToK 1 (by omega) (M j)) :=
+    mToK_memW0 n 1 (by omega) hn _ (hM j)
+  unfold prismForm
+  rw [aux_mToK_finset_sum 1 J (by omega) M hM]
+  exact aux_prismBrascampLiebForm_finset_sum n 1 J (by omega) hn
+    (fun j => mToK 1 (by omega) (M j)) hK F
+
+private theorem aux_leftBumpOneShort_scaled_integralM_prefix
+    {d J : ℕ} (hd : 1 ≤ d)
+    (D P c : ℝ) (hD : 0 < D) (hc : 0 < c) (hPc : D * c = P)
+    (psi : SchwartzMap ℝ ℝ) (a : ℤ → ℝ) (ha : SpacedSequence a)
+    (f : ReductionNormalizedTuple (d + 1)) (hJ : 0 < J)
+    (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
+    (Psi : WhitneyKernelData)
+    (hPsi : Psi.kernel = fun v : RealPlane => c *
+      integralFctKernel (fun x => psi x) (WithLp.toLp 2 ![v.1, v.2]))
+    (E : Fin J → ℝ≥0∞)
+    (henergy : ∀ j : Fin J,
+      E j = ENNReal.ofReal
+        (prismForm (d + 1) 1 (by omega) (by omega)
+          (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi)
+          (fun i x =>
+            Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1 i x))) :
+    ∑ j : Fin J, ENNReal.ofReal P * E j ≤
+      ENNReal.ofReal (D * C_inductPositiveTermsReductionWhitney (d + 1)) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1)) := by
+  classical
+  let F : Fin (d + 1) → SchwartzMap (RealVector (d + 1)) ℝ :=
+    Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1
+  let Fnorm : NormalizedFunctionTuple (d + 1) := ⟨F, by
+    intro i
+    dsimp [F]
+    convert
+      (Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions_eLpNorm f.1 i
+        ((2 : ℝ≥0∞) ^ (i.val + min (d + 1 - i.val) 2))).trans (f.2 i) using 1 <;>
+      norm_num⟩
+  let M : KernelSequence 1 := aux_whitneySequence Psi.kernel a
+  have hMbound : kernelSequenceSeminorm (d + 1) 1 (by omega) (by omega) M ≤
+      ENNReal.ofReal (C_inductPositiveTermsReductionWhitney (d + 1)) := by
+    dsimp [M]
+    exact inductPositiveTermsReductionWhitney (by omega) a ha phi0 phi1 hpair Psi
+  have hseq : M = fun j y => c * aux_leftBumpOneShort_integralM (a j) psi y := by
+    dsimp [M]
+    rw [hPsi]
+    exact aux_leftBumpOneShort_whitneySequence_integralM_eq c psi a
+  have henergyF (j : Fin J) : E j = ENNReal.ofReal
+      (prismForm (d + 1) 1 (by omega) (by omega)
+        (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi) (fun i x => F i x)) := by
+    simpa [F] using henergy j
+  have hMmem (j : Fin J) : MemW0 (M (j : ℤ)) := by
+    dsimp [M]
+    exact aux_leftBumpOneShort_whitneySequence_memW0 Psi a ha (j : ℤ)
+  have hMform (j : Fin J) : 0 ≤
+      prismForm (d + 1) 1 (by omega) (by omega) (M (j : ℤ))
+        (fun i x => F i x) := by
+    dsimp [M]
+    exact aux_leftBumpOneShort_whitneySequence_form_nonneg (by omega)
+      Psi a ha (j : ℤ) F
+  have hMscale (j : Fin J) :
+      prismForm (d + 1) 1 (by omega) (by omega) (M (j : ℤ))
+          (fun i x => F i x) =
+        c * prismForm (d + 1) 1 (by omega) (by omega)
+          (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi) (fun i x => F i x) := by
+    rw [hseq]
+    exact aux_leftBumpOneShort_prismForm_const_mul (n := d + 1) (by omega) c
+      (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi) (fun i x => F i x)
+  have hformsum :
+      prismForm (d + 1) 1 (by omega) (by omega)
+        (fun y => ∑ j : Fin J, M (j : ℤ) y) (fun i x => F i x) =
+      ∑ j : Fin J, prismForm (d + 1) 1 (by omega) (by omega)
+        (M (j : ℤ)) (fun i x => F i x) := by
+    exact aux_leftBumpOneShort_prismForm_finset_sum (by omega)
+      (fun j => M (j : ℤ)) hMmem F
+  have hsumNonneg : 0 ≤ prismForm (d + 1) 1 (by omega) (by omega)
+      (fun y => ∑ j : Fin J, M (j : ℤ) y) (fun i x => F i x) := by
+    rw [hformsum]
+    exact Finset.sum_nonneg fun j _ => hMform j
+  have hsumKernel :
+      (fun y => ∑ j ∈ Finset.range J, M (j : ℤ) y) =
+        fun y => ∑ j : Fin J, M (j : ℤ) y := by
+    funext y
+    rw [← Fin.sum_univ_eq_sum_range (fun j : ℕ => M (j : ℤ) y) J]
+  have hprefix := aux_mainAuxOne_prefix_from_seminorm (by omega) M
+    (C_inductPositiveTermsReductionWhitney (d + 1)) hMbound J hJ Fnorm
+  have hprefix' : ENNReal.ofReal
+      |prismForm (d + 1) 1 (by omega) (by omega)
+        (fun y => ∑ j : Fin J, M (j : ℤ) y) (fun i x => F i x)| ≤
+      ENNReal.ofReal (C_inductPositiveTermsReductionWhitney (d + 1)) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1)) := by
+    rw [← hsumKernel]
+    simpa [Fnorm] using hprefix
+  have hP : 0 ≤ P := by rw [← hPc]; positivity
+  have hleft : ∑ j : Fin J, ENNReal.ofReal P * E j =
+      ENNReal.ofReal D * ENNReal.ofReal
+        (prismForm (d + 1) 1 (by omega) (by omega)
+          (fun y => ∑ j : Fin J, M (j : ℤ) y) (fun i x => F i x)) := by
+    calc
+      ∑ j : Fin J, ENNReal.ofReal P * E j =
+          ∑ j : Fin J, ENNReal.ofReal D * ENNReal.ofReal
+            (prismForm (d + 1) 1 (by omega) (by omega)
+              (M (j : ℤ)) (fun i x => F i x)) := by
+            apply Finset.sum_congr rfl
+            intro j _
+            calc
+              ENNReal.ofReal P * E j = ENNReal.ofReal P * ENNReal.ofReal
+                  (prismForm (d + 1) 1 (by omega) (by omega)
+                    (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi)
+                    (fun i x => F i x)) := by rw [henergyF]
+              _ = ENNReal.ofReal (P * prismForm (d + 1) 1 (by omega) (by omega)
+                    (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi)
+                    (fun i x => F i x)) := (ENNReal.ofReal_mul hP).symm
+              _ = ENNReal.ofReal (D * prismForm (d + 1) 1 (by omega) (by omega)
+                    (M (j : ℤ)) (fun i x => F i x)) := by
+                    congr 1
+                    rw [← hPc, hMscale]
+                    ring
+              _ = ENNReal.ofReal D * ENNReal.ofReal
+                  (prismForm (d + 1) 1 (by omega) (by omega)
+                    (M (j : ℤ)) (fun i x => F i x)) := ENNReal.ofReal_mul hD.le
+      _ = ENNReal.ofReal D * ∑ j : Fin J, ENNReal.ofReal
+          (prismForm (d + 1) 1 (by omega) (by omega)
+            (M (j : ℤ)) (fun i x => F i x)) := by rw [Finset.mul_sum]
+      _ = ENNReal.ofReal D * ENNReal.ofReal
+          (∑ j : Fin J, prismForm (d + 1) 1 (by omega) (by omega)
+            (M (j : ℤ)) (fun i x => F i x)) := by
+            rw [ENNReal.ofReal_sum_of_nonneg]
+            intro j _
+            exact hMform j
+      _ = ENNReal.ofReal D * ENNReal.ofReal
+          (prismForm (d + 1) 1 (by omega) (by omega)
+            (fun y => ∑ j : Fin J, M (j : ℤ) y) (fun i x => F i x)) := by
+            rw [hformsum]
+  calc
+    ∑ j : Fin J, ENNReal.ofReal P * E j =
+        ENNReal.ofReal D * ENNReal.ofReal
+          (prismForm (d + 1) 1 (by omega) (by omega)
+            (fun y => ∑ j : Fin J, M (j : ℤ) y) (fun i x => F i x)) := hleft
+    _ = ENNReal.ofReal D * ENNReal.ofReal
+        |prismForm (d + 1) 1 (by omega) (by omega)
+          (fun y => ∑ j : Fin J, M (j : ℤ) y) (fun i x => F i x)| := by
+          rw [abs_of_nonneg hsumNonneg]
+    _ ≤ ENNReal.ofReal D *
+        (ENNReal.ofReal (C_inductPositiveTermsReductionWhitney (d + 1)) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1))) :=
+      mul_le_mul_of_nonneg_left hprefix' bot_le
+    _ = (ENNReal.ofReal D *
+        ENNReal.ofReal (C_inductPositiveTermsReductionWhitney (d + 1))) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1)) := by ac_rfl
+    _ = ENNReal.ofReal (D * C_inductPositiveTermsReductionWhitney (d + 1)) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1)) := by
+      rw [← ENNReal.ofReal_mul hD.le]
+
+
 /-- The first short-variation constant in Lemma \ref{lem:leftbump1_short1}. -/
 noncomputable def C_leftBumpOneShortOne (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 2 * C_inductPositiveTermsReductionWhitney n * C_thetaPrimitive 2 ^ 2 *
@@ -4997,12 +6638,109 @@ theorem leftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n)
               2 volume ^ 2 ≤
       ENNReal.ofReal (C_leftBumpOneShortOne n) *
         ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
-  sorry
+  classical
+  cases n with
+  | zero => omega
+  | succ d =>
+    have hd : 1 ≤ d := by omega
+    obtain ⟨a, ha, ha_restrict⟩ := aux_mainAuxOne_extend_dyadic_chain J hJ ell
+    let E : Fin J → ℝ≥0∞ := fun j =>
+      ∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ENNReal.ofReal t⁻¹ *
+          eLpNorm
+            (twistedAverageAtScale ((2 : ℝ) ^ (ell.1 j.castSucc) * t)
+              (windowBasedBumpFunctions.phiFour b k) (fun i x => f.1 i x))
+            2 volume ^ 2
+    have henergy : ∀ j : Fin J,
+        E j = ENNReal.ofReal
+          (prismForm (d + 1) 1 (by omega) (by omega)
+            (aux_leftBumpOneShort_integralM (a (j : ℤ)) (phiFourSchwartz b k))
+            (fun i x =>
+              Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1 i x)) := by
+      intro j
+      dsimp [E]
+      rw [← ha_restrict j]
+      simpa only [phiFourSchwartz_apply] using
+        aux_leftBumpOneShort_continuous_aToLambda_integralFct d
+          (a (j : ℤ)) (ha (j : ℤ)).1 (phiFourSchwartz b k) f.1
+    let D : ℝ := aux_leftBumpOneShort_whitneyNormalizer
+    let P : ℝ := Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2)
+    let c : ℝ := D⁻¹ * P
+    have hD : 0 < D := by
+      simpa only [D] using aux_leftBumpOneShort_whitneyNormalizer_pos
+    have hP : 0 < P := by
+      dsimp [P]
+      exact Real.rpow_pos_of_pos (by norm_num) _
+    have hc : 0 < c := mul_pos (inv_pos.mpr hD) hP
+    have hPc : D * c = P := by
+      dsimp [c]
+      field_simp [hD.ne']
+    change ∑ j : Fin J, ENNReal.ofReal P * E j ≤
+      ENNReal.ofReal (C_leftBumpOneShortOne (d + 1)) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1))
+    by_cases hzero : (fun v : RealPlane => c *
+        integralFctKernel (windowBasedBumpFunctions.phiFour b k)
+          (WithLp.toLp 2 ![v.1, v.2])) = 0
+    · have hsum := aux_leftBumpOneShort_zero_energy_sum c hc (phiFourSchwartz b k)
+        (by simpa only [phiFourSchwartz_apply] using hzero) a f P E henergy
+      rw [hsum]
+      exact bot_le
+    · let Psi : WhitneyKernelData := aux_leftBumpOneShort_whitneyData b k hk
+        (by simpa only [c, D, P] using hzero)
+        (fun m hm xi =>
+          aux_leftBumpOneShort_normalized_diagonal_bound b k hk m hm xi)
+      have hPsi : Psi.kernel = fun v : RealPlane => c *
+          integralFctKernel (fun x => phiFourSchwartz b k x)
+            (WithLp.toLp 2 ![v.1, v.2]) := by
+        dsimp [Psi]
+        rfl
+      have hmain := aux_leftBumpOneShort_scaled_integralM_prefix hd D P c hD hc hPc
+        (phiFourSchwartz b k) a ha f hJ b.phi0 b.phi1 b.universalPair Psi hPsi E henergy
+      have hconst : D * C_inductPositiveTermsReductionWhitney (d + 1) =
+          C_leftBumpOneShortOne (d + 1) := by
+        dsimp [D, aux_leftBumpOneShort_whitneyNormalizer]
+        unfold C_leftBumpOneShortOne
+        ring
+      calc
+        ∑ j : Fin J, ENNReal.ofReal P * E j ≤
+            ENNReal.ofReal (D * C_inductPositiveTermsReductionWhitney (d + 1)) *
+              ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1)) := hmain
+        _ = ENNReal.ofReal (C_leftBumpOneShortOne (d + 1)) *
+              ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1)) := by
+              rw [hconst]
 
 /-- The numerical estimate in Lemma \ref{constant left bump one short one}. -/
 theorem constantLeftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n) :
-    C_leftBumpOneShortOne n < (2 : ℝ) ^ 628 := by
-  sorry
+    C_leftBumpOneShortOne n <
+      (185801 / 262144 : ℝ) * (2 : ℝ) ^ 628 := by
+  have hWhitney : C_inductPositiveTermsReductionWhitney n <
+      (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
+    unfold C_inductPositiveTermsReductionWhitney
+    calc
+      11 * C_inductPositiveTermsReductionWhitneyGap n <
+          11 * ((127 / 128 : ℝ) * (2 : ℝ) ^ 553) :=
+        mul_lt_mul_of_pos_left (constantWhitneyGapReduction hn) (by norm_num)
+      _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by
+        norm_num
+        ring
+      _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
+        rw [← pow_add]
+  have hA : 0 < (2 : ℝ) ^ 2 * C_thetaPrimitive 2 ^ 2 * C_thetaTOffcenter := by
+    norm_num [C_thetaPrimitive, C_uniPair, C_thetaTOffcenter]
+  unfold C_leftBumpOneShortOne
+  calc
+    (2 : ℝ) ^ 2 * C_inductPositiveTermsReductionWhitney n * C_thetaPrimitive 2 ^ 2 *
+        C_thetaTOffcenter =
+        ((2 : ℝ) ^ 2 * C_thetaPrimitive 2 ^ 2 * C_thetaTOffcenter) *
+          C_inductPositiveTermsReductionWhitney n := by ring
+    _ < ((2 : ℝ) ^ 2 * C_thetaPrimitive 2 ^ 2 * C_thetaTOffcenter) *
+        ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) :=
+      mul_lt_mul_of_pos_left hWhitney hA
+    _ = (185801 / 262144 : ℝ) * ((2 : ℝ) ^ 71 * (2 : ℝ) ^ 557) := by
+      norm_num [C_thetaPrimitive, C_uniPair, C_thetaTOffcenter]
+      ring
+    _ = (185801 / 262144 : ℝ) * (2 : ℝ) ^ 628 := by
+      rw [← pow_add]
 
 /-- The second short-variation auxiliary constant in Lemma \ref{lem:leftbump1_short2}. -/
 noncomputable def C_leftBumpOneShortTwoAuxiliary : ℝ :=
@@ -5012,6 +6750,1130 @@ noncomputable def C_leftBumpOneShortTwoAuxiliary : ℝ :=
 noncomputable def C_leftBumpOneShortTwo (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 4 * C_inductPositiveTermsReductionWhitney n * C_thetaTOffcenter *
     C_leftBumpOneShortTwoAuxiliary ^ 2
+
+open Codex.Preliminaries.BumpsAndEstimates
+
+private theorem aux_leftBumpOneShortTwo_product_deriv_bound
+    (p q : ℝ → ℂ) (hp : ContDiff ℝ 2 p) (hq : ContDiff ℝ 2 q)
+    (A B : ℝ) (hA : 0 ≤ A) (hB : 0 ≤ B)
+    (hpbound : ∀ i : ℕ, i ≤ 2 → ∀ x : ℝ, ‖iteratedDeriv i p x‖ ≤ A)
+    (hqbound : ∀ i : ℕ, i ≤ 2 → ∀ x : ℝ, ‖iteratedDeriv i q x‖ ≤ B) :
+    ∀ m : ℕ, m ≤ 2 → ∀ x : ℝ,
+      ‖iteratedDeriv m (p * q) x‖ ≤ (2 : ℝ) ^ m * A * B := by
+  intro m hm x
+  have hpAt : ContDiffAt ℝ (m : ℕ∞) p x := by
+    apply (hp.of_le (m := (m : WithTop ℕ∞)) ?_).contDiffAt
+    apply WithTop.coe_le_coe.mpr
+    exact_mod_cast hm
+  have hqAt : ContDiffAt ℝ (m : ℕ∞) q x := by
+    apply (hq.of_le (m := (m : WithTop ℕ∞)) ?_).contDiffAt
+    apply WithTop.coe_le_coe.mpr
+    exact_mod_cast hm
+  rw [iteratedDeriv_mul hpAt hqAt]
+  calc
+    ‖∑ i ∈ Finset.range (m + 1),
+        (m.choose i : ℂ) * iteratedDeriv i p x * iteratedDeriv (m - i) q x‖ ≤
+        ∑ i ∈ Finset.range (m + 1),
+          ‖(m.choose i : ℂ) * iteratedDeriv i p x * iteratedDeriv (m - i) q x‖ :=
+      norm_sum_le _ _
+    _ ≤ ∑ i ∈ Finset.range (m + 1), (m.choose i : ℝ) * (A * B) := by
+      apply Finset.sum_le_sum
+      intro i hi
+      have him : i ≤ m := Nat.le_of_lt_succ (Finset.mem_range.mp hi)
+      have hmi : m - i ≤ m := Nat.sub_le _ _
+      rw [norm_mul, norm_mul, Complex.norm_natCast]
+      calc
+        ↑(m.choose i) * ‖iteratedDeriv i p x‖ * ‖iteratedDeriv (m - i) q x‖ ≤
+            ↑(m.choose i) * A * B := by
+          gcongr
+          exact hpbound i (le_trans him hm) x
+          exact hqbound (m - i) (le_trans hmi hm) x
+        _ = (m.choose i : ℝ) * (A * B) := by ring
+    _ ≤ (2 : ℝ) ^ m * A * B := by
+      interval_cases m <;> norm_num [Finset.sum_range_succ, Nat.choose] <;>
+        ring_nf <;> exact le_rfl
+
+private theorem aux_leftBumpOneShortTwo_product_deriv_bound_at
+    (p q : ℝ → ℂ) (hp : ContDiff ℝ 2 p) (hq : ContDiff ℝ 2 q)
+    (A B : ℝ) (hA : 0 ≤ A) (hB : 0 ≤ B) (x : ℝ)
+    (hpbound : ∀ i : ℕ, i ≤ 2 → ‖iteratedDeriv i p x‖ ≤ A)
+    (hqbound : ∀ i : ℕ, i ≤ 2 → ‖iteratedDeriv i q x‖ ≤ B) :
+    ∀ m : ℕ, m ≤ 2 →
+      ‖iteratedDeriv m (p * q) x‖ ≤ (2 : ℝ) ^ m * A * B := by
+  intro m hm
+  have hpAt : ContDiffAt ℝ (m : ℕ∞) p x := by
+    apply (hp.of_le (m := (m : WithTop ℕ∞)) ?_).contDiffAt
+    apply WithTop.coe_le_coe.mpr
+    exact_mod_cast hm
+  have hqAt : ContDiffAt ℝ (m : ℕ∞) q x := by
+    apply (hq.of_le (m := (m : WithTop ℕ∞)) ?_).contDiffAt
+    apply WithTop.coe_le_coe.mpr
+    exact_mod_cast hm
+  rw [iteratedDeriv_mul hpAt hqAt]
+  calc
+    ‖∑ i ∈ Finset.range (m + 1),
+        (m.choose i : ℂ) * iteratedDeriv i p x * iteratedDeriv (m - i) q x‖ ≤
+        ∑ i ∈ Finset.range (m + 1),
+          ‖(m.choose i : ℂ) * iteratedDeriv i p x * iteratedDeriv (m - i) q x‖ :=
+      norm_sum_le _ _
+    _ ≤ ∑ i ∈ Finset.range (m + 1), (m.choose i : ℝ) * (A * B) := by
+      apply Finset.sum_le_sum
+      intro i hi
+      have him : i ≤ m := Nat.le_of_lt_succ (Finset.mem_range.mp hi)
+      have hmi : m - i ≤ m := Nat.sub_le _ _
+      rw [norm_mul, norm_mul, Complex.norm_natCast]
+      calc
+        ↑(m.choose i) * ‖iteratedDeriv i p x‖ * ‖iteratedDeriv (m - i) q x‖ ≤
+            ↑(m.choose i) * A * B := by
+          gcongr
+          exact hpbound i (le_trans him hm)
+          exact hqbound (m - i) (le_trans hmi hm)
+        _ = (m.choose i : ℝ) * (A * B) := by ring
+    _ ≤ (2 : ℝ) ^ m * A * B := by
+      interval_cases m <;> norm_num [Finset.sum_range_succ, Nat.choose] <;>
+        ring_nf <;> exact le_rfl
+
+private noncomputable def aux_leftBumpOneShortTwo_fourier (b : windowBasedBumpFunctions) : ℝ → ℂ :=
+  FourierTransform.fourier
+    (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ))
+
+private noncomputable def aux_leftBumpOneShortTwo_amplitude (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℂ :=
+  fun xi =>
+    2 * Real.pi * Complex.I * (xi : ℂ) * aux_leftBumpOneShortTwo_fourier b xi -
+      ((2 : ℝ) ^ k : ℂ) * (xi : ℂ) * iteratedDeriv 1 (aux_leftBumpOneShortTwo_fourier b) xi
+
+private theorem aux_leftBumpOneShortTwo_fourier_contDiff (b : windowBasedBumpFunctions) :
+    ContDiff ℝ 3 (aux_leftBumpOneShortTwo_fourier b) := by
+  let Theta : SchwartzMap ℝ ℂ :=
+    (thetaTildeSchwartz b).postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
+  have hTheta : (Theta : ℝ → ℂ) = fun x : ℝ =>
+      (windowBasedBumpFunctions.thetaTilde b x : ℂ) := by
+    funext x
+    simp [Theta, thetaTildeSchwartz_apply, SchwartzMap.postcompCLM_apply]
+  have hs : ContDiff ℝ 3 (FourierTransform.fourier Theta : ℝ → ℂ) :=
+    (FourierTransform.fourier Theta).smooth 3
+  rw [SchwartzMap.fourier_coe, hTheta] at hs
+  simpa [aux_leftBumpOneShortTwo_fourier] using hs
+
+private theorem aux_leftBumpOneShortTwo_fourier_deriv_bound (b : windowBasedBumpFunctions)
+    (m : ℕ) (hm : m ≤ 3) (xi : ℝ) :
+    ‖iteratedDeriv m (aux_leftBumpOneShortTwo_fourier b) xi‖ ≤
+      (2 : ℝ) ^ 14 * C_uniPair := by
+  simpa [aux_leftBumpOneShortTwo_fourier] using thetaTildeFourier_deriv_bound b m hm xi
+
+private theorem aux_leftBumpOneShortTwo_fourier_deriv_zero_outside (b : windowBasedBumpFunctions)
+    (m : ℕ) (xi : ℝ) (hxi : xi ∉ aux_frequencyAnnulus) :
+    iteratedDeriv m (aux_leftBumpOneShortTwo_fourier b) xi = 0 := by
+  have hsupp : Function.support (aux_leftBumpOneShortTwo_fourier b) ⊆ aux_frequencyAnnulus := by
+    simpa [aux_leftBumpOneShortTwo_fourier] using thetaTildeFourier_support b
+  have hclosed : IsClosed aux_frequencyAnnulus := by
+    unfold aux_frequencyAnnulus
+    exact isClosed_Icc.union isClosed_Icc
+  have htsupp : tsupport (aux_leftBumpOneShortTwo_fourier b) ⊆ aux_frequencyAnnulus :=
+    closure_minimal hsupp hclosed
+  have hderivSupp : Function.support
+      (iteratedDeriv m (aux_leftBumpOneShortTwo_fourier b)) ⊆ aux_frequencyAnnulus :=
+    (subset_tsupport _).trans
+      ((aux_tsupport_iteratedDeriv_subset (aux_leftBumpOneShortTwo_fourier b) m).trans htsupp)
+  apply Function.notMem_support.mp
+  intro hmem
+  exact hxi (hderivSupp hmem)
+
+private theorem aux_leftBumpOneShortTwo_amplitude_support (b : windowBasedBumpFunctions) (k : ℤ) :
+    Function.support (aux_leftBumpOneShortTwo_amplitude b k) ⊆ aux_frequencyAnnulus := by
+  intro xi hxi
+  by_contra hout
+  have h0 := aux_leftBumpOneShortTwo_fourier_deriv_zero_outside b 0 xi hout
+  have h1 := aux_leftBumpOneShortTwo_fourier_deriv_zero_outside b 1 xi hout
+  apply Function.mem_support.mp hxi
+  simp only [aux_leftBumpOneShortTwo_amplitude, iteratedDeriv_zero] at h0
+  simp [aux_leftBumpOneShortTwo_amplitude, h0, h1]
+
+private theorem aux_leftBumpOneShortTwo_amplitude_deriv_zero_outside (b : windowBasedBumpFunctions)
+    (k : ℤ) (m : ℕ) (xi : ℝ) (hxi : xi ∉ aux_frequencyAnnulus) :
+    iteratedDeriv m (aux_leftBumpOneShortTwo_amplitude b k) xi = 0 := by
+  have hclosed : IsClosed aux_frequencyAnnulus := by
+    unfold aux_frequencyAnnulus
+    exact isClosed_Icc.union isClosed_Icc
+  have htsupp : tsupport (aux_leftBumpOneShortTwo_amplitude b k) ⊆ aux_frequencyAnnulus :=
+    closure_minimal (aux_leftBumpOneShortTwo_amplitude_support b k) hclosed
+  have hderivSupp : Function.support (iteratedDeriv m (aux_leftBumpOneShortTwo_amplitude b k)) ⊆
+      aux_frequencyAnnulus :=
+    (subset_tsupport _).trans
+      ((aux_tsupport_iteratedDeriv_subset (aux_leftBumpOneShortTwo_amplitude b k) m).trans htsupp)
+  apply Function.notMem_support.mp
+  intro hmem
+  exact hxi (hderivSupp hmem)
+
+private theorem aux_leftBumpOneShortTwo_linear_deriv (xi : ℝ) :
+    deriv (fun y : ℝ => 2 * Real.pi * Complex.I * (y : ℂ)) xi =
+      2 * Real.pi * Complex.I := by
+  have hcast : HasDerivAt (fun y : ℝ => (y : ℂ)) 1 xi := by
+    simpa using
+      (hasDerivAt_const xi Complex.ofRealCLM).clm_apply (hasDerivAt_id xi)
+  simpa using (hcast.const_mul (2 * Real.pi * Complex.I)).deriv
+
+private theorem aux_leftBumpOneShortTwo_linear_deriv_fun :
+    deriv (fun y : ℝ => 2 * Real.pi * Complex.I * (y : ℂ)) =
+      fun _ : ℝ => 2 * Real.pi * Complex.I := by
+  funext x
+  exact aux_leftBumpOneShortTwo_linear_deriv x
+
+private theorem aux_leftBumpOneShortTwo_annulus_abs_upper {xi : ℝ}
+    (hxi : xi ∈ aux_frequencyAnnulus) : |xi| ≤ 1 := by
+  rcases hxi with hxi | hxi
+  · rw [abs_of_nonpos (by linarith [hxi.2])]
+    linarith [hxi.1]
+  · rw [abs_of_nonneg (by linarith [hxi.1])]
+    exact hxi.2
+
+private theorem aux_leftBumpOneShortTwo_linear_iterated_bound (xi : ℝ)
+    (hxi : xi ∈ aux_frequencyAnnulus) (m : ℕ) (hm : m ≤ 2) :
+    ‖iteratedDeriv m (fun y : ℝ => 2 * Real.pi * Complex.I * (y : ℂ)) xi‖ ≤ 8 := by
+  have habs := aux_leftBumpOneShortTwo_annulus_abs_upper hxi
+  interval_cases m
+  · rw [iteratedDeriv_zero]
+    rw [norm_mul, norm_mul, norm_mul]
+    norm_num [Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg Real.pi_pos.le, Complex.norm_I]
+    calc
+      2 * Real.pi * |xi| ≤ 2 * Real.pi * 1 :=
+        mul_le_mul_of_nonneg_left habs (by positivity)
+      _ ≤ 2 * 4 * 1 := by
+        gcongr
+        exact Real.pi_le_four
+      _ = 8 := by norm_num
+  · rw [iteratedDeriv_one, aux_leftBumpOneShortTwo_linear_deriv]
+    rw [norm_mul, norm_mul]
+    norm_num [Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg Real.pi_pos.le, Complex.norm_I]
+    nlinarith [Real.pi_le_four]
+  · rw [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ,
+      iteratedDeriv_one, aux_leftBumpOneShortTwo_linear_deriv_fun]
+    simp
+
+private theorem aux_leftBumpOneShortTwo_cast_iterated_bound (xi : ℝ)
+    (hxi : xi ∈ aux_frequencyAnnulus) (m : ℕ) (hm : m ≤ 2) :
+    ‖iteratedDeriv m (fun y : ℝ => (y : ℂ)) xi‖ ≤ 1 := by
+  have habs := aux_leftBumpOneShortTwo_annulus_abs_upper hxi
+  interval_cases m
+  · rw [iteratedDeriv_zero, Complex.norm_real, Real.norm_eq_abs]
+    exact habs
+  · rw [iteratedDeriv_one]
+    have hcast : HasDerivAt (fun y : ℝ => (y : ℂ)) 1 xi := by
+      simpa using
+        (hasDerivAt_const xi Complex.ofRealCLM).clm_apply (hasDerivAt_id xi)
+    rw [hcast.deriv]
+    norm_num
+  · rw [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ,
+      iteratedDeriv_one]
+    have hcastfun : deriv (fun y : ℝ => (y : ℂ)) = fun _ : ℝ => (1 : ℂ) := by
+      funext y
+      have hcast : HasDerivAt (fun z : ℝ => (z : ℂ)) 1 y := by
+        simpa using
+          (hasDerivAt_const y Complex.ofRealCLM).clm_apply (hasDerivAt_id y)
+      exact hcast.deriv
+    rw [hcastfun]
+    simp
+
+private theorem aux_leftBumpOneShortTwo_fourier_deriv_contDiff (b : windowBasedBumpFunctions) :
+    ContDiff ℝ 2 (deriv (aux_leftBumpOneShortTwo_fourier b)) := by
+  simpa using (aux_leftBumpOneShortTwo_fourier_contDiff b).deriv'
+
+private theorem aux_leftBumpOneShortTwo_fourier_deriv_iterated_bound (b : windowBasedBumpFunctions)
+    (m : ℕ) (hm : m ≤ 2) (xi : ℝ) :
+    ‖iteratedDeriv m (deriv (aux_leftBumpOneShortTwo_fourier b)) xi‖ ≤
+      (2 : ℝ) ^ 14 * C_uniPair := by
+  interval_cases m
+  · rw [iteratedDeriv_zero, ← iteratedDeriv_one]
+    exact aux_leftBumpOneShortTwo_fourier_deriv_bound b 1 (by norm_num) xi
+  · rw [iteratedDeriv_one]
+    have heq : iteratedDeriv 2 (aux_leftBumpOneShortTwo_fourier b) = deriv (deriv (aux_leftBumpOneShortTwo_fourier b)) := by
+      rw [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ,
+        iteratedDeriv_one]
+    rw [← heq]
+    exact aux_leftBumpOneShortTwo_fourier_deriv_bound b 2 (by norm_num) xi
+  · have heq : iteratedDeriv 3 (aux_leftBumpOneShortTwo_fourier b) =
+        deriv (deriv (deriv (aux_leftBumpOneShortTwo_fourier b))) := by
+      rw [show (3 : ℕ) = 2 + 1 by norm_num, iteratedDeriv_succ,
+        show iteratedDeriv 2 (aux_leftBumpOneShortTwo_fourier b) = deriv (deriv (aux_leftBumpOneShortTwo_fourier b)) by
+          rw [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ,
+            iteratedDeriv_one]]
+    rw [show iteratedDeriv 2 (deriv (aux_leftBumpOneShortTwo_fourier b)) =
+        deriv (deriv (deriv (aux_leftBumpOneShortTwo_fourier b))) by
+          rw [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ,
+            iteratedDeriv_one], ← heq]
+    exact aux_leftBumpOneShortTwo_fourier_deriv_bound b 3 (by norm_num) xi
+
+private theorem aux_leftBumpOneShortTwo_amplitude_contDiff (b : windowBasedBumpFunctions) (k : ℤ) :
+    ContDiff ℝ 2 (aux_leftBumpOneShortTwo_amplitude b k) := by
+  let L : ℝ → ℂ := fun y => 2 * Real.pi * Complex.I * (y : ℂ)
+  let X : ℝ → ℂ := fun y => (y : ℂ)
+  let H : ℝ → ℂ := aux_leftBumpOneShortTwo_fourier b
+  have hL : ContDiff ℝ 2 L := by
+    dsimp [L]
+    exact (contDiff_const.mul Complex.ofRealCLM.contDiff)
+  have hX : ContDiff ℝ 2 X := by
+    dsimp [X]
+    exact Complex.ofRealCLM.contDiff
+  have hH : ContDiff ℝ 2 H := (aux_leftBumpOneShortTwo_fourier_contDiff b).of_le (by norm_num)
+  have hHd : ContDiff ℝ 2 (deriv H) := by
+    dsimp [H]
+    exact aux_leftBumpOneShortTwo_fourier_deriv_contDiff b
+  have hc : ContDiff ℝ 2 (fun _ : ℝ => ((2 : ℂ) ^ k)) := contDiff_const
+  have hmain : ContDiff ℝ 2 (fun x => L x * H x -
+      ((2 : ℂ) ^ k) * (X x * deriv H x)) :=
+    (hL.mul hH).sub (hc.mul (hX.mul hHd))
+  have hfun : aux_leftBumpOneShortTwo_amplitude b k = fun x => L x * H x -
+      ((2 : ℂ) ^ k) * (X x * deriv H x) := by
+    funext x
+    dsimp [aux_leftBumpOneShortTwo_amplitude, L, X, H]
+    rw [iteratedDeriv_one]
+    ring
+  rw [hfun]
+  exact hmain
+
+private theorem aux_leftBumpOneShortTwo_amplitude_deriv_bound (b : windowBasedBumpFunctions) (k : ℤ)
+    (hk : k ≤ -1) (m : ℕ) (hm : m < 3) (xi : ℝ) :
+    ‖iteratedDeriv m (aux_leftBumpOneShortTwo_amplitude b k) xi‖ ≤
+      64 * ((2 : ℝ) ^ 14 * C_uniPair) := by
+  let B : ℝ := (2 : ℝ) ^ 14 * C_uniPair
+  have hB : 0 ≤ B := by norm_num [B, C_uniPair]
+  have hm' : m ≤ 2 := by omega
+  by_cases hxi : xi ∈ aux_frequencyAnnulus
+  · let L : ℝ → ℂ := fun y => 2 * Real.pi * Complex.I * (y : ℂ)
+    let X : ℝ → ℂ := fun y => (y : ℂ)
+    let H : ℝ → ℂ := aux_leftBumpOneShortTwo_fourier b
+    have hL : ContDiff ℝ 2 L := by
+      dsimp [L]
+      exact contDiff_const.mul Complex.ofRealCLM.contDiff
+    have hX : ContDiff ℝ 2 X := by
+      dsimp [X]
+      exact Complex.ofRealCLM.contDiff
+    have hH : ContDiff ℝ 2 H := (aux_leftBumpOneShortTwo_fourier_contDiff b).of_le (by norm_num)
+    have hHd : ContDiff ℝ 2 (deriv H) := by
+      dsimp [H]
+      exact aux_leftBumpOneShortTwo_fourier_deriv_contDiff b
+    have hLbound : ∀ i : ℕ, i ≤ 2 → ‖iteratedDeriv i L xi‖ ≤ 8 := by
+      intro i hi
+      simpa [L] using aux_leftBumpOneShortTwo_linear_iterated_bound xi hxi i hi
+    have hXbound : ∀ i : ℕ, i ≤ 2 → ‖iteratedDeriv i X xi‖ ≤ 1 := by
+      intro i hi
+      simpa [X] using aux_leftBumpOneShortTwo_cast_iterated_bound xi hxi i hi
+    have hHbound : ∀ i : ℕ, i ≤ 2 → ‖iteratedDeriv i H xi‖ ≤ B := by
+      intro i hi
+      simpa [H, B] using aux_leftBumpOneShortTwo_fourier_deriv_bound b i (by omega) xi
+    have hHdbound : ∀ i : ℕ, i ≤ 2 →
+        ‖iteratedDeriv i (deriv H) xi‖ ≤ B := by
+      intro i hi
+      simpa [H, B] using aux_leftBumpOneShortTwo_fourier_deriv_iterated_bound b i hi xi
+    have hLH := aux_leftBumpOneShortTwo_product_deriv_bound_at L H hL hH 8 B (by norm_num) hB xi
+      hLbound hHbound m hm'
+    have hXHd := aux_leftBumpOneShortTwo_product_deriv_bound_at X (deriv H) hX hHd 1 B
+      (by norm_num) hB xi hXbound hHdbound m hm'
+    have hpow : (2 : ℝ) ^ m ≤ 4 := by
+      interval_cases m <;> norm_num
+    have hLH' : ‖iteratedDeriv m (L * H) xi‖ ≤ 32 * B := by
+      calc
+        ‖iteratedDeriv m (L * H) xi‖ ≤ (2 : ℝ) ^ m * 8 * B := hLH
+        _ ≤ 4 * 8 * B := by gcongr
+        _ = 32 * B := by ring
+    have hXHd' : ‖iteratedDeriv m (X * deriv H) xi‖ ≤ 4 * B := by
+      calc
+        ‖iteratedDeriv m (X * deriv H) xi‖ ≤ (2 : ℝ) ^ m * 1 * B := hXHd
+        _ ≤ 4 * 1 * B := by gcongr
+        _ = 4 * B := by ring
+    have hcknonneg : 0 ≤ (2 : ℝ) ^ k :=
+      (zpow_pos (by norm_num) _).le
+    have hckle : (2 : ℝ) ^ k ≤ 1 := by
+      calc
+        (2 : ℝ) ^ k ≤ (2 : ℝ) ^ (0 : ℤ) :=
+          zpow_le_zpow_right₀ (by norm_num) (by omega)
+        _ = 1 := by norm_num
+    have hcnorm : ‖((2 : ℂ) ^ k)‖ ≤ 1 := by
+      rw [norm_zpow]
+      norm_num
+      omega
+    have hPAt : ContDiffAt ℝ (m : ℕ∞) (L * H) xi := by
+      apply ((hL.mul hH).of_le (m := (m : WithTop ℕ∞)) ?_).contDiffAt
+      apply WithTop.coe_le_coe.mpr
+      exact_mod_cast hm'
+    let Q : ℝ → ℂ := fun x => ((2 : ℂ) ^ k) * (X * deriv H) x
+    have hQ : ContDiff ℝ 2 Q := by
+      dsimp [Q]
+      exact contDiff_const.mul (hX.mul hHd)
+    have hQAt : ContDiffAt ℝ (m : ℕ∞) Q xi := by
+      apply (hQ.of_le
+        (m := (m : WithTop ℕ∞)) ?_).contDiffAt
+      apply WithTop.coe_le_coe.mpr
+      exact_mod_cast hm'
+    have hformula : aux_leftBumpOneShortTwo_amplitude b k = fun x => (L * H) x - Q x := by
+      funext x
+      dsimp [aux_leftBumpOneShortTwo_amplitude, L, X, H, Q]
+      rw [iteratedDeriv_one]
+      ring
+    rw [hformula]
+    change ‖iteratedDeriv m ((L * H) - Q) xi‖ ≤ 64 * B
+    rw [iteratedDeriv_sub hPAt hQAt]
+    have hQderiv : iteratedDeriv m Q xi =
+        ((2 : ℂ) ^ k) * iteratedDeriv m (X * deriv H) xi := by
+      dsimp [Q]
+      rw [iteratedDeriv_const_mul_field]
+      rfl
+    rw [hQderiv]
+    calc
+      ‖iteratedDeriv m (L * H) xi -
+          ((2 : ℂ) ^ k) * iteratedDeriv m (X * deriv H) xi‖ ≤
+          ‖iteratedDeriv m (L * H) xi‖ +
+            ‖((2 : ℂ) ^ k) * iteratedDeriv m (X * deriv H) xi‖ :=
+        norm_sub_le _ _
+      _ = ‖iteratedDeriv m (L * H) xi‖ +
+          ‖((2 : ℂ) ^ k)‖ * ‖iteratedDeriv m (X * deriv H) xi‖ := by
+        rw [norm_mul]
+      _ ≤ 32 * B + 1 * (4 * B) := by gcongr
+      _ ≤ 64 * B := by nlinarith
+  · rw [aux_leftBumpOneShortTwo_amplitude_deriv_zero_outside b k m xi hxi, norm_zero]
+    positivity
+
+private theorem aux_leftBumpOneShortTwo_integralFct_plane_diagonal_eq
+    (b : windowBasedBumpFunctions) (k : ℤ) (z : ℝ) :
+    aux_planeFourier
+      (fun v : RealPlane => integralFctKernel
+        (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x)
+        (WithLp.toLp 2 ![v.1, v.2]))
+      (WithLp.toLp 2 ![z, -z]) =
+      ∫ t : ℝ in Icc (1 : ℝ) 2,
+        aux_leftBumpOneShortTwo_amplitude b k (t * z) * aux_leftBumpOneShortTwo_amplitude b k (-(t * z)) *
+          ((t⁻¹ : ℝ) : ℂ) := by
+  have hcoord : (fun u : EuclideanSpace ℝ (Fin 2) =>
+      (integralFctKernel
+        (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x)
+        (WithLp.toLp 2 ![u 0, u 1]) : ℂ)) =
+      fun u => (integralFctKernel
+        (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x) u : ℂ) := by
+    funext u
+    congr 1
+  rw [aux_planeFourier, hcoord, integralFctKernel_fourier_eq]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+  congr 1
+  funext t
+  rw [show t * -z = -(t * z) by ring]
+  have hpsi (x : ℝ) :
+      (tBumpSchwartz (phiFourSchwartz b k) x : ℂ) =
+        ((Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k) x : ℝ) : ℂ) := by
+    rw [tBumpSchwartz_apply]
+    unfold Codex.Reduction.SmoothingDecomposition.aux_T
+      Codex.Reduction.BumpFunctions.aux_T
+      Codex.Reduction.BumpFunctions.multiplicationOperatorX
+    congr 1
+  have hpair := phiFour_T_fourier_pair_eq b k (t * z)
+  simpa only [aux_leftBumpOneShortTwo_amplitude, aux_leftBumpOneShortTwo_fourier, hpsi] using
+    (show
+      FourierTransform.fourier
+          (fun x : ℝ => ((Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k) x : ℝ) : ℂ)) (t * z) *
+        FourierTransform.fourier
+          (fun x : ℝ => ((Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k) x : ℝ) : ℂ)) (-(t * z)) *
+          ((t⁻¹ : ℝ) : ℂ) =
+        (aux_leftBumpOneShortTwo_amplitude b k (t * z) * aux_leftBumpOneShortTwo_amplitude b k (-(t * z))) *
+          ((t⁻¹ : ℝ) : ℂ) by
+        rw [hpair]
+        simp only [aux_leftBumpOneShortTwo_amplitude, aux_leftBumpOneShortTwo_fourier]
+        push_cast
+        rfl)
+
+private theorem aux_leftBumpOneShortTwo_base_diagonal_deriv_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (m : ℕ) (hm : m < 3) (z : ℝ) :
+    ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane => integralFctKernel
+          (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+          (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) z‖ ≤
+      8 * (64 * ((2 : ℝ) ^ 14 * C_uniPair)) ^ 2 := by
+  let A : ℝ → ℂ := aux_leftBumpOneShortTwo_amplitude b k
+  have hA : ContDiff ℝ 2 A := aux_leftBumpOneShortTwo_amplitude_contDiff b k
+  have hC : 0 ≤ 64 * ((2 : ℝ) ^ 14 * C_uniPair) := by
+    norm_num [C_uniPair]
+  have hAbound : ∀ r : ℕ, r ≤ 2 → ∀ x : ℝ,
+      ‖iteratedDeriv r A x‖ ≤ 64 * ((2 : ℝ) ^ 14 * C_uniPair) := by
+    intro r hr x
+    simpa [A] using aux_leftBumpOneShortTwo_amplitude_deriv_bound b k hk r (by omega) x
+  have hlog := aux_leftBumpOneShort_pair_logIntegral_deriv_bound A hA
+    (64 * ((2 : ℝ) ^ 14 * C_uniPair)) hC hAbound m hm z
+  have hformula :
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane => integralFctKernel
+          (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+          (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) =
+      fun x => ∫ t : ℝ in Icc (1 : ℝ) 2,
+        A (t * x) * A (-(t * x)) * ((t⁻¹ : ℝ) : ℂ) := by
+    funext x
+    simpa [A] using aux_leftBumpOneShortTwo_integralFct_plane_diagonal_eq b k x
+  rw [hformula]
+  exact hlog
+
+private theorem aux_leftBumpOneShortTwo_normalizer_dominates_diagonal :
+    8 * (64 * ((2 : ℝ) ^ 14 * C_uniPair)) ^ 2 ≤
+      16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter := by
+  have haux : C_thetaPrimitive 2 ≤ C_leftBumpOneShortTwoAuxiliary := by
+    unfold C_leftBumpOneShortTwoAuxiliary
+    exact le_max_left _ _
+  have hprim : C_thetaPrimitive 2 = (2 : ℝ) ^ 16 * C_uniPair := by
+    norm_num [C_thetaPrimitive]
+  have hmain : 8 * (64 * ((2 : ℝ) ^ 14 * C_uniPair)) ^ 2 ≤
+      16 * (C_thetaPrimitive 2) ^ 2 * C_thetaTOffcenter := by
+    rw [hprim]
+    norm_num [C_thetaTOffcenter, C_uniPair]
+  have hprimnonneg : 0 ≤ C_thetaPrimitive 2 := by
+    norm_num [C_thetaPrimitive, C_uniPair]
+  have hcoff : 0 ≤ C_thetaTOffcenter := by
+    norm_num [C_thetaTOffcenter]
+  calc
+    8 * (64 * ((2 : ℝ) ^ 14 * C_uniPair)) ^ 2 ≤
+        16 * (C_thetaPrimitive 2) ^ 2 * C_thetaTOffcenter := hmain
+    _ ≤ 16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter := by
+      gcongr
+
+private theorem aux_leftBumpOneShortTwo_raw_scaled_diagonal_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (m : ℕ) (hm : m < 3) (z : ℝ) :
+    ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane => Real.rpow 2 ((k : ℝ) / 2) *
+          integralFctKernel
+            (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+            (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) z‖ ≤
+      16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter := by
+  let p : ℝ := Real.rpow 2 ((k : ℝ) / 2)
+  have hp : 0 ≤ p := Real.rpow_nonneg (by norm_num) _
+  have hple : p ≤ 1 := by
+    apply Real.rpow_le_one_of_one_le_of_nonpos (by norm_num)
+    have hkreal : (k : ℝ) ≤ -1 := by exact_mod_cast hk
+    linarith
+  have hbase := aux_leftBumpOneShortTwo_base_diagonal_deriv_bound b k hk m hm z
+  have hformula :
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane => p * integralFctKernel
+          (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+          (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) =
+      fun x => (p : ℂ) * aux_planeFourier
+        (fun v : RealPlane => integralFctKernel
+          (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+          (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x]) := by
+    funext x
+    rw [aux_leftBumpOneShort_planeFourier_const_mul]
+  change ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane => p * integralFctKernel
+          (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+          (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) z‖ ≤ _
+  rw [hformula, iteratedDeriv_const_mul_field, norm_mul,
+    Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hp]
+  calc
+    p * ‖iteratedDeriv m
+        (fun x : ℝ => aux_planeFourier
+          (fun v : RealPlane => integralFctKernel
+            (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+            (WithLp.toLp 2 ![v.1, v.2]))
+          (WithLp.toLp 2 ![x, -x])) z‖ ≤
+        p * (8 * (64 * ((2 : ℝ) ^ 14 * C_uniPair)) ^ 2) :=
+      mul_le_mul_of_nonneg_left hbase hp
+    _ ≤ 1 * (8 * (64 * ((2 : ℝ) ^ 14 * C_uniPair)) ^ 2) := by gcongr
+    _ = 8 * (64 * ((2 : ℝ) ^ 14 * C_uniPair)) ^ 2 := by ring
+    _ ≤ 16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter :=
+      aux_leftBumpOneShortTwo_normalizer_dominates_diagonal
+
+private theorem aux_leftBumpOneShortTwo_normalized_diagonal_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (m : ℕ) (hm : m < 3) (z : ℝ) :
+    ‖iteratedDeriv m
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane =>
+          (16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter)⁻¹ *
+            Real.rpow 2 ((k : ℝ) / 2) *
+            integralFctKernel
+              (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+              (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x])) z‖ ≤ 1 := by
+  let D : ℝ := 16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter
+  have hD : 0 < D := by
+    dsimp [D]
+    have haux : 0 < C_leftBumpOneShortTwoAuxiliary := by
+      unfold C_leftBumpOneShortTwoAuxiliary
+      have hprim : 0 < C_thetaPrimitive 2 := by
+        norm_num [C_thetaPrimitive, C_uniPair]
+      exact hprim.trans_le (le_max_left _ _)
+    exact mul_pos (mul_pos (by norm_num) (sq_pos_of_pos haux))
+      (by norm_num [C_thetaTOffcenter])
+  have hraw := aux_leftBumpOneShortTwo_raw_scaled_diagonal_bound b k hk m hm z
+  have hformula :
+      (fun x : ℝ => aux_planeFourier
+        (fun v : RealPlane => D⁻¹ *
+          (Real.rpow 2 ((k : ℝ) / 2) *
+            integralFctKernel
+              (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+              (WithLp.toLp 2 ![v.1, v.2])))
+        (WithLp.toLp 2 ![x, -x])) =
+      fun x => (D⁻¹ : ℂ) * aux_planeFourier
+        (fun v : RealPlane =>
+          Real.rpow 2 ((k : ℝ) / 2) *
+            integralFctKernel
+              (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+              (WithLp.toLp 2 ![v.1, v.2]))
+        (WithLp.toLp 2 ![x, -x]) := by
+    funext x
+    rw [aux_leftBumpOneShort_planeFourier_const_mul]
+    norm_cast
+  have hkernel :
+      (fun v : RealPlane =>
+        (16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter)⁻¹ *
+          Real.rpow 2 ((k : ℝ) / 2) *
+          integralFctKernel
+            (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+            (WithLp.toLp 2 ![v.1, v.2])) =
+      fun v => D⁻¹ *
+        (Real.rpow 2 ((k : ℝ) / 2) *
+          integralFctKernel
+            (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+            (WithLp.toLp 2 ![v.1, v.2])) := by
+    funext v
+    dsimp [D]
+    ring
+  rw [hkernel, hformula, iteratedDeriv_const_mul_field, norm_mul,
+    norm_inv, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos hD]
+  calc
+    D⁻¹ * ‖iteratedDeriv m
+        (fun x : ℝ => aux_planeFourier
+          (fun v : RealPlane =>
+            Real.rpow 2 ((k : ℝ) / 2) *
+              integralFctKernel
+                (fun y : ℝ => tBumpSchwartz (phiFourSchwartz b k) y)
+                (WithLp.toLp 2 ![v.1, v.2]))
+          (WithLp.toLp 2 ![x, -x])) z‖ ≤ D⁻¹ * D :=
+      mul_le_mul_of_nonneg_left (by simpa [D] using hraw)
+        (inv_nonneg.mpr hD.le)
+    _ = 1 := by field_simp [ne_of_gt hD]
+
+
+
+private theorem aux_leftBumpOneShortTwo_auxiliary_nonneg :
+    0 ≤ C_leftBumpOneShortTwoAuxiliary := by
+  unfold C_leftBumpOneShortTwoAuxiliary
+  exact le_max_of_le_left (by norm_num [C_thetaPrimitive, C_uniPair])
+
+private theorem aux_leftBumpOneShortTwo_auxiliary_pos :
+    0 < C_leftBumpOneShortTwoAuxiliary := by
+  unfold C_leftBumpOneShortTwoAuxiliary
+  have hprim : 0 < C_thetaPrimitive 2 := by
+    norm_num [C_thetaPrimitive, C_uniPair]
+  exact hprim.trans_le (le_max_left _ _)
+
+private noncomputable def aux_leftBumpOneShortTwo_normalizer : ℝ :=
+  16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter
+
+private theorem aux_leftBumpOneShortTwo_normalizer_pos :
+    0 < aux_leftBumpOneShortTwo_normalizer := by
+  unfold aux_leftBumpOneShortTwo_normalizer
+  exact mul_pos (mul_pos (by norm_num)
+    (sq_pos_of_pos aux_leftBumpOneShortTwo_auxiliary_pos))
+    (by norm_num [C_thetaTOffcenter])
+
+private theorem aux_leftBumpOneShortTwo_tBump_eq_aux_T (phi : SchwartzMap ℝ ℝ) :
+    (fun x : ℝ => tBumpSchwartz phi x) =
+      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ => phi x) := by
+  funext x
+  rw [tBumpSchwartz_apply]
+  unfold Codex.Reduction.SmoothingDecomposition.aux_T
+    Codex.Reduction.BumpFunctions.aux_T
+    Codex.Reduction.BumpFunctions.multiplicationOperatorX
+  congr 1
+
+private theorem aux_leftBumpOneShortTwo_rescaled_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (t u : ℝ) (ht : t ∈ Set.Icc (1 : ℝ) 2)
+    (hTformula : ∀ x : ℝ,
+      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+        (2 : ℝ) ^ k *
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+            (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
+              (x - (2 : ℝ) ^ (-k)))) :
+    |Codex.Reduction.BumpFunctions.aux_realRescaled t
+        (Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k)) u| ≤
+      4 * C_leftBumpOneShortTwoAuxiliary *
+        bracketBump (u - t * (2 : ℝ) ^ (-k)) ^ 2 := by
+  let C : ℝ := C_leftBumpOneShortTwoAuxiliary
+  let x : ℝ := u - t * (2 : ℝ) ^ (-k)
+  have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+  have htinv : 0 ≤ t⁻¹ := inv_nonneg.mpr htpos.le
+  have hp : 0 ≤ (2 : ℝ) ^ k := (zpow_pos (by norm_num) _).le
+  have hpinv : 0 ≤ (2 : ℝ) ^ (-k) := (zpow_pos (by norm_num) _).le
+  have hC : 0 ≤ C := aux_leftBumpOneShortTwo_auxiliary_nonneg
+  have hprimle : C_thetaPrimitive 2 ≤ C := by
+    dsimp [C, C_leftBumpOneShortTwoAuxiliary]
+    exact le_max_left _ _
+  have hthetale : C_thetaDecay 2 ≤ C := by
+    dsimp [C, C_leftBumpOneShortTwoAuxiliary]
+    exact le_trans (le_max_left _ _) (le_max_right _ _)
+  have harg : t⁻¹ * u - (2 : ℝ) ^ (-k) = t⁻¹ * x := by
+    dsimp [x]
+    field_simp [ne_of_gt htpos]
+  have hbr : bracketBump (t⁻¹ * x) ≤ t * bracketBump x :=
+    aux_leftBumpOneShort_bracket_inv_mul_le t x ht.1
+  have hbrsq : bracketBump (t⁻¹ * x) ^ 2 ≤ (t * bracketBump x) ^ 2 :=
+    pow_le_pow_left₀ (by rw [bracketBump]; positivity) hbr 2
+  have htilde : |Codex.Reduction.BumpFunctions.aux_T
+      (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x)| ≤
+      C * (t * bracketBump x) ^ 2 := by
+    have hbase := (thetaPrimitive b 2 (by omega) (by norm_num [N_uniPair])).2.2.2
+      (t⁻¹ * x)
+    calc
+      |Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x)| ≤
+          C_thetaPrimitive 2 * bracketBump (t⁻¹ * x) ^ 2 := hbase
+      _ ≤ C * bracketBump (t⁻¹ * x) ^ 2 :=
+        mul_le_mul_of_nonneg_right hprimle (by positivity)
+      _ ≤ C * (t * bracketBump x) ^ 2 :=
+        mul_le_mul_of_nonneg_left hbrsq hC
+  have htheta : |windowBasedBumpFunctions.theta b (t⁻¹ * x)| ≤
+      C * (t * bracketBump x) ^ 2 := by
+    have hbase := thetaDecay b 2 (by omega) (by omega) (t⁻¹ * x)
+    calc
+      |windowBasedBumpFunctions.theta b (t⁻¹ * x)| ≤
+          C_thetaDecay 2 * bracketBump (t⁻¹ * x) ^ 2 := hbase
+      _ ≤ C * bracketBump (t⁻¹ * x) ^ 2 :=
+        mul_le_mul_of_nonneg_right hthetale (by positivity)
+      _ ≤ C * (t * bracketBump x) ^ 2 :=
+        mul_le_mul_of_nonneg_left hbrsq hC
+  have hsum : |Codex.Reduction.BumpFunctions.aux_T
+      (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x) +
+      (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b (t⁻¹ * x)| ≤
+      (1 + (2 : ℝ) ^ (-k)) * (C * (t * bracketBump x) ^ 2) := by
+    calc
+      |Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x) +
+          (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b (t⁻¹ * x)| ≤
+          |Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x)| +
+            |(2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b (t⁻¹ * x)| :=
+        abs_add_le _ _
+      _ = |Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x)| +
+          (2 : ℝ) ^ (-k) * |windowBasedBumpFunctions.theta b (t⁻¹ * x)| := by
+        rw [abs_mul, abs_of_nonneg hpinv]
+      _ ≤ C * (t * bracketBump x) ^ 2 +
+          (2 : ℝ) ^ (-k) * (C * (t * bracketBump x) ^ 2) := by
+        gcongr
+      _ = (1 + (2 : ℝ) ^ (-k)) * (C * (t * bracketBump x) ^ 2) := by ring
+  have hcancel : (2 : ℝ) ^ k * (2 : ℝ) ^ (-k) = 1 := by
+    rw [← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+    norm_num
+  have hpowhalf : (2 : ℝ) ^ k ≤ (1 / 2 : ℝ) := by
+    calc
+      (2 : ℝ) ^ k ≤ (2 : ℝ) ^ (-1 : ℤ) :=
+        zpow_le_zpow_right₀ (by norm_num) hk
+      _ = (1 / 2 : ℝ) := by norm_num [zpow_neg]
+  have hpt : (2 : ℝ) ^ k * t ≤ 1 := by
+    calc
+      (2 : ℝ) ^ k * t ≤ (1 / 2 : ℝ) * t :=
+        mul_le_mul_of_nonneg_right hpowhalf htpos.le
+      _ ≤ 1 := by nlinarith [ht.2]
+  have hcoeff : (2 : ℝ) ^ k * t + t ≤ 4 := by
+    nlinarith [hpt, ht.2]
+  change |t⁻¹ * Codex.Reduction.BumpFunctions.aux_T
+      (windowBasedBumpFunctions.phiFour b k) (t⁻¹ * u)| ≤
+      4 * C * bracketBump x ^ 2
+  rw [hTformula, harg, abs_mul, abs_of_nonneg htinv,
+    abs_mul, abs_of_nonneg hp]
+  calc
+    t⁻¹ * ((2 : ℝ) ^ k *
+        |Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x) +
+          (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b (t⁻¹ * x)|) ≤
+        t⁻¹ * ((2 : ℝ) ^ k *
+          ((1 + (2 : ℝ) ^ (-k)) * (C * (t * bracketBump x) ^ 2))) := by
+      gcongr
+    _ = ((2 : ℝ) ^ k * t + t) * C * bracketBump x ^ 2 := by
+      have hfac : (2 : ℝ) ^ k * (1 + (2 : ℝ) ^ (-k)) =
+          (2 : ℝ) ^ k + 1 := by
+        calc
+          (2 : ℝ) ^ k * (1 + (2 : ℝ) ^ (-k)) =
+              (2 : ℝ) ^ k + (2 : ℝ) ^ k * (2 : ℝ) ^ (-k) := by ring
+          _ = (2 : ℝ) ^ k + 1 := by rw [hcancel]
+      field_simp [ne_of_gt htpos]
+      rw [hfac]
+      ring
+    _ ≤ 4 * C * bracketBump x ^ 2 := by
+      have hB : 0 ≤ bracketBump x ^ 2 := by positivity
+      have hmain : ((2 : ℝ) ^ k * t + t) * (C * bracketBump x ^ 2) ≤
+          4 * (C * bracketBump x ^ 2) :=
+        mul_le_mul_of_nonneg_right hcoeff (mul_nonneg hC hB)
+      simpa [mul_assoc] using hmain
+
+/-- Product estimate for the short-two logarithmic integrand. -/
+private theorem aux_leftBumpOneShortTwo_integrand_bound
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (t : ℝ) (ht : t ∈ Set.Icc (1 : ℝ) 2) (v : RealPlane)
+    (hTformula : ∀ x : ℝ,
+      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+        (2 : ℝ) ^ k *
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+            (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
+              (x - (2 : ℝ) ^ (-k)))) :
+    |Codex.Reduction.BumpFunctions.aux_realRescaled t
+        (Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k)) v.1 *
+      Codex.Reduction.BumpFunctions.aux_realRescaled t
+        (Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| ≤
+      (4 * C_leftBumpOneShortTwoAuxiliary) ^ 2 *
+        (bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 *
+          bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2) := by
+  have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+  have htinv : 0 ≤ t⁻¹ := inv_nonneg.mpr htpos.le
+  have htinvle : t⁻¹ ≤ 1 := (inv_le_one₀ htpos).2 ht.1
+  have h0 := aux_leftBumpOneShortTwo_rescaled_bound b k hk t v.1 ht hTformula
+  have h1 := aux_leftBumpOneShortTwo_rescaled_bound b k hk t v.2 ht hTformula
+  have hA : 0 ≤ 4 * C_leftBumpOneShortTwoAuxiliary :=
+    mul_nonneg (by norm_num) aux_leftBumpOneShortTwo_auxiliary_nonneg
+  have hB0 : 0 ≤ bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 := by positivity
+  rw [abs_mul, abs_mul, abs_of_nonneg htinv]
+  calc
+    |Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k)) v.1| *
+        |Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k)) v.2| * t⁻¹ ≤
+        ((4 * C_leftBumpOneShortTwoAuxiliary) *
+          bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2) *
+          ((4 * C_leftBumpOneShortTwoAuxiliary) *
+            bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2) * t⁻¹ := by
+          refine mul_le_mul_of_nonneg_right ?_ htinv
+          exact mul_le_mul h0 h1 (abs_nonneg _) (mul_nonneg hA hB0)
+    _ ≤ ((4 * C_leftBumpOneShortTwoAuxiliary) *
+          bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2) *
+          ((4 * C_leftBumpOneShortTwoAuxiliary) *
+            bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2) * 1 := by
+          apply mul_le_mul_of_nonneg_left htinvle
+          positivity
+    _ = (4 * C_leftBumpOneShortTwoAuxiliary) ^ 2 *
+        (bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 *
+          bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2) := by ring
+
+/-- The fully normalized physical Whitney decay for the short-two kernel,
+conditional only on the public logarithmic-derivative formula for `phiFour`. -/
+private theorem aux_leftBumpOneShortTwo_kernel_decay
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (v : RealPlane)
+    (hTformula : ∀ x : ℝ,
+      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+        (2 : ℝ) ^ k *
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+            (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
+              (x - (2 : ℝ) ^ (-k)))) :
+    |Real.rpow 2 ((k : ℝ) / 2) *
+      integralFctKernel
+        (Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k))
+        (WithLp.toLp 2 ![v.1, v.2])| ≤
+      (16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter) *
+        ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
+  let A : ℝ := 4 * C_leftBumpOneShortTwoAuxiliary
+  let B : ℝ → ℝ := fun t =>
+    bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 *
+      bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2
+  have hA2 : 0 ≤ A ^ 2 := sq_nonneg _
+  have hBcont : Continuous B := by
+    dsimp [B]
+    have h0 : Continuous (fun t : ℝ =>
+        1 + |v.1 - t * (2 : ℝ) ^ (-k)|) := by fun_prop
+    have h1 : Continuous (fun t : ℝ =>
+        1 + |v.2 - t * (2 : ℝ) ^ (-k)|) := by fun_prop
+    have h0ne : ∀ t : ℝ, 1 + |v.1 - t * (2 : ℝ) ^ (-k)| ≠ 0 := by
+      intro t
+      positivity
+    have h1ne : ∀ t : ℝ, 1 + |v.2 - t * (2 : ℝ) ^ (-k)| ≠ 0 := by
+      intro t
+      positivity
+    change Continuous (fun t : ℝ =>
+      (1 + |v.1 - t * (2 : ℝ) ^ (-k)|)⁻¹ ^ 2 *
+        (1 + |v.2 - t * (2 : ℝ) ^ (-k)|)⁻¹ ^ 2)
+    exact ((h0.inv₀ h0ne).pow 2).mul ((h1.inv₀ h1ne).pow 2)
+  have hBint : IntegrableOn B (Set.Icc (1 : ℝ) 2) := hBcont.integrableOn_Icc
+  have hint : ∫ t : ℝ in Set.Icc (1 : ℝ) 2,
+      |Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k)) v.1 *
+        Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| ≤
+      A ^ 2 * ∫ t : ℝ in Set.Icc (1 : ℝ) 2, B t := by
+    calc
+      ∫ t : ℝ in Set.Icc (1 : ℝ) 2,
+          |Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (Codex.Reduction.BumpFunctions.aux_T
+                (windowBasedBumpFunctions.phiFour b k)) v.1 *
+            Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (Codex.Reduction.BumpFunctions.aux_T
+                (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| ≤
+          ∫ t : ℝ in Set.Icc (1 : ℝ) 2, A ^ 2 * B t := by
+            apply MeasureTheory.setIntegral_mono_of_nonneg
+            · intro t ht
+              exact abs_nonneg _
+            · intro t ht
+              simpa only [A, B] using
+                aux_leftBumpOneShortTwo_integrand_bound b k hk t ht v hTformula
+            · exact hBint.const_mul _
+      _ = A ^ 2 * ∫ t : ℝ in Set.Icc (1 : ℝ) 2, B t := by
+        rw [integral_const_mul]
+  have hc : 0 ≤ Real.rpow 2 ((k : ℝ) / 2) :=
+    Real.rpow_nonneg (by norm_num) _
+  have hoff := thetaTOffcenter k hk v.1 v.2
+  change |Real.rpow 2 ((k : ℝ) / 2) *
+      ∫ t : ℝ in Set.Icc 1 2,
+        Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k)) v.1 *
+        Codex.Reduction.BumpFunctions.aux_realRescaled t
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| ≤ _
+  calc
+    |Real.rpow 2 ((k : ℝ) / 2) *
+        ∫ t : ℝ in Set.Icc 1 2,
+          Codex.Reduction.BumpFunctions.aux_realRescaled t
+            (Codex.Reduction.BumpFunctions.aux_T
+              (windowBasedBumpFunctions.phiFour b k)) v.1 *
+          Codex.Reduction.BumpFunctions.aux_realRescaled t
+            (Codex.Reduction.BumpFunctions.aux_T
+              (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| =
+        Real.rpow 2 ((k : ℝ) / 2) *
+          |∫ t : ℝ in Set.Icc 1 2,
+            Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (Codex.Reduction.BumpFunctions.aux_T
+                (windowBasedBumpFunctions.phiFour b k)) v.1 *
+            Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (Codex.Reduction.BumpFunctions.aux_T
+                (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| := by
+              rw [abs_mul, abs_of_nonneg hc]
+    _ ≤ Real.rpow 2 ((k : ℝ) / 2) *
+        ∫ t : ℝ in Set.Icc 1 2,
+          |Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (Codex.Reduction.BumpFunctions.aux_T
+                (windowBasedBumpFunctions.phiFour b k)) v.1 *
+            Codex.Reduction.BumpFunctions.aux_realRescaled t
+              (Codex.Reduction.BumpFunctions.aux_T
+                (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| := by
+              exact mul_le_mul_of_nonneg_left abs_integral_le_integral_abs hc
+    _ ≤ Real.rpow 2 ((k : ℝ) / 2) *
+        (A ^ 2 * ∫ t : ℝ in Set.Icc 1 2, B t) := by
+          exact mul_le_mul_of_nonneg_left hint hc
+    _ = 16 * C_leftBumpOneShortTwoAuxiliary ^ 2 *
+        (Real.rpow 2 ((k : ℝ) / 2) *
+          ∫ t : ℝ in Set.Icc 1 2, B t) := by
+          dsimp [A]
+          ring
+    _ ≤ 16 * C_leftBumpOneShortTwoAuxiliary ^ 2 *
+        (C_thetaTOffcenter *
+          (Real.rpow (bracketBump v.1) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump v.2) (3 / 2 : ℝ) +
+            Real.rpow (bracketBump (v.1 + v.2)) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump (v.1 - v.2)) (3 / 2 : ℝ))) := by
+          apply mul_le_mul_of_nonneg_left
+          · simpa only [B] using hoff
+          · positivity
+    _ ≤ 16 * C_leftBumpOneShortTwoAuxiliary ^ 2 *
+        (C_thetaTOffcenter * ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2)) := by
+          apply mul_le_mul_of_nonneg_left
+          exact aux_leftBumpOneShort_offcenter_rhs_le_whitney v
+          positivity
+    _ = (16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter) *
+        ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by ring
+
+private theorem aux_leftBumpOneShortTwo_normalized_decay
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (v : RealPlane)
+    (hTformula : ∀ x : ℝ,
+      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+        (2 : ℝ) ^ k *
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+            (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
+              (x - (2 : ℝ) ^ (-k)))) :
+    |(aux_leftBumpOneShortTwo_normalizer)⁻¹ *
+      Real.rpow 2 ((k : ℝ) / 2) *
+      integralFctKernel
+        (Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k))
+        (WithLp.toLp 2 ![v.1, v.2])| ≤
+      ∑ u : Fin 2,
+        scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
+  let D : ℝ := aux_leftBumpOneShortTwo_normalizer
+  let S : ℝ := ∑ u : Fin 2,
+    scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+      scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2)
+  have hD : 0 < D := aux_leftBumpOneShortTwo_normalizer_pos
+  have hraw : |Real.rpow 2 ((k : ℝ) / 2) *
+      integralFctKernel
+        (Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k))
+        (WithLp.toLp 2 ![v.1, v.2])| ≤ D * S := by
+    dsimp [D, S, aux_leftBumpOneShortTwo_normalizer]
+    exact aux_leftBumpOneShortTwo_kernel_decay b k hk v hTformula
+  change |D⁻¹ * Real.rpow 2 ((k : ℝ) / 2) *
+      integralFctKernel
+        (Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k))
+        (WithLp.toLp 2 ![v.1, v.2])| ≤ S
+  calc
+    |D⁻¹ * Real.rpow 2 ((k : ℝ) / 2) *
+        integralFctKernel
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k))
+          (WithLp.toLp 2 ![v.1, v.2])| =
+        |D⁻¹ * (Real.rpow 2 ((k : ℝ) / 2) *
+          integralFctKernel
+            (Codex.Reduction.BumpFunctions.aux_T
+              (windowBasedBumpFunctions.phiFour b k))
+            (WithLp.toLp 2 ![v.1, v.2]))| := by
+      rw [mul_assoc]
+    _ = D⁻¹ * |Real.rpow 2 ((k : ℝ) / 2) *
+        integralFctKernel
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k))
+          (WithLp.toLp 2 ![v.1, v.2])| := by
+      rw [abs_mul, abs_of_pos (inv_pos.mpr hD)]
+    _ ≤ D⁻¹ * (D * S) :=
+      mul_le_mul_of_nonneg_left hraw (inv_nonneg.mpr hD.le)
+    _ = S := by field_simp [ne_of_gt hD]
+
+private theorem aux_leftBumpOneShortTwo_tPhiFourSchwartz_support (b : windowBasedBumpFunctions) (k : ℤ) :
+    Function.support (FourierTransform.fourier
+      (fun x : ℝ => (tBumpSchwartz (phiFourSchwartz b k) x : ℂ))) ⊆
+        Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+  intro xi hxi
+  have heq : (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x) =
+      Codex.Reduction.BumpFunctions.aux_T
+        (windowBasedBumpFunctions.phiFour b k) := by
+    rw [aux_leftBumpOneShortTwo_tBump_eq_aux_T]
+    congr 1
+  have hraw : xi ∈ Function.support (FourierTransform.fourier
+      (fun x : ℝ =>
+        ((Codex.Reduction.BumpFunctions.aux_T
+          (fun y : ℝ => (windowBasedBumpFunctions.phiFour b k y : ℝ)) x : ℝ) : ℂ))) := by
+    simpa only [heq] using hxi
+  exact (thetaPrimitive b 2 (by omega) (by norm_num [N_uniPair])).1.2
+    ((phiFourSupport b k).2 hraw)
+
+/-- Full short-two Whitney packaging, conditional only on nonvanishing and the
+same phase-cancelled diagonal Fourier derivative estimate as the blueprint. -/
+private noncomputable def aux_leftBumpOneShortTwo_whitneyData
+    (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
+    (hTformula : ∀ x : ℝ,
+      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+        (2 : ℝ) ^ k *
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+            (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
+              (x - (2 : ℝ) ^ (-k))))
+    (hnonzero : (fun v : RealPlane =>
+      (aux_leftBumpOneShortTwo_normalizer)⁻¹ *
+        Real.rpow 2 ((k : ℝ) / 2) *
+        integralFctKernel
+          (Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k))
+          (WithLp.toLp 2 ![v.1, v.2])) ≠ 0)
+    (hdiag : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
+      ‖iteratedDeriv m
+        (fun z : ℝ => aux_planeFourier
+          (fun v : RealPlane =>
+            (aux_leftBumpOneShortTwo_normalizer)⁻¹ *
+              Real.rpow 2 ((k : ℝ) / 2) *
+              integralFctKernel
+                (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x)
+                (WithLp.toLp 2 ![v.1, v.2]))
+          (WithLp.toLp 2 ![z, -z])) xi‖ ≤ 1) :
+    WhitneyKernelData := by
+  let psi : SchwartzMap ℝ ℝ := tBumpSchwartz (phiFourSchwartz b k)
+  let c : ℝ := (aux_leftBumpOneShortTwo_normalizer)⁻¹ *
+    Real.rpow 2 ((k : ℝ) / 2)
+  have hann : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+    dsimp [psi]
+    exact aux_leftBumpOneShortTwo_tPhiFourSchwartz_support b k
+  have hband : Function.support (FourierTransform.fourier
+      (fun x : ℝ => (psi x : ℂ))) ⊆
+      Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1 := by
+    intro xi hxi
+    have heq : (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x) =
+        Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k) := by
+      rw [aux_leftBumpOneShortTwo_tBump_eq_aux_T]
+      congr 1
+    have hraw : xi ∈ Function.support (FourierTransform.fourier
+        (fun x : ℝ =>
+          ((Codex.Reduction.BumpFunctions.aux_T
+            (fun y : ℝ => (windowBasedBumpFunctions.phiFour b k y : ℝ)) x : ℝ) : ℂ))) := by
+      simpa only [psi, heq] using hxi
+    simpa [aux_frequencyAnnulus] using (phiFourSupport b k).2 hraw
+  have hc : 0 ≤ c := by
+    dsimp [c]
+    exact mul_nonneg
+      (inv_nonneg.mpr aux_leftBumpOneShortTwo_normalizer_pos.le)
+      (Real.rpow_nonneg (by norm_num) _)
+  have hfourier : Function.support (aux_planeFourier
+      (fun v : RealPlane => c * integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![v.1, v.2]))) ⊆
+      {v : EuclideanSpace ℝ (Fin 2) |
+        v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+        v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)} :=
+    aux_leftBumpOneShort_integralFct_plane_fourier_support_smul psi hband c
+  have hdecay : ∀ v : RealPlane,
+      |c * integralFctKernel (fun x : ℝ => psi x)
+        (WithLp.toLp 2 ![v.1, v.2])| ≤
+        ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
+    intro v
+    have heq : (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x) =
+        Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k) := by
+      rw [aux_leftBumpOneShortTwo_tBump_eq_aux_T]
+      congr 1
+    simpa only [c, psi, heq] using
+      aux_leftBumpOneShortTwo_normalized_decay b k hk v hTformula
+  apply aux_leftBumpOneShort_integralFctWhitneyData psi hann hband c hc
+  · have heq : (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x) =
+        Codex.Reduction.BumpFunctions.aux_T
+          (windowBasedBumpFunctions.phiFour b k) := by
+        rw [aux_leftBumpOneShortTwo_tBump_eq_aux_T]
+        congr 1
+    simpa only [c, psi, heq] using hnonzero
+  · exact hfourier
+  · simpa only [c, psi] using hdiag
+  · exact hdecay
+
 
 /-- Lemma \ref{lem:leftbump1_short2}. -/
 theorem leftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n)
@@ -5029,16 +7891,1054 @@ theorem leftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n)
               2 volume ^ 2 ≤
       ENNReal.ofReal (C_leftBumpOneShortTwo n) *
         ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
-  sorry
+  classical
+  cases n with
+  | zero => omega
+  | succ d =>
+    have hd : 1 ≤ d := by omega
+    obtain ⟨a, ha, ha_restrict⟩ := aux_mainAuxOne_extend_dyadic_chain J hJ ell
+    let D : ℝ := aux_leftBumpOneShortTwo_normalizer
+    let P : ℝ := Real.rpow 2 ((k : ℝ) / 2)
+    let c : ℝ := D⁻¹ * P
+    let psi : SchwartzMap ℝ ℝ := tBumpSchwartz (phiFourSchwartz b k)
+    let E : Fin J → ℝ≥0∞ := fun j =>
+      ∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ENNReal.ofReal t⁻¹ *
+          eLpNorm
+            (twistedAverageAtScale ((2 : ℝ) ^ (ell.1 j.castSucc) * t)
+              (Codex.Reduction.BumpFunctions.aux_T
+                (windowBasedBumpFunctions.phiFour b k))
+              (fun i x => f.1 i x))
+            2 volume ^ 2
+    have hD : 0 < D := by
+      simpa only [D] using aux_leftBumpOneShortTwo_normalizer_pos
+    have hP : 0 < P := by
+      dsimp [P]
+      exact Real.rpow_pos_of_pos (by norm_num) _
+    have hc : 0 < c := mul_pos (inv_pos.mpr hD) hP
+    have hPc : D * c = P := by
+      dsimp [c]
+      field_simp [hD.ne']
+    have henergy : ∀ j : Fin J,
+        E j = ENNReal.ofReal
+          (prismForm (d + 1) 1 (by omega) (by omega)
+            (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi)
+            (fun i x =>
+              Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1 i x)) := by
+      intro j
+      dsimp [E]
+      rw [← ha_restrict j]
+      simpa only [psi, aux_leftBumpOneShortTwo_tBump_eq_aux_T,
+        phiFourSchwartz_apply] using
+        aux_leftBumpOneShort_continuous_aToLambda_integralFct d
+          (a (j : ℤ)) (ha (j : ℤ)).1 psi f.1
+    change ∑ j : Fin J, ENNReal.ofReal P * E j ≤
+      ENNReal.ofReal (C_leftBumpOneShortTwo (d + 1)) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1))
+    let K : RealPlane → ℝ := fun v => c *
+      integralFctKernel (fun x => psi x) (WithLp.toLp 2 ![v.1, v.2])
+    by_cases hzero : K = 0
+    · have hsum := aux_leftBumpOneShort_zero_energy_sum c hc psi hzero a f P E henergy
+      rw [hsum]
+      exact bot_le
+    · have hTformula : ∀ x : ℝ,
+        Codex.Reduction.BumpFunctions.aux_T
+            (windowBasedBumpFunctions.phiFour b k) x =
+          (2 : ℝ) ^ k *
+            (Codex.Reduction.BumpFunctions.aux_T
+              (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+              (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
+                (x - (2 : ℝ) ^ (-k))) := by
+          intro x
+          exact congrFun (phiFour_T_eq b k) x
+      let Psi : WhitneyKernelData := aux_leftBumpOneShortTwo_whitneyData b k hk hTformula
+        (by simpa only [K, c, D, P, psi, aux_leftBumpOneShortTwo_tBump_eq_aux_T,
+          phiFourSchwartz_apply] using hzero)
+        (fun m hm xi => by
+          simpa only [D, P, aux_leftBumpOneShortTwo_normalizer] using
+            aux_leftBumpOneShortTwo_normalized_diagonal_bound b k hk m hm xi)
+      have hPsi : Psi.kernel = fun v : RealPlane => c *
+          integralFctKernel (fun x => psi x) (WithLp.toLp 2 ![v.1, v.2]) := by
+        dsimp [Psi]
+        rfl
+      have hmain := aux_leftBumpOneShort_scaled_integralM_prefix hd D P c hD hc hPc
+        psi a ha f hJ b.phi0 b.phi1 b.universalPair Psi hPsi E henergy
+      have hconst : D * C_inductPositiveTermsReductionWhitney (d + 1) =
+          C_leftBumpOneShortTwo (d + 1) := by
+        dsimp [D, aux_leftBumpOneShortTwo_normalizer]
+        unfold C_leftBumpOneShortTwo
+        ring
+      calc
+        ∑ j : Fin J, ENNReal.ofReal P * E j ≤
+            ENNReal.ofReal (D * C_inductPositiveTermsReductionWhitney (d + 1)) *
+              ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1)) := hmain
+        _ = ENNReal.ofReal (C_leftBumpOneShortTwo (d + 1)) *
+              ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1)) := by
+              rw [hconst]
 
 /-- The numerical estimate in Lemma \ref{constant left bump one short two}. -/
 theorem constantLeftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOneShortTwo n < (2 : ℝ) ^ 630 := by
-  sorry
+  have hWhitney : C_inductPositiveTermsReductionWhitney n <
+      (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
+    unfold C_inductPositiveTermsReductionWhitney
+    calc
+      11 * C_inductPositiveTermsReductionWhitneyGap n <
+          11 * ((127 / 128 : ℝ) * (2 : ℝ) ^ 553) :=
+        mul_lt_mul_of_pos_left (constantWhitneyGapReduction hn) (by norm_num)
+      _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by
+        norm_num
+        ring
+      _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
+        rw [← pow_add]
+  have hprim : C_thetaPrimitive 2 ≤ (2 : ℝ) ^ 31 := by
+    exact (constantThetaPrimitive 2 (by norm_num) (by norm_num [N_uniPair])).2
+  have hdecayTwo : C_thetaDecay 2 ≤ (2 : ℝ) ^ 21 := by
+    simpa using constantThetaDecay 2 (by norm_num) (by norm_num)
+  have hdecayThree : C_thetaDecay 3 ≤ (2 : ℝ) ^ 23 := by
+    simpa using constantThetaDecay 3 (by norm_num) (by norm_num)
+  have hdecayTwo' : C_thetaDecay 2 ≤ (2 : ℝ) ^ 31 :=
+    hdecayTwo.trans (by norm_num)
+  have hdecayThree' : C_thetaDecay 3 ≤ (2 : ℝ) ^ 31 :=
+    hdecayThree.trans (by norm_num)
+  have haux : C_leftBumpOneShortTwoAuxiliary ≤ (2 : ℝ) ^ 31 := by
+    unfold C_leftBumpOneShortTwoAuxiliary
+    exact max_le hprim (max_le hdecayTwo' hdecayThree')
+  have hauxpos : 0 < C_leftBumpOneShortTwoAuxiliary := by
+    unfold C_leftBumpOneShortTwoAuxiliary
+    have hprimpos : 0 < C_thetaPrimitive 2 := by
+      norm_num [C_thetaPrimitive, C_uniPair]
+    exact hprimpos.trans_le (le_max_left _ _)
+  have hfacpos : 0 < (2 : ℝ) ^ 4 * C_thetaTOffcenter *
+      C_leftBumpOneShortTwoAuxiliary ^ 2 := by
+    exact mul_pos
+      (mul_pos (by positivity) (by norm_num [C_thetaTOffcenter]))
+      (sq_pos_of_pos hauxpos)
+  unfold C_leftBumpOneShortTwo
+  calc
+    (2 : ℝ) ^ 4 * C_inductPositiveTermsReductionWhitney n * C_thetaTOffcenter *
+        C_leftBumpOneShortTwoAuxiliary ^ 2 =
+        ((2 : ℝ) ^ 4 * C_thetaTOffcenter * C_leftBumpOneShortTwoAuxiliary ^ 2) *
+          C_inductPositiveTermsReductionWhitney n := by ring
+    _ < ((2 : ℝ) ^ 4 * C_thetaTOffcenter * C_leftBumpOneShortTwoAuxiliary ^ 2) *
+        ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) :=
+      mul_lt_mul_of_pos_left hWhitney hfacpos
+    _ ≤ ((2 : ℝ) ^ 4 * C_thetaTOffcenter * ((2 : ℝ) ^ 31) ^ 2) *
+        ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) := by
+      gcongr
+      norm_num [C_thetaTOffcenter]
+    _ = (185801 / 262144 : ℝ) * (2 : ℝ) ^ 630 := by
+      have hpow : (2 : ℝ) ^ 4 * ((2 : ℝ) ^ 31) ^ 2 * (2 : ℝ) ^ 557 =
+          (2 : ℝ) ^ 623 := by
+        rw [← pow_mul, ← pow_add, ← pow_add]
+      have hpow630 : (2 : ℝ) ^ 630 = (2 : ℝ) ^ 7 * (2 : ℝ) ^ 623 := by
+        rw [← pow_add]
+      rw [hpow630, ← hpow]
+      norm_num [C_thetaTOffcenter]
+      ring
+    _ < (2 : ℝ) ^ 630 := by
+      calc
+        (185801 / 262144 : ℝ) * (2 : ℝ) ^ 630 <
+            1 * (2 : ℝ) ^ 630 :=
+          mul_lt_mul_of_pos_right (by norm_num) (by positivity)
+        _ = (2 : ℝ) ^ 630 := by ring
 
 /-- The long-variation constant in Lemma \ref{lem:leftbump1_long}. -/
 noncomputable def C_leftBumpOneLong (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 6 * C_inductPositiveTermsReductionWhitney n * C_thetaPrimitive 2 ^ 2
+
+/-! ### Long-variation Whitney normalization -/
+
+private theorem aux_leftBumpOneLong_bracket_pos (x : ℝ) : 0 < bracketBump x := by
+  rw [bracketBump]
+  positivity
+
+private theorem aux_leftBumpOneLong_bracket_le_one (x : ℝ) : bracketBump x ≤ 1 := by
+  rw [bracketBump]
+  exact (inv_le_one₀ (by positivity)).2 (by linarith [abs_nonneg x])
+
+private theorem aux_leftBumpOneLong_bracket_mul_le (x y : ℝ) :
+    bracketBump x * bracketBump y ≤ bracketBump (x - y) := by
+  rw [bracketBump, bracketBump, bracketBump]
+  have h : 1 + |x - y| ≤ (1 + |x|) * (1 + |y|) := by
+    calc
+      1 + |x - y| ≤ 1 + (|x| + |y|) := by
+        gcongr
+        simpa using (abs_sub_le x 0 y)
+      _ ≤ (1 + |x|) * (1 + |y|) := by nlinarith [abs_nonneg x, abs_nonneg y]
+  have hp : 0 < 1 + |x - y| := by positivity
+  rw [← one_div, ← one_div, ← one_div]
+  have h' := one_div_le_one_div_of_le hp h
+  simpa [one_div, div_eq_mul_inv, mul_comm] using h'
+
+private theorem aux_leftBumpOneLong_bracket_sq_mul_le_three_halves (x y : ℝ) :
+    bracketBump x ^ 2 * bracketBump y ^ 2 ≤
+      Real.rpow (bracketBump (x - y)) (3 / 2 : ℝ) := by
+  have hmul := aux_leftBumpOneLong_bracket_mul_le x y
+  have hx : 0 ≤ bracketBump x := (aux_leftBumpOneLong_bracket_pos x).le
+  have hy : 0 ≤ bracketBump y := (aux_leftBumpOneLong_bracket_pos y).le
+  have hxy : 0 ≤ bracketBump x * bracketBump y := mul_nonneg hx hy
+  have hsq : (bracketBump x * bracketBump y) ^ 2 ≤ bracketBump (x - y) ^ 2 :=
+    pow_le_pow_left₀ hxy hmul 2
+  calc
+    bracketBump x ^ 2 * bracketBump y ^ 2 =
+        (bracketBump x * bracketBump y) ^ 2 := by ring
+    _ ≤ bracketBump (x - y) ^ 2 := hsq
+    _ ≤ Real.rpow (bracketBump (x - y)) (3 / 2 : ℝ) := by
+      rw [← Real.rpow_natCast]
+      exact Real.rpow_le_rpow_of_exponent_ge (aux_leftBumpOneLong_bracket_pos _)
+        (aux_leftBumpOneLong_bracket_le_one _) (by norm_num)
+
+private theorem aux_leftBumpOneLong_bracket_sq_le_three_halves (x : ℝ) :
+    bracketBump x ^ 2 ≤ Real.rpow (bracketBump x) (3 / 2 : ℝ) := by
+  rw [← Real.rpow_natCast]
+  exact Real.rpow_le_rpow_of_exponent_ge (aux_leftBumpOneLong_bracket_pos x)
+    (aux_leftBumpOneLong_bracket_le_one x) (by norm_num)
+
+private theorem aux_leftBumpOneLong_bracket_shift_large_raw (R u : ℝ) (hR : 2 ≤ R)
+    (hu : R / 2 ≤ |u - R|) :
+    bracketBump (u - R) ≤ 3 * bracketBump u := by
+  have hRpos : 0 < R := by linarith
+  have habs : |u| ≤ |u - R| + R := by
+    calc
+      |u| = |(u - R) + R| := by congr 1 <;> ring
+      _ ≤ |u - R| + |R| := abs_add_le _ _
+      _ = |u - R| + R := by rw [abs_of_pos hRpos]
+  have hshift : |u| ≤ 3 * |u - R| := by nlinarith
+  have htri : 1 + |u| ≤ 3 * (1 + |u - R|) := by
+    nlinarith [abs_nonneg (u - R)]
+  rw [bracketBump, bracketBump]
+  calc
+    (1 + |u - R|)⁻¹ = 1 / (1 + |u - R|) := by rw [one_div]
+    _ ≤ 3 / (1 + |u|) :=
+      (div_le_div_iff₀ (by positivity) (by positivity)).2 (by simpa using htri)
+    _ = 3 * (1 + |u|)⁻¹ := by rw [div_eq_mul_inv]
+
+private theorem aux_leftBumpOneLong_bracket_shift_large (R u : ℝ) (hR : 2 ≤ R)
+    (hu : R / 2 ≤ |u - R|) :
+    bracketBump (u - R) ^ 2 ≤
+      Real.rpow 3 (3 / 2 : ℝ) * Real.rpow (bracketBump u) (3 / 2 : ℝ) := by
+  have hraw := aux_leftBumpOneLong_bracket_shift_large_raw R u hR hu
+  calc
+    bracketBump (u - R) ^ 2 ≤
+        Real.rpow (bracketBump (u - R)) (3 / 2 : ℝ) :=
+      aux_leftBumpOneLong_bracket_sq_le_three_halves _
+    _ ≤ Real.rpow (3 * bracketBump u) (3 / 2 : ℝ) :=
+      Real.rpow_le_rpow (aux_leftBumpOneLong_bracket_pos _).le hraw (by norm_num)
+    _ = Real.rpow 3 (3 / 2 : ℝ) *
+        Real.rpow (bracketBump u) (3 / 2 : ℝ) :=
+      Real.mul_rpow (by norm_num) (aux_leftBumpOneLong_bracket_pos _).le
+
+private theorem aux_leftBumpOneLong_bracket_shift_scale_raw (R v : ℝ) (hR : 2 ≤ R) :
+    bracketBump (v - R) ≤ ((3 / 2 : ℝ) * R) * bracketBump v := by
+  have hRpos : 0 < R := by linarith
+  have habs : |v| ≤ |v - R| + R := by
+    calc
+      |v| = |(v - R) + R| := by congr 1 <;> ring
+      _ ≤ |v - R| + |R| := abs_add_le _ _
+      _ = |v - R| + R := by rw [abs_of_pos hRpos]
+  have htri : 1 + |v| ≤ ((3 / 2 : ℝ) * R) * (1 + |v - R|) := by
+    nlinarith [abs_nonneg (v - R)]
+  rw [bracketBump, bracketBump]
+  calc
+    (1 + |v - R|)⁻¹ = 1 / (1 + |v - R|) := by rw [one_div]
+    _ ≤ ((3 / 2 : ℝ) * R) / (1 + |v|) :=
+      (div_le_div_iff₀ (by positivity) (by positivity)).2 (by simpa using htri)
+    _ = ((3 / 2 : ℝ) * R) * (1 + |v|)⁻¹ := by rw [div_eq_mul_inv]
+
+private theorem aux_leftBumpOneLong_bracket_shift_scale (R v : ℝ) (hR : 2 ≤ R) :
+    Real.rpow R (-(3 / 2 : ℝ)) * bracketBump (v - R) ^ 2 ≤
+      Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) *
+        Real.rpow (bracketBump v) (3 / 2 : ℝ) := by
+  have hRpos : 0 < R := by linarith
+  have hraw := aux_leftBumpOneLong_bracket_shift_scale_raw R v hR
+  have hpow : Real.rpow (bracketBump (v - R)) (3 / 2 : ℝ) ≤
+      Real.rpow (((3 / 2 : ℝ) * R) * bracketBump v) (3 / 2 : ℝ) :=
+    Real.rpow_le_rpow (aux_leftBumpOneLong_bracket_pos _).le hraw (by norm_num)
+  have hcoef : 0 ≤ Real.rpow R (-(3 / 2 : ℝ)) := Real.rpow_nonneg hRpos.le _
+  calc
+    Real.rpow R (-(3 / 2 : ℝ)) * bracketBump (v - R) ^ 2 ≤
+        Real.rpow R (-(3 / 2 : ℝ)) *
+          Real.rpow (bracketBump (v - R)) (3 / 2 : ℝ) :=
+      mul_le_mul_of_nonneg_left (aux_leftBumpOneLong_bracket_sq_le_three_halves _) hcoef
+    _ ≤ Real.rpow R (-(3 / 2 : ℝ)) *
+          Real.rpow (((3 / 2 : ℝ) * R) * bracketBump v) (3 / 2 : ℝ) :=
+      mul_le_mul_of_nonneg_left hpow hcoef
+    _ = Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) *
+        Real.rpow (bracketBump v) (3 / 2 : ℝ) := by
+      have hsplit1 : Real.rpow (((3 / 2 : ℝ) * R) * bracketBump v) (3 / 2 : ℝ) =
+          Real.rpow ((3 / 2 : ℝ) * R) (3 / 2 : ℝ) *
+            Real.rpow (bracketBump v) (3 / 2 : ℝ) :=
+        Real.mul_rpow (mul_nonneg (by norm_num) hRpos.le)
+          (aux_leftBumpOneLong_bracket_pos _).le
+      have hsplit2 : Real.rpow ((3 / 2 : ℝ) * R) (3 / 2 : ℝ) =
+          Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) * Real.rpow R (3 / 2 : ℝ) :=
+        Real.mul_rpow (by norm_num) hRpos.le
+      have hneg : Real.rpow R (-(3 / 2 : ℝ)) =
+          (Real.rpow R (3 / 2 : ℝ))⁻¹ :=
+        Real.rpow_neg hRpos.le (3 / 2 : ℝ)
+      rw [hsplit1, hsplit2, hneg]
+      field_simp [ne_of_gt (Real.rpow_pos_of_pos hRpos (3 / 2 : ℝ))]
+
+private theorem aux_leftBumpOneLong_scale_to_bracket (R c v : ℝ) (hR : 0 < R)
+    (hc : 0 < c) (h : 1 + |v| ≤ c * R) :
+    Real.rpow R (-(3 / 2 : ℝ)) ≤
+      Real.rpow c (3 / 2 : ℝ) * Real.rpow (bracketBump v) (3 / 2 : ℝ) := by
+  have hbase : R⁻¹ ≤ c * bracketBump v := by
+    change R⁻¹ ≤ c / (1 + |v|)
+    rw [le_div_iff₀ (by positivity)]
+    calc
+      R⁻¹ * (1 + |v|) ≤ R⁻¹ * (c * R) :=
+        mul_le_mul_of_nonneg_left h (inv_nonneg.mpr hR.le)
+      _ = c := by field_simp [hR.ne']
+  calc
+    Real.rpow R (-(3 / 2 : ℝ)) = Real.rpow R⁻¹ (3 / 2 : ℝ) :=
+      Real.rpow_neg_eq_inv_rpow R _
+    _ ≤ Real.rpow (c * bracketBump v) (3 / 2 : ℝ) :=
+      Real.rpow_le_rpow (inv_nonneg.mpr hR.le) hbase (by norm_num)
+    _ = Real.rpow c (3 / 2 : ℝ) *
+        Real.rpow (bracketBump v) (3 / 2 : ℝ) :=
+      Real.mul_rpow hc.le (aux_leftBumpOneLong_bracket_pos v).le
+
+private theorem aux_leftBumpOneLong_rpow_three_halves_le (q : ℝ) (hq : 0 < q)
+    (hroot : Real.sqrt q ≤ 3) :
+    Real.rpow q (3 / 2 : ℝ) ≤ 3 * q := by
+  calc
+    Real.rpow q (3 / 2 : ℝ) = Real.rpow q (1 / 2 : ℝ) * q := by
+      convert Real.rpow_add hq (1 / 2 : ℝ) 1 using 1 <;> norm_num
+    _ = Real.sqrt q * q := by
+      exact congrArg (fun z : ℝ => z * q) (Real.sqrt_eq_rpow q).symm
+    _ ≤ 3 * q := by gcongr
+
+private theorem aux_leftBumpOneLong_rpow_nine_halves_le_sixteen :
+    Real.rpow (9 / 2 : ℝ) (3 / 2 : ℝ) ≤ 16 := by
+  have hsqrt : Real.sqrt (9 / 2 : ℝ) ≤ 3 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 9 / 2),
+      Real.sqrt_nonneg (9 / 2 : ℝ)]
+  calc
+    Real.rpow (9 / 2 : ℝ) (3 / 2 : ℝ) ≤ 3 * (9 / 2 : ℝ) :=
+      aux_leftBumpOneLong_rpow_three_halves_le _ (by norm_num) hsqrt
+    _ ≤ 16 := by norm_num
+
+private theorem aux_leftBumpOneLong_rpow_seven_halves_le_sixteen :
+    Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) ≤ 16 := by
+  have hsqrt : Real.sqrt (7 / 2 : ℝ) ≤ 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 7 / 2),
+      Real.sqrt_nonneg (7 / 2 : ℝ)]
+  calc
+    Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) ≤ 3 * (7 / 2 : ℝ) :=
+      aux_leftBumpOneLong_rpow_three_halves_le _ (by norm_num)
+        (hsqrt.trans (by norm_num))
+    _ ≤ 16 := by norm_num
+
+private theorem aux_leftBumpOneLong_shifted_bracket_decay (R u v : ℝ) (hR : 2 ≤ R) :
+    Real.rpow R (-(3 / 2 : ℝ)) *
+        (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) ≤
+      16 * (Real.rpow (bracketBump u) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump v) (3 / 2 : ℝ) +
+        Real.rpow (bracketBump (u + v)) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump (u - v)) (3 / 2 : ℝ)) := by
+  have hRpos : 0 < R := by linarith
+  let A : ℝ := Real.rpow (bracketBump u) (3 / 2 : ℝ) *
+    Real.rpow (bracketBump v) (3 / 2 : ℝ)
+  let B : ℝ := Real.rpow (bracketBump (u + v)) (3 / 2 : ℝ) *
+    Real.rpow (bracketBump (u - v)) (3 / 2 : ℝ)
+  have hA : 0 ≤ A := by
+    dsimp [A]
+    exact mul_nonneg (Real.rpow_nonneg (aux_leftBumpOneLong_bracket_pos u).le _)
+      (Real.rpow_nonneg (aux_leftBumpOneLong_bracket_pos v).le _)
+  have hB : 0 ≤ B := by
+    dsimp [B]
+    exact mul_nonneg (Real.rpow_nonneg (aux_leftBumpOneLong_bracket_pos (u + v)).le _)
+      (Real.rpow_nonneg (aux_leftBumpOneLong_bracket_pos (u - v)).le _)
+  by_cases hu : R / 2 ≤ |u - R|
+  · have hlarge := aux_leftBumpOneLong_bracket_shift_large R u hR hu
+    have hscale := aux_leftBumpOneLong_bracket_shift_scale R v hR
+    have hcoef : Real.rpow 3 (3 / 2 : ℝ) *
+        Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) ≤ 16 := by
+      calc
+        Real.rpow 3 (3 / 2 : ℝ) * Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) =
+            Real.rpow (9 / 2 : ℝ) (3 / 2 : ℝ) := by
+              have hmul : Real.rpow ((3 : ℝ) * (3 / 2 : ℝ)) (3 / 2 : ℝ) =
+                  Real.rpow 3 (3 / 2 : ℝ) *
+                    Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) :=
+                Real.mul_rpow (by norm_num) (by norm_num)
+              rw [← hmul]
+              norm_num
+        _ ≤ 16 := aux_leftBumpOneLong_rpow_nine_halves_le_sixteen
+    have hprod : Real.rpow R (-(3 / 2 : ℝ)) *
+        (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) ≤
+        (Real.rpow 3 (3 / 2 : ℝ) *
+          Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ)) * A := by
+      calc
+        Real.rpow R (-(3 / 2 : ℝ)) *
+            (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) =
+            (bracketBump (u - R) ^ 2) *
+              (Real.rpow R (-(3 / 2 : ℝ)) * bracketBump (v - R) ^ 2) := by ring
+        _ ≤ (Real.rpow 3 (3 / 2 : ℝ) *
+              Real.rpow (bracketBump u) (3 / 2 : ℝ)) *
+            (Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump v) (3 / 2 : ℝ)) := by
+              exact mul_le_mul hlarge hscale
+                (mul_nonneg (Real.rpow_nonneg hRpos.le _) (sq_nonneg _))
+                (mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+                  (Real.rpow_nonneg (aux_leftBumpOneLong_bracket_pos u).le _))
+        _ = (Real.rpow 3 (3 / 2 : ℝ) *
+              Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ)) * A := by
+              dsimp [A]
+              ring
+    calc
+      Real.rpow R (-(3 / 2 : ℝ)) *
+          (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) ≤
+          (Real.rpow 3 (3 / 2 : ℝ) *
+            Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ)) * A := hprod
+      _ ≤ 16 * A := mul_le_mul_of_nonneg_right hcoef hA
+      _ ≤ 16 * (A + B) :=
+        mul_le_mul_of_nonneg_left (le_add_of_nonneg_right hB) (by norm_num)
+  · have hu' : |u - R| < R / 2 := lt_of_not_ge hu
+    by_cases hv : R / 2 ≤ |v - R|
+    · have hvlarge := aux_leftBumpOneLong_bracket_shift_large R v hR hv
+      have huscale := aux_leftBumpOneLong_bracket_shift_scale R u hR
+      have hcoef : Real.rpow 3 (3 / 2 : ℝ) *
+          Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) ≤ 16 := by
+        calc
+          Real.rpow 3 (3 / 2 : ℝ) * Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) =
+              Real.rpow (9 / 2 : ℝ) (3 / 2 : ℝ) := by
+                have hmul : Real.rpow ((3 : ℝ) * (3 / 2 : ℝ)) (3 / 2 : ℝ) =
+                    Real.rpow 3 (3 / 2 : ℝ) *
+                      Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) :=
+                  Real.mul_rpow (by norm_num) (by norm_num)
+                rw [← hmul]
+                norm_num
+        _ ≤ 16 := aux_leftBumpOneLong_rpow_nine_halves_le_sixteen
+      have hprod : Real.rpow R (-(3 / 2 : ℝ)) *
+          (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) ≤
+          (Real.rpow 3 (3 / 2 : ℝ) *
+            Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ)) * A := by
+        calc
+          Real.rpow R (-(3 / 2 : ℝ)) *
+              (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) =
+              (Real.rpow R (-(3 / 2 : ℝ)) * bracketBump (u - R) ^ 2) *
+                bracketBump (v - R) ^ 2 := by ring
+          _ ≤ (Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump u) (3 / 2 : ℝ)) *
+              (Real.rpow 3 (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v) (3 / 2 : ℝ)) := by
+                exact mul_le_mul huscale hvlarge
+                  (sq_nonneg _)
+                  (mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+                    (Real.rpow_nonneg (aux_leftBumpOneLong_bracket_pos u).le _))
+          _ = (Real.rpow 3 (3 / 2 : ℝ) *
+                Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ)) * A := by
+                dsimp [A]
+                ring
+      calc
+        Real.rpow R (-(3 / 2 : ℝ)) *
+            (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) ≤
+            (Real.rpow 3 (3 / 2 : ℝ) *
+              Real.rpow (3 / 2 : ℝ) (3 / 2 : ℝ)) * A := hprod
+        _ ≤ 16 * A := mul_le_mul_of_nonneg_right hcoef hA
+        _ ≤ 16 * (A + B) :=
+          mul_le_mul_of_nonneg_left (le_add_of_nonneg_right hB) (by norm_num)
+    · have hv' : |v - R| < R / 2 := lt_of_not_ge hv
+      have hsum : 1 + |u + v| ≤ (7 / 2 : ℝ) * R := by
+        have habs : |u + v| ≤ |u - R| + |v - R| + 2 * R := by
+          calc
+            |u + v| = |(u - R) + (v - R) + (R + R)| := by congr 1 <;> ring
+            _ ≤ |(u - R) + (v - R)| + |R + R| := abs_add_le _ _
+            _ ≤ (|u - R| + |v - R|) + |R + R| := by
+              gcongr
+              exact abs_add_le _ _
+            _ = |u - R| + |v - R| + 2 * R := by
+              have hRR : |R + R| = 2 * R := by
+                rw [abs_of_nonneg (by linarith [hRpos])]
+                ring
+              rw [hRR]
+        nlinarith
+      have hscale := aux_leftBumpOneLong_scale_to_bracket R (7 / 2 : ℝ) (u + v)
+        hRpos (by norm_num) hsum
+      have hproduct : bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2 ≤
+          Real.rpow (bracketBump (u - v)) (3 / 2 : ℝ) := by
+        convert aux_leftBumpOneLong_bracket_sq_mul_le_three_halves (u - R) (v - R)
+          using 1 <;> ring
+      have hcoef := aux_leftBumpOneLong_rpow_seven_halves_le_sixteen
+      have hprod : Real.rpow R (-(3 / 2 : ℝ)) *
+          (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) ≤
+          Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) * B := by
+        calc
+          Real.rpow R (-(3 / 2 : ℝ)) *
+              (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) ≤
+              Real.rpow R (-(3 / 2 : ℝ)) *
+                Real.rpow (bracketBump (u - v)) (3 / 2 : ℝ) :=
+            mul_le_mul_of_nonneg_left hproduct (Real.rpow_nonneg hRpos.le _)
+          _ ≤ (Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump (u + v)) (3 / 2 : ℝ)) *
+              Real.rpow (bracketBump (u - v)) (3 / 2 : ℝ) := by
+              exact mul_le_mul_of_nonneg_right hscale
+                (Real.rpow_nonneg (aux_leftBumpOneLong_bracket_pos (u - v)).le _)
+          _ = Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) * B := by
+              dsimp [B]
+              ring
+      calc
+        Real.rpow R (-(3 / 2 : ℝ)) *
+            (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) ≤
+            Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) * B := hprod
+        _ ≤ 16 * B := mul_le_mul_of_nonneg_right hcoef hB
+        _ ≤ 16 * (A + B) :=
+          mul_le_mul_of_nonneg_left (le_add_of_nonneg_left hA) (by norm_num)
+
+private theorem aux_leftBumpOneLong_phiFour_plane_formula (b : windowBasedBumpFunctions)
+    (k : ℤ) (c z : ℝ) :
+    aux_planeFourier (fun v => c * tensorSquare (phiFourSchwartz b k) v)
+      (WithLp.toLp 2 ![z, -z]) =
+      (c : ℂ) * (((2 : ℝ) ^ (2 * k) : ℝ) : ℂ) *
+        FourierTransform.fourier
+          (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) z *
+        FourierTransform.fourier
+          (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ)) (-z) := by
+  have hfun : (fun x : ℝ => (phiFourSchwartz b k x : ℂ)) =
+      fun x : ℝ => (windowBasedBumpFunctions.phiFour b k x : ℂ) := by
+    funext x
+    rw [phiFourSchwartz_apply]
+  have htensor (f : ℝ → ℝ) (xi : EuclideanSpace ℝ (Fin 2)) :
+      aux_planeFourier (tensorSquare f) xi =
+        FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) (xi 0) *
+          FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) (xi 1) := by
+    unfold aux_planeFourier tensorSquare
+    simpa using aux_fourier_tensor_two_eq f f xi
+  rw [aux_leftBumpOneShort_planeFourier_const_mul, htensor, hfun]
+  change (c : ℂ) *
+      (FourierTransform.fourier
+        (fun x : ℝ => (windowBasedBumpFunctions.phiFour b k x : ℂ)) z *
+      FourierTransform.fourier
+        (fun x : ℝ => (windowBasedBumpFunctions.phiFour b k x : ℂ)) (-z)) = _
+  rw [phiFour_fourier_pair_eq]
+  ring
+
+private theorem aux_leftBumpOneLong_phiFour_support (b : windowBasedBumpFunctions) (k : ℤ) :
+    Function.support (FourierTransform.fourier
+      (fun x : ℝ => (phiFourSchwartz b k x : ℂ))) ⊆
+      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) := by
+  intro xi hxi
+  have h := aux_leftBumpOneShort_phiFourSchwartz_support b k hxi
+  unfold Codex.Reduction.BumpFunctions.aux_annulusOne at h ⊢
+  constructor <;> nlinarith [h.1, h.2]
+
+private theorem aux_leftBumpOneLong_diagonal_bound (b : windowBasedBumpFunctions)
+    (k : ℤ) (c : ℝ)
+    (hscalar : |c * (2 : ℝ) ^ (2 * k)| *
+        (4 * ((2 : ℝ) ^ 14 * C_uniPair) ^ 2) ≤ 1)
+    (m : ℕ) (hm : m < 3) (xi : ℝ) :
+    ‖iteratedDeriv m
+      (fun z : ℝ => aux_planeFourier
+        (fun v => c * tensorSquare (phiFourSchwartz b k) v)
+        (WithLp.toLp 2 ![z, -z])) xi‖ ≤ 1 := by
+  let H : ℝ → ℂ := FourierTransform.fourier
+    (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ))
+  let B : ℝ := (2 : ℝ) ^ 14 * C_uniPair
+  have hB : 0 ≤ B := by
+    dsimp [B]
+    norm_num [C_uniPair]
+  have hbound : ∀ q : ℕ, q ≤ 2 → ∀ x : ℝ,
+      ‖iteratedDeriv q H x‖ ≤ B := by
+    intro q hq x
+    dsimp [H, B]
+    exact thetaTildeFourier_deriv_bound b q (le_trans hq (by norm_num)) x
+  have hformula :
+      (fun z : ℝ => aux_planeFourier
+        (fun v => c * tensorSquare (phiFourSchwartz b k) v)
+        (WithLp.toLp 2 ![z, -z])) =
+      fun z => ((c * (2 : ℝ) ^ (2 * k) : ℝ) : ℂ) * (H z * H (-z)) := by
+    funext z
+    rw [aux_leftBumpOneLong_phiFour_plane_formula]
+    dsimp [H]
+    push_cast
+    ring
+  rw [hformula, iteratedDeriv_const_mul_field, norm_mul, Complex.norm_real]
+  have hprod := aux_leftBumpOneShort_pair_deriv_bound H
+    ((aux_leftBumpOneShort_thetaTildeFourier_contDiff b).of_le (by norm_num)) B hB hbound m
+    (by omega) xi
+  have hprod' : ‖iteratedDeriv m (fun z : ℝ => H z * H (-z)) xi‖ ≤
+      4 * B ^ 2 := by
+    calc
+      ‖iteratedDeriv m (fun z : ℝ => H z * H (-z)) xi‖ ≤ (2 : ℝ) ^ m * B ^ 2 :=
+        hprod
+      _ ≤ 4 * B ^ 2 := by
+        interval_cases m <;> nlinarith [sq_nonneg B]
+  calc
+    |c * (2 : ℝ) ^ (2 * k)| *
+        ‖iteratedDeriv m (fun z : ℝ => H z * H (-z)) xi‖ ≤
+        |c * (2 : ℝ) ^ (2 * k)| * (4 * B ^ 2) :=
+      mul_le_mul_of_nonneg_left hprod' (abs_nonneg _)
+    _ ≤ 1 := by simpa [B] using hscalar
+
+private theorem aux_leftBumpOneLong_R_ge_two (k : ℤ) (hk : k ≤ -1) :
+    (2 : ℝ) ≤ (2 : ℝ) ^ (-k) := by
+  calc
+    (2 : ℝ) = (2 : ℝ) ^ (1 : ℤ) := by norm_num
+    _ ≤ (2 : ℝ) ^ (-k) :=
+      (zpow_le_zpow_iff_right₀ (by norm_num : (1 : ℝ) < 2)).mpr (by omega)
+
+private theorem aux_leftBumpOneLong_zpow_twice_rpow (k : ℤ) :
+    (2 : ℝ) ^ (2 * k) = Real.rpow ((2 : ℝ) ^ (-k)) (-2 : ℝ) := by
+  let R : ℝ := (2 : ℝ) ^ (-k)
+  have hR : (2 : ℝ) ^ k = R⁻¹ := by
+    simpa [R] using (zpow_neg (2 : ℝ) (-k))
+  calc
+    (2 : ℝ) ^ (2 * k) = ((2 : ℝ) ^ k) ^ 2 := by
+      rw [show 2 * k = k * 2 by ring, zpow_mul]
+      rfl
+    _ = (R⁻¹) ^ 2 := by rw [hR]
+    _ = R ^ (-2 : ℤ) := by
+      rw [show (-2 : ℤ) = -(2 : ℤ) by norm_num, zpow_neg]
+      norm_num
+    _ = Real.rpow R (-2 : ℝ) := by
+      simpa using (Real.rpow_intCast R (-2)).symm
+
+private theorem aux_leftBumpOneLong_c_scale_physical (k : ℤ) :
+    let R : ℝ := (2 : ℝ) ^ (-k)
+    let C : ℝ := C_thetaPrimitive 2
+    let c : ℝ := (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ)
+    c * (((2 : ℝ) ^ k * C) * ((2 : ℝ) ^ k * C)) =
+      (16 : ℝ)⁻¹ * Real.rpow R (-(3 / 2 : ℝ)) := by
+  dsimp
+  let R : ℝ := (2 : ℝ) ^ (-k)
+  let C : ℝ := C_thetaPrimitive 2
+  change (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ) *
+      (((2 : ℝ) ^ k * C) * ((2 : ℝ) ^ k * C)) =
+        (16 : ℝ)⁻¹ * Real.rpow R (-(3 / 2 : ℝ))
+  have hR : (2 : ℝ) ^ k = R⁻¹ := by
+    simpa [R] using (zpow_neg (2 : ℝ) (-k))
+  have hRpos : 0 < R := by dsimp [R]; positivity
+  have hCpos : 0 < C := by
+    dsimp [C]
+    norm_num [C_thetaPrimitive, C_uniPair]
+  rw [hR]
+  calc
+    (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ) *
+        (R⁻¹ * C * (R⁻¹ * C)) =
+      (16 : ℝ)⁻¹ * (R⁻¹ * R⁻¹) * Real.rpow R (1 / 2 : ℝ) := by
+        field_simp [hCpos.ne']
+    _ = (16 : ℝ)⁻¹ * Real.rpow R (-(3 / 2 : ℝ)) := by
+      have hpow : R⁻¹ * R⁻¹ = Real.rpow R (-2 : ℝ) := by
+        calc
+          R⁻¹ * R⁻¹ = R ^ (-2 : ℤ) := by
+            rw [show (-2 : ℤ) = -(2 : ℤ) by norm_num, zpow_neg]
+            field_simp [hRpos.ne']
+          _ = Real.rpow R (-2 : ℝ) := by
+            simpa using (Real.rpow_intCast R (-2)).symm
+      calc
+        (16 : ℝ)⁻¹ * (R⁻¹ * R⁻¹) * Real.rpow R (1 / 2 : ℝ) =
+            (16 : ℝ)⁻¹ * (Real.rpow R (-2 : ℝ) *
+              Real.rpow R (1 / 2 : ℝ)) := by rw [hpow]; ring
+        _ = (16 : ℝ)⁻¹ * Real.rpow R (-(3 / 2 : ℝ)) := by
+            have hsum : Real.rpow R (-2 : ℝ) * Real.rpow R (1 / 2 : ℝ) =
+                Real.rpow R (-(3 / 2 : ℝ)) := by
+              calc
+                Real.rpow R (-2 : ℝ) * Real.rpow R (1 / 2 : ℝ) =
+                    Real.rpow R ((-2 : ℝ) + (1 / 2 : ℝ)) :=
+                  (Real.rpow_add hRpos (-2 : ℝ) (1 / 2 : ℝ)).symm
+                _ = Real.rpow R (-(3 / 2 : ℝ)) := by
+                  congr 1
+                  ring
+            rw [hsum]
+
+private theorem aux_leftBumpOneLong_phiFour_decay (b : windowBasedBumpFunctions)
+    (k : ℤ) (x : ℝ) :
+    |phiFourSchwartz b k x| ≤
+      (2 : ℝ) ^ k * C_thetaPrimitive 2 *
+        bracketBump (x - (2 : ℝ) ^ (-k)) ^ 2 := by
+  rw [phiFourSchwartz_apply, windowBasedBumpFunctions.phiFour, abs_mul,
+    abs_of_pos (zpow_pos (by norm_num) _)]
+  simpa [mul_assoc] using
+    (mul_le_mul_of_nonneg_left
+      ((thetaPrimitive b 2 (by norm_num) (by norm_num [N_uniPair])).2.2.1
+        (x - (2 : ℝ) ^ (-k)))
+      (zpow_pos (by norm_num : (0 : ℝ) < 2) k).le)
+
+private theorem aux_leftBumpOneLong_W_decay_dominates (v : RealPlane) :
+    Real.rpow (bracketBump v.1) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump v.2) (3 / 2 : ℝ) +
+        Real.rpow (bracketBump (v.1 + v.2)) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump (v.1 - v.2)) (3 / 2 : ℝ) ≤
+      ∑ u : Fin 2,
+        scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
+  rw [Fin.sum_univ_two]
+  have hfirst : Real.rpow (bracketBump v.1) (3 / 2 : ℝ) *
+      Real.rpow (bracketBump v.2) (3 / 2 : ℝ) =
+      scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W (0 : Fin 2) v).1) *
+        scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W (0 : Fin 2) v).2) := by
+    rw [W, if_pos rfl, aux_leftBumpOneShort_scaledBracket_one_eq_rpow,
+      aux_leftBumpOneShort_scaledBracket_one_eq_rpow]
+  rw [← hfirst]
+  simpa [add_comm] using
+    (add_le_add_left (aux_leftBumpOneShort_offcenter_second_term_le_whitney v)
+      (Real.rpow (bracketBump v.1) (3 / 2 : ℝ) *
+        Real.rpow (bracketBump v.2) (3 / 2 : ℝ)))
+
+private theorem aux_leftBumpOneLong_data_decay (b : windowBasedBumpFunctions) (k : ℤ)
+    (hk : k ≤ -1) :
+    let R : ℝ := (2 : ℝ) ^ (-k)
+    let C : ℝ := C_thetaPrimitive 2
+    let c : ℝ := (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ)
+    ∀ v : RealPlane,
+      |c * tensorSquare (phiFourSchwartz b k) v| ≤
+        ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
+  dsimp
+  let R : ℝ := (2 : ℝ) ^ (-k)
+  let C : ℝ := C_thetaPrimitive 2
+  let c : ℝ := (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ)
+  change ∀ v : RealPlane,
+    |c * tensorSquare (phiFourSchwartz b k) v| ≤
+      ∑ u : Fin 2,
+        scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2)
+  have hRtwo : 2 ≤ R := by
+    dsimp [R]
+    exact aux_leftBumpOneLong_R_ge_two k hk
+  have hc : 0 ≤ c := by
+    have hC : 0 < C := by
+      dsimp [C]
+      norm_num [C_thetaPrimitive, C_uniPair]
+    dsimp [c]
+    exact mul_nonneg (inv_nonneg.mpr (by positivity))
+      (Real.rpow_nonneg (by positivity) _)
+  intro v
+  rw [tensorSquare, abs_mul, abs_of_nonneg hc, abs_mul]
+  have h0 := aux_leftBumpOneLong_phiFour_decay b k v.1
+  have h1 := aux_leftBumpOneLong_phiFour_decay b k v.2
+  have hprod :
+      |phiFourSchwartz b k v.1| * |phiFourSchwartz b k v.2| ≤
+        ((2 : ℝ) ^ k * C) * ((2 : ℝ) ^ k * C) *
+          (bracketBump (v.1 - R) ^ 2 * bracketBump (v.2 - R) ^ 2) := by
+    have h0' : |phiFourSchwartz b k v.1| ≤
+        (2 : ℝ) ^ k * C * bracketBump (v.1 - R) ^ 2 := by
+      simpa [R, C, mul_assoc] using h0
+    have h1' : |phiFourSchwartz b k v.2| ≤
+        (2 : ℝ) ^ k * C * bracketBump (v.2 - R) ^ 2 := by
+      simpa [R, C, mul_assoc] using h1
+    have hCpos : 0 < C := by
+      dsimp [C]
+      norm_num [C_thetaPrimitive, C_uniPair]
+    have hrightnonneg : 0 ≤
+        (2 : ℝ) ^ k * C * bracketBump (v.2 - R) ^ 2 := by
+      exact mul_nonneg
+        (mul_nonneg (zpow_pos (by norm_num) _).le hCpos.le)
+        (sq_nonneg _)
+    have hleftnonneg : 0 ≤
+        (2 : ℝ) ^ k * C * bracketBump (v.1 - R) ^ 2 := by
+      exact mul_nonneg
+        (mul_nonneg (zpow_pos (by norm_num) _).le hCpos.le)
+        (sq_nonneg _)
+    calc
+      |phiFourSchwartz b k v.1| * |phiFourSchwartz b k v.2| ≤
+          ((2 : ℝ) ^ k * C * bracketBump (v.1 - R) ^ 2) *
+            ((2 : ℝ) ^ k * C * bracketBump (v.2 - R) ^ 2) :=
+        mul_le_mul h0' h1' (abs_nonneg _) hleftnonneg
+      _ = ((2 : ℝ) ^ k * C) * ((2 : ℝ) ^ k * C) *
+          (bracketBump (v.1 - R) ^ 2 * bracketBump (v.2 - R) ^ 2) := by ring
+  have hcoef := aux_leftBumpOneLong_c_scale_physical k
+  change c * (|phiFourSchwartz b k v.1| * |phiFourSchwartz b k v.2|) ≤ _
+  calc
+    c * (|phiFourSchwartz b k v.1| * |phiFourSchwartz b k v.2|) ≤
+        c * (((2 : ℝ) ^ k * C) * ((2 : ℝ) ^ k * C) *
+          (bracketBump (v.1 - R) ^ 2 * bracketBump (v.2 - R) ^ 2)) := by
+      gcongr
+    _ = (16 : ℝ)⁻¹ *
+        (Real.rpow R (-(3 / 2 : ℝ)) *
+          (bracketBump (v.1 - R) ^ 2 * bracketBump (v.2 - R) ^ 2)) := by
+      rw [← mul_assoc, hcoef]
+      ring
+    _ ≤ Real.rpow (bracketBump v.1) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump v.2) (3 / 2 : ℝ) +
+        Real.rpow (bracketBump (v.1 + v.2)) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump (v.1 - v.2)) (3 / 2 : ℝ) := by
+      have hsharp := aux_leftBumpOneLong_shifted_bracket_decay R v.1 v.2 hRtwo
+      nlinarith
+    _ ≤ ∑ u : Fin 2,
+        scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) :=
+      aux_leftBumpOneLong_W_decay_dominates v
+
+private theorem aux_leftBumpOneLong_c_diagonal_scalar (k : ℤ) (hk : k ≤ -1) :
+    let R : ℝ := (2 : ℝ) ^ (-k)
+    let C : ℝ := C_thetaPrimitive 2
+    let c : ℝ := (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ)
+    |c * (2 : ℝ) ^ (2 * k)| *
+      (4 * ((2 : ℝ) ^ 14 * C_uniPair) ^ 2) ≤ 1 := by
+  dsimp
+  let R : ℝ := (2 : ℝ) ^ (-k)
+  let C : ℝ := C_thetaPrimitive 2
+  let B : ℝ := (2 : ℝ) ^ 14 * C_uniPair
+  change |(16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ) *
+      (2 : ℝ) ^ (2 * k)| * (4 * B ^ 2) ≤ 1
+  have hRtwo : 2 ≤ R := by
+    dsimp [R]
+    exact aux_leftBumpOneLong_R_ge_two k hk
+  have hRpos : 0 < R := lt_of_lt_of_le (by norm_num) hRtwo
+  have hC : C = 4 * B := by
+    dsimp [C, B]
+    norm_num [C_thetaPrimitive]
+    ring
+  have hCpos : 0 < C := by
+    rw [hC]
+    have : 0 < B := by dsimp [B]; norm_num [C_uniPair]
+    positivity
+  have hneg : Real.rpow R (-(3 / 2 : ℝ)) ≤ 1 := by
+    exact Real.rpow_le_one_of_one_le_of_nonpos (by linarith [hRtwo]) (by norm_num)
+  rw [aux_leftBumpOneLong_zpow_twice_rpow]
+  have hscale :
+      (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ) *
+          Real.rpow R (-2 : ℝ) =
+        (16 * C ^ 2)⁻¹ * Real.rpow R (-(3 / 2 : ℝ)) := by
+    calc
+      (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ) *
+          Real.rpow R (-2 : ℝ) =
+        (16 * C ^ 2)⁻¹ *
+          (Real.rpow R (1 / 2 : ℝ) * Real.rpow R (-2 : ℝ)) := by ring
+      _ = (16 * C ^ 2)⁻¹ * Real.rpow R (-(3 / 2 : ℝ)) := by
+        have hsum : Real.rpow R (1 / 2 : ℝ) * Real.rpow R (-2 : ℝ) =
+            Real.rpow R (-(3 / 2 : ℝ)) := by
+          calc
+            Real.rpow R (1 / 2 : ℝ) * Real.rpow R (-2 : ℝ) =
+                Real.rpow R ((1 / 2 : ℝ) + (-2 : ℝ)) :=
+              (Real.rpow_add hRpos (1 / 2 : ℝ) (-2 : ℝ)).symm
+            _ = Real.rpow R (-(3 / 2 : ℝ)) := by
+              congr 1
+              ring
+        rw [hsum]
+  have hnonneg : 0 ≤
+      (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ) *
+        Real.rpow R (-2 : ℝ) := by
+    have hden : 0 < 16 * C ^ 2 :=
+      mul_pos (by norm_num) (sq_pos_of_pos hCpos)
+    exact mul_nonneg
+      (mul_nonneg (inv_pos.mpr hden).le (Real.rpow_pos_of_pos hRpos _).le)
+      (Real.rpow_pos_of_pos hRpos _).le
+  rw [abs_of_nonneg hnonneg, hscale, hC]
+  have hBpos : 0 < B := by dsimp [B]; norm_num [C_uniPair]
+  calc
+    (16 * (4 * B) ^ 2)⁻¹ * Real.rpow R (-(3 / 2 : ℝ)) *
+        (4 * B ^ 2) =
+      (64 : ℝ)⁻¹ * Real.rpow R (-(3 / 2 : ℝ)) := by
+        field_simp [hBpos.ne']
+        ring
+    _ ≤ 1 := by nlinarith
+
+private theorem aux_leftBumpOneLong_tensor_sequence_eq (psi : SchwartzMap ℝ ℝ)
+    (c : ℝ) (hc : c ≠ 0) (a : ℤ → ℝ) (ha : SpacedSequence a)
+    (j : ℤ) (y : RealVector 1 × RealVector 1) :
+    aux_liftPlaneKernel
+      (tensorSquare (aux_mainAuxOne_windowSchwartz psi (a j) (ha j).1)) y =
+      c⁻¹ * aux_whitneySequence (fun v => c * tensorSquare psi v) a j y := by
+  simp only [aux_liftPlaneKernel, tensorSquare, aux_whitneySequence,
+    aux_planeRescale, aux_mainAuxOne_windowSchwartz_apply, aux_windowRescale]
+  have hapos : a j ≠ 0 := ne_of_gt (ha j).1
+  field_simp [hc, hapos]
+
+private theorem aux_leftBumpOneLong_tensor_whitney_prefix {n : ℕ} (hn : 2 ≤ n)
+    (a : ℤ → ℝ) (ha : SpacedSequence a) (psi : SchwartzMap ℝ ℝ)
+    (c : ℝ) (hc : 0 < c) (Psi : WhitneyKernelData)
+    (hkernel : Psi.kernel = fun v => c * tensorSquare psi v)
+    (f : ReductionNormalizedTuple n) (J : ℕ) (hJ : 0 < J) :
+    ∑ j : Fin J,
+      eLpNorm (twistedAverageAtScale (a (j : ℤ)) (fun x => psi x)
+        (fun i x => f.1 i x)) 2 volume ^ 2 ≤
+      ENNReal.ofReal (c⁻¹ * C_inductPositiveTermsReductionWhitney n) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+  classical
+  let phi : Fin J → SchwartzMap ℝ ℝ := fun j =>
+    aux_mainAuxOne_windowSchwartz psi (a (j : ℤ)) (ha (j : ℤ)).1
+  obtain ⟨F, hFnorm, hsum⟩ := aToLambda_fin_sum (n := n) (J := J) (by omega) phi f.1
+  let Fnorm : NormalizedFunctionTuple n := ⟨F, by
+    intro i
+    convert (hFnorm i ((2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2))).trans
+      (f.2 i) using 1 <;> norm_num⟩
+  let M : KernelSequence 1 := fun j y => aux_liftPlaneKernel
+    (tensorSquare (aux_mainAuxOne_windowSchwartz psi (a j) (ha j).1)) y
+  let N : KernelSequence 1 := aux_whitneySequence Psi.kernel a
+  obtain ⟨phi0, phi1, hpair⟩ := existsUniversalPair
+  have hNbound : kernelSequenceSeminorm n 1 (by omega) (by omega) N ≤
+      ENNReal.ofReal (C_inductPositiveTermsReductionWhitney n) := by
+    dsimp [N]
+    exact inductPositiveTermsReductionWhitney hn a ha phi0 phi1 hpair Psi
+  have hseq : M = fun j y => c⁻¹ * N j y := by
+    funext j y
+    dsimp [M, N]
+    rw [hkernel]
+    exact aux_leftBumpOneLong_tensor_sequence_eq psi c hc.ne' a ha j y
+  have hMbound : kernelSequenceSeminorm n 1 (by omega) (by omega) M ≤
+      ENNReal.ofReal (c⁻¹ * C_inductPositiveTermsReductionWhitney n) := by
+    rw [hseq, aux_kernelSequenceSeminorm_const_mul (by omega) (by omega) c⁻¹
+      (inv_nonneg.mpr hc.le)]
+    calc
+      ENNReal.ofReal c⁻¹ * kernelSequenceSeminorm n 1 (by omega) (by omega) N ≤
+          ENNReal.ofReal c⁻¹ * ENNReal.ofReal (C_inductPositiveTermsReductionWhitney n) :=
+        mul_le_mul_of_nonneg_left hNbound bot_le
+      _ = ENNReal.ofReal (c⁻¹ * C_inductPositiveTermsReductionWhitney n) := by
+        rw [ENNReal.ofReal_mul (inv_nonneg.mpr hc.le)]
+  have hprefix := aux_mainAuxOne_prefix_from_seminorm hn M
+    (c⁻¹ * C_inductPositiveTermsReductionWhitney n) hMbound J hJ Fnorm
+  have hleft :
+      (∑ j : Fin J,
+        eLpNorm (twistedAverageAtScale (a (j : ℤ)) (fun x => psi x)
+          (fun i x => f.1 i x)) 2 volume ^ 2) =
+      ∑ j : Fin J,
+        eLpNorm (twistedAverage (phi j) (fun i x => f.1 i x)) 2 volume ^ 2 := by
+    apply Finset.sum_congr rfl
+    intro j hj
+    dsimp [phi]
+    unfold twistedAverage twistedAverageAtScale
+    congr 1
+  have hkernel' :
+      (fun y : RealVector 1 × RealVector 1 =>
+        ∑ j : Fin J, phi j (y.1 0) * phi j (y.2 0)) =
+      fun y => ∑ j ∈ Finset.range J, M (j : ℤ) y := by
+    funext y
+    let g : ℕ → ℝ := fun r => if hr : r < J then M (r : ℤ) y else 0
+    calc
+      (∑ j : Fin J, phi j (y.1 0) * phi j (y.2 0)) =
+          ∑ r ∈ Finset.range J, g r := by
+            rw [← Fin.sum_univ_eq_sum_range g J]
+            apply Finset.sum_congr rfl
+            intro j hj
+            dsimp [g]
+            rw [if_pos j.2]
+            simp only [M, phi, aux_liftPlaneKernel, tensorSquare]
+      _ = ∑ r ∈ Finset.range J, M (r : ℤ) y := by
+            apply Finset.sum_congr rfl
+            intro r hr
+            dsimp [g]
+            rw [if_pos (Finset.mem_range.mp hr)]
+  have hsum' :
+      (∑ j : Fin J,
+        eLpNorm (twistedAverage (phi j) (fun i x => f.1 i x)) 2 volume ^ 2) =
+      ENNReal.ofReal
+        (prismForm n 1 (by omega) (by omega)
+          (fun y => ∑ j ∈ Finset.range J, M (j : ℤ) y)
+          (fun i x => F i x)) := by
+    rw [hsum, hkernel']
+  calc
+    ∑ j : Fin J,
+        eLpNorm (twistedAverageAtScale (a (j : ℤ)) (fun x => psi x)
+          (fun i x => f.1 i x)) 2 volume ^ 2 =
+        ENNReal.ofReal
+          (prismForm n 1 (by omega) (by omega)
+            (fun y => ∑ j ∈ Finset.range J, M (j : ℤ) y)
+            (fun i x ↦ F i x)) := hleft.trans hsum'
+    _ ≤ ENNReal.ofReal
+        |prismForm n 1 (by omega) (by omega)
+          (fun y => ∑ j ∈ Finset.range J, M (j : ℤ) y)
+          (fun i x => F i x)| :=
+      ENNReal.ofReal_le_ofReal (le_abs_self _)
+    _ ≤ ENNReal.ofReal (c⁻¹ * C_inductPositiveTermsReductionWhitney n) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+      simpa [Fnorm] using hprefix
+
+private theorem aux_leftBumpOneLong_tensor_whitney_dyadic {n : ℕ} (hn : 2 ≤ n)
+    (psi : SchwartzMap ℝ ℝ) (c : ℝ) (hc : 0 < c) (Psi : WhitneyKernelData)
+    (hkernel : Psi.kernel = fun v => c * tensorSquare psi v)
+    (f : ReductionNormalizedTuple n) :
+    aux_dyadicVariationBound
+      (4 * (c⁻¹ * C_inductPositiveTermsReductionWhitney n))
+      (fun x => psi x) f.1 := by
+  intro J hJ k
+  have hsup :
+      (⨆ ks : {u : Fin J → ℤ // StrictMono u},
+        ∑ j, eLpNorm
+          (twistedAverageAtScale ((2 : ℝ) ^ (ks.1 j)) (fun x => psi x)
+            (fun i x => f.1 i x)) 2 volume ^ 2) ≤
+        ENNReal.ofReal (c⁻¹ * C_inductPositiveTermsReductionWhitney n) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+    apply iSup_le
+    intro ks
+    obtain ⟨q, hq⟩ := aux_mainAuxTwo_chain_to_dyadicChain J hJ ks
+    obtain ⟨a, ha, hrestrict⟩ := aux_mainAuxOne_extend_dyadic_chain J hJ q
+    have hprefix := aux_leftBumpOneLong_tensor_whitney_prefix hn a ha psi c hc Psi hkernel f J hJ
+    simpa only [hq, hrestrict] using hprefix
+  calc
+    aux_dyadicJumpEnergy (fun x => psi x) f.1 J k ≤
+        twistedDyadicVariationEnergy (fun x => psi x) (fun i x => f.1 i x) J := by
+      change twistedDyadicJumpEnergy (fun x => psi x) (fun i x => f.1 i x) J k ≤ _
+      rw [twistedDyadicVariationEnergy]
+      exact le_iSup (fun q : aux_dyadicChain J =>
+        twistedDyadicJumpEnergy (fun x => psi x) (fun i x => f.1 i x) J q) k
+    _ ≤ 4 * ⨆ ks : {u : Fin J → ℤ // StrictMono u},
+        ∑ j, eLpNorm
+          (twistedAverageAtScale ((2 : ℝ) ^ (ks.1 j)) (fun x => psi x)
+            (fun i x => f.1 i x)) 2 volume ^ 2 :=
+      bootstrap hn psi f.1 J
+    _ ≤ 4 * (ENNReal.ofReal (c⁻¹ * C_inductPositiveTermsReductionWhitney n) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) := by
+      simpa [mul_comm] using mul_le_mul_left hsup 4
+    _ = ENNReal.ofReal (4 * (c⁻¹ * C_inductPositiveTermsReductionWhitney n)) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+      rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4)]
+      norm_num
+      ring
+
+private noncomputable def aux_leftBumpOneLong_data (b : windowBasedBumpFunctions)
+    (k : ℤ) (hk : k ≤ -1) (hpsi : phiFourSchwartz b k ≠ 0) :
+    WhitneyKernelData :=
+  let R : ℝ := (2 : ℝ) ^ (-k)
+  let C : ℝ := C_thetaPrimitive 2
+  let c : ℝ := (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ)
+  aux_tensorWhitneyData (phiFourSchwartz b k)
+    (aux_leftBumpOneLong_phiFour_support b k)
+    c (by
+      dsimp [c, C]
+      have hC : 0 < C_thetaPrimitive 2 := by
+        norm_num [C_thetaPrimitive, C_uniPair]
+      apply mul_pos
+      · exact inv_pos.mpr (mul_pos (by norm_num) (sq_pos_of_pos hC))
+      · exact Real.rpow_pos_of_pos (by positivity) _)
+    hpsi
+    (fun m hm xi =>
+      aux_leftBumpOneLong_diagonal_bound b k c
+        (aux_leftBumpOneLong_c_diagonal_scalar k hk) m hm xi)
+    (aux_leftBumpOneLong_data_decay b k hk)
+
+private theorem aux_leftBumpOneLong_final_scalar (n : ℕ) (k : ℤ) :
+    let R : ℝ := (2 : ℝ) ^ (-k)
+    let C : ℝ := C_thetaPrimitive 2
+    let c : ℝ := (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ)
+    4 * (c⁻¹ * C_inductPositiveTermsReductionWhitney n) =
+      C_leftBumpOneLong n * Real.rpow 2 ((k : ℝ) / 2) := by
+  dsimp
+  let R : ℝ := (2 : ℝ) ^ (-k)
+  let C : ℝ := C_thetaPrimitive 2
+  let c : ℝ := (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ)
+  change 4 * (c⁻¹ * C_inductPositiveTermsReductionWhitney n) =
+    C_leftBumpOneLong n * Real.rpow 2 ((k : ℝ) / 2)
+  have hRpos : 0 < R := by dsimp [R]; positivity
+  have hCpos : 0 < C := by
+    dsimp [C]
+    norm_num [C_thetaPrimitive, C_uniPair]
+  have hcinv : c⁻¹ = 16 * C ^ 2 * Real.rpow R (-(1 / 2 : ℝ)) := by
+    dsimp [c]
+    rw [mul_inv_rev, ← Real.rpow_neg hRpos.le]
+    field_simp [hCpos.ne']
+  have hgamma : Real.rpow 2 ((k : ℝ) / 2) =
+      Real.rpow ((2 : ℝ) ^ (-k)) (-(1 / 2 : ℝ)) := by
+    calc
+      Real.rpow 2 ((k : ℝ) / 2) =
+          Real.rpow 2 ((((-k : ℤ) : ℝ) * (-(1 / 2 : ℝ)))) := by
+        congr 1
+        push_cast
+        ring
+      _ = Real.rpow ((2 : ℝ) ^ (-k)) (-(1 / 2 : ℝ)) := by
+        simpa using (Real.rpow_intCast_mul (x := (2 : ℝ)) (by norm_num : (0 : ℝ) ≤ 2)
+          (-k) (-(1 / 2 : ℝ)))
+  rw [hcinv, ← hgamma]
+  change 4 * (16 * C ^ 2 * Real.rpow 2 ((k : ℝ) / 2) *
+      C_inductPositiveTermsReductionWhitney n) =
+    ((2 : ℝ) ^ 6 * C_inductPositiveTermsReductionWhitney n * C ^ 2) *
+      Real.rpow 2 ((k : ℝ) / 2)
+  norm_num
+  ring
 
 /-- Lemma \ref{lem:leftbump1_long}. -/
 theorem leftBumpOneLong {n : ℕ} (hn : 2 ≤ n)
@@ -5046,12 +8946,92 @@ theorem leftBumpOneLong {n : ℕ} (hn : 2 ≤ n)
     (hk : k ≤ -1) :
     aux_dyadicVariationBound (C_leftBumpOneLong n * Real.rpow 2 ((k : ℝ) / 2))
       (windowBasedBumpFunctions.phiFour b k) f.1 := by
-  sorry
+  classical
+  let R : ℝ := (2 : ℝ) ^ (-k)
+  let C : ℝ := C_thetaPrimitive 2
+  let c : ℝ := (16 * C ^ 2)⁻¹ * Real.rpow R (1 / 2 : ℝ)
+  have hc : 0 < c := by
+    dsimp [c, C]
+    have hC : 0 < C_thetaPrimitive 2 := by
+      norm_num [C_thetaPrimitive, C_uniPair]
+    apply mul_pos
+    · exact inv_pos.mpr (mul_pos (by norm_num) (sq_pos_of_pos hC))
+    · exact Real.rpow_pos_of_pos (by positivity) _
+  by_cases hzero : phiFourSchwartz b k = 0
+  · have hrawzero : (fun x : ℝ => windowBasedBumpFunctions.phiFour b k x) = 0 := by
+      funext x
+      rw [← phiFourSchwartz_apply]
+      simp [hzero]
+    change aux_dyadicVariationBound
+      (C_leftBumpOneLong n * Real.rpow 2 ((k : ℝ) / 2))
+      (fun x : ℝ => windowBasedBumpFunctions.phiFour b k x) f.1
+    rw [hrawzero]
+    intro J hJ ell
+    simp [aux_dyadicJumpEnergy, twistedDyadicJumpEnergy, twistedAverageAtScale]
+  · let Psi : WhitneyKernelData := aux_leftBumpOneLong_data b k hk hzero
+    have hkernel : Psi.kernel = fun v => c * tensorSquare (phiFourSchwartz b k) v := by
+      dsimp [Psi, aux_leftBumpOneLong_data, c, C, R]
+      rfl
+    have hdyadic := aux_leftBumpOneLong_tensor_whitney_dyadic hn
+      (phiFourSchwartz b k) c hc Psi hkernel f
+    have hscalar : 4 * (c⁻¹ * C_inductPositiveTermsReductionWhitney n) =
+        C_leftBumpOneLong n * Real.rpow 2 ((k : ℝ) / 2) := by
+      simpa [c, C, R] using aux_leftBumpOneLong_final_scalar n k
+    rw [hscalar] at hdyadic
+    simpa only [phiFourSchwartz_apply] using hdyadic
+
+private theorem aux_leftBumpOneLong_whitney_sharp {n : ℕ} (hn : 2 ≤ n) :
+    C_inductPositiveTermsReductionWhitney n <
+      (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
+  unfold C_inductPositiveTermsReductionWhitney
+  calc
+    11 * C_inductPositiveTermsReductionWhitneyGap n <
+        11 * ((127 / 128 : ℝ) * (2 : ℝ) ^ 553) :=
+      mul_lt_mul_of_pos_left (constantWhitneyGapReduction hn) (by norm_num)
+    _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
+      calc
+        11 * ((127 / 128 : ℝ) * (2 : ℝ) ^ 553) =
+            ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 4) * (2 : ℝ) ^ 553 := by
+              norm_num
+              ring
+        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by ring
+        _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by rw [← pow_add]
+
+private theorem aux_leftBumpOneLong_sharp {n : ℕ} (hn : 2 ≤ n) :
+    C_leftBumpOneLong n <
+      (1397 / 2048 : ℝ) * (2 : ℝ) ^ 625 := by
+  have hW := aux_leftBumpOneLong_whitney_sharp hn
+  have hP := (constantThetaPrimitive 2 (by norm_num) (by norm_num [N_uniPair])).2
+  have hPnonneg : 0 ≤ C_thetaPrimitive 2 := by
+    norm_num [C_thetaPrimitive, C_uniPair]
+  have hPpos : 0 < C_thetaPrimitive 2 := by
+    norm_num [C_thetaPrimitive, C_uniPair]
+  unfold C_leftBumpOneLong
+  calc
+    (2 : ℝ) ^ 6 * C_inductPositiveTermsReductionWhitney n * C_thetaPrimitive 2 ^ 2 <
+      (2 : ℝ) ^ 6 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) * C_thetaPrimitive 2 ^ 2 := by
+        gcongr
+    _ ≤ (2 : ℝ) ^ 6 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) * ((2 : ℝ) ^ 31) ^ 2 := by
+        gcongr
+    _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 625 := by
+      rw [show ((2 : ℝ) ^ 31) ^ 2 = (2 : ℝ) ^ 62 by rw [← pow_mul]]
+      calc
+        (2 : ℝ) ^ 6 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) *
+            (2 : ℝ) ^ 62 =
+            (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 6 * (2 : ℝ) ^ 557 * (2 : ℝ) ^ 62) := by ring
+        _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 625 := by
+          rw [← pow_add, ← pow_add]
 
 /-- The numerical estimate in Lemma \ref{constant left bump one long}. -/
 theorem constantLeftBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOneLong n < (2 : ℝ) ^ 625 := by
-  sorry
+  calc
+    C_leftBumpOneLong n < (1397 / 2048 : ℝ) * (2 : ℝ) ^ 625 :=
+      aux_leftBumpOneLong_sharp hn
+    _ < (2 : ℝ) ^ 625 := by
+      apply mul_lt_of_lt_one_left
+      · positivity
+      · norm_num
 
 /-- The constant in Lemma \ref{lem:leftbump1}. -/
 noncomputable def C_leftBumpOne (n : ℕ) : ℝ :=
@@ -5059,17 +9039,1845 @@ noncomputable def C_leftBumpOne (n : ℕ) : ℝ :=
       Real.sqrt (C_leftBumpOneShortTwo n) + 2 * C_leftBumpOneLong n
 
 /-- Lemma \ref{lem:leftbump1}. -/
+private theorem aux_leftBumpOne_logarithmic_setIntegral_rescale (a : ℝ) (ha : 0 < a)
+    (g : ℝ → ℝ) :
+    (∫ t : ℝ in Set.Icc a (a * 2), |g t| ^ 2 * t⁻¹) =
+      ∫ t : ℝ in Set.Icc 1 2, |g (a * t)| ^ 2 * t⁻¹ := by
+  let h : ℝ → ℝ := fun u => |g u| ^ 2 * u⁻¹
+  have hinterval :
+      (∫ t : ℝ in Set.Icc a (a * 2), h t) =
+        a * ∫ t : ℝ in Set.Icc 1 2, h (a * t) := by
+    have hcomp := intervalIntegral.integral_comp_mul_left h ha.ne'
+      (a := (1 : ℝ)) (b := 2)
+    rw [MeasureTheory.integral_Icc_eq_integral_Ioc,
+      ← intervalIntegral.integral_of_le (by nlinarith)]
+    calc
+      (∫ t : ℝ in a..a * 2, h t) = a * (a⁻¹ * ∫ t : ℝ in a..a * 2, h t) := by
+        field_simp [ha.ne']
+      _ = a * ∫ t : ℝ in 1..2, h (a * t) := by
+        rw [hcomp]
+        simp only [smul_eq_mul]
+        ring
+      _ = a * ∫ t : ℝ in Set.Icc 1 2, h (a * t) := by
+        congr 1
+        rw [MeasureTheory.integral_Icc_eq_integral_Ioc,
+          ← intervalIntegral.integral_of_le (by norm_num)]
+  change (∫ t : ℝ in Set.Icc a (a * 2), h t) = _
+  rw [hinterval]
+  rw [← integral_const_mul]
+  apply integral_congr_ae
+  filter_upwards [] with t
+  dsimp [h]
+  field_simp [ha.ne']
+
+private theorem aux_leftBumpOne_twistedAverageAtScale_contDiffOn {n : ℕ}
+    (phi : SchwartzMap ℝ ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (x : EuclideanSpace ℝ (Fin n)) {α β : ℝ} (hα : 0 < α) (hαβ : α < β) :
+    ContDiffOn ℝ 1
+      (fun t ↦ twistedAverageAtScale t (fun u ↦ phi u) (fun i y ↦ f i y) x)
+      (Set.Icc α β) := by
+  let a : ℝ → ℝ := fun t ↦
+    twistedAverageAtScale t (fun u ↦ phi u) (fun i y ↦ f i y) x
+  let b : ℝ → ℝ := fun t ↦
+    twistedAverageAtScale t (aux_tBump phi) (fun i y ↦ f i y) x
+  let psi : SchwartzMap ℝ ℝ :=
+    SchwartzMap.smulLeftCLM ℝ (fun u : ℝ ↦ u) phi
+  let tau : SchwartzMap ℝ ℝ := SchwartzMap.derivCLM ℝ ℝ psi
+  have htau : (tau : ℝ → ℝ) = aux_tBump phi := by
+    funext u
+    change SchwartzMap.derivCLM ℝ ℝ psi u = aux_tBump phi u
+    simp only [SchwartzMap.derivCLM_apply, aux_tBump]
+    congr 1
+    funext z
+    rw [SchwartzMap.smulLeftCLM_apply_apply (by fun_prop)]
+    simp only [smul_eq_mul]
+  have hdiff : DifferentiableOn ℝ a (Set.Icc α β) := by
+    intro t ht
+    exact (aux_twistedAverageAtScale_hasDerivAt phi f x t
+      (lt_of_lt_of_le hα ht.1)).differentiableAt.differentiableWithinAt
+  have hcontb : ContinuousOn b (Set.Icc α β) := by
+    have hconttau : ContinuousOn
+        (fun t ↦ twistedAverageAtScale t (fun u ↦ tau u) (fun i y ↦ f i y) x)
+        (Set.Icc α β) := by
+      apply HasDerivAt.continuousOn
+      intro t ht
+      exact aux_twistedAverageAtScale_hasDerivAt tau f x t
+        (lt_of_lt_of_le hα ht.1)
+    refine hconttau.congr ?_
+    intro t ht
+    dsimp [b]
+    rw [← htau]
+  have hinv : ContinuousOn (fun t : ℝ ↦ t⁻¹) (Set.Icc α β) := by
+    exact continuousOn_id.inv₀ (fun t ht ↦ ne_of_gt (lt_of_lt_of_le hα ht.1))
+  have hcontg : ContinuousOn (fun t ↦ -t⁻¹ * b t) (Set.Icc α β) := by
+    change ContinuousOn ((fun t : ℝ ↦ -(t⁻¹)) * b) (Set.Icc α β)
+    exact hinv.neg.mul hcontb
+  rw [show (1 : WithTop ℕ∞) = 1 by rfl,
+    contDiffOn_one_iff_derivWithin (uniqueDiffOn_Icc hαβ)]
+  refine ⟨hdiff, hcontg.congr ?_⟩
+  intro t ht
+  exact (aux_twistedAverageAtScale_hasDerivAt phi f x t
+    (lt_of_lt_of_le hα ht.1)).hasDerivWithinAt.derivWithin
+      ((uniqueDiffOn_Icc hαβ) t ht)
+
+private theorem aux_leftBumpOne_Aphi_lintegral {n : ℕ} (phi : SchwartzMap ℝ ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (x : EuclideanSpace ℝ (Fin n)) (k : ℤ) :
+    (∫⁻ t,
+      ‖twistedAverageAtScale t (fun u ↦ phi u) (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ)
+        ∂aux_logarithmicMeasure ((2 : ℝ) ^ k) ((2 : ℝ) ^ (k + 1))) =
+      ∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun u ↦ phi u)
+          (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹ := by
+  let α : ℝ := (2 : ℝ) ^ k
+  let β : ℝ := (2 : ℝ) ^ (k + 1)
+  let a : ℝ → ℝ := fun t ↦
+    twistedAverageAtScale t (fun u ↦ phi u) (fun i y ↦ f i y) x
+  let g : ℝ → ℝ := fun t ↦
+    twistedAverageAtScale (α * t) (fun u ↦ phi u) (fun i y ↦ f i y) x
+  have hα : 0 < α := by
+    dsimp [α]
+    exact zpow_pos (by norm_num) _
+  have hβ : β = α * 2 := by
+    dsimp [α, β]
+    rw [zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0), zpow_one]
+  have hconta : ContinuousOn a (Set.Icc α β) := by
+    apply HasDerivAt.continuousOn
+    intro t ht
+    exact aux_twistedAverageAtScale_hasDerivAt phi f x t
+      (lt_of_lt_of_le hα ht.1)
+  have hinv : ContinuousOn (fun t : ℝ ↦ t⁻¹) (Set.Icc α β) :=
+    continuousOn_id.inv₀ (fun t ht ↦ ne_of_gt (lt_of_lt_of_le hα ht.1))
+  have hleftCont : ContinuousOn (fun t ↦ |a t| ^ 2 * t⁻¹)
+      (Set.Icc α β) := by
+    change ContinuousOn ((fun t ↦ |a t| ^ 2) * fun t ↦ t⁻¹)
+      (Set.Icc α β)
+    exact (hconta.abs.pow 2).mul hinv
+  have hleftInt : Integrable (fun t ↦ |a t| ^ 2 * t⁻¹)
+      (volume.restrict (Set.Icc α β)) := hleftCont.integrableOn_Icc
+  have hcontg : ContinuousOn g (Set.Icc (1 : ℝ) 2) := by
+    have hscale : ContinuousOn (fun t : ℝ ↦ α * t) (Set.Icc (1 : ℝ) 2) :=
+      (continuous_const.mul continuous_id).continuousOn
+    have hmaps : MapsTo (fun t : ℝ ↦ α * t) (Set.Icc (1 : ℝ) 2)
+        (Set.Icc α β) := by
+      intro t ht
+      constructor
+      · calc
+          α = α * 1 := (mul_one _).symm
+          _ ≤ α * t := mul_le_mul_of_nonneg_left ht.1 hα.le
+      · calc
+          α * t ≤ α * 2 := mul_le_mul_of_nonneg_left ht.2 hα.le
+          _ = β := hβ.symm
+    change ContinuousOn (a ∘ fun t : ℝ ↦ α * t) (Set.Icc (1 : ℝ) 2)
+    exact hconta.comp hscale hmaps
+  have hinvOne : ContinuousOn (fun t : ℝ ↦ t⁻¹) (Set.Icc (1 : ℝ) 2) :=
+    continuousOn_id.inv₀ (fun t ht ↦ ne_of_gt (lt_of_lt_of_le zero_lt_one ht.1))
+  have hrightCont : ContinuousOn (fun t ↦ |g t| ^ 2 * t⁻¹)
+      (Set.Icc (1 : ℝ) 2) := by
+    change ContinuousOn ((fun t ↦ |g t| ^ 2) * fun t ↦ t⁻¹)
+      (Set.Icc (1 : ℝ) 2)
+    exact (hcontg.abs.pow 2).mul hinvOne
+  have hrightInt : Integrable (fun t ↦ |g t| ^ 2 * t⁻¹)
+      (volume.restrict (Set.Icc (1 : ℝ) 2)) := hrightCont.integrableOn_Icc
+  have hFTC :
+      (∫ t in Set.Icc α β, |a t| ^ 2 * t⁻¹) =
+        ∫ t in Set.Icc (1 : ℝ) 2, |g t| ^ 2 * t⁻¹ := by
+    rw [hβ]
+    exact aux_leftBumpOne_logarithmic_setIntegral_rescale α hα a
+  have hleftNonneg : 0 ≤ᵐ[volume.restrict (Set.Icc α β)]
+      fun t ↦ |a t| ^ 2 * t⁻¹ := by
+    filter_upwards [self_mem_ae_restrict measurableSet_Icc] with t ht
+    exact mul_nonneg (sq_nonneg _) (inv_nonneg.mpr (lt_of_lt_of_le hα ht.1).le)
+  have hrightNonneg : 0 ≤ᵐ[volume.restrict (Set.Icc (1 : ℝ) 2)]
+      fun t ↦ |g t| ^ 2 * t⁻¹ := by
+    filter_upwards [self_mem_ae_restrict measurableSet_Icc] with t ht
+    exact mul_nonneg (sq_nonneg _) (inv_nonneg.mpr (lt_of_lt_of_le zero_lt_one ht.1).le)
+  have hleftOfReal := ofReal_integral_eq_lintegral_ofReal hleftInt hleftNonneg
+  have hrightOfReal := ofReal_integral_eq_lintegral_ofReal hrightInt hrightNonneg
+  have hweightMeas : AEMeasurable (fun t : ℝ ↦ ENNReal.ofReal t⁻¹)
+      (volume.restrict (Set.Icc α β)) :=
+    (measurable_inv.comp measurable_id).ennreal_ofReal.aemeasurable
+  have hweightFinite : ∀ᵐ t : ℝ ∂volume.restrict (Set.Icc α β),
+      ENNReal.ofReal t⁻¹ < ∞ :=
+    ae_of_all _ fun _ ↦ lt_top_iff_ne_top.mpr ENNReal.ofReal_ne_top
+  have hleftDensity :
+      (∫⁻ t, ‖a t‖ₑ ^ (2 : ℝ) ∂aux_logarithmicMeasure α β) =
+        ∫⁻ t in Set.Icc α β, ENNReal.ofReal (|a t| ^ 2 * t⁻¹) := by
+    unfold aux_logarithmicMeasure
+    rw [lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _ hweightMeas hweightFinite]
+    apply lintegral_congr_ae
+    filter_upwards [self_mem_ae_restrict measurableSet_Icc] with t ht
+    have htpos : 0 < t := lt_of_lt_of_le hα ht.1
+    change ENNReal.ofReal t⁻¹ * ‖a t‖ₑ ^ (2 : ℝ) = _
+    rw [show ‖a t‖ₑ ^ (2 : ℝ) = ENNReal.ofReal (|a t| ^ 2) by
+      rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) zero_le_two,
+        Real.rpow_two]]
+    rw [ENNReal.ofReal_mul (sq_nonneg _)]
+    rw [ENNReal.ofReal_inv_of_pos htpos]
+    ring
+  have hrightEnorm :
+      (∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ENNReal.ofReal (|g t| ^ 2 * t⁻¹)) =
+      ∫⁻ t in Set.Icc (1 : ℝ) 2, ‖g t‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹ := by
+    apply lintegral_congr_ae
+    filter_upwards [self_mem_ae_restrict measurableSet_Icc] with t ht
+    have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+    rw [ENNReal.ofReal_mul (sq_nonneg _)]
+    rw [show ENNReal.ofReal (|g t| ^ 2) = ‖g t‖ₑ ^ (2 : ℝ) by
+      rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) zero_le_two,
+        Real.rpow_two]]
+  change (∫⁻ t, ‖a t‖ₑ ^ (2 : ℝ)
+      ∂aux_logarithmicMeasure α β) =
+    ∫⁻ t in Set.Icc (1 : ℝ) 2, ‖g t‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹
+  rw [hleftDensity, ← hleftOfReal, hFTC, hrightOfReal, hrightEnorm]
+
+private theorem aux_leftBumpOne_pointwise_local_product {n : ℕ} (phi : SchwartzMap ℝ ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (x : EuclideanSpace ℝ (Fin n)) (J : ℕ) (k : ℤ)
+    (u : Fin (J + 1) → aux_dyadicInterval k) (hu : Monotone u) :
+    (∑ j : Fin J,
+      ‖twistedAverageAtScale (u j.succ) (fun q ↦ phi q) (fun i y ↦ f i y) x -
+        twistedAverageAtScale (u j.castSucc) (fun q ↦ phi q) (fun i y ↦ f i y) x‖ₑ ^
+          (2 : ℝ)) ≤
+      8 *
+        (∫⁻ t in Set.Icc (1 : ℝ) 2,
+          ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ phi q)
+            (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) *
+        (∫⁻ t in Set.Icc (1 : ℝ) 2,
+          ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (aux_tBump phi)
+            (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) := by
+  let α : ℝ := (2 : ℝ) ^ k
+  let β : ℝ := (2 : ℝ) ^ (k + 1)
+  let a : ℝ → ℝ := fun t ↦
+    twistedAverageAtScale t (fun q ↦ phi q) (fun i y ↦ f i y) x
+  let psi : SchwartzMap ℝ ℝ :=
+    SchwartzMap.smulLeftCLM ℝ (fun q : ℝ ↦ q) phi
+  let tau : SchwartzMap ℝ ℝ := SchwartzMap.derivCLM ℝ ℝ psi
+  have htau : (tau : ℝ → ℝ) = aux_tBump phi := by
+    funext z
+    change SchwartzMap.derivCLM ℝ ℝ psi z = aux_tBump phi z
+    simp only [SchwartzMap.derivCLM_apply, aux_tBump]
+    congr 1
+    funext z
+    rw [SchwartzMap.smulLeftCLM_apply_apply (by fun_prop)]
+    simp only [smul_eq_mul]
+  have hα : 0 < α := by
+    dsimp [α]
+    exact zpow_pos (by norm_num) _
+  have hβ : β = α * 2 := by
+    dsimp [α, β]
+    rw [zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0), zpow_one]
+  have hαβ : α < β := by rw [hβ]; nlinarith
+  have hcont : ContDiffOn ℝ 1 a (Set.Icc α β) :=
+    aux_leftBumpOne_twistedAverageAtScale_contDiffOn phi f x hα hαβ
+  let U : {v : Fin (J + 1) → Set.Icc α β // Monotone v} :=
+    ⟨fun j ↦ ⟨u j, by simpa only [α, β, aux_dyadicInterval] using (u j).2⟩,
+      by
+        intro i j hij
+        exact hu hij⟩
+  have hchain :
+      (∑ j : Fin J,
+        ‖a (U.1 j.succ) - a (U.1 j.castSucc)‖ₑ ^ (2 : ℝ)) ^ ((2 : ℝ)⁻¹) ≤
+        finiteVariationSeminorm (fun s : Set.Icc α β ↦ a s) 2 J := by
+    rw [finiteVariationSeminorm]
+    exact le_iSup (fun v : {v : Fin (J + 1) → Set.Icc α β // Monotone v} ↦
+      (∑ j : Fin J,
+        (‖a (v.1 j.succ) - a (v.1 j.castSucc)‖₊ : ℝ≥0∞) ^ (2 : ℝ)) ^
+          ((2 : ℝ)⁻¹)) U
+  have hsquare := ENNReal.rpow_le_rpow hchain (by norm_num : (0 : ℝ) ≤ 2)
+  have hleft :
+      ((∑ j : Fin J,
+        ‖a (U.1 j.succ) - a (U.1 j.castSucc)‖ₑ ^ (2 : ℝ)) ^ ((2 : ℝ)⁻¹)) ^
+          (2 : ℝ) =
+        ∑ j : Fin J,
+          ‖a (U.1 j.succ) - a (U.1 j.castSucc)‖ₑ ^ (2 : ℝ) := by
+    rw [← ENNReal.rpow_mul]
+    norm_num
+  rw [hleft] at hsquare
+  have hftc := (ftcCsR J hα hαβ a hcont).2
+  have hrawSq : (aux_logarithmicL2 α β a) ^ (2 : ℝ) =
+      ∫⁻ t, ‖a t‖ₑ ^ (2 : ℝ) ∂aux_logarithmicMeasure α β := by
+    unfold aux_logarithmicL2
+    simpa [ENNReal.rpow_two] using
+      (eLpNorm_nnreal_pow_eq_lintegral (μ := aux_logarithmicMeasure α β)
+        (f := a) (p := (2 : NNReal)) (by norm_num : (2 : NNReal) ≠ 0))
+  have hrawIntegral :
+      (∫⁻ t, ‖a t‖ₑ ^ (2 : ℝ) ∂aux_logarithmicMeasure α β) =
+      ∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ phi q)
+          (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹ := by
+    simpa only [α, β, a] using aux_leftBumpOne_Aphi_lintegral phi f x k
+  have hderivSq :
+      (aux_logarithmicL2 α β (fun t ↦ t * deriv a t)) ^ (2 : ℝ) =
+      ∫⁻ t, ‖t * deriv a t‖ₑ ^ (2 : ℝ) ∂aux_logarithmicMeasure α β := by
+    unfold aux_logarithmicL2
+    simpa [ENNReal.rpow_two] using
+      (eLpNorm_nnreal_pow_eq_lintegral (μ := aux_logarithmicMeasure α β)
+        (f := fun t ↦ t * deriv a t) (p := (2 : NNReal))
+        (by norm_num : (2 : NNReal) ≠ 0))
+  have hderivEq (t : ℝ) (ht : t ∈ Set.Icc α β) :
+      t * deriv a t = -twistedAverageAtScale t (aux_tBump phi)
+        (fun i y ↦ f i y) x := by
+    have h := aux_twistedAverageAtScale_hasDerivAt phi f x t
+      (lt_of_lt_of_le hα ht.1)
+    rw [h.deriv]
+    field_simp [ne_of_gt (lt_of_lt_of_le hα ht.1)]
+  have hmem : ∀ᵐ t ∂aux_logarithmicMeasure α β, t ∈ Set.Icc α β := by
+    unfold aux_logarithmicMeasure
+    exact (withDensity_absolutelyContinuous (volume.restrict (Set.Icc α β)) _).ae_le
+      (self_mem_ae_restrict measurableSet_Icc)
+  have hderivLog :
+      (∫⁻ t, ‖t * deriv a t‖ₑ ^ (2 : ℝ) ∂aux_logarithmicMeasure α β) =
+      ∫⁻ t, ‖twistedAverageAtScale t (fun q ↦ tau q) (fun i y ↦ f i y) x‖ₑ ^
+        (2 : ℝ) ∂aux_logarithmicMeasure α β := by
+    apply lintegral_congr_ae
+    filter_upwards [hmem] with t ht
+    rw [hderivEq t ht, ← htau]
+    simp
+  have htauIntegral :
+      (∫⁻ t, ‖twistedAverageAtScale t (fun q ↦ tau q) (fun i y ↦ f i y) x‖ₑ ^
+          (2 : ℝ) ∂aux_logarithmicMeasure α β) =
+      ∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (aux_tBump phi)
+          (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹ := by
+    rw [← htau]
+    simpa only [α, β] using aux_leftBumpOne_Aphi_lintegral tau f x k
+  have hrawRoot : aux_logarithmicL2 α β a =
+      (∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ phi q)
+          (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) := by
+    calc
+      aux_logarithmicL2 α β a = (aux_logarithmicL2 α β a ^ (2 : ℝ)) ^ ((2 : ℝ)⁻¹) := by
+        rw [← ENNReal.rpow_mul]
+        norm_num
+      _ = _ := by rw [hrawSq, hrawIntegral]
+  have hderivRoot : aux_logarithmicL2 α β (fun t ↦ t * deriv a t) =
+      (∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (aux_tBump phi)
+          (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) := by
+    calc
+      aux_logarithmicL2 α β (fun t ↦ t * deriv a t) =
+          (aux_logarithmicL2 α β (fun t ↦ t * deriv a t) ^ (2 : ℝ)) ^ ((2 : ℝ)⁻¹) := by
+        rw [← ENNReal.rpow_mul]
+        norm_num
+      _ = _ := by rw [hderivSq, hderivLog, htauIntegral]
+  calc
+    (∑ j : Fin J,
+      ‖twistedAverageAtScale (u j.succ) (fun q ↦ phi q) (fun i y ↦ f i y) x -
+        twistedAverageAtScale (u j.castSucc) (fun q ↦ phi q) (fun i y ↦ f i y) x‖ₑ ^
+          (2 : ℝ)) =
+        ∑ j : Fin J,
+          ‖a (U.1 j.succ) - a (U.1 j.castSucc)‖ₑ ^ (2 : ℝ) := by
+      congr 2 with j
+    _ ≤ (finiteVariationSeminorm (fun s : Set.Icc α β ↦ a s) 2 J) ^ (2 : ℝ) := hsquare
+    _ ≤ 8 * aux_logarithmicL2 α β a *
+        aux_logarithmicL2 α β (fun t ↦ t * deriv a t) := hftc
+    _ = _ := by rw [hrawRoot, hderivRoot]
+
+private noncomputable def aux_leftBumpOne_scaleKernel (phi : SchwartzMap ℝ ℝ) (t : ℝ) : ℝ → ℝ :=
+  fun s ↦ t⁻¹ * phi (t⁻¹ * s)
+
+private theorem aux_leftBumpOne_scaleKernel_memLp (phi : SchwartzMap ℝ ℝ) (t : ℝ) :
+    MemLp (aux_leftBumpOne_scaleKernel phi t) 2 volume := by
+  by_cases ht : t = 0
+  · subst t
+    have : aux_leftBumpOne_scaleKernel phi 0 = 0 := by
+      funext s
+      simp [aux_leftBumpOne_scaleKernel]
+    rw [this]
+    exact MemLp.zero
+  · have hmeas : AEStronglyMeasurable (aux_leftBumpOne_scaleKernel phi t) volume := by
+      change AEStronglyMeasurable (fun s : ℝ ↦ t⁻¹ * phi (t⁻¹ * s)) (volume : Measure ℝ)
+      exact (continuous_const.mul
+        (phi.continuous.comp (continuous_const.mul continuous_id))).aestronglyMeasurable
+    apply (memLp_two_iff_integrable_sq hmeas).mpr
+    have hsq : Integrable (fun s : ℝ ↦ phi s ^ 2) (volume : Measure ℝ) :=
+      (phi.memLp 2).integrable_sq
+    have hrescale : Integrable (fun s : ℝ ↦
+        t⁻¹ ^ 2 * phi (t⁻¹ * s) ^ 2) (volume : Measure ℝ) :=
+      (hsq.comp_mul_left' (inv_ne_zero ht)).const_mul (t⁻¹ ^ 2)
+    have heq : (fun s : ℝ ↦ aux_leftBumpOne_scaleKernel phi t s ^ 2) =
+        fun s ↦ t⁻¹ ^ 2 * phi (t⁻¹ * s) ^ 2 := by
+      funext s
+      dsimp [aux_leftBumpOne_scaleKernel]
+      ring
+    rw [heq]
+    exact hrescale
+
+private noncomputable def aux_leftBumpOne_averageLp {n : ℕ} (hn : 2 ≤ n)
+    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (t : ℝ) :
+    Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ (Fin n))) :=
+  (aux_twistedAverage_memLp hn f.1 (aux_leftBumpOne_scaleKernel phi t)
+    (aux_leftBumpOne_scaleKernel_memLp phi t)).toLp _
+
+private theorem aux_leftBumpOne_averageLp_enorm_sub {n : ℕ} (hn : 2 ≤ n)
+    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (s t : ℝ) :
+    (‖aux_leftBumpOne_averageLp hn phi f s - aux_leftBumpOne_averageLp hn phi f t‖₊ : ℝ≥0∞) =
+      eLpNorm
+        (fun x ↦ twistedAverageAtScale s (fun u ↦ phi u) (fun i y ↦ f.1 i y) x -
+          twistedAverageAtScale t (fun u ↦ phi u) (fun i y ↦ f.1 i y) x)
+        2 volume := by
+  let hs := aux_twistedAverage_memLp hn f.1 (aux_leftBumpOne_scaleKernel phi s)
+    (aux_leftBumpOne_scaleKernel_memLp phi s)
+  let ht := aux_twistedAverage_memLp hn f.1 (aux_leftBumpOne_scaleKernel phi t)
+    (aux_leftBumpOne_scaleKernel_memLp phi t)
+  change ‖hs.toLp _ - ht.toLp _‖ₑ = _
+  rw [← hs.toLp_sub ht]
+  rw [Lp.enorm_toLp]
+  rfl
+
+private theorem aux_leftBumpOne_lp_chain_energy_eq_lintegral {n : ℕ} (hn : 2 ≤ n)
+    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (J : ℕ) (k : ℤ)
+    (u : Fin (J + 1) → aux_dyadicInterval k) (hu : Monotone u) :
+    (∑ j : Fin J,
+      ‖aux_leftBumpOne_averageLp hn phi f (u j.succ) -
+        aux_leftBumpOne_averageLp hn phi f (u j.castSucc)‖ₑ ^ (2 : ℝ)) =
+      ∫⁻ x,
+        ∑ j : Fin J,
+          ‖twistedAverageAtScale (u j.succ) (fun q ↦ phi q) (fun i y ↦ f.1 i y) x -
+            twistedAverageAtScale (u j.castSucc) (fun q ↦ phi q)
+              (fun i y ↦ f.1 i y) x‖ₑ ^ (2 : ℝ) := by
+  let g : Fin J → EuclideanSpace ℝ (Fin n) → ℝ := fun j x ↦
+    twistedAverageAtScale (u j.succ) (fun q ↦ phi q) (fun i y ↦ f.1 i y) x -
+      twistedAverageAtScale (u j.castSucc) (fun q ↦ phi q) (fun i y ↦ f.1 i y) x
+  have hmem (j : Fin J) : MemLp (g j) 2 volume := by
+    let hs := aux_twistedAverage_memLp hn f.1 (aux_leftBumpOne_scaleKernel phi (u j.succ))
+      (aux_leftBumpOne_scaleKernel_memLp phi (u j.succ))
+    let ht := aux_twistedAverage_memLp hn f.1 (aux_leftBumpOne_scaleKernel phi (u j.castSucc))
+      (aux_leftBumpOne_scaleKernel_memLp phi (u j.castSucc))
+    change MemLp
+      (twistedAverage (aux_leftBumpOne_scaleKernel phi (u j.succ)) (fun i y ↦ f.1 i y) -
+        twistedAverage (aux_leftBumpOne_scaleKernel phi (u j.castSucc)) (fun i y ↦ f.1 i y)) 2 volume
+    exact hs.sub ht
+  have hmeas (j : Fin J) : AEMeasurable (fun x ↦ ‖g j x‖ₑ ^ (2 : ℝ)) volume :=
+    (hmem j).aestronglyMeasurable.enorm.pow_const _
+  calc
+    (∑ j : Fin J,
+      ‖aux_leftBumpOne_averageLp hn phi f (u j.succ) -
+        aux_leftBumpOne_averageLp hn phi f (u j.castSucc)‖ₑ ^ (2 : ℝ)) =
+        ∑ j : Fin J, eLpNorm (g j) 2 volume ^ (2 : ℝ) := by
+      apply Finset.sum_congr rfl
+      intro j _
+      exact congrArg (fun z : ℝ≥0∞ ↦ z ^ (2 : ℝ))
+        (aux_leftBumpOne_averageLp_enorm_sub hn phi f (u j.succ) (u j.castSucc))
+    _ = ∑ j : Fin J, ∫⁻ x, ‖g j x‖ₑ ^ (2 : ℝ) := by
+      apply Finset.sum_congr rfl
+      intro j _
+      exact eLpNorm_nnreal_pow_eq_lintegral (μ := volume) (f := g j)
+        (p := (2 : NNReal)) (by norm_num)
+    _ = ∫⁻ x, ∑ j : Fin J, ‖g j x‖ₑ ^ (2 : ℝ) := by
+      simpa using (lintegral_finset_sum' (μ := volume) Finset.univ
+        (f := fun j x ↦ ‖g j x‖ₑ ^ (2 : ℝ)) (fun j _ ↦ hmeas j)).symm
+
+private theorem aux_leftBumpOne_joint_measurable_twistedAverageAtScale {n : ℕ}
+    (psi : SchwartzMap ℝ ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ) (α : ℝ) :
+    StronglyMeasurable (fun tx : ℝ × EuclideanSpace ℝ (Fin n) ↦
+      twistedAverageAtScale (α * tx.1) (fun u ↦ psi u) (fun i y ↦ f i y) tx.2) := by
+  let F : ((ℝ × EuclideanSpace ℝ (Fin n)) × ℝ) → ℝ := fun z ↦
+    (α * z.1.1)⁻¹ * psi ((α * z.1.1)⁻¹ * z.2) *
+      ∏ i, f i (z.1.2 + z.2 • WithLp.toLp 2 (Pi.single i (1 : ℝ)))
+  have hF : Measurable F := by
+    dsimp [F]
+    fun_prop
+  have hInt : StronglyMeasurable (fun tx : ℝ × EuclideanSpace ℝ (Fin n) ↦
+      ∫ s : ℝ, F (tx, s) ∂(volume : Measure ℝ)) :=
+    hF.stronglyMeasurable.integral_prod_right' (ν := volume)
+  simpa only [F, twistedAverageAtScale, twistedAverage] using hInt
+
+private theorem aux_leftBumpOne_energy_inner_aemeasurable {n : ℕ}
+    (psi : SchwartzMap ℝ ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ) (k : ℤ) :
+    AEMeasurable (fun x ↦
+      ∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+          (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) volume := by
+  let H : EuclideanSpace ℝ (Fin n) → ℝ → ℝ≥0∞ := fun x t ↦
+    ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+      (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹
+  have hjoint : AEStronglyMeasurable
+      (fun z : EuclideanSpace ℝ (Fin n) × ℝ ↦
+        twistedAverageAtScale ((2 : ℝ) ^ k * z.2) (fun q ↦ psi q)
+          (fun i y ↦ f i y) z.1)
+      (volume.prod (volume.restrict (Set.Icc (1 : ℝ) 2))) := by
+    exact (aux_leftBumpOne_joint_measurable_twistedAverageAtScale psi f ((2 : ℝ) ^ k)
+      |>.comp_measurable measurable_swap).aestronglyMeasurable
+  have hHmeas : AEMeasurable (Function.uncurry H)
+      (volume.prod (volume.restrict (Set.Icc (1 : ℝ) 2))) := by
+    have hweight : AEMeasurable
+        (fun z : EuclideanSpace ℝ (Fin n) × ℝ ↦ ENNReal.ofReal z.2⁻¹)
+        (volume.prod (volume.restrict (Set.Icc (1 : ℝ) 2))) :=
+      ((measurable_inv.comp measurable_snd).ennreal_ofReal).aemeasurable
+    change AEMeasurable
+      ((fun z : EuclideanSpace ℝ (Fin n) × ℝ ↦
+        ‖twistedAverageAtScale ((2 : ℝ) ^ k * z.2) (fun q ↦ psi q)
+          (fun i y ↦ f i y) z.1‖ₑ ^ (2 : ℝ)) *
+        fun z ↦ ENNReal.ofReal z.2⁻¹) _
+    exact (hjoint.enorm.pow_const _).mul hweight
+  simpa only [H] using hHmeas.lintegral_prod_right
+
+private theorem aux_leftBumpOne_energy_tonelli {n : ℕ}
+    (psi : SchwartzMap ℝ ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ) (k : ℤ) :
+    (∫⁻ x,
+      ∫⁻ t in Set.Icc (1 : ℝ) 2,
+        ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+          (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) =
+      ∫⁻ t in Set.Icc (1 : ℝ) 2,
+        eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+          (fun i y ↦ f i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹ := by
+  let H : EuclideanSpace ℝ (Fin n) → ℝ → ℝ≥0∞ := fun x t ↦
+    ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+      (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹
+  have hjoint : AEStronglyMeasurable
+      (fun z : EuclideanSpace ℝ (Fin n) × ℝ ↦
+        twistedAverageAtScale ((2 : ℝ) ^ k * z.2) (fun q ↦ psi q)
+          (fun i y ↦ f i y) z.1)
+      (volume.prod (volume.restrict (Set.Icc (1 : ℝ) 2))) := by
+    exact (aux_leftBumpOne_joint_measurable_twistedAverageAtScale psi f ((2 : ℝ) ^ k)
+      |>.comp_measurable measurable_swap).aestronglyMeasurable
+  have hHmeas : AEMeasurable (Function.uncurry H)
+      (volume.prod (volume.restrict (Set.Icc (1 : ℝ) 2))) := by
+    have hweight : AEMeasurable
+        (fun z : EuclideanSpace ℝ (Fin n) × ℝ ↦ ENNReal.ofReal z.2⁻¹)
+        (volume.prod (volume.restrict (Set.Icc (1 : ℝ) 2))) :=
+      ((measurable_inv.comp measurable_snd).ennreal_ofReal).aemeasurable
+    change AEMeasurable
+      ((fun z : EuclideanSpace ℝ (Fin n) × ℝ ↦
+        ‖twistedAverageAtScale ((2 : ℝ) ^ k * z.2) (fun q ↦ psi q)
+          (fun i y ↦ f i y) z.1‖ₑ ^ (2 : ℝ)) *
+        fun z ↦ ENNReal.ofReal z.2⁻¹) _
+    exact (hjoint.enorm.pow_const _).mul hweight
+  have hswap := lintegral_lintegral_swap hHmeas
+  rw [show (fun x ↦ ∫⁻ t in Set.Icc (1 : ℝ) 2,
+      ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+        (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) =
+      fun x ↦ ∫⁻ t in Set.Icc (1 : ℝ) 2, H x t by rfl]
+  rw [hswap]
+  change (∫⁻ t in Set.Icc (1 : ℝ) 2,
+    ∫⁻ x, ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+      (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) = _
+  apply lintegral_congr_ae
+  filter_upwards [self_mem_ae_restrict measurableSet_Icc] with t ht
+  rw [lintegral_mul_const' (ENNReal.ofReal t⁻¹)
+    (fun x ↦ ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+      (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ)) ENNReal.ofReal_ne_top]
+  have hnorm : eLpNorm
+      (fun x ↦ twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+        (fun i y ↦ f i y) x) 2 volume ^ (2 : ℝ) =
+      ∫⁻ x, ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+        (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) := by
+    simpa [ENNReal.rpow_two] using
+      (eLpNorm_nnreal_pow_eq_lintegral (μ := volume)
+        (f := fun x ↦ twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ psi q)
+          (fun i y ↦ f i y) x) (p := (2 : NNReal)) (by norm_num))
+  rw [← hnorm]
+
+private theorem aux_leftBumpOne_lintegral_sqrt_mul_sqrt_le {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) (p q : α → ℝ≥0∞)
+    (hp : AEMeasurable p μ) (hq : AEMeasurable q μ) :
+    (∫⁻ x, p x ^ ((2 : ℝ)⁻¹) * q x ^ ((2 : ℝ)⁻¹) ∂μ) ≤
+      (∫⁻ x, p x ∂μ) ^ ((2 : ℝ)⁻¹) *
+        (∫⁻ x, q x ∂μ) ^ ((2 : ℝ)⁻¹) := by
+  have h := ENNReal.lintegral_mul_norm_pow_le hp hq
+    (by norm_num : 0 ≤ (2 : ℝ)⁻¹)
+    (by norm_num : 0 ≤ (2 : ℝ)⁻¹)
+    (by norm_num : (2 : ℝ)⁻¹ + (2 : ℝ)⁻¹ = 1)
+  simpa using h
+
+private theorem aux_leftBumpOne_local_variation_product {n : ℕ} (hn : 2 ≤ n)
+    (phi tau : SchwartzMap ℝ ℝ) (htau : (tau : ℝ → ℝ) = aux_tBump phi)
+    (f : ReductionNormalizedTuple n) (J : ℕ) (k : ℤ) :
+    (finiteVariationSeminorm
+      (fun s : aux_dyadicInterval k ↦ aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+      8 *
+        (∫⁻ t in Set.Icc (1 : ℝ) 2,
+          eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ phi q)
+            (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) *
+        (∫⁻ t in Set.Icc (1 : ℝ) 2,
+          eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ tau q)
+            (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) := by
+  let P : EuclideanSpace ℝ (Fin n) → ℝ≥0∞ := fun x ↦
+    ∫⁻ t in Set.Icc (1 : ℝ) 2,
+      ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ phi q)
+        (fun i y ↦ f.1 i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹
+  let Q : EuclideanSpace ℝ (Fin n) → ℝ≥0∞ := fun x ↦
+    ∫⁻ t in Set.Icc (1 : ℝ) 2,
+      ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ tau q)
+        (fun i y ↦ f.1 i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹
+  let Rphi : ℝ≥0∞ := ∫⁻ t in Set.Icc (1 : ℝ) 2,
+    eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ phi q)
+      (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹
+  let Rtau : ℝ≥0∞ := ∫⁻ t in Set.Icc (1 : ℝ) 2,
+    eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ tau q)
+      (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹
+  have hPmeas : AEMeasurable P volume := by
+    simpa only [P] using aux_leftBumpOne_energy_inner_aemeasurable phi f.1 k
+  have hQmeas : AEMeasurable Q volume := by
+    simpa only [Q] using aux_leftBumpOne_energy_inner_aemeasurable tau f.1 k
+  have hPtonelli : (∫⁻ x, P x) = Rphi := by
+    simpa only [P, Rphi] using aux_leftBumpOne_energy_tonelli phi f.1 k
+  have hQtonelli : (∫⁻ x, Q x) = Rtau := by
+    simpa only [Q, Rtau] using aux_leftBumpOne_energy_tonelli tau f.1 k
+  have hholder := aux_leftBumpOne_lintegral_sqrt_mul_sqrt_le volume P Q hPmeas hQmeas
+  have hchain (u : {v : Fin (J + 1) → aux_dyadicInterval k // Monotone v}) :
+      (∑ j : Fin J,
+        ‖aux_leftBumpOne_averageLp hn phi f (u.1 j.succ) -
+          aux_leftBumpOne_averageLp hn phi f (u.1 j.castSucc)‖ₑ ^ (2 : ℝ)) ≤
+        8 * Rphi ^ ((2 : ℝ)⁻¹) * Rtau ^ ((2 : ℝ)⁻¹) := by
+    have hpoint (x : EuclideanSpace ℝ (Fin n)) :
+        (∑ j : Fin J,
+          ‖twistedAverageAtScale (u.1 j.succ) (fun q ↦ phi q) (fun i y ↦ f.1 i y) x -
+            twistedAverageAtScale (u.1 j.castSucc) (fun q ↦ phi q)
+              (fun i y ↦ f.1 i y) x‖ₑ ^ (2 : ℝ)) ≤
+          8 * (P x ^ ((2 : ℝ)⁻¹) * Q x ^ ((2 : ℝ)⁻¹)) := by
+      have h := aux_leftBumpOne_pointwise_local_product phi f.1 x J k u.1 u.2
+      rw [← htau] at h
+      simpa only [P, Q, mul_assoc] using h
+    have hpointInt :
+        (∫⁻ x,
+          ∑ j : Fin J,
+            ‖twistedAverageAtScale (u.1 j.succ) (fun q ↦ phi q)
+                (fun i y ↦ f.1 i y) x -
+              twistedAverageAtScale (u.1 j.castSucc) (fun q ↦ phi q)
+                (fun i y ↦ f.1 i y) x‖ₑ ^ (2 : ℝ)) ≤
+          ∫⁻ x, 8 * (P x ^ ((2 : ℝ)⁻¹) * Q x ^ ((2 : ℝ)⁻¹)) := by
+      apply lintegral_mono
+      exact hpoint
+    calc
+      (∑ j : Fin J,
+        ‖aux_leftBumpOne_averageLp hn phi f (u.1 j.succ) -
+          aux_leftBumpOne_averageLp hn phi f (u.1 j.castSucc)‖ₑ ^ (2 : ℝ)) =
+          ∫⁻ x,
+            ∑ j : Fin J,
+              ‖twistedAverageAtScale (u.1 j.succ) (fun q ↦ phi q)
+                  (fun i y ↦ f.1 i y) x -
+                twistedAverageAtScale (u.1 j.castSucc) (fun q ↦ phi q)
+                  (fun i y ↦ f.1 i y) x‖ₑ ^ (2 : ℝ) :=
+        aux_leftBumpOne_lp_chain_energy_eq_lintegral hn phi f J k u.1 u.2
+      _ ≤ ∫⁻ x, 8 * (P x ^ ((2 : ℝ)⁻¹) * Q x ^ ((2 : ℝ)⁻¹)) := hpointInt
+      _ = 8 * ∫⁻ x, P x ^ ((2 : ℝ)⁻¹) * Q x ^ ((2 : ℝ)⁻¹) := by
+        rw [lintegral_const_mul' 8 _ (by norm_num)]
+      _ ≤ 8 * ((∫⁻ x, P x) ^ ((2 : ℝ)⁻¹) *
+          (∫⁻ x, Q x) ^ ((2 : ℝ)⁻¹)) := by gcongr
+      _ = 8 * Rphi ^ ((2 : ℝ)⁻¹) * Rtau ^ ((2 : ℝ)⁻¹) := by
+        rw [hPtonelli, hQtonelli]
+        ring
+  have hroot : finiteVariationSeminorm
+      (fun s : aux_dyadicInterval k ↦ aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J ≤
+      (8 * Rphi ^ ((2 : ℝ)⁻¹) * Rtau ^ ((2 : ℝ)⁻¹)) ^ ((2 : ℝ)⁻¹) := by
+    rw [finiteVariationSeminorm]
+    apply iSup_le
+    intro u
+    have h := ENNReal.rpow_le_rpow (hchain u) (by norm_num : (0 : ℝ) ≤ (2 : ℝ)⁻¹)
+    simpa only [← enorm_eq_nnnorm] using h
+  have hsquare := ENNReal.rpow_le_rpow hroot (by norm_num : (0 : ℝ) ≤ 2)
+  have hright :
+      ((8 * Rphi ^ ((2 : ℝ)⁻¹) * Rtau ^ ((2 : ℝ)⁻¹)) ^ ((2 : ℝ)⁻¹)) ^ (2 : ℝ) =
+        8 * Rphi ^ ((2 : ℝ)⁻¹) * Rtau ^ ((2 : ℝ)⁻¹) := by
+    rw [← ENNReal.rpow_mul]
+    norm_num
+  rw [hright] at hsquare
+  exact hsquare
+
+private theorem aux_leftBumpOne_weighted_energy_bound
+    (u v w C D P X Y : ℝ≥0∞)
+    (hu0 : u ≠ 0) (hutop : u ≠ ∞) (hv0 : v ≠ 0) (hvtop : v ≠ ∞)
+    (hweight : u⁻¹ ^ ((2 : ℝ)⁻¹) * v⁻¹ ^ ((2 : ℝ)⁻¹) = w)
+    (hX : u * X ≤ 2 * C * P) (hY : v * Y ≤ 2 * D * P) :
+    8 * X ^ ((2 : ℝ)⁻¹) * Y ^ ((2 : ℝ)⁻¹) ≤
+      16 * w * C ^ ((2 : ℝ)⁻¹) * D ^ ((2 : ℝ)⁻¹) * P := by
+  let h : ℝ := (2 : ℝ)⁻¹
+  have hh : 0 ≤ h := by dsimp [h]; norm_num
+  have huhr0 : u ^ h ≠ 0 := by
+    intro hz
+    rcases (ENNReal.rpow_eq_zero_iff.mp hz) with hz | hz
+    · exact hu0 hz.1
+    · exact hutop hz.1
+  have huhrtop : u ^ h ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hh hutop
+  have hvhr0 : v ^ h ≠ 0 := by
+    intro hz
+    rcases (ENNReal.rpow_eq_zero_iff.mp hz) with hz | hz
+    · exact hv0 hz.1
+    · exact hvtop hz.1
+  have hvhrtop : v ^ h ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hh hvtop
+  have hXroot : (u * X) ^ h ≤ (2 * C * P) ^ h :=
+    ENNReal.rpow_le_rpow hX hh
+  have hYroot : (v * Y) ^ h ≤ (2 * D * P) ^ h :=
+    ENNReal.rpow_le_rpow hY hh
+  have hprod : (u * X) ^ h * (v * Y) ^ h ≤
+      (2 * C * P) ^ h * (2 * D * P) ^ h :=
+    mul_le_mul hXroot hYroot bot_le bot_le
+  have hsplitX : X ^ h = u⁻¹ ^ h * (u * X) ^ h := by
+    rw [ENNReal.inv_rpow, ENNReal.mul_rpow_of_nonneg _ _ hh]
+    rw [← mul_assoc, ENNReal.inv_mul_cancel huhr0 huhrtop, one_mul]
+  have hsplitY : Y ^ h = v⁻¹ ^ h * (v * Y) ^ h := by
+    rw [ENNReal.inv_rpow, ENNReal.mul_rpow_of_nonneg _ _ hh]
+    rw [← mul_assoc, ENNReal.inv_mul_cancel hvhr0 hvhrtop, one_mul]
+  have hpowTwo : (2 : ℝ≥0∞) ^ h * 2 ^ h = 2 := by
+    rw [← ENNReal.rpow_add_of_nonneg _ _ hh hh]
+    dsimp [h]
+    norm_num
+  have hpowP : P ^ h * P ^ h = P := by
+    rw [← ENNReal.rpow_add_of_nonneg _ _ hh hh]
+    dsimp [h]
+    norm_num
+  calc
+    8 * X ^ h * Y ^ h =
+        8 * (u⁻¹ ^ h * v⁻¹ ^ h) * ((u * X) ^ h * (v * Y) ^ h) := by
+      rw [hsplitX, hsplitY]
+      ring
+    _ ≤ 8 * (u⁻¹ ^ h * v⁻¹ ^ h) *
+        ((2 * C * P) ^ h * (2 * D * P) ^ h) := by
+      gcongr
+    _ = 16 * w * C ^ h * D ^ h * P := by
+      rw [hweight]
+      repeat' rw [ENNReal.mul_rpow_of_nonneg _ _ hh]
+      calc
+        8 * w * (2 ^ h * C ^ h * P ^ h * (2 ^ h * D ^ h * P ^ h)) =
+            8 * w * ((2 ^ h * 2 ^ h) * C ^ h * D ^ h * (P ^ h * P ^ h)) := by ring
+        _ = 16 * w * C ^ h * D ^ h * P := by
+          rw [hpowTwo, hpowP]
+          ring
+
+private theorem aux_leftBumpOne_leftBumpOne_weight_identity (k : ℤ) :
+    (ENNReal.ofReal (Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2)))⁻¹ ^ ((2 : ℝ)⁻¹) *
+      (ENNReal.ofReal (Real.rpow 2 ((k : ℝ) / 2)))⁻¹ ^ ((2 : ℝ)⁻¹) =
+        ENNReal.ofReal (Real.rpow 2 ((k : ℝ) / 2)) := by
+  let a : ℝ := -(3 : ℝ) * (k : ℝ) / 2
+  let b : ℝ := (k : ℝ) / 2
+  have htwo : (ENNReal.ofReal (2 : ℝ)) ≠ 0 := by norm_num
+  have htwo_top : (ENNReal.ofReal (2 : ℝ)) ≠ ∞ := by norm_num
+  change (ENNReal.ofReal (Real.rpow 2 a))⁻¹ ^ ((2 : ℝ)⁻¹) *
+      (ENNReal.ofReal (Real.rpow 2 b))⁻¹ ^ ((2 : ℝ)⁻¹) =
+        ENNReal.ofReal (Real.rpow 2 b)
+  have ha : ENNReal.ofReal (Real.rpow 2 a) = (ENNReal.ofReal (2 : ℝ)) ^ a :=
+    (ENNReal.ofReal_rpow_of_pos (by norm_num : (0 : ℝ) < 2)).symm
+  have hb : ENNReal.ofReal (Real.rpow 2 b) = (ENNReal.ofReal (2 : ℝ)) ^ b :=
+    (ENNReal.ofReal_rpow_of_pos (by norm_num : (0 : ℝ) < 2)).symm
+  rw [ha, hb,
+    ← ENNReal.rpow_neg, ← ENNReal.rpow_neg,
+    ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
+    ← ENNReal.rpow_add _ _ htwo htwo_top]
+  congr 1
+  dsimp [a, b]
+  ring
+
+private theorem aux_leftBumpOne_leftBumpOne_weight_nonzero (k : ℤ) :
+    ENNReal.ofReal (Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2)) ≠ 0 := by
+  exact ENNReal.ofReal_ne_zero_iff.mpr
+    (Real.rpow_pos_of_pos (by norm_num) _)
+
+private theorem aux_leftBumpOne_leftBumpOne_weight_not_top (k : ℤ) :
+    ENNReal.ofReal (Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2)) ≠ ∞ :=
+  ENNReal.ofReal_ne_top
+
+private theorem aux_leftBumpOne_leftBumpOne_Tweight_nonzero (k : ℤ) :
+    ENNReal.ofReal (Real.rpow 2 ((k : ℝ) / 2)) ≠ 0 := by
+  exact ENNReal.ofReal_ne_zero_iff.mpr
+    (Real.rpow_pos_of_pos (by norm_num) _)
+
+private theorem aux_leftBumpOne_leftBumpOne_Tweight_not_top (k : ℤ) :
+    ENNReal.ofReal (Real.rpow 2 ((k : ℝ) / 2)) ≠ ∞ :=
+  ENNReal.ofReal_ne_top
+
+private theorem aux_leftBumpOne_finset_sqrt_mul_sqrt_le {ι : Type*} (κ : Finset ι)
+    (p q : ι → ℝ≥0∞) :
+    (∑ i ∈ κ, p i ^ ((2 : ℝ)⁻¹) * q i ^ ((2 : ℝ)⁻¹)) ≤
+      (∑ i ∈ κ, p i) ^ ((2 : ℝ)⁻¹) *
+        (∑ i ∈ κ, q i) ^ ((2 : ℝ)⁻¹) := by
+  classical
+  letI : MeasurableSpace κ := ⊤
+  let p' : κ → ℝ≥0∞ := fun i ↦ p i
+  let q' : κ → ℝ≥0∞ := fun i ↦ q i
+  have hp : AEMeasurable p' Measure.count := Measurable.aemeasurable (by fun_prop)
+  have hq : AEMeasurable q' Measure.count := Measurable.aemeasurable (by fun_prop)
+  have h := aux_leftBumpOne_lintegral_sqrt_mul_sqrt_le Measure.count p' q' hp hq
+  simpa only [p', q', lintegral_count, tsum_fintype,
+    ← Finset.sum_coe_sort κ (fun i ↦ p i ^ ((2 : ℝ)⁻¹) * q i ^ ((2 : ℝ)⁻¹)),
+    ← Finset.sum_coe_sort κ p, ← Finset.sum_coe_sort κ q] using h
+
+private theorem aux_leftBumpOne_dyadic_index_unique {x : ℝ} {k l : ℤ}
+    (hk : (2 : ℝ) ^ k ≤ x ∧ x < (2 : ℝ) ^ (k + 1))
+    (hl : (2 : ℝ) ^ l ≤ x ∧ x < (2 : ℝ) ^ (l + 1)) :
+    k = l := by
+  apply le_antisymm
+  · by_contra hnot
+    have hlt : l < k := lt_of_not_ge hnot
+    have hstep : l + 1 ≤ k := Int.add_one_le_iff.mpr hlt
+    have hp : (2 : ℝ) ^ (l + 1) ≤ (2 : ℝ) ^ k :=
+      (zpow_le_zpow_iff_right₀ (by norm_num : (1 : ℝ) < 2)).mpr hstep
+    exact (not_lt_of_ge (hp.trans hk.1)) hl.2
+  · by_contra hnot
+    have hlt : k < l := lt_of_not_ge hnot
+    have hstep : k + 1 ≤ l := Int.add_one_le_iff.mpr hlt
+    have hp : (2 : ℝ) ^ (k + 1) ≤ (2 : ℝ) ^ l :=
+      (zpow_le_zpow_iff_right₀ (by norm_num : (1 : ℝ) < 2)).mpr hstep
+    exact (not_lt_of_ge (hp.trans hl.1)) hk.2
+
+private theorem aux_leftBumpOne_kappa_card_le {J : ℕ}
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ j, 0 < t j)
+    (kappa : Finset ℤ)
+    (hkappa : ∀ k, k ∈ kappa ↔ ∃ j,
+      (2 : ℝ) ^ k ≤ t j ∧ t j < (2 : ℝ) ^ (k + 1)) :
+    kappa.card ≤ J + 1 := by
+  classical
+  choose q hq using fun k : kappa => (hkappa k).mp k.property
+  have hqin : Function.Injective q := by
+    intro k l hkl
+    apply Subtype.ext
+    apply aux_leftBumpOne_dyadic_index_unique (x := t (q k)) (k := (k : ℤ)) (l := (l : ℤ))
+    · exact hq k
+    · simpa [hkl] using hq l
+  simpa using Fintype.card_le_of_injective q hqin
+
+private theorem aux_leftBumpOne_finset_sum_as_dyadic_chain (kappa : Finset ℤ)
+    (hkappa : kappa.Nonempty) :
+    ∃ (K : ℕ) (_ : 0 < K) (_ : K = kappa.card) (q : aux_dyadicChain K),
+      ∀ F : ℤ → ℝ≥0∞,
+        (∑ k ∈ kappa, F k) = ∑ j : Fin K, F (q.1 j.castSucc) := by
+  classical
+  obtain ⟨M, hcard⟩ : ∃ M : ℕ, kappa.card = M + 1 := by
+    have hpos : 0 < kappa.card := Finset.card_pos.mpr hkappa
+    refine ⟨kappa.card - 1, ?_⟩
+    omega
+  let e : Fin (M + 1) ↪o ℤ := kappa.orderEmbOfFin hcard
+  let qfun : Fin (M + 2) → ℤ :=
+    Fin.lastCases (e (Fin.last M) + 1) e
+  have hqfun : StrictMono qfun := by
+    intro i j hij
+    by_cases hj : j = Fin.last (M + 1)
+    · subst j
+      change i.1 < M + 1 at hij
+      let i' : Fin (M + 1) := ⟨i.1, by omega⟩
+      have hi : i = i'.castSucc := by rfl
+      rw [hi]
+      simp only [qfun, Fin.lastCases_castSucc, Fin.lastCases_last]
+      have hle : e i' ≤ e (Fin.last M) := e.monotone (Fin.le_last i')
+      omega
+    · have hjlt : j < Fin.last (M + 1) := Fin.lt_last_iff_ne_last.mpr hj
+      change i.1 < j.1 at hij
+      change j.1 < M + 1 at hjlt
+      let i' : Fin (M + 1) := ⟨i.1, by omega⟩
+      let j' : Fin (M + 1) := ⟨j.1, by omega⟩
+      have hi : i = i'.castSucc := by rfl
+      have hj' : j = j'.castSucc := by rfl
+      rw [hi, hj']
+      simp only [qfun, Fin.lastCases_castSucc]
+      apply e.strictMono
+      simpa [i', j'] using hij
+  let q : aux_dyadicChain (M + 1) := ⟨qfun, hqfun⟩
+  refine ⟨M + 1, Nat.zero_lt_succ _, hcard.symm, q, ?_⟩
+  intro F
+  let e' : Fin (M + 1) → kappa := fun i ↦
+    ⟨e i, Finset.orderEmbOfFin_mem kappa hcard i⟩
+  have he'inj : Function.Injective e' := by
+    intro i j hij
+    apply e.injective
+    exact congrArg Subtype.val hij
+  have he'bij : Function.Bijective e' := by
+    rw [Fintype.bijective_iff_injective_and_card]
+    refine ⟨he'inj, ?_⟩
+    simp [hcard]
+  let equiv : Fin (M + 1) ≃ kappa := Equiv.ofBijective e' he'bij
+  calc
+    (∑ k ∈ kappa, F k) = ∑ k : kappa, F k := (Finset.sum_coe_sort kappa F).symm
+    _ = ∑ j : Fin (M + 1), F (equiv j) := by
+      exact (Equiv.sum_comp equiv (fun k : kappa ↦ F k)).symm
+    _ = ∑ j : Fin (M + 1), F (q.1 j.castSucc) := by
+      apply Finset.sum_congr rfl
+      intro j _
+      change F (e j) = F (qfun j.castSucc)
+      simp [qfun]
+
+private theorem aux_leftBumpOne_card_power_bound {n J K : ℕ} (hn : 2 ≤ n) (hJ : 0 < J)
+    (hK : K ≤ J + 1) :
+    ENNReal.ofReal ((K : ℝ) ^ variationExponent n) ≤
+      2 * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+  have hexpNonneg : 0 ≤ variationExponent n := by
+    unfold variationExponent
+    have hn' : (2 : ℝ) ≤ n := by exact_mod_cast hn
+    have hpow : (2 : ℝ) ^ (-(n : ℝ) + 2) ≤ 1 :=
+      Real.rpow_le_one_of_one_le_of_nonpos (by norm_num) (by linarith)
+    linarith
+  have hexpLeOne : variationExponent n ≤ 1 := by
+    unfold variationExponent
+    have hpow : 0 ≤ (2 : ℝ) ^ (-(n : ℝ) + 2) :=
+      Real.rpow_nonneg (by norm_num) _
+    linarith
+  have hKreal : (K : ℝ) ≤ 2 * J := by
+    have hKJ : (K : ℝ) ≤ J + 1 := by exact_mod_cast hK
+    have hJreal : (1 : ℝ) ≤ J := by exact_mod_cast hJ
+    nlinarith
+  have hpow : (K : ℝ) ^ variationExponent n ≤
+      2 * (J : ℝ) ^ variationExponent n := by
+    calc
+      (K : ℝ) ^ variationExponent n ≤ (2 * J : ℝ) ^ variationExponent n :=
+        Real.rpow_le_rpow (Nat.cast_nonneg _) hKreal hexpNonneg
+      _ = (2 : ℝ) ^ variationExponent n * (J : ℝ) ^ variationExponent n :=
+        Real.mul_rpow (by norm_num) (by positivity)
+      _ ≤ 2 * (J : ℝ) ^ variationExponent n := by
+        have htwo : (2 : ℝ) ^ variationExponent n ≤ 2 := by
+          calc
+            (2 : ℝ) ^ variationExponent n ≤ (2 : ℝ) ^ (1 : ℝ) :=
+              Real.rpow_le_rpow_of_exponent_le (by norm_num) hexpLeOne
+            _ = 2 := by norm_num
+        gcongr
+  calc
+    ENNReal.ofReal ((K : ℝ) ^ variationExponent n) ≤
+        ENNReal.ofReal (2 * (J : ℝ) ^ variationExponent n) :=
+      ENNReal.ofReal_le_ofReal hpow
+    _ = 2 * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+      rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
+      norm_num
+
+private theorem aux_leftBumpOne_ofReal_sqrt_rpow_product (C D : ℝ) (hC : 0 ≤ C) (hD : 0 ≤ D)
+    (k : ℤ) :
+    ENNReal.ofReal (Real.rpow 2 ((k : ℝ) / 2)) *
+        ENNReal.ofReal C ^ ((2 : ℝ)⁻¹) * ENNReal.ofReal D ^ ((2 : ℝ)⁻¹) =
+      ENNReal.ofReal
+        (Real.sqrt C * Real.sqrt D * Real.rpow 2 ((k : ℝ) / 2)) := by
+  have hhalf : 0 ≤ (2 : ℝ)⁻¹ := by norm_num
+  rw [ENNReal.ofReal_rpow_of_nonneg hC hhalf,
+    ENNReal.ofReal_rpow_of_nonneg hD hhalf]
+  have hCsqrt : C ^ ((2 : ℝ)⁻¹) = Real.sqrt C := by
+    convert (Real.sqrt_eq_rpow C).symm using 1 <;> norm_num
+  have hDsqrt : D ^ ((2 : ℝ)⁻¹) = Real.sqrt D := by
+    convert (Real.sqrt_eq_rpow D).symm using 1 <;> norm_num
+  rw [hCsqrt, hDsqrt]
+  have hsC : 0 ≤ Real.sqrt C := Real.sqrt_nonneg _
+  have hsD : 0 ≤ Real.sqrt D := Real.sqrt_nonneg _
+  have hkpow : 0 ≤ Real.rpow 2 ((k : ℝ) / 2) :=
+    Real.rpow_nonneg (by norm_num) _
+  calc
+    ENNReal.ofReal (Real.rpow 2 ((k : ℝ) / 2)) * ENNReal.ofReal (Real.sqrt C) *
+        ENNReal.ofReal (Real.sqrt D) =
+        ENNReal.ofReal
+          (Real.rpow 2 ((k : ℝ) / 2) * Real.sqrt C * Real.sqrt D) := by
+          rw [← ENNReal.ofReal_mul hkpow,
+            ← ENNReal.ofReal_mul (mul_nonneg hkpow hsC)]
+    _ = ENNReal.ofReal
+          (Real.sqrt C * Real.sqrt D * Real.rpow 2 ((k : ℝ) / 2)) := by
+          congr 1
+          ring
+
+private theorem aux_leftBumpOne_whitney_nonneg (n : ℕ) :
+    0 ≤ C_inductPositiveTermsReductionWhitney n := by
+  have hdiagonal : 0 ≤ C_diagonalBandReduction := by
+    unfold C_diagonalBandReduction
+    exact add_nonneg
+      (mul_nonneg (by positivity) (Real.sqrt_nonneg _))
+      (mul_nonneg (by positivity) aux_CincreaseDataReduction_nonneg)
+  have hnonWhitney : 0 ≤ C_inductPositiveTermsReductionNonWhitney := by
+    unfold C_inductPositiveTermsReductionNonWhitney
+    apply add_nonneg
+    · norm_num [C_oneScaleEstimateWindow, WindowsAndPairs.C_uniPair]
+    · exact mul_nonneg (mul_nonneg (mul_nonneg (by positivity) (by positivity))
+        (by positivity)) hdiagonal
+  have hskip : 0 ≤ C_inductPositiveTermsReductionNonWhitneySkip n := by
+    unfold C_inductPositiveTermsReductionNonWhitneySkip
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _) hnonWhitney
+  have hgap : 0 ≤ C_inductPositiveTermsReductionWhitneyGap n := by
+    unfold C_inductPositiveTermsReductionWhitneyGap
+    exact add_nonneg (mul_nonneg (by norm_num) hskip)
+      (mul_nonneg (mul_nonneg (by positivity) (add_nonneg (sq_nonneg _)
+        (sq_nonneg _))) hdiagonal)
+  unfold C_inductPositiveTermsReductionWhitney
+  exact mul_nonneg (by norm_num) hgap
+
+private theorem aux_leftBumpOne_short_one_nonneg (n : ℕ) : 0 ≤ C_leftBumpOneShortOne n := by
+  unfold C_leftBumpOneShortOne
+  exact mul_nonneg (mul_nonneg (mul_nonneg (by positivity)
+    (aux_leftBumpOne_whitney_nonneg n)) (sq_nonneg _))
+    (by norm_num [C_thetaTOffcenter])
+
+private theorem aux_leftBumpOne_short_two_aux_nonneg : 0 ≤ C_leftBumpOneShortTwoAuxiliary := by
+  unfold C_leftBumpOneShortTwoAuxiliary
+  exact le_max_of_le_left (by norm_num [C_thetaPrimitive, WindowsAndPairs.C_uniPair])
+
+private theorem aux_leftBumpOne_short_two_nonneg (n : ℕ) : 0 ≤ C_leftBumpOneShortTwo n := by
+  unfold C_leftBumpOneShortTwo
+  exact mul_nonneg (mul_nonneg (mul_nonneg (by positivity)
+    (aux_leftBumpOne_whitney_nonneg n))
+    (by norm_num [C_thetaTOffcenter])) (sq_nonneg _)
+
+private theorem aux_leftBumpOne_long_nonneg (n : ℕ) : 0 ≤ C_leftBumpOneLong n := by
+  unfold C_leftBumpOneLong
+  exact mul_nonneg
+    (mul_nonneg (by positivity) (aux_leftBumpOne_whitney_nonneg n))
+    (sq_nonneg _)
+
+private theorem aux_leftBumpOne_T_eq_tBump (phi : SchwartzMap ℝ ℝ) :
+    Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ phi x) = aux_tBump phi := by
+  funext x
+  unfold Codex.Reduction.BumpFunctions.aux_T
+    Codex.Reduction.BumpFunctions.multiplicationOperatorX aux_tBump
+  simp only [smul_eq_mul]
+
+private theorem aux_leftBumpOne_leftBumpOne_local_finset_bound {n : ℕ} (hn : 2 ≤ n)
+    (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
+    (hk : k ≤ -1) (J : ℕ) (hJ : 0 < J)
+    (κ : Finset ℤ) (hcard : κ.card ≤ J + 1) :
+    ∑ ell ∈ κ,
+      (finiteVariationSeminorm
+        (fun s : aux_dyadicInterval ell ↦
+          aux_leftBumpOne_averageLp hn (phiFourSchwartz b k) f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+      16 * ENNReal.ofReal
+        (Real.sqrt (C_leftBumpOneShortOne n) *
+          Real.sqrt (C_leftBumpOneShortTwo n) * Real.rpow 2 ((k : ℝ) / 2)) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+  classical
+  let phi : SchwartzMap ℝ ℝ := phiFourSchwartz b k
+  let psi : SchwartzMap ℝ ℝ :=
+    SchwartzMap.smulLeftCLM ℝ (fun q : ℝ ↦ q) phi
+  let tau : SchwartzMap ℝ ℝ := SchwartzMap.derivCLM ℝ ℝ psi
+  have hphi : (phi : ℝ → ℝ) = windowBasedBumpFunctions.phiFour b k := by
+    funext x
+    exact phiFourSchwartz_apply b k x
+  have htau : (tau : ℝ → ℝ) = aux_tBump phi := by
+    funext z
+    change SchwartzMap.derivCLM ℝ ℝ psi z = aux_tBump phi z
+    simp only [SchwartzMap.derivCLM_apply, aux_tBump]
+    congr 1
+    funext z
+    rw [SchwartzMap.smulLeftCLM_apply_apply (by fun_prop)]
+    simp only [smul_eq_mul]
+  let Iphi : ℤ → ℝ≥0∞ := fun ell ↦
+    ∫⁻ t in Set.Icc (1 : ℝ) 2,
+      eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ ell * t) (fun q ↦ phi q)
+        (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹
+  let Itau : ℤ → ℝ≥0∞ := fun ell ↦
+    ∫⁻ t in Set.Icc (1 : ℝ) 2,
+      eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ ell * t) (fun q ↦ tau q)
+        (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹
+  let X : ℝ≥0∞ := ∑ ell ∈ κ, Iphi ell
+  let Y : ℝ≥0∞ := ∑ ell ∈ κ, Itau ell
+  let P : ℝ≥0∞ := ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
+  let w1 : ℝ≥0∞ := ENNReal.ofReal (Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2))
+  let w2 : ℝ≥0∞ := ENNReal.ofReal (Real.rpow 2 ((k : ℝ) / 2))
+  have hTtau : Codex.Reduction.BumpFunctions.aux_T
+      (windowBasedBumpFunctions.phiFour b k) = (tau : ℝ → ℝ) := by
+    calc
+      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) =
+          aux_tBump phi := by
+            rw [← hphi]
+            exact aux_leftBumpOne_T_eq_tBump phi
+      _ = (tau : ℝ → ℝ) := htau.symm
+  by_cases hκ : κ.Nonempty
+  · obtain ⟨K, hK, hKcard, q, hsum⟩ := aux_leftBumpOne_finset_sum_as_dyadic_chain κ hκ
+    have hKle : K ≤ J + 1 := by simpa [hKcard] using hcard
+    have hpow := aux_leftBumpOne_card_power_bound hn hJ hKle
+    have hshortOne := leftBumpOneShortOne hn b f k hk K hK q
+    have hshortTwo := leftBumpOneShortTwo hn b f k hk K hK q
+    rw [hTtau] at hshortTwo
+    have hX : w1 * X ≤ 2 * ENNReal.ofReal (C_leftBumpOneShortOne n) * P := by
+      calc
+        w1 * X = ∑ ell ∈ κ, w1 * Iphi ell := by
+          dsimp [X]
+          rw [Finset.mul_sum]
+        _ = ∑ j : Fin K, w1 * Iphi (q.1 j.castSucc) := hsum (fun ell ↦ w1 * Iphi ell)
+        _ ≤ ENNReal.ofReal (C_leftBumpOneShortOne n) *
+            ENNReal.ofReal ((K : ℝ) ^ variationExponent n) := by
+          simpa [w1, Iphi, hphi, ENNReal.rpow_two, mul_comm] using hshortOne
+        _ ≤ ENNReal.ofReal (C_leftBumpOneShortOne n) * (2 * P) := by
+          gcongr
+        _ = 2 * ENNReal.ofReal (C_leftBumpOneShortOne n) * P := by ring
+    have hY : w2 * Y ≤ 2 * ENNReal.ofReal (C_leftBumpOneShortTwo n) * P := by
+      calc
+        w2 * Y = ∑ ell ∈ κ, w2 * Itau ell := by
+          dsimp [Y]
+          rw [Finset.mul_sum]
+        _ = ∑ j : Fin K, w2 * Itau (q.1 j.castSucc) := hsum (fun ell ↦ w2 * Itau ell)
+        _ ≤ ENNReal.ofReal (C_leftBumpOneShortTwo n) *
+            ENNReal.ofReal ((K : ℝ) ^ variationExponent n) := by
+          simpa [w2, Itau, ENNReal.rpow_two, mul_comm] using hshortTwo
+        _ ≤ ENNReal.ofReal (C_leftBumpOneShortTwo n) * (2 * P) := by
+          gcongr
+        _ = 2 * ENNReal.ofReal (C_leftBumpOneShortTwo n) * P := by ring
+    have hlocal :
+        ∑ ell ∈ κ,
+          (finiteVariationSeminorm
+            (fun s : aux_dyadicInterval ell ↦
+              aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+          8 * X ^ ((2 : ℝ)⁻¹) * Y ^ ((2 : ℝ)⁻¹) := by
+      calc
+        ∑ ell ∈ κ,
+          (finiteVariationSeminorm
+            (fun s : aux_dyadicInterval ell ↦
+              aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+            ∑ ell ∈ κ, 8 * Iphi ell ^ ((2 : ℝ)⁻¹) * Itau ell ^ ((2 : ℝ)⁻¹) := by
+              apply Finset.sum_le_sum
+              intro ell hell
+              have h := aux_leftBumpOne_local_variation_product hn phi tau htau f J ell
+              simpa only [Iphi, Itau] using h
+        _ = 8 * (∑ ell ∈ κ, Iphi ell ^ ((2 : ℝ)⁻¹) * Itau ell ^ ((2 : ℝ)⁻¹)) := by
+              rw [Finset.mul_sum]
+              apply Finset.sum_congr rfl
+              intro ell _
+              ring
+        _ ≤ 8 * (X ^ ((2 : ℝ)⁻¹) * Y ^ ((2 : ℝ)⁻¹)) := by
+              gcongr
+              simpa only [X, Y] using aux_leftBumpOne_finset_sqrt_mul_sqrt_le κ Iphi Itau
+        _ = 8 * X ^ ((2 : ℝ)⁻¹) * Y ^ ((2 : ℝ)⁻¹) := by ring
+    have hweight : w1⁻¹ ^ ((2 : ℝ)⁻¹) * w2⁻¹ ^ ((2 : ℝ)⁻¹) = w2 := by
+      simpa only [w1, w2] using aux_leftBumpOne_leftBumpOne_weight_identity k
+    have hweighted := aux_leftBumpOne_weighted_energy_bound
+      w1 w2 w2 (ENNReal.ofReal (C_leftBumpOneShortOne n))
+      (ENNReal.ofReal (C_leftBumpOneShortTwo n)) P X Y
+      (by simpa only [w1] using aux_leftBumpOne_leftBumpOne_weight_nonzero k)
+      (by simpa only [w1] using aux_leftBumpOne_leftBumpOne_weight_not_top k)
+      (by simpa only [w2] using aux_leftBumpOne_leftBumpOne_Tweight_nonzero k)
+      (by simpa only [w2] using aux_leftBumpOne_leftBumpOne_Tweight_not_top k)
+      hweight hX hY
+    have hconstants :
+        w2 * ENNReal.ofReal (C_leftBumpOneShortOne n) ^ ((2 : ℝ)⁻¹) *
+          ENNReal.ofReal (C_leftBumpOneShortTwo n) ^ ((2 : ℝ)⁻¹) =
+        ENNReal.ofReal
+          (Real.sqrt (C_leftBumpOneShortOne n) *
+            Real.sqrt (C_leftBumpOneShortTwo n) * Real.rpow 2 ((k : ℝ) / 2)) := by
+      exact aux_leftBumpOne_ofReal_sqrt_rpow_product
+        (C_leftBumpOneShortOne n) (C_leftBumpOneShortTwo n)
+        (aux_leftBumpOne_short_one_nonneg n) (aux_leftBumpOne_short_two_nonneg n) k
+    calc
+      ∑ ell ∈ κ,
+        (finiteVariationSeminorm
+          (fun s : aux_dyadicInterval ell ↦
+            aux_leftBumpOne_averageLp hn (phiFourSchwartz b k) f (s : ℝ)) 2 J) ^ (2 : ℝ) =
+          ∑ ell ∈ κ,
+            (finiteVariationSeminorm
+              (fun s : aux_dyadicInterval ell ↦
+                aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) := by
+            congr 3
+      _ ≤ 8 * X ^ ((2 : ℝ)⁻¹) * Y ^ ((2 : ℝ)⁻¹) := hlocal
+      _ ≤ 16 * w2 * ENNReal.ofReal (C_leftBumpOneShortOne n) ^ ((2 : ℝ)⁻¹) *
+          ENNReal.ofReal (C_leftBumpOneShortTwo n) ^ ((2 : ℝ)⁻¹) * P := hweighted
+      _ = 16 * ENNReal.ofReal
+          (Real.sqrt (C_leftBumpOneShortOne n) *
+            Real.sqrt (C_leftBumpOneShortTwo n) * Real.rpow 2 ((k : ℝ) / 2)) * P := by
+          rw [show 16 * w2 * ENNReal.ofReal (C_leftBumpOneShortOne n) ^ ((2 : ℝ)⁻¹) *
+              ENNReal.ofReal (C_leftBumpOneShortTwo n) ^ ((2 : ℝ)⁻¹) * P =
+              16 * (w2 * ENNReal.ofReal (C_leftBumpOneShortOne n) ^ ((2 : ℝ)⁻¹) *
+                ENNReal.ofReal (C_leftBumpOneShortTwo n) ^ ((2 : ℝ)⁻¹)) * P by ring,
+            hconstants]
+      _ = 16 * ENNReal.ofReal
+          (Real.sqrt (C_leftBumpOneShortOne n) *
+            Real.sqrt (C_leftBumpOneShortTwo n) * Real.rpow 2 ((k : ℝ) / 2)) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by rfl
+  · have hempty : κ = ∅ := Finset.not_nonempty_iff_eq_empty.mp hκ
+    simp [hempty]
+
+private noncomputable def aux_leftBumpOne_intEnergy (d : ℤ → ℤ → ℝ≥0∞) {J : ℕ}
+    (t : Fin (J + 1) → ℤ) : ℝ≥0∞ :=
+  ∑ j : Fin J, d (t j.succ) (t j.castSucc)
+
+private theorem aux_leftBumpOne_compress_mono_chain
+    (d : ℤ → ℤ → ℝ≥0∞) (hdiag : ∀ z, d z z = 0) :
+    ∀ (J : ℕ) (t : Fin (J + 1) → ℤ), Monotone t →
+      ∃ M : ℕ, M ≤ J ∧ ∃ q : Fin (M + 1) → ℤ,
+        StrictMono q ∧ q 0 = t 0 ∧ q (Fin.last M) = t (Fin.last J) ∧
+          aux_leftBumpOne_intEnergy d t = aux_leftBumpOne_intEnergy d q := by
+  intro J
+  induction J with
+  | zero =>
+      intro t ht
+      refine ⟨0, le_rfl, t, ?_, rfl, rfl, ?_⟩
+      · intro i j hij
+        omega
+      · simp [aux_leftBumpOne_intEnergy]
+  | succ J ih =>
+      intro t ht
+      let u : Fin (J + 1) → ℤ := fun i => t i.succ
+      have hu : Monotone u := by
+        intro i j hij
+        dsimp [u]
+        apply ht
+        exact Fin.succ_le_succ_iff.mpr hij
+      obtain ⟨M, hMJ, q, hq, hq0, hqlast, henergy⟩ := ih u hu
+      have hsplit : aux_leftBumpOne_intEnergy d t =
+          d (t 1) (t 0) + aux_leftBumpOne_intEnergy d u := by
+        unfold aux_leftBumpOne_intEnergy
+        rw [Fin.sum_univ_succ]
+        rfl
+      by_cases h01 : t 0 = t 1
+      · refine ⟨M, le_trans hMJ (Nat.le_succ _), q, hq, ?_, ?_, ?_⟩
+        · simpa [u, h01] using hq0
+        · simpa [u, Fin.succ_last] using hqlast
+        · rw [hsplit, h01, hdiag, zero_add, henergy]
+      · have h01lt : t 0 < t 1 := lt_of_le_of_ne (ht (Fin.zero_le _)) h01
+        let q' : Fin (M + 2) → ℤ := fun i => Fin.cases (t 0) q i
+        have hq'strict : StrictMono q' := by
+          intro i j hij
+          by_cases hi : i = 0
+          · subst i
+            have hj0 : j ≠ 0 := ne_of_gt (lt_of_le_of_lt (Fin.zero_le _) hij)
+            obtain ⟨j', hj'⟩ := Fin.exists_succ_eq_of_ne_zero hj0
+            subst j
+            have hqle : q 0 ≤ q j' := hq.monotone (Fin.zero_le _)
+            have hfirst : t 0 < q 0 := by
+              calc
+                t 0 < t 1 := h01lt
+                _ = u 0 := rfl
+                _ = q 0 := hq0.symm
+            exact hfirst.trans_le hqle
+          · obtain ⟨i', hi'⟩ := Fin.exists_succ_eq_of_ne_zero hi
+            subst i
+            have hj0 : j ≠ 0 := by
+              intro hj
+              subst j
+              exact (Fin.not_lt_zero i'.succ hij).elim
+            obtain ⟨j', hj'⟩ := Fin.exists_succ_eq_of_ne_zero hj0
+            subst j
+            exact hq (Fin.succ_lt_succ_iff.mp hij)
+        refine ⟨M + 1, Nat.succ_le_succ hMJ, q', hq'strict, ?_, ?_, ?_⟩
+        · rfl
+        · simp only [q', Fin.succ_last]
+          exact hqlast
+        · have hqsplit : aux_leftBumpOne_intEnergy d q' =
+              d (t 1) (t 0) + aux_leftBumpOne_intEnergy d q := by
+            unfold aux_leftBumpOne_intEnergy
+            rw [Fin.sum_univ_succ]
+            have hqone : q' (Fin.succ 0) = t 1 := by
+              change q 0 = t 1
+              simpa [u] using hq0
+            rw [hqone]
+            rfl
+          rw [hsplit, henergy, hqsplit]
+
+private theorem aux_leftBumpOne_variationExponent_nonneg {n : ℕ} (hn : 2 ≤ n) :
+    0 ≤ variationExponent n := by
+  unfold variationExponent
+  have hn' : (2 : ℝ) ≤ n := by exact_mod_cast hn
+  have hexp : -(n : ℝ) + 2 ≤ 0 := by linarith
+  have hpow : (2 : ℝ) ^ (-(n : ℝ) + 2) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos (by norm_num) hexp
+  linarith
+
+private theorem aux_leftBumpOne_energy_of_root_le (E S V : ℝ≥0∞)
+    (h : E ^ ((2 : ℝ)⁻¹) ≤ 2 * S ^ ((2 : ℝ)⁻¹) + V) :
+    E ≤ 8 * S + 2 * V ^ (2 : ℝ) := by
+  have hsquare := ENNReal.rpow_le_rpow h (by norm_num : (0 : ℝ) ≤ 2)
+  have hleft : (E ^ ((2 : ℝ)⁻¹)) ^ (2 : ℝ) = E := by
+    rw [← ENNReal.rpow_mul]
+    norm_num
+  rw [hleft] at hsquare
+  calc
+    E ≤ (2 * S ^ ((2 : ℝ)⁻¹) + V) ^ (2 : ℝ) := hsquare
+    _ ≤ (2 : ℝ≥0∞) ^ ((2 : ℝ) - 1) *
+        (((2 * S ^ ((2 : ℝ)⁻¹)) ^ (2 : ℝ)) + V ^ (2 : ℝ)) := by
+      exact ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ (p := (2 : ℝ)) (by norm_num)
+    _ = 8 * S + 2 * V ^ (2 : ℝ) := by
+      rw [show (2 : ℝ≥0∞) ^ ((2 : ℝ) - 1) = 2 by norm_num]
+      rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2)]
+      have hterm : (S ^ ((2 : ℝ)⁻¹)) ^ (2 : ℝ) = S := by
+        rw [← ENNReal.rpow_mul]
+        norm_num
+      rw [hterm]
+      norm_num [mul_add]
+      congr 1
+      · rw [← mul_assoc]
+        norm_num
+
+private theorem aux_leftBumpOne_long_variation_sq_le {n : ℕ} (hn : 2 ≤ n)
+    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (J : ℕ) (hJ : 0 < J)
+    (A : ℝ) (hA : aux_dyadicVariationBound A (fun x ↦ phi x) f.1) :
+    (finiteVariationSeminorm
+      (fun s : Set.range (fun k : ℤ ↦ (2 : ℝ) ^ k) ↦
+        aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+      ENNReal.ofReal A * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+  let R : ℝ≥0∞ := ENNReal.ofReal A * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
+  have hexpNonneg : 0 ≤ variationExponent n := aux_leftBumpOne_variationExponent_nonneg hn
+  have hchain (u : {v : Fin (J + 1) → Set.range (fun k : ℤ ↦ (2 : ℝ) ^ k) //
+      Monotone v}) :
+      (∑ j : Fin J,
+        ‖aux_leftBumpOne_averageLp hn phi f (u.1 j.succ) -
+          aux_leftBumpOne_averageLp hn phi f (u.1 j.castSucc)‖ₑ ^ (2 : ℝ)) ≤ R := by
+    let z : Fin (J + 1) → ℤ := fun j ↦ (u.1 j).2.choose
+    have hzval (j : Fin (J + 1)) : (2 : ℝ) ^ z j = u.1 j :=
+      (u.1 j).2.choose_spec
+    have hzmono : Monotone z := by
+      intro i j hij
+      apply (zpow_le_zpow_iff_right₀ (by norm_num : (1 : ℝ) < 2)).mp
+      calc
+        (2 : ℝ) ^ z i = u.1 i := hzval i
+        _ ≤ u.1 j := u.2 hij
+        _ = (2 : ℝ) ^ z j := (hzval j).symm
+    let d : ℤ → ℤ → ℝ≥0∞ := fun p q ↦
+      ‖aux_leftBumpOne_averageLp hn phi f ((2 : ℝ) ^ p) -
+        aux_leftBumpOne_averageLp hn phi f ((2 : ℝ) ^ q)‖ₑ ^ (2 : ℕ)
+    have hdiag (p : ℤ) : d p p = 0 := by
+      simp [d]
+    obtain ⟨M, hMJ, q, hq, hq0, hqlast, hcompress⟩ :=
+      aux_leftBumpOne_compress_mono_chain d hdiag J z hzmono
+    have horig :
+        (∑ j : Fin J,
+          ‖aux_leftBumpOne_averageLp hn phi f (u.1 j.succ) -
+            aux_leftBumpOne_averageLp hn phi f (u.1 j.castSucc)‖ₑ ^ (2 : ℝ)) =
+          aux_leftBumpOne_intEnergy d z := by
+      unfold aux_leftBumpOne_intEnergy d
+      simp only [ENNReal.rpow_two]
+      apply Finset.sum_congr rfl
+      intro j _
+      rw [hzval]
+      rw [hzval]
+    by_cases hM : M = 0
+    · subst M
+      have hzero : aux_leftBumpOne_intEnergy d q = 0 := by simp [aux_leftBumpOne_intEnergy]
+      rw [horig, hcompress, hzero]
+      exact bot_le
+    · have hMpos : 0 < M := Nat.pos_of_ne_zero hM
+      let qc : aux_dyadicChain M := ⟨q, hq⟩
+      have hqEnergy : aux_leftBumpOne_intEnergy d q =
+          aux_dyadicJumpEnergy (fun x ↦ phi x) f.1 M qc := by
+        unfold aux_leftBumpOne_intEnergy d aux_dyadicJumpEnergy
+        apply Finset.sum_congr rfl
+        intro j _
+        dsimp [qc]
+        simpa only [← enorm_eq_nnnorm] using congrArg (fun z : ℝ≥0∞ ↦ z ^ (2 : ℕ))
+          (aux_leftBumpOne_averageLp_enorm_sub hn phi f ((2 : ℝ) ^ (q j.succ))
+            ((2 : ℝ) ^ (q j.castSucc)))
+      have hq := hA M hMpos qc
+      have hMJreal : (M : ℝ) ≤ J := by exact_mod_cast hMJ
+      have hpow : (M : ℝ) ^ variationExponent n ≤
+          (J : ℝ) ^ variationExponent n :=
+        Real.rpow_le_rpow (Nat.cast_nonneg _) hMJreal hexpNonneg
+      have hpowENN : ENNReal.ofReal ((M : ℝ) ^ variationExponent n) ≤
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) :=
+        ENNReal.ofReal_le_ofReal hpow
+      calc
+        (∑ j : Fin J,
+          ‖aux_leftBumpOne_averageLp hn phi f (u.1 j.succ) -
+            aux_leftBumpOne_averageLp hn phi f (u.1 j.castSucc)‖ₑ ^ (2 : ℝ)) =
+            aux_leftBumpOne_intEnergy d z := horig
+        _ = aux_leftBumpOne_intEnergy d q := hcompress
+        _ = aux_dyadicJumpEnergy (fun x ↦ phi x) f.1 M qc := hqEnergy
+        _ ≤ ENNReal.ofReal A * ENNReal.ofReal ((M : ℝ) ^ variationExponent n) := hq
+        _ ≤ R := by
+          dsimp [R]
+          exact mul_le_mul_of_nonneg_left hpowENN bot_le
+  have hroot : finiteVariationSeminorm
+      (fun s : Set.range (fun k : ℤ ↦ (2 : ℝ) ^ k) ↦
+        aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J ≤ R ^ ((2 : ℝ)⁻¹) := by
+    rw [finiteVariationSeminorm]
+    apply iSup_le
+    intro u
+    have h := ENNReal.rpow_le_rpow (hchain u)
+      (by norm_num : (0 : ℝ) ≤ (2 : ℝ)⁻¹)
+    simpa only [← enorm_eq_nnnorm] using h
+  have hsquare := ENNReal.rpow_le_rpow hroot (by norm_num : (0 : ℝ) ≤ 2)
+  have hright : (R ^ ((2 : ℝ)⁻¹)) ^ (2 : ℝ) = R := by
+    rw [← ENNReal.rpow_mul]
+    norm_num
+  rw [hright] at hsquare
+  exact hsquare
+
+private theorem aux_leftBumpOne_shortLong_finish_of_local {n : ℕ} (hn : 2 ≤ n)
+    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (B A : ℝ)
+    (hBnonneg : 0 ≤ B) (hAnonneg : 0 ≤ A)
+    (hA : aux_dyadicVariationBound A (fun x ↦ phi x) f.1)
+    (hlocal : ∀ (J : ℕ), 0 < J → ∀ κ : Finset ℤ, κ.card ≤ J + 1 →
+      ∑ k ∈ κ,
+        (finiteVariationSeminorm
+          (fun s : aux_dyadicInterval k ↦ aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+        ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) :
+    aux_variationBound (8 * B + 2 * A) (fun x ↦ phi x) f.1 := by
+  unfold aux_variationBound
+  intro J hJ t
+  let a : ℝ → Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ (Fin n))) :=
+    aux_leftBumpOne_averageLp hn phi f
+  obtain ⟨κ, hκ, hsplit⟩ :=
+    (shortlongJumps a J 2 (by norm_num : (1 : ℝ) ≤ 2)).1 t.1 t.2.1.monotone t.2.2
+  let S : ℝ≥0∞ := ∑ k ∈ κ,
+    (finiteVariationSeminorm (fun s : aux_dyadicInterval k ↦ a s) 2 J) ^ (2 : ℝ)
+  let V : ℝ≥0∞ := finiteVariationSeminorm
+    (fun s : Set.range (fun k : ℤ ↦ (2 : ℝ) ^ k) ↦ a s) 2 J
+  have henergy :
+      (∑ j : Fin J,
+        (‖a (t.1 j.succ) - a (t.1 j.castSucc)‖₊ : ℝ≥0∞) ^ (2 : ℝ)) ≤
+        8 * S + 2 * V ^ (2 : ℝ) := by
+    exact aux_leftBumpOne_energy_of_root_le _ S V hsplit
+  have hlocal' : S ≤ ENNReal.ofReal B *
+      ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+    have hcard : κ.card ≤ J + 1 :=
+      aux_leftBumpOne_kappa_card_le t.1 t.2.2 κ hκ
+    dsimp [S, a]
+    exact hlocal J hJ κ hcard
+  have hlong' : V ^ (2 : ℝ) ≤
+      ENNReal.ofReal A * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+    dsimp [V, a]
+    exact aux_leftBumpOne_long_variation_sq_le hn phi f J hJ A hA
+  have htarget :
+      8 * S + 2 * V ^ (2 : ℝ) ≤
+        ENNReal.ofReal (8 * B + 2 * A) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+    calc
+      8 * S + 2 * V ^ (2 : ℝ) ≤
+          8 * (ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) +
+          2 * (ENNReal.ofReal A * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) := by
+            gcongr
+      _ = (8 * ENNReal.ofReal B + 2 * ENNReal.ofReal A) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by ring
+      _ = ENNReal.ofReal (8 * B + 2 * A) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+        rw [ENNReal.ofReal_add]
+        · rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 8),
+            ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
+          norm_num
+        · exact mul_nonneg (by norm_num) hBnonneg
+        · exact mul_nonneg (by norm_num) hAnonneg
+  have hjump : aux_jumpEnergy (fun x ↦ phi x) f.1 J t =
+      ∑ j : Fin J,
+        (‖a (t.1 j.succ) - a (t.1 j.castSucc)‖₊ : ℝ≥0∞) ^ (2 : ℝ) := by
+    unfold aux_jumpEnergy twistedJumpEnergy
+    simp only [ENNReal.rpow_two]
+    apply Finset.sum_congr rfl
+    intro j _
+    simpa only [← enorm_eq_nnnorm, ENNReal.rpow_two] using
+      (congrArg (fun z : ℝ≥0∞ ↦ z ^ (2 : ℕ))
+        (aux_leftBumpOne_averageLp_enorm_sub hn phi f (t.1 j.succ) (t.1 j.castSucc))).symm
+  rw [hjump]
+  exact henergy.trans htarget
+
+private theorem aux_leftBumpOne_twistedAverageAtScale_oneRescaled {n : ℕ}
+    (phi : ℝ → ℝ) (f : Fin n → EuclideanSpace ℝ (Fin n) → ℝ)
+    (t lambda : ℝ) (ht : 0 < t) (hlambda : 0 < lambda) :
+    twistedAverageAtScale t (aux_oneRescaled lambda phi) f =
+      twistedAverageAtScale (t * lambda) phi f := by
+  unfold twistedAverageAtScale twistedAverage aux_oneRescaled
+  funext x
+  congr 1
+  funext s
+  congr 1
+  field_simp [ht.ne', hlambda.ne']
+
+private def aux_leftBumpOne_scaleMul (lambda : ℝ) (hlambda : 0 < lambda)
+    {J : ℕ} (t : aux_scaleChain J) : aux_scaleChain J :=
+  ⟨fun j ↦ lambda * t.1 j,
+    ⟨by
+      intro i j hij
+      exact mul_lt_mul_of_pos_left (t.2.1 hij) hlambda,
+    by
+      intro j
+      exact mul_pos hlambda (t.2.2 j)⟩⟩
+
+private theorem aux_leftBumpOne_variationBound_of_oneRescaled {n : ℕ} (lambda : ℝ)
+    (hlambda : 0 < lambda) (A : ℝ) (phi : ℝ → ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (hA : aux_variationBound A (aux_oneRescaled lambda phi) f) :
+    aux_variationBound A phi f := by
+  intro J hJ t
+  let t' : aux_scaleChain J := aux_leftBumpOne_scaleMul lambda⁻¹ (inv_pos.mpr hlambda) t
+  have hscale (j : Fin (J + 1)) : t'.1 j * lambda = t.1 j := by
+    dsimp [t', aux_leftBumpOne_scaleMul]
+    field_simp [hlambda.ne']
+  have hEq : aux_jumpEnergy (aux_oneRescaled lambda phi) f J t' =
+      aux_jumpEnergy phi f J t := by
+    unfold aux_jumpEnergy twistedJumpEnergy
+    apply Finset.sum_congr rfl
+    intro j _
+    congr 2
+    funext x
+    rw [aux_leftBumpOne_twistedAverageAtScale_oneRescaled phi (fun i y ↦ f i y)
+      (t'.1 j.succ) lambda (t'.2.2 j.succ) hlambda,
+      aux_leftBumpOne_twistedAverageAtScale_oneRescaled phi (fun i y ↦ f i y)
+        (t'.1 j.castSucc) lambda (t'.2.2 j.castSucc) hlambda,
+      hscale j.succ, hscale j.castSucc]
+  calc
+    aux_jumpEnergy phi f J t = aux_jumpEnergy (aux_oneRescaled lambda phi) f J t' :=
+      hEq.symm
+    _ ≤ ENNReal.ofReal A * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) :=
+      hA J hJ t'
+
+private theorem aux_leftBumpOne_twistedAverageAtScale_neg {n : ℕ}
+    (phi : ℝ → ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ) (t : ℝ) :
+    twistedAverageAtScale t (-phi) (fun i y ↦ f i y) =
+      -twistedAverageAtScale t phi (fun i y ↦ f i y) := by
+  unfold twistedAverageAtScale
+  have hkernel : (fun s : ℝ ↦ t⁻¹ * (-phi) (t⁻¹ * s)) =
+      -(fun s : ℝ ↦ t⁻¹ * phi (t⁻¹ * s)) := by
+    funext s
+    change t⁻¹ * (-(phi (t⁻¹ * s))) = -(t⁻¹ * phi (t⁻¹ * s))
+    ring
+  rw [hkernel]
+  exact aux_twistedAverage_neg f _
+
+private theorem aux_leftBumpOne_variationBound_neg {n : ℕ} (A : ℝ) (phi : ℝ → ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (hA : aux_variationBound A phi f) :
+    aux_variationBound A (-phi) f := by
+  intro J hJ t
+  calc
+    aux_jumpEnergy (-phi) f J t = aux_jumpEnergy phi f J t := by
+      unfold aux_jumpEnergy twistedJumpEnergy
+      apply Finset.sum_congr rfl
+      intro j _
+      rw [aux_leftBumpOne_twistedAverageAtScale_neg phi f,
+        aux_leftBumpOne_twistedAverageAtScale_neg phi f]
+      have hfun :
+          (fun x ↦ (-twistedAverageAtScale (t.1 j.succ) phi (fun i y ↦ f i y)) x -
+              (-twistedAverageAtScale (t.1 j.castSucc) phi (fun i y ↦ f i y)) x) =
+            fun x ↦ -(twistedAverageAtScale (t.1 j.succ) phi (fun i y ↦ f i y) x -
+              twistedAverageAtScale (t.1 j.castSucc) phi (fun i y ↦ f i y) x) := by
+            funext x
+            simp only [Pi.neg_apply]
+            ring
+      rw [hfun]
+      calc
+        eLpNorm
+            (fun x ↦ -(twistedAverageAtScale (t.1 j.succ) phi (fun i y ↦ f i y) x -
+              twistedAverageAtScale (t.1 j.castSucc) phi (fun i y ↦ f i y) x)) 2 volume ^ 2 =
+            eLpNorm
+              (-(fun x ↦ twistedAverageAtScale (t.1 j.succ) phi (fun i y ↦ f i y) x -
+                twistedAverageAtScale (t.1 j.castSucc) phi (fun i y ↦ f i y) x)) 2 volume ^ 2 := by
+              rfl
+        _ = eLpNorm
+              (fun x ↦ twistedAverageAtScale (t.1 j.succ) phi (fun i y ↦ f i y) x -
+                twistedAverageAtScale (t.1 j.castSucc) phi (fun i y ↦ f i y) x) 2 volume ^ 2 := by
+              rw [eLpNorm_neg]
+    _ ≤ ENNReal.ofReal A * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) :=
+      hA J hJ t
+
+private theorem aux_leftBumpOne_conv_Ici_one_eq_conv_Ici_zero_shift (g : ℝ → ℝ) (x : ℝ) :
+    Codex.Reduction.SmoothingDecomposition.aux_realConvolution
+      (Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 1)) g x =
+      Codex.Reduction.SmoothingDecomposition.aux_realConvolution
+        (Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0)) g (x - 1) := by
+  unfold Codex.Reduction.SmoothingDecomposition.aux_realConvolution
+  let G : ℝ → ℝ := fun y =>
+    Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 1) y * g (x - y)
+  have hemb : MeasurableEmbedding (fun z : ℝ => (1 : ℝ) + z) := by
+    apply Continuous.measurableEmbedding
+    · fun_prop
+    · intro u v huv
+      linarith
+  have hmp := measurePreserving_add_left (volume : Measure ℝ) (1 : ℝ)
+  have h := hmp.integral_comp hemb G
+  calc
+    (∫ y : ℝ, Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 1) y *
+        g (x - y)) = ∫ z : ℝ, G (1 + z) := h.symm
+    _ = ∫ z : ℝ,
+        Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) z *
+          g ((x - 1) - z) := by
+      apply integral_congr_ae
+      filter_upwards [] with z
+      dsimp [G]
+      have hind : Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 1) (1 + z) =
+          Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) z := by
+        unfold Codex.Reduction.SmoothingDecomposition.aux_indicator
+        by_cases hz : 0 ≤ z <;> simp [hz] <;> linarith
+      rw [hind]
+      congr 1
+      ring
+
+private theorem aux_leftBumpOne_conv_Ici_zero_rescaled_theta_eq (b : windowBasedBumpFunctions)
+    (a x : ℝ) (ha : 0 < a) :
+    Codex.Reduction.SmoothingDecomposition.aux_realConvolution
+      (Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0))
+      (Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+        (windowBasedBumpFunctions.theta b)) x =
+      a * aux_oneRescaled a (windowBasedBumpFunctions.thetaTilde b) x := by
+  let g : ℝ → ℝ := fun z =>
+    Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) z *
+      windowBasedBumpFunctions.theta b (a⁻¹ * x - z)
+  have hind (y : ℝ) :
+      Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) (a⁻¹ * y) =
+        Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y := by
+    have hmem : a⁻¹ * y ∈ Set.Ici (0 : ℝ) ↔ y ∈ Set.Ici (0 : ℝ) := by
+      change 0 ≤ a⁻¹ * y ↔ 0 ≤ y
+      exact mul_nonneg_iff_of_pos_left (inv_pos.mpr ha)
+    unfold Codex.Reduction.SmoothingDecomposition.aux_indicator
+    by_cases hy : y ∈ Set.Ici (0 : ℝ)
+    · have hy' : a⁻¹ * y ∈ Set.Ici (0 : ℝ) := hmem.mpr hy
+      simp [hy, hy']
+    · have hy' : a⁻¹ * y ∉ Set.Ici (0 : ℝ) := fun h => hy (hmem.mp h)
+      simp [hy, hy']
+  have hleft :
+      (∫ y : ℝ, Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
+        Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+          (windowBasedBumpFunctions.theta b) (x - y)) =
+        a⁻¹ * ∫ y : ℝ, g (a⁻¹ * y) := by
+    calc
+      (∫ y : ℝ, Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
+          Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+            (windowBasedBumpFunctions.theta b) (x - y)) =
+          ∫ y : ℝ, a⁻¹ * g (a⁻¹ * y) := by
+            apply integral_congr_ae
+            filter_upwards [] with y
+            dsimp [g, Codex.Reduction.SmoothingDecomposition.aux_realRescaled]
+            rw [hind]
+            ring
+      _ = a⁻¹ * ∫ y : ℝ, g (a⁻¹ * y) := by
+        rw [integral_const_mul]
+  have hchange := Measure.integral_comp_inv_mul_left g a
+  rw [abs_of_pos ha, smul_eq_mul] at hchange
+  change (∫ y : ℝ,
+      Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
+      Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+        (windowBasedBumpFunctions.theta b) (x - y)) =
+    a * (a⁻¹ * ∫ y : ℝ,
+      Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
+        windowBasedBumpFunctions.theta b (a⁻¹ * x - y))
+  calc
+    (∫ y : ℝ, Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
+        Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+          (windowBasedBumpFunctions.theta b) (x - y)) =
+        a⁻¹ * ∫ y : ℝ, g (a⁻¹ * y) := hleft
+    _ = a⁻¹ * (a * ∫ y : ℝ, g y) := by rw [hchange]
+    _ = ∫ y : ℝ, g y := by field_simp [ha.ne']
+    _ = a * (a⁻¹ * ∫ y : ℝ,
+        Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
+          windowBasedBumpFunctions.theta b (a⁻¹ * x - y)) := by
+          dsimp [g]
+          field_simp [ha.ne']
+
+private theorem aux_leftBumpOne_phiTwo_eq_neg_oneRescaled_phiFour (b : windowBasedBumpFunctions)
+    (k : ℤ) :
+    windowBasedBumpFunctions.phiTwo b k =
+      -aux_oneRescaled ((2 : ℝ) ^ k) (windowBasedBumpFunctions.phiFour b k) := by
+  funext x
+  let a : ℝ := (2 : ℝ) ^ k
+  have ha : 0 < a := by
+    dsimp [a]
+    positivity
+  rw [show windowBasedBumpFunctions.phiTwo b k x =
+      -Codex.Reduction.SmoothingDecomposition.aux_realConvolution
+        (Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0))
+        (Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+          (windowBasedBumpFunctions.theta b)) (x - 1) by
+          dsimp [windowBasedBumpFunctions.phiTwo, a]
+          rw [aux_leftBumpOne_conv_Ici_one_eq_conv_Ici_zero_shift]
+    , aux_leftBumpOne_conv_Ici_zero_rescaled_theta_eq b a (x - 1) ha]
+  have hprod : (2 : ℝ) ^ k * (2 : ℝ) ^ (-k) = 1 := by
+    rw [← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+    norm_num
+  dsimp [a, windowBasedBumpFunctions.phiFour, aux_oneRescaled]
+  field_simp [ha.ne']
+  rw [hprod]
+
+private theorem aux_leftBumpOne_leftBumpOne {n : ℕ} (hn : 2 ≤ n)
+    (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
+    (hk : k ≤ -1) :
+    aux_variationBound (C_leftBumpOne n * Real.rpow 2 ((k : ℝ) / 2))
+      (windowBasedBumpFunctions.phiTwo b k) f.1 := by
+  let phi : SchwartzMap ℝ ℝ := phiFourSchwartz b k
+  let B : ℝ := 16 * Real.sqrt (C_leftBumpOneShortOne n) *
+    Real.sqrt (C_leftBumpOneShortTwo n) * Real.rpow 2 ((k : ℝ) / 2)
+  let A : ℝ := C_leftBumpOneLong n * Real.rpow 2 ((k : ℝ) / 2)
+  have hphi : (fun x : ℝ ↦ phi x) = windowBasedBumpFunctions.phiFour b k := by
+    funext x
+    exact phiFourSchwartz_apply b k x
+  have hBnonneg : 0 ≤ B := by
+    dsimp [B]
+    exact mul_nonneg
+      (mul_nonneg (mul_nonneg (by norm_num) (Real.sqrt_nonneg _)) (Real.sqrt_nonneg _))
+      (Real.rpow_nonneg (by norm_num) _)
+  have hAnonneg : 0 ≤ A := by
+    dsimp [A]
+    exact mul_nonneg (aux_leftBumpOne_long_nonneg n) (Real.rpow_nonneg (by norm_num) _)
+  have hlong : aux_dyadicVariationBound A (fun x ↦ phi x) f.1 := by
+    simpa [A, hphi] using leftBumpOneLong hn b f k hk
+  have hlocal : ∀ (J : ℕ), 0 < J → ∀ κ : Finset ℤ, κ.card ≤ J + 1 →
+      ∑ ell ∈ κ,
+        (finiteVariationSeminorm
+          (fun s : aux_dyadicInterval ell ↦ aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+        ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+    intro J hJ κ hcard
+    let Q : ℝ := Real.sqrt (C_leftBumpOneShortOne n) *
+      Real.sqrt (C_leftBumpOneShortTwo n) * Real.rpow 2 ((k : ℝ) / 2)
+    have hlocal0 := aux_leftBumpOne_leftBumpOne_local_finset_bound hn b f k hk J hJ κ hcard
+    calc
+      ∑ ell ∈ κ,
+        (finiteVariationSeminorm
+          (fun s : aux_dyadicInterval ell ↦ aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+          16 * ENNReal.ofReal Q * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+            simpa [phi, Q] using hlocal0
+      _ = ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+            have hBsplit : B = 16 * Q := by
+              dsimp [B, Q]
+              ring
+            rw [hBsplit, ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 16)]
+            norm_num
+  have hshort := aux_leftBumpOne_shortLong_finish_of_local hn phi f B A
+    hBnonneg hAnonneg hlong hlocal
+  have hcoef : 8 * B + 2 * A =
+      C_leftBumpOne n * Real.rpow 2 ((k : ℝ) / 2) := by
+    dsimp [B, A, C_leftBumpOne]
+    ring
+  rw [hcoef] at hshort
+  let a : ℝ := (2 : ℝ) ^ k
+  have ha : 0 < a := by
+    dsimp [a]
+    positivity
+  have hcomp : aux_oneRescaled a⁻¹ (aux_oneRescaled a (fun x ↦ phi x)) =
+      fun x ↦ phi x := by
+    funext x
+    unfold aux_oneRescaled
+    field_simp [ha.ne']
+  rw [← hcomp] at hshort
+  have hrescaled := aux_leftBumpOne_variationBound_of_oneRescaled a⁻¹ (inv_pos.mpr ha)
+    (C_leftBumpOne n * Real.rpow 2 ((k : ℝ) / 2))
+    (aux_oneRescaled a (fun x ↦ phi x)) f.1 hshort
+  have hneg := aux_leftBumpOne_variationBound_neg
+    (C_leftBumpOne n * Real.rpow 2 ((k : ℝ) / 2))
+    (aux_oneRescaled a (fun x ↦ phi x)) f.1 hrescaled
+  have hphiTwo : windowBasedBumpFunctions.phiTwo b k =
+      -aux_oneRescaled a (fun x ↦ phi x) := by
+    calc
+      windowBasedBumpFunctions.phiTwo b k =
+          -aux_oneRescaled ((2 : ℝ) ^ k) (windowBasedBumpFunctions.phiFour b k) :=
+            aux_leftBumpOne_phiTwo_eq_neg_oneRescaled_phiFour b k
+      _ = -aux_oneRescaled a (fun x ↦ phi x) := by
+            rw [← hphi]
+  rw [hphiTwo]
+  exact hneg
+
 theorem leftBumpOne {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
     (hk : k ≤ -1) :
     aux_variationBound (C_leftBumpOne n * Real.rpow 2 ((k : ℝ) / 2))
       (windowBasedBumpFunctions.phiTwo b k) f.1 := by
-  sorry
+  exact aux_leftBumpOne_leftBumpOne hn b f k hk
 
 /-- The numerical estimate in Lemma \ref{constant left bump one}. -/
+private theorem aux_leftBumpOne_whitney_sharp {n : ℕ} (hn : 2 ≤ n) :
+    C_inductPositiveTermsReductionWhitney n <
+      (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
+  unfold C_inductPositiveTermsReductionWhitney
+  calc
+    11 * C_inductPositiveTermsReductionWhitneyGap n <
+        11 * ((127 / 128 : ℝ) * (2 : ℝ) ^ 553) :=
+      mul_lt_mul_of_pos_left (constantWhitneyGapReduction hn) (by norm_num)
+    _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
+      calc
+        11 * ((127 / 128 : ℝ) * (2 : ℝ) ^ 553) =
+            ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 4) * (2 : ℝ) ^ 553 := by
+              norm_num
+              ring
+        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by ring
+        _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by rw [← pow_add]
+
+private theorem aux_leftBumpOne_short_two_aux_le :
+    C_leftBumpOneShortTwoAuxiliary ≤ (2 : ℝ) ^ 31 := by
+  unfold C_leftBumpOneShortTwoAuxiliary
+  apply max_le
+  · exact (constantThetaPrimitive 2 (by norm_num) (by norm_num [N_uniPair])).2
+  · apply max_le
+    · calc
+        C_thetaDecay 2 ≤ (2 : ℝ) ^ (2 * 2 + 17) :=
+          constantThetaDecay 2 (by norm_num) (by norm_num)
+        _ ≤ (2 : ℝ) ^ 31 := by norm_num
+    · calc
+        C_thetaDecay 3 ≤ (2 : ℝ) ^ (2 * 3 + 17) :=
+          constantThetaDecay 3 (by norm_num) (by norm_num)
+        _ ≤ (2 : ℝ) ^ 31 := by norm_num
+
+private theorem aux_leftBumpOne_short_two_sharp {n : ℕ} (hn : 2 ≤ n) :
+    C_leftBumpOneShortTwo n <
+      (185801 / 262144 : ℝ) * (2 : ℝ) ^ 630 := by
+  have hW := aux_leftBumpOne_whitney_sharp hn
+  have hAux := aux_leftBumpOne_short_two_aux_le
+  have hO := constantOffCenterBump
+  have hOnonneg : 0 ≤ C_thetaTOffcenter := by
+    norm_num [C_thetaTOffcenter]
+  have hOpos : 0 < C_thetaTOffcenter := by
+    norm_num [C_thetaTOffcenter]
+  have hAuxpos : 0 < C_leftBumpOneShortTwoAuxiliary := by
+    unfold C_leftBumpOneShortTwoAuxiliary
+    exact lt_of_lt_of_le
+      (by norm_num [C_thetaPrimitive, WindowsAndPairs.C_uniPair])
+      (le_max_left _ _)
+  unfold C_leftBumpOneShortTwo
+  calc
+    (2 : ℝ) ^ 4 * C_inductPositiveTermsReductionWhitney n * C_thetaTOffcenter *
+        C_leftBumpOneShortTwoAuxiliary ^ 2 <
+      (2 : ℝ) ^ 4 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) * C_thetaTOffcenter *
+        C_leftBumpOneShortTwoAuxiliary ^ 2 := by
+          gcongr
+    _ ≤ (2 : ℝ) ^ 4 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) * C_thetaTOffcenter *
+        ((2 : ℝ) ^ 31) ^ 2 := by
+          gcongr
+    _ ≤ (2 : ℝ) ^ 4 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) * 133 *
+        ((2 : ℝ) ^ 31) ^ 2 := by
+          gcongr
+    _ = (185801 / 262144 : ℝ) * (2 : ℝ) ^ 630 := by
+      rw [show ((2 : ℝ) ^ 31) ^ 2 = (2 : ℝ) ^ 62 by rw [← pow_mul]]
+      calc
+        (2 : ℝ) ^ 4 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) * 133 *
+            (2 : ℝ) ^ 62 =
+            (185801 / 262144 : ℝ) *
+              ((2 : ℝ) ^ 11 * (2 : ℝ) ^ 557 * (2 : ℝ) ^ 62) := by norm_num; ring
+        _ = (185801 / 262144 : ℝ) * (2 : ℝ) ^ 630 := by
+          rw [← pow_add, ← pow_add]
+
+private theorem aux_leftBumpOne_constant_sharp {n : ℕ} (hn : 2 ≤ n) :
+    C_leftBumpOne n < (23 / 32 : ℝ) * (2 : ℝ) ^ 636 := by
+  let q : ℝ := 185801 / 262144
+  have h1 : C_leftBumpOneShortOne n < q * (2 : ℝ) ^ 628 := by
+    simpa [q] using constantLeftBumpOneShortOne hn
+  have h2 : C_leftBumpOneShortTwo n < q * (2 : ℝ) ^ 630 := by
+    simpa [q] using aux_leftBumpOne_short_two_sharp hn
+  have hL : C_leftBumpOneLong n < (2 : ℝ) ^ 625 :=
+    constantLeftBumpOneLong hn
+  have h1nonneg := aux_leftBumpOne_short_one_nonneg n
+  have h2nonneg := aux_leftBumpOne_short_two_nonneg n
+  have hproduct : C_leftBumpOneShortOne n * C_leftBumpOneShortTwo n <
+      (q * (2 : ℝ) ^ 629) ^ 2 := by
+    calc
+      C_leftBumpOneShortOne n * C_leftBumpOneShortTwo n <
+          (q * (2 : ℝ) ^ 628) * (q * (2 : ℝ) ^ 630) :=
+        mul_lt_mul_of_nonneg h1 h2 h1nonneg h2nonneg
+      _ = q ^ 2 * ((2 : ℝ) ^ 628 * (2 : ℝ) ^ 630) := by ring
+      _ = q ^ 2 * ((2 : ℝ) ^ 629) ^ 2 := by
+        congr 1
+        rw [← pow_add, ← pow_mul]
+      _ = (q * (2 : ℝ) ^ 629) ^ 2 := by rw [mul_pow]
+  have hroot : Real.sqrt (C_leftBumpOneShortOne n) *
+      Real.sqrt (C_leftBumpOneShortTwo n) < q * (2 : ℝ) ^ 629 := by
+    apply (sq_lt_sq₀
+      (mul_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _))
+      (by positivity)).mp
+    rw [mul_pow, Real.sq_sqrt h1nonneg, Real.sq_sqrt h2nonneg]
+    exact hproduct
+  have hshort : (2 : ℝ) ^ 7 * Real.sqrt (C_leftBumpOneShortOne n) *
+      Real.sqrt (C_leftBumpOneShortTwo n) < q * (2 : ℝ) ^ 636 := by
+    calc
+      (2 : ℝ) ^ 7 * Real.sqrt (C_leftBumpOneShortOne n) *
+          Real.sqrt (C_leftBumpOneShortTwo n) =
+          (2 : ℝ) ^ 7 *
+            (Real.sqrt (C_leftBumpOneShortOne n) *
+              Real.sqrt (C_leftBumpOneShortTwo n)) := by ring
+      _ < (2 : ℝ) ^ 7 * (q * (2 : ℝ) ^ 629) :=
+        mul_lt_mul_of_pos_left hroot (by positivity)
+      _ = q * (2 : ℝ) ^ 636 := by
+        calc
+          (2 : ℝ) ^ 7 * (q * (2 : ℝ) ^ 629) =
+              q * ((2 : ℝ) ^ 7 * (2 : ℝ) ^ 629) := by ring
+          _ = q * (2 : ℝ) ^ 636 := by rw [← pow_add]
+  have hlong : 2 * C_leftBumpOneLong n <
+      (1 / 1024 : ℝ) * (2 : ℝ) ^ 636 := by
+    calc
+      2 * C_leftBumpOneLong n < 2 * (2 : ℝ) ^ 625 :=
+        mul_lt_mul_of_pos_left hL (by norm_num)
+      _ = (1 / 1024 : ℝ) * (2 : ℝ) ^ 636 := by
+        rw [show (1024 : ℝ) = (2 : ℝ) ^ 10 by norm_num]
+        field_simp
+  unfold C_leftBumpOne
+  calc
+    (2 : ℝ) ^ 7 * Real.sqrt (C_leftBumpOneShortOne n) *
+          Real.sqrt (C_leftBumpOneShortTwo n) + 2 * C_leftBumpOneLong n <
+        q * (2 : ℝ) ^ 636 + (1 / 1024 : ℝ) * (2 : ℝ) ^ 636 :=
+      add_lt_add hshort hlong
+    _ = (q + 1 / 1024 : ℝ) * (2 : ℝ) ^ 636 := by ring
+    _ < (23 / 32 : ℝ) * (2 : ℝ) ^ 636 := by
+      apply mul_lt_mul_of_pos_right
+      · dsimp [q]
+        norm_num
+      · positivity
+
 theorem constantLeftBumpOne {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOne n < (23 / 32 : ℝ) * (2 : ℝ) ^ 636 := by
-  sorry
+  exact aux_leftBumpOne_constant_sharp hn
 
 /-- The final constant in the proof of Theorem \ref{thm:nct main real}. -/
 noncomputable def C_mainTwistedTheorem (n : ℕ) : ℝ :=

@@ -926,6 +926,13 @@ private theorem quarter_height_tsum (C : ℝ) (hC : 0 ≤ C) :
       (ENNReal.ofReal_tsum_of_nonneg hnonneg hactual).symm
     _ ≤ ENNReal.ofReal ((2 : ℝ) ^ 3 * C) := ENNReal.ofReal_le_ofReal hsum
 
+/-- The ENNReal geometric tail of a quarter-power dyadic decay is at most eight
+    times its nonnegative coefficient. -/
+theorem quarterHeightTsum (C : ℝ) (hC : 0 ≤ C) :
+    (∑' h : ℕ, ENNReal.ofReal (C * Real.rpow 2 (-((h : ℝ) / 4)))) ≤
+      ENNReal.ofReal ((2 : ℝ) ^ 3 * C) :=
+  quarter_height_tsum C hC
+
 
 /--
 Proposition \ref{P:diagonal-band-reduction}.  The sequence of all diagonal
