@@ -37,9 +37,9 @@ noncomputable def aux_twistedVariation {n : ℕ} (phi : ℝ → ℝ)
     (f : Fin n → EuclideanSpace ℝ (Fin n) → ℝ) (p : ℝ≥0∞) (r : ℝ) (J : ℕ) : ℝ≥0∞ :=
   ⨆ t : {u : Fin (J + 1) → Set.Ioi (0 : ℝ) // StrictMono u},
     (∑ j : Fin J,
-      eLpNorm
+      (eLpNorm
         (fun x ↦ twistedAverageAtScale (t.1 j.succ) phi f x -
-          twistedAverageAtScale (t.1 j.castSucc) phi f x) p volume) ^ r
+          twistedAverageAtScale (t.1 j.castSucc) phi f x) p volume) ^ r) ^ r⁻¹
 
 /-- Auxiliary scale-composition identity for the rescaling lemma `lem:rescaling`. -/
 private theorem aux_twistedAverageAtScale_oneRescaled {n : ℕ} (phi : ℝ → ℝ)
@@ -81,14 +81,14 @@ theorem rescaling {n : ℕ} (phi : ℝ → ℝ) (_hphi : Integrable phi)
     let t' := aux_scaleMul lambda hlambda t
     have hEq :
         (∑ j : Fin J,
-          eLpNorm
+          (eLpNorm
             (fun x ↦ twistedAverageAtScale (t.1 j.succ) (aux_oneRescaled lambda phi) f x -
               twistedAverageAtScale (t.1 j.castSucc) (aux_oneRescaled lambda phi) f x)
-            2 volume) ^ r =
+            2 volume) ^ r) ^ r⁻¹ =
           (∑ j : Fin J,
-            eLpNorm
+            (eLpNorm
               (fun x ↦ twistedAverageAtScale (t'.1 j.succ) phi f x -
-                twistedAverageAtScale (t'.1 j.castSucc) phi f x) 2 volume) ^ r := by
+                twistedAverageAtScale (t'.1 j.castSucc) phi f x) 2 volume) ^ r) ^ r⁻¹ := by
       congr 1
       apply Finset.sum_congr rfl
       intro j hj
@@ -103,21 +103,22 @@ theorem rescaling {n : ℕ} (phi : ℝ → ℝ) (_hphi : Integrable phi)
     rw [hEq]
     exact le_iSup (fun u : {u : Fin (J + 1) → Set.Ioi (0 : ℝ) // StrictMono u} ↦
       (∑ j : Fin J,
-        eLpNorm
+        (eLpNorm
           (fun x ↦ twistedAverageAtScale (u.1 j.succ) phi f x -
-            twistedAverageAtScale (u.1 j.castSucc) phi f x) 2 volume) ^ r) t'
+            twistedAverageAtScale (u.1 j.castSucc) phi f x) 2 volume) ^ r) ^ r⁻¹) t'
   · refine iSup_le fun t ↦ ?_
     let t' := aux_scaleMul lambda⁻¹ (inv_pos.mpr hlambda) t
     have hEq :
         (∑ j : Fin J,
-          eLpNorm
+          (eLpNorm
             (fun x ↦ twistedAverageAtScale (t.1 j.succ) phi f x -
-              twistedAverageAtScale (t.1 j.castSucc) phi f x) 2 volume) ^ r =
+              twistedAverageAtScale (t.1 j.castSucc) phi f x)
+            2 volume) ^ r) ^ r⁻¹ =
           (∑ j : Fin J,
-            eLpNorm
+            (eLpNorm
               (fun x ↦ twistedAverageAtScale (t'.1 j.succ) (aux_oneRescaled lambda phi) f x -
                 twistedAverageAtScale (t'.1 j.castSucc) (aux_oneRescaled lambda phi) f x)
-              2 volume) ^ r := by
+              2 volume) ^ r) ^ r⁻¹ := by
       congr 1
       apply Finset.sum_congr rfl
       intro j hj
@@ -132,10 +133,10 @@ theorem rescaling {n : ℕ} (phi : ℝ → ℝ) (_hphi : Integrable phi)
     rw [hEq]
     exact le_iSup (fun u : {u : Fin (J + 1) → Set.Ioi (0 : ℝ) // StrictMono u} ↦
       (∑ j : Fin J,
-        eLpNorm
+        (eLpNorm
           (fun x ↦ twistedAverageAtScale (u.1 j.succ) (aux_oneRescaled lambda phi) f x -
             twistedAverageAtScale (u.1 j.castSucc) (aux_oneRescaled lambda phi) f x)
-          2 volume) ^ r) t'
+          2 volume) ^ r) ^ r⁻¹) t'
 
 /--
 \begin{lemma}\label{lem:norm_A_sum_le_sum}
@@ -477,6 +478,15 @@ private theorem aux_normASum_twistedAverage_memLp {n : ℕ} (hn : 2 ≤ n)
   convert h using 1
   funext x
   simpa [K] using aux_normASum_twistedAverage_eq_E1Kernel chi f x
+
+/-- A twisted average of a square-integrable scalar kernel against a Schwartz
+tuple is square-integrable.  This public interface is used by the final
+short/long-variation reduction. -/
+theorem aux_twistedAverage_memLp {n : ℕ} (hn : 2 ≤ n)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (chi : ℝ → ℝ) (hchi : MemLp chi 2 volume) :
+    MemLp (twistedAverage chi (fun i x ↦ f i x)) 2 volume :=
+  aux_normASum_twistedAverage_memLp hn f chi hchi
 
 private theorem aux_normASum_twistedAverage_sq_integral_bound {n : ℕ} (hn : 2 ≤ n)
     (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)

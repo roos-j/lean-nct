@@ -315,6 +315,17 @@ theorem aux_withinSequenceDistance_trans {a b c : ℤ → ℝ} {k l : ℕ}
       _ ≤ a ((j + l) + k) := (hab (j + l)).2
       _ = a (j + (k + l)) := by ring
 
+/-- Pointwise maxima remain within a common finite sequence-distance comparison.
+This is used when finite bracket majorants produce the maximum of two nearby
+scale sequences. -/
+theorem aux_withinSequenceDistance_max {a b c : ℤ → ℝ} {k : ℕ}
+    (hab : WithinSequenceDistance a b k) (hac : WithinSequenceDistance a c k) :
+    WithinSequenceDistance a (fun j => max (b j) (c j)) k := by
+  intro j
+  constructor
+  · exact (hab j).1.trans (le_max_left _ _)
+  · exact max_le (hab j).2 (hac j).2
+
 /--
 \begin{proposition}[Properties of distance of sequences]\label{Properties of distance of sequences}
 Let $a,b,c\in {\rm A}$.

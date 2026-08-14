@@ -959,6 +959,16 @@ private theorem aux_fourier_tensor_two (f g : ℝ → ℝ) (xi : EuclideanSpace 
         push_cast
         ring
 
+/-- The Fourier transform of a two-coordinate tensor product factors into the
+two one-dimensional Fourier transforms.  This exposes the calculation used in
+the reduction argument without duplicating its Fubini proof. -/
+theorem aux_fourier_tensor_two_eq (f g : ℝ → ℝ) (xi : EuclideanSpace ℝ (Fin 2)) :
+    FourierTransform.fourier (fun u : EuclideanSpace ℝ (Fin 2) =>
+      (f (u 0) * g (u 1) : ℂ)) xi =
+    FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) (xi 0) *
+      FourierTransform.fourier (fun x : ℝ => (g x : ℂ)) (xi 1) := by
+  exact aux_fourier_tensor_two f g xi
+
 /-- Integrability of the three-variable Fubini integrand in the positivity part of
 `integralFct` (Lemma \ref{lem:int_fct}). -/
 private theorem aux_integralFct_triple_integrable

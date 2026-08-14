@@ -661,6 +661,57 @@ end aux_aToLambda
 
 open aux_aToLambda
 
+/- The canonical form of the change-of-variables identity.  Unlike the public
+existential formulation below, this fixes the transformed tuple once and for all,
+which is needed when several kernels are considered simultaneously. -/
+private theorem aux_aToLambda_explicit {d : ℕ} (phi : SchwartzMap ℝ ℝ)
+    (f : Fin (d + 1) → SchwartzMap (EuclideanSpace ℝ (Fin (d + 1))) ℝ) :
+    eLpNorm (twistedAverage phi (fun i x ↦ f i x)) 2 volume ^ 2 =
+      ENNReal.ofReal
+        (prismForm (d + 1) 1 (by omega) (by omega)
+          (fun y ↦ phi (y.1 0) * phi (y.2 0))
+          (fun i x ↦ transformedFunctions f i x)) := by
+  have hRaw := rawTwistedAverage_sq_fubini phi f
+  have hT2 : Integrable (fun z : EuclideanSpace ℝ (Fin (d + 1)) =>
+      twistedAverage phi (fun i x => f i x) z ^ 2) := by
+    have hcomp :=
+      (PiLp.volume_preserving_ofLp (Fin (d + 1))).integrable_comp_of_integrable hRaw.1
+    refine hcomp.congr ?_
+    filter_upwards [] with z
+    change rawTwistedAverage phi f z.ofLp ^ 2 =
+      twistedAverage phi (fun i x => f i x) z ^ 2
+    rw [← twistedAverage_toLp_eq_rawTwistedAverage phi f z.ofLp,
+      WithLp.toLp_ofLp]
+  have hTInt :
+      (∫ z : EuclideanSpace ℝ (Fin (d + 1)),
+        twistedAverage phi (fun i x => f i x) z ^ 2) =
+        ∫ x : RealVector (d + 1), rawTwistedAverage phi f x ^ 2 := by
+      calc
+        (∫ z : EuclideanSpace ℝ (Fin (d + 1)),
+            twistedAverage phi (fun i x => f i x) z ^ 2) =
+            ∫ x : RealVector (d + 1),
+              twistedAverage phi (fun i z => f i z) (WithLp.toLp 2 x) ^ 2 :=
+          (toLp_integral_comp (fun z : EuclideanSpace ℝ (Fin (d + 1)) =>
+            twistedAverage phi (fun i x => f i x) z ^ 2) hT2).symm
+        _ = ∫ x : RealVector (d + 1), rawTwistedAverage phi f x ^ 2 := by
+          apply integral_congr_ae
+          filter_upwards [] with x
+          rw [twistedAverage_toLp_eq_rawTwistedAverage phi f x]
+  calc
+    eLpNorm (twistedAverage phi (fun i x => f i x)) 2 volume ^ 2 =
+        ENNReal.ofReal (∫ z : EuclideanSpace ℝ (Fin (d + 1)),
+          twistedAverage phi (fun i x => f i x) z ^ 2) :=
+      eLpNorm_two_sq_eq_ofReal_integral_sq volume _ hT2
+    _ = ENNReal.ofReal (∫ x : RealVector (d + 1), rawTwistedAverage phi f x ^ 2) := by
+      rw [hTInt]
+    _ = ENNReal.ofReal (∫ q, rawTwistedSquareIntegrand phi f q) := by
+      rw [hRaw.2]
+    _ = ENNReal.ofReal
+        (prismForm (d + 1) 1 (by omega) (by omega)
+          (fun y => phi (y.1 0) * phi (y.2 0))
+          (fun i x => transformedFunctions f i x)) := by
+      rw [rawTwistedSquareIntegrand_integral_eq_prismForm phi f]
+
 /--
 \begin{lemma}[$A$ to $\Lambda_1$]\label{A to Lambda}
 Let $\phi\in \mathcal{S}(\R)$ and let
@@ -682,56 +733,88 @@ theorem aToLambda {n : ℕ} (hn : 1 ≤ n) (phi : SchwartzMap ℝ ℝ)
   cases n with
   | zero => omega
   | succ d =>
-      let F : Fin (d + 1) → SchwartzMap (RealVector (d + 1)) ℝ :=
-        transformedFunctions f
-      refine ⟨F, ?_, ?_⟩
+      refine ⟨transformedFunctions f, ?_, ?_⟩
       · intro i p
-        simpa [F] using transformedFunctions_eLpNorm f i p
-      · change eLpNorm (twistedAverage phi (fun i x => f i x)) 2 volume ^ 2 =
-          ENNReal.ofReal
-            (prismForm (d + 1) 1 (by omega) (by omega)
-              (fun y => phi (y.1 0) * phi (y.2 0))
-              (fun i x => transformedFunctions f i x))
-        have hRaw := rawTwistedAverage_sq_fubini phi f
-        have hT2 : Integrable (fun z : EuclideanSpace ℝ (Fin (d + 1)) =>
-            twistedAverage phi (fun i x => f i x) z ^ 2) := by
-          have hcomp :=
-            (PiLp.volume_preserving_ofLp (Fin (d + 1))).integrable_comp_of_integrable hRaw.1
-          refine hcomp.congr ?_
-          filter_upwards [] with z
-          change rawTwistedAverage phi f z.ofLp ^ 2 =
-            twistedAverage phi (fun i x => f i x) z ^ 2
-          rw [← twistedAverage_toLp_eq_rawTwistedAverage phi f z.ofLp,
-            WithLp.toLp_ofLp]
-        have hTInt :
-            (∫ z : EuclideanSpace ℝ (Fin (d + 1)),
-              twistedAverage phi (fun i x => f i x) z ^ 2) =
-              ∫ x : RealVector (d + 1), rawTwistedAverage phi f x ^ 2 := by
-          calc
-            (∫ z : EuclideanSpace ℝ (Fin (d + 1)),
-                twistedAverage phi (fun i x => f i x) z ^ 2) =
-                ∫ x : RealVector (d + 1),
-                  twistedAverage phi (fun i z => f i z) (WithLp.toLp 2 x) ^ 2 :=
-              (toLp_integral_comp (fun z : EuclideanSpace ℝ (Fin (d + 1)) =>
-                twistedAverage phi (fun i x => f i x) z ^ 2) hT2).symm
-            _ = ∫ x : RealVector (d + 1), rawTwistedAverage phi f x ^ 2 := by
-              apply integral_congr_ae
-              filter_upwards [] with x
-              rw [twistedAverage_toLp_eq_rawTwistedAverage phi f x]
-        calc
-          eLpNorm (twistedAverage phi (fun i x => f i x)) 2 volume ^ 2 =
-              ENNReal.ofReal (∫ z : EuclideanSpace ℝ (Fin (d + 1)),
-                twistedAverage phi (fun i x => f i x) z ^ 2) :=
-            eLpNorm_two_sq_eq_ofReal_integral_sq volume _ hT2
-          _ = ENNReal.ofReal (∫ x : RealVector (d + 1), rawTwistedAverage phi f x ^ 2) := by
-            rw [hTInt]
-          _ = ENNReal.ofReal (∫ q, rawTwistedSquareIntegrand phi f q) := by
-            rw [hRaw.2]
-          _ = ENNReal.ofReal
-              (prismForm (d + 1) 1 (by omega) (by omega)
-                (fun y => phi (y.1 0) * phi (y.2 0))
-                (fun i x => transformedFunctions f i x)) := by
-            rw [rawTwistedSquareIntegrand_integral_eq_prismForm phi f]
+        exact transformedFunctions_eLpNorm f i p
+      · simpa using aux_aToLambda_explicit phi f
+
+/- The tensor-square prism form in the canonical `A`-to-`Λ₁` reduction is a
+square integral, hence nonnegative. -/
+private lemma aux_aToLambda_explicit_prism_nonneg {d : ℕ} (phi : SchwartzMap ℝ ℝ)
+    (f : Fin (d + 1) → SchwartzMap (EuclideanSpace ℝ (Fin (d + 1))) ℝ) :
+    0 ≤ prismForm (d + 1) 1 (by omega) (by omega)
+      (fun y ↦ phi (y.1 0) * phi (y.2 0))
+      (fun i x ↦ transformedFunctions f i x) := by
+  rw [← rawTwistedSquareIntegrand_integral_eq_prismForm phi f]
+  rw [← (rawTwistedAverage_sq_fubini phi f).2]
+  exact integral_nonneg fun _ ↦ sq_nonneg _
+
+/- Finite linearity of the first prism form for the special tensor-square
+kernels arising from the `A`-to-`Λ₁` change of variables. -/
+private lemma aux_aToLambda_prismForm_fin_sum {d J : ℕ}
+    (phi : Fin J → SchwartzMap ℝ ℝ)
+    (f : Fin (d + 1) → SchwartzMap (EuclideanSpace ℝ (Fin (d + 1))) ℝ) :
+    prismForm (d + 1) 1 (by omega) (by omega)
+      (fun y ↦ ∑ j, phi j (y.1 0) * phi j (y.2 0))
+      (fun i x ↦ transformedFunctions f i x) =
+      ∑ j, prismForm (d + 1) 1 (by omega) (by omega)
+        (fun y ↦ phi j (y.1 0) * phi j (y.2 0))
+        (fun i x ↦ transformedFunctions f i x) := by
+  have hM (j : Fin J) : MemW0 (fun y : RealVector 1 × RealVector 1 =>
+      phi j (y.1 0) * phi j (y.2 0)) :=
+    oneTensorSquare_memW0 (phi j)
+  have hK (j : Fin J) : MemW0 (mToK 1 (by omega)
+      (fun y : RealVector 1 × RealVector 1 => phi j (y.1 0) * phi j (y.2 0))) :=
+    mToK_memW0 (d + 1) 1 (by omega) (by omega) _ (hM j)
+  unfold prismForm
+  rw [aux_mToK_finset_sum 1 J (by omega)
+    (fun j y => phi j (y.1 0) * phi j (y.2 0)) hM]
+  rw [aux_prismBrascampLiebForm_finset_sum (d + 1) 1 J (by omega) (by omega)
+    (fun j => mToK 1 (by omega)
+      (fun y => phi j (y.1 0) * phi j (y.2 0))) hK]
+
+/--
+A finite-family version of `aToLambda`. It uses one common determinant-one
+coordinate transform of `f` for every kernel, so a finite square sum of
+twisted averages becomes a single first prism form.
+-/
+theorem aToLambda_fin_sum {n J : ℕ} (hn : 1 ≤ n)
+    (phi : Fin J → SchwartzMap ℝ ℝ)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ) :
+    ∃ F : Fin n → SchwartzMap (RealVector n) ℝ,
+      (∀ i, ∀ p : ℝ≥0∞, eLpNorm (F i) p volume = eLpNorm (f i) p volume) ∧
+      (∑ j, eLpNorm (twistedAverage (phi j) (fun i x ↦ f i x)) 2 volume ^ 2) =
+        ENNReal.ofReal
+          (prismForm n 1 (by omega) hn
+            (fun y ↦ ∑ j, phi j (y.1 0) * phi j (y.2 0))
+            (fun i x ↦ F i x)) := by
+  cases n with
+  | zero => omega
+  | succ d =>
+    refine ⟨transformedFunctions f, ?_, ?_⟩
+    · intro i p
+      exact transformedFunctions_eLpNorm f i p
+    · calc
+        (∑ j, eLpNorm (twistedAverage (phi j) (fun i x ↦ f i x)) 2 volume ^ 2) =
+            ∑ j, ENNReal.ofReal
+              (prismForm (d + 1) 1 (by omega) hn
+                (fun y ↦ phi j (y.1 0) * phi j (y.2 0))
+                (fun i x ↦ transformedFunctions f i x)) := by
+              apply Finset.sum_congr rfl
+              intro j _
+              simpa using aux_aToLambda_explicit (phi j) f
+        _ = ENNReal.ofReal
+            (∑ j, prismForm (d + 1) 1 (by omega) hn
+              (fun y ↦ phi j (y.1 0) * phi j (y.2 0))
+              (fun i x ↦ transformedFunctions f i x)) := by
+            rw [ENNReal.ofReal_sum_of_nonneg]
+            intro j _
+            simpa using aux_aToLambda_explicit_prism_nonneg (phi j) f
+        _ = ENNReal.ofReal
+            (prismForm (d + 1) 1 (by omega) hn
+              (fun y ↦ ∑ j, phi j (y.1 0) * phi j (y.2 0))
+              (fun i x ↦ transformedFunctions f i x)) := by
+            rw [aux_aToLambda_prismForm_fin_sum phi f]
 
 end
 

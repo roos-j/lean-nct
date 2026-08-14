@@ -16,12 +16,14 @@ open scoped BigOperators ENNReal FourierTransform Real
 open Codex
 open Codex.Preliminaries.Notation
 open Codex.Preliminaries.BumpsAndEstimates
+open Codex.Preliminaries.Gaussians
 open Codex.Preliminaries.KKernels
 open Codex.Preliminaries.MKernels
 open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
 open Codex.MainArgument.SandwichKernel
 open Codex.MainArgument.MultipliersHLN
 open Codex.MainArgument.MainInduction
+open Codex.MainArgument.GaussianDomination
 
 noncomputable section
 
@@ -53,8 +55,8 @@ structure ReductionData where
   triples_card : triples.card ≤ 5
   kernel : ℤ → RealPlane → ℝ
   kernel_memW0 : ∀ j : ℤ, MemW0 (kernel j)
-  diagonal_cancellation : ∀ j ξ : ℤ, ∫ v : RealPlane,
-    kernel j v * Real.cos (2 * Real.pi * ((ξ : ℝ) * (v.1 - v.2))) = 0
+  diagonal_cancellation : ∀ (j : ℤ) (ξ : ℝ),
+    aux_fourierPlane (kernel j) (ξ, -ξ) = 0
   kernel_decay : ∀ j v, |kernel j v| ≤
     ∑ q ∈ triples,
       scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) ((W q.orientation v).1) *
@@ -115,6 +117,338 @@ noncomputable def C_rhoKernelsReduction : ℝ :=
   (2 : ℝ) ^ (21 : ℕ) *
     (C_meanFourScaleGaussianKernel 2 + C_fourScaleGaussianKernel 2)
 
+private theorem aux_rho_nu_mem {n : ℕ} (_hn : 2 ≤ n) :
+    aux_reductionNu n ∈ Set.Ico (-1 : ℝ) 0 := by
+  unfold aux_reductionNu
+  split <;> norm_num
+
+private theorem aux_rho_cmean_nonneg (N : ℕ) : 0 ≤ C_meanFourScaleGaussianKernel N := by
+  unfold C_meanFourScaleGaussianKernel
+  apply add_nonneg
+  · apply mul_nonneg
+    · apply mul_nonneg
+      · norm_num
+      · unfold C_meanValueBumpEstimate
+        positivity
+    · exact (aux_C_gaussianBumpEstimate_nonneg 0).trans
+        (aux_le_maxUpTo C_gaussianBumpEstimate (Nat.zero_le _))
+  · apply mul_nonneg
+    · apply mul_nonneg
+      · norm_num
+      · unfold C_meanValueBumpEstimate
+        positivity
+    · have hzero : 0 ≤ (2 : ℝ) ^ 0 * C_secondGaussianEstimate 0 := by
+        simpa using aux_C_secondGaussianEstimate_nonneg 0
+      exact hzero.trans
+        (aux_le_maxUpTo (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l)
+          (Nat.zero_le _))
+
+private theorem aux_rho_cfour_nonneg (N : ℕ) : 0 ≤ C_fourScaleGaussianKernel N := by
+  unfold C_fourScaleGaussianKernel C_smoothDecay2
+  apply add_nonneg
+  · apply mul_nonneg
+    · apply mul_nonneg <;> positivity
+    · exact (aux_C_gaussianBumpEstimate_nonneg 0).trans (le_max_left _ _)
+  · apply mul_nonneg
+    · positivity
+    · exact (aux_C_secondGaussianEstimate_nonneg 0).trans (le_max_left _ _)
+
+private theorem aux_rho_standard_fourScale (muMinus muPlus lambdaMinus lambdaPlus nu : ℝ)
+    (hmuMinus : 0 < muMinus) (hmuPlus : 0 < muPlus)
+    (hlambdaMinus : 0 < lambdaMinus) (hlambdaPlus : 0 < lambdaPlus)
+    (hscales : 2 * muMinus ≤ 2 * lambdaMinus ∧ 2 * lambdaMinus ≤ lambdaPlus ∧
+      lambdaPlus ≤ muPlus) (hnu : nu ∈ Set.Ico (-1 : ℝ) 0) :
+    MemW0 (fourScaleGaussianRho
+      (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+      muMinus muPlus lambdaMinus lambdaPlus nu) ∧
+      ∀ x : ℝ, ‖fourScaleGaussianRho
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        muMinus muPlus lambdaMinus lambdaPlus nu x‖ ≤
+        (2 : ℝ) ^ 18 * C_fourScaleGaussianKernel 2 *
+          (scaledBracketBump 2 lambdaMinus x + scaledBracketBump 2 lambdaPlus x) := by
+  refine fourScaleGaussianKernel ((2 : ℝ) ^ 18) 2 (by norm_num)
+    (fun x : ℝ => (standardBump x : ℂ))
+    (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+    aux_standardBumpComplex_memW0 rfl (by positivity)
+    (closure_minimal (standardBumpProperties_fourierShape).2.1 isClosed_Icc)
+    (standardBumpProperties_fourierShape).2.2
+    (aux_standardBumpComplex_fourier_contDiff.of_le (WithTop.coe_le_coe.mpr le_top))
+    (by
+      intro m hm xi
+      interval_cases m
+      · exact (aux_standardBump_fourier_iteratedDeriv_le_zero xi).trans (by norm_num)
+      · exact (aux_standardBump_fourier_iteratedDeriv_le_one xi).trans (by norm_num)
+      · exact aux_standardBump_fourier_iteratedDeriv_le_two xi)
+    muMinus muPlus lambdaMinus lambdaPlus nu
+    hmuMinus hmuPlus hlambdaMinus hlambdaPlus hscales hnu
+
+private theorem aux_rho_standard_meanFourScale (muMinus muPlus lambdaMinus lambdaPlus nu : ℝ)
+    (hmuMinus : 0 < muMinus) (hmuPlus : 0 < muPlus)
+    (hlambdaMinus : 0 < lambdaMinus) (hlambdaPlus : 0 < lambdaPlus)
+    (hscales : 2 * muMinus ≤ 2 * lambdaMinus ∧ 2 * lambdaMinus ≤ lambdaPlus ∧
+      lambdaPlus ≤ muPlus) (hlambdaEq : lambdaPlus = 2 * lambdaMinus)
+    (hnu : nu ∈ Set.Ico (-1 : ℝ) 0) :
+    MemW0 (fourScaleGaussianRho
+      (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+      muMinus muPlus lambdaMinus lambdaPlus nu) ∧
+      ∀ x y : ℝ, ‖fourScaleGaussianRho
+        (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+        muMinus muPlus lambdaMinus lambdaPlus nu (x + y) -
+          fourScaleGaussianRho
+            (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+            muMinus muPlus lambdaMinus lambdaPlus nu x‖ ≤
+        (2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2 *
+          min 1 (2 * Real.pi * lambdaPlus⁻¹ * |y|) *
+            (scaledBracketBump 2 lambdaPlus (x + y) +
+              scaledBracketBump 2 lambdaPlus x) := by
+  refine meanFourScaleGaussianKernel ((2 : ℝ) ^ 18) 2 (by norm_num)
+    (fun x : ℝ => (standardBump x : ℂ))
+    (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
+    aux_standardBumpComplex_memW0 rfl (by positivity)
+    (closure_minimal (standardBumpProperties_fourierShape).2.1 isClosed_Icc)
+    (standardBumpProperties_fourierShape).2.2
+    (aux_standardBumpComplex_fourier_contDiff.of_le (WithTop.coe_le_coe.mpr le_top))
+    (by
+      intro m hm xi
+      interval_cases m
+      · exact (aux_standardBump_fourier_iteratedDeriv_le_zero xi).trans (by norm_num)
+      · exact (aux_standardBump_fourier_iteratedDeriv_le_one xi).trans (by norm_num)
+      · exact aux_standardBump_fourier_iteratedDeriv_le_two xi)
+    muMinus muPlus lambdaMinus lambdaPlus nu
+    hmuMinus hmuPlus hlambdaMinus hlambdaPlus hscales hlambdaEq hnu
+
+private theorem aux_rho_move_two_pi_out {A lambda y B : ℝ}
+    (hA : 0 ≤ A) (_hlambda : 0 < lambda) (hB : 0 ≤ B) :
+    A * min 1 (2 * Real.pi * lambda⁻¹ * |y|) * B ≤
+      (2 * Real.pi * A) * min 1 (lambda⁻¹ * |y|) * B := by
+  have hmin : min 1 (2 * Real.pi * (lambda⁻¹ * |y|)) ≤
+      2 * Real.pi * min 1 (lambda⁻¹ * |y|) := by
+    have hpi : 1 ≤ 2 * Real.pi := by nlinarith [Real.pi_gt_three]
+    by_cases h : 1 ≤ lambda⁻¹ * |y|
+    · rw [min_eq_left h]
+      exact (min_le_left _ _).trans (by nlinarith)
+    · have h' : lambda⁻¹ * |y| ≤ 1 := le_of_not_ge h
+      rw [min_eq_right h']
+      exact min_le_right _ _
+  calc
+    A * min 1 (2 * Real.pi * lambda⁻¹ * |y|) * B =
+        A * min 1 (2 * Real.pi * (lambda⁻¹ * |y|)) * B := by ring
+    _ ≤ A * (2 * Real.pi * min 1 (lambda⁻¹ * |y|)) * B :=
+      mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hmin hA) hB
+    _ = (2 * Real.pi * A) * min 1 (lambda⁻¹ * |y|) * B := by ring
+
+private theorem aux_rho_constant_dominates_mean :
+    2 * Real.pi * ((2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2) ≤
+      C_rhoKernelsReduction := by
+  have hmean := aux_rho_cmean_nonneg 2
+  have hfour := aux_rho_cfour_nonneg 2
+  have hpi : 2 * Real.pi ≤ 8 := by nlinarith [Real.pi_lt_four]
+  calc
+    2 * Real.pi * ((2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2) ≤
+        8 * ((2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2) :=
+      mul_le_mul_of_nonneg_right hpi (mul_nonneg (by positivity) hmean)
+    _ = (2 : ℝ) ^ 21 * C_meanFourScaleGaussianKernel 2 := by ring
+    _ ≤ (2 : ℝ) ^ 21 *
+        (C_meanFourScaleGaussianKernel 2 + C_fourScaleGaussianKernel 2) :=
+      mul_le_mul_of_nonneg_left (le_add_of_nonneg_right hfour) (by positivity)
+    _ = C_rhoKernelsReduction := rfl
+
+private theorem aux_rho_constant_dominates_four :
+    (2 : ℝ) ^ 18 * C_fourScaleGaussianKernel 2 ≤ C_rhoKernelsReduction := by
+  have hmean := aux_rho_cmean_nonneg 2
+  have hfour := aux_rho_cfour_nonneg 2
+  calc
+    (2 : ℝ) ^ 18 * C_fourScaleGaussianKernel 2 ≤
+        (2 : ℝ) ^ 21 * C_fourScaleGaussianKernel 2 :=
+      mul_le_mul_of_nonneg_right (by norm_num) hfour
+    _ ≤ (2 : ℝ) ^ 21 *
+        (C_meanFourScaleGaussianKernel 2 + C_fourScaleGaussianKernel 2) :=
+      mul_le_mul_of_nonneg_left (le_add_of_nonneg_left hmean) (by positivity)
+    _ = C_rhoKernelsReduction := rfl
+
+private theorem aux_rho_kernels_reduction {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
+    (ha : SpacedSequence a) (h : ℕ) (j : ℤ) :
+    MemW0 (rhoKernel n a h j) ∧
+      (∀ x p : ℝ, 1 ≤ h →
+        |rhoKernel n a h j (x + p) - rhoKernel n a h j x| ≤
+          C_rhoKernelsReduction * min 1 ((rhoUpperScale a h j)⁻¹ * |p|) *
+            (scaledBracketBumpReal 2 (rhoUpperScale a h j) (x + p) +
+              scaledBracketBumpReal 2 (rhoUpperScale a h j) x)) ∧
+      ∀ x : ℝ, |rhoKernel n a h j x| ≤
+        C_rhoKernelsReduction *
+          (scaledBracketBumpReal 2 (rhoLowerScale a h j) x +
+            scaledBracketBumpReal 2 (rhoUpperScale a h j) x) := by
+  cases h with
+  | zero =>
+      have hscales :
+          2 * a (j - 1) ≤ 2 * a (j - 1) ∧
+            2 * a (j - 1) ≤ a j ∧ a j ≤ a j :=
+        ⟨le_rfl, by simpa using (ha (j - 1)).2, le_rfl⟩
+      have hfour := aux_rho_standard_fourScale (a (j - 1)) (a j) (a (j - 1)) (a j)
+        (aux_reductionNu n) (ha _).1 (ha _).1 (ha _).1 (ha _).1 hscales (aux_rho_nu_mem hn)
+      refine ⟨?_, ?_, ?_⟩
+      · change MemW0 (fun x =>
+          (fourScaleGaussianRho
+            (FourierTransform.fourier (fun y : ℝ => (standardBump y : ℂ)))
+            (rhoGaussianLowerScale a 0 j) (rhoGaussianUpperScale a 0 j)
+            (rhoLowerScale a 0 j) (rhoUpperScale a 0 j) (aux_reductionNu n) x).re)
+        simpa [rhoGaussianLowerScale, rhoGaussianUpperScale,
+          rhoLowerScale, rhoUpperScale] using aux_memW0_re hfour.1
+      · intro x p hp
+        omega
+      · intro x
+        have htarget :
+            |(fourScaleGaussianRho
+                (FourierTransform.fourier (fun y : ℝ => (standardBump y : ℂ)))
+                (a (j - 1)) (a j) (a (j - 1)) (a j) (aux_reductionNu n) x).re| ≤
+              C_rhoKernelsReduction *
+                (scaledBracketBump 2 (a (j - 1)) x + scaledBracketBump 2 (a j) x) := by
+          calc
+            |(fourScaleGaussianRho
+                (FourierTransform.fourier (fun y : ℝ => (standardBump y : ℂ)))
+                (a (j - 1)) (a j) (a (j - 1)) (a j) (aux_reductionNu n) x).re| ≤
+                ‖fourScaleGaussianRho
+                  (FourierTransform.fourier (fun y : ℝ => (standardBump y : ℂ)))
+                  (a (j - 1)) (a j) (a (j - 1)) (a j) (aux_reductionNu n) x‖ :=
+              Complex.abs_re_le_norm _
+            _ ≤ (2 : ℝ) ^ 18 * C_fourScaleGaussianKernel 2 *
+                (scaledBracketBump 2 (a (j - 1)) x + scaledBracketBump 2 (a j) x) :=
+              hfour.2 x
+            _ ≤ C_rhoKernelsReduction *
+                (scaledBracketBump 2 (a (j - 1)) x + scaledBracketBump 2 (a j) x) :=
+              mul_le_mul_of_nonneg_right aux_rho_constant_dominates_four
+                (add_nonneg
+                  (aux_scaledBracketBump_nonneg 2 (ha (j - 1)).1 x)
+                  (aux_scaledBracketBump_nonneg 2 (ha j).1 x))
+        simpa [rhoKernel, rhoGaussianLowerScale, rhoGaussianUpperScale,
+          rhoLowerScale, rhoUpperScale, aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq]
+          using htarget
+  | succ k =>
+      let muMinus : ℝ := (2 : ℝ) ^ (Nat.succ k) * a (j - 1)
+      let muPlus : ℝ := (2 : ℝ) ^ (Nat.succ k) * a j
+      let lambdaMinus : ℝ := (2 : ℝ) ^ k * a j
+      let lambdaPlus : ℝ := (2 : ℝ) ^ (Nat.succ k) * a j
+      let R : ℝ → ℂ := fourScaleGaussianRho
+        (FourierTransform.fourier (fun y : ℝ => (standardBump y : ℂ)))
+        muMinus muPlus lambdaMinus lambdaPlus (aux_reductionNu n)
+      have hpow : (2 : ℝ) ^ (Nat.succ k) = 2 * (2 : ℝ) ^ k := by
+        rw [pow_succ]
+        ring
+      have hmuMinus : 0 < muMinus := by
+        dsimp [muMinus]
+        exact mul_pos (by positivity) (ha (j - 1)).1
+      have hmuPlus : 0 < muPlus := by
+        dsimp [muPlus]
+        exact mul_pos (by positivity) (ha j).1
+      have hlambdaMinus : 0 < lambdaMinus := by
+        dsimp [lambdaMinus]
+        exact mul_pos (by positivity) (ha j).1
+      have hlambdaPlus : 0 < lambdaPlus := by
+        dsimp [lambdaPlus]
+        exact mul_pos (by positivity) (ha j).1
+      have hscales :
+          2 * muMinus ≤ 2 * lambdaMinus ∧ 2 * lambdaMinus ≤ lambdaPlus ∧
+            lambdaPlus ≤ muPlus := by
+        refine ⟨?_, ?_, le_rfl⟩
+        · dsimp [muMinus, lambdaMinus]
+          calc
+            2 * ((2 : ℝ) ^ (Nat.succ k) * a (j - 1)) =
+                (2 * (2 : ℝ) ^ k) * (2 * a (j - 1)) := by rw [hpow]; ring
+            _ ≤ (2 * (2 : ℝ) ^ k) * a j :=
+              mul_le_mul_of_nonneg_left (by simpa using (ha (j - 1)).2) (by positivity)
+            _ = 2 * ((2 : ℝ) ^ k * a j) := by ring
+        · dsimp [lambdaMinus, lambdaPlus]
+          apply le_of_eq
+          rw [hpow]
+          ring
+      have hlambdaEq : lambdaPlus = 2 * lambdaMinus := by
+        dsimp [lambdaPlus, lambdaMinus]
+        rw [hpow]
+        ring
+      have hfour := aux_rho_standard_fourScale muMinus muPlus lambdaMinus lambdaPlus
+        (aux_reductionNu n) hmuMinus hmuPlus hlambdaMinus hlambdaPlus hscales (aux_rho_nu_mem hn)
+      have hmean := aux_rho_standard_meanFourScale muMinus muPlus lambdaMinus lambdaPlus
+        (aux_reductionNu n) hmuMinus hmuPlus hlambdaMinus hlambdaPlus hscales hlambdaEq
+          (aux_rho_nu_mem hn)
+      have hfourR : MemW0 R ∧ ∀ x : ℝ, ‖R x‖ ≤
+          (2 : ℝ) ^ 18 * C_fourScaleGaussianKernel 2 *
+            (scaledBracketBump 2 lambdaMinus x + scaledBracketBump 2 lambdaPlus x) := by
+        simpa [R] using hfour
+      have hmeanR : MemW0 R ∧ ∀ x y : ℝ, ‖R (x + y) - R x‖ ≤
+          (2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2 *
+            min 1 (2 * Real.pi * lambdaPlus⁻¹ * |y|) *
+              (scaledBracketBump 2 lambdaPlus (x + y) +
+                scaledBracketBump 2 lambdaPlus x) := by
+        simpa [R] using hmean
+      refine ⟨?_, ?_, ?_⟩
+      · change MemW0 (fun x =>
+          (fourScaleGaussianRho
+            (FourierTransform.fourier (fun y : ℝ => (standardBump y : ℂ)))
+            (rhoGaussianLowerScale a (Nat.succ k) j)
+            (rhoGaussianUpperScale a (Nat.succ k) j)
+            (rhoLowerScale a (Nat.succ k) j)
+            (rhoUpperScale a (Nat.succ k) j) (aux_reductionNu n) x).re)
+        simpa [R, muMinus, muPlus, lambdaMinus, lambdaPlus,
+          rhoGaussianLowerScale, rhoGaussianUpperScale, rhoLowerScale, rhoUpperScale]
+          using aux_memW0_re hmeanR.1
+      · intro x p _
+        have hA : 0 ≤ (2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2 :=
+          mul_nonneg (by positivity) (aux_rho_cmean_nonneg 2)
+        have hB : 0 ≤ scaledBracketBump 2 lambdaPlus (x + p) +
+            scaledBracketBump 2 lambdaPlus x :=
+          add_nonneg (aux_scaledBracketBump_nonneg 2 hlambdaPlus (x + p))
+            (aux_scaledBracketBump_nonneg 2 hlambdaPlus x)
+        have hmin : 0 ≤ min 1 (lambdaPlus⁻¹ * |p|) :=
+          le_min (by norm_num) (mul_nonneg (inv_nonneg.mpr hlambdaPlus.le) (abs_nonneg _))
+        have htarget : |(R (x + p)).re - (R x).re| ≤
+            C_rhoKernelsReduction * min 1 (lambdaPlus⁻¹ * |p|) *
+              (scaledBracketBump 2 lambdaPlus (x + p) +
+                scaledBracketBump 2 lambdaPlus x) := by
+          calc
+            |(R (x + p)).re - (R x).re| = |(R (x + p) - R x).re| := by simp
+            _ ≤ ‖R (x + p) - R x‖ := Complex.abs_re_le_norm _
+            _ ≤ (2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2 *
+                min 1 (2 * Real.pi * lambdaPlus⁻¹ * |p|) *
+                  (scaledBracketBump 2 lambdaPlus (x + p) +
+                    scaledBracketBump 2 lambdaPlus x) := hmeanR.2 x p
+            _ ≤ (2 * Real.pi * ((2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2)) *
+                min 1 (lambdaPlus⁻¹ * |p|) *
+                  (scaledBracketBump 2 lambdaPlus (x + p) +
+                    scaledBracketBump 2 lambdaPlus x) :=
+              aux_rho_move_two_pi_out hA hlambdaPlus hB
+            _ = (2 * Real.pi * ((2 : ℝ) ^ 18 * C_meanFourScaleGaussianKernel 2)) *
+                (min 1 (lambdaPlus⁻¹ * |p|) *
+                  (scaledBracketBump 2 lambdaPlus (x + p) +
+                    scaledBracketBump 2 lambdaPlus x)) := by ring
+            _ ≤ C_rhoKernelsReduction *
+                (min 1 (lambdaPlus⁻¹ * |p|) *
+                  (scaledBracketBump 2 lambdaPlus (x + p) +
+                    scaledBracketBump 2 lambdaPlus x)) :=
+              mul_le_mul_of_nonneg_right aux_rho_constant_dominates_mean
+                (mul_nonneg hmin hB)
+            _ = C_rhoKernelsReduction * min 1 (lambdaPlus⁻¹ * |p|) *
+                (scaledBracketBump 2 lambdaPlus (x + p) +
+                  scaledBracketBump 2 lambdaPlus x) := by ring
+        simpa [R, muMinus, muPlus, lambdaMinus, lambdaPlus, rhoKernel,
+          rhoGaussianLowerScale, rhoGaussianUpperScale, rhoLowerScale, rhoUpperScale,
+          aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq] using htarget
+      · intro x
+        have htarget : |(R x).re| ≤ C_rhoKernelsReduction *
+            (scaledBracketBump 2 lambdaMinus x + scaledBracketBump 2 lambdaPlus x) := by
+          calc
+            |(R x).re| ≤ ‖R x‖ := Complex.abs_re_le_norm _
+            _ ≤ (2 : ℝ) ^ 18 * C_fourScaleGaussianKernel 2 *
+                (scaledBracketBump 2 lambdaMinus x + scaledBracketBump 2 lambdaPlus x) :=
+              hfourR.2 x
+            _ ≤ C_rhoKernelsReduction *
+                (scaledBracketBump 2 lambdaMinus x + scaledBracketBump 2 lambdaPlus x) :=
+              mul_le_mul_of_nonneg_right aux_rho_constant_dominates_four
+                (add_nonneg (aux_scaledBracketBump_nonneg 2 hlambdaMinus x)
+                  (aux_scaledBracketBump_nonneg 2 hlambdaPlus x))
+        simpa [R, muMinus, muPlus, lambdaMinus, lambdaPlus, rhoKernel,
+          rhoGaussianLowerScale, rhoGaussianUpperScale, rhoLowerScale, rhoUpperScale,
+          aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq] using htarget
+
 /--
 Lemma \ref{lem:rho-kernels-reduction}.  The existing four-scale Gaussian
 estimates supply this second, reduction-specific use of Gaussian domination.
@@ -131,29 +465,4314 @@ theorem rhoKernelsReduction {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
         C_rhoKernelsReduction *
           (scaledBracketBumpReal 2 (rhoLowerScale a h j) x +
             scaledBracketBumpReal 2 (rhoUpperScale a h j) x) := by
-  sorry
+  exact aux_rho_kernels_reduction hn a ha h j
 
 /-- The explicit numerical estimate in Lemma \ref{constant rho kernels reduction}. -/
 theorem constantRhoKernelsReduction : C_rhoKernelsReduction < (2 : ℝ) ^ (66 : ℕ) := by
-  sorry
+  have hmean : C_meanFourScaleGaussianKernel 2 < 20397963318112 :=
+    aux_C_meanFourScaleGaussianKernel_two_lt_value
+  have hfour : C_fourScaleGaussianKernel 2 < 637436354528 :=
+    aux_C_fourScaleGaussianKernel_two_lt_value
+  unfold C_rhoKernelsReduction
+  calc
+    (2 : ℝ) ^ 21 * (C_meanFourScaleGaussianKernel 2 + C_fourScaleGaussianKernel 2) <
+        (2 : ℝ) ^ 21 * (20397963318112 + 637436354528) :=
+      mul_lt_mul_of_pos_left (add_lt_add hmean hfour) (by positivity)
+    _ < (2 : ℝ) ^ 66 := by norm_num
+
+/-- The sharper numerical form of `constantRhoKernelsReduction` needed by the
+subsequent reduction constants. -/
+private theorem aux_rhoKernelsReduction_lt_numeric :
+    C_rhoKernelsReduction < (44114430494276321280 : ℝ) := by
+  have hmean : C_meanFourScaleGaussianKernel 2 < (20397963318112 : ℝ) :=
+    aux_C_meanFourScaleGaussianKernel_two_lt_value
+  have hfour : C_fourScaleGaussianKernel 2 < (637436354528 : ℝ) :=
+    aux_C_fourScaleGaussianKernel_two_lt_value
+  unfold C_rhoKernelsReduction
+  calc
+    (2 : ℝ) ^ 21 *
+        (C_meanFourScaleGaussianKernel 2 + C_fourScaleGaussianKernel 2) <
+      (2 : ℝ) ^ 21 * (20397963318112 + 637436354528) :=
+      mul_lt_mul_of_pos_left (add_lt_add hmean hfour) (by positivity)
+    _ = 44114430494276321280 := by norm_num
+
+/-- The precise fractional power-of-two consequence of the rho-kernel
+constant estimate used in `constantIncreaseDataBracketDomination`. -/
+private theorem aux_rhoKernelsReduction_lt_three_fifths_two_pow_66 :
+    C_rhoKernelsReduction < (3 / 5 : ℝ) * (2 : ℝ) ^ (66 : ℕ) := by
+  calc
+    C_rhoKernelsReduction < (44114430494276321280 : ℝ) :=
+      aux_rhoKernelsReduction_lt_numeric
+    _ < (3 / 5 : ℝ) * (2 : ℝ) ^ (66 : ℕ) := by norm_num
 
 /--
-Lemma \ref{lem:affine-diagonal-cancellation-reduction}.  The displayed
-Fourier-side cancellation is represented in `ReductionData` by its real
-diagonal Fourier integral.
+Lemma \ref{lem:affine-diagonal-cancellation-reduction}.  Vanishing of the
+full Fourier transform on the anti-diagonal implies cancellation on every
+parallel diagonal line.
 -/
 theorem affineDiagonalCancellationReduction (M : RealPlane → ℝ) (hM : MemW0 M)
-    (hcancel : ∀ ξ : ℤ, ∫ v : RealPlane,
-      M v * Real.cos (2 * Real.pi * ((ξ : ℝ) * (v.1 - v.2))) = 0) (x : ℝ) :
+    (hcancel : ∀ ξ : ℝ, aux_fourierPlane M (ξ, -ξ) = 0) (x : ℝ) :
     ∫ q : ℝ, M (x + q, q) = 0 := by
-  sorry
+  let L : ℝ → ℝ := fun u => ∫ p : ℝ, M (u + p, p)
+  have hS : MemW0 (fun q : RealPlane => M (aux_diagonalShear q)) :=
+    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hM
+      aux_diagonalShear
+  have hL : MemW0 L := by
+    have hslice := Codex.Preliminaries.KKernels.aux_memW0_integral_slice_of_addHaar hS
+    have hslice_eq :
+        (fun u : ℝ => ∫ v : ℝ, M (aux_diagonalShear (u, v))) = L := by
+      funext u
+      dsimp [L, aux_diagonalShear]
+    rw [hslice_eq] at hslice
+    exact hslice
+  have hLInt : Integrable (fun u : ℝ => (L u : ℂ)) :=
+    (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hL).ofReal
+  have hLCont : Continuous (fun u : ℝ => (L u : ℂ)) :=
+    Complex.continuous_ofReal.comp hL.1
+  have hFourierZero (ξ : ℝ) :
+      FourierTransform.fourier (fun u : ℝ => (L u : ℂ)) ξ = 0 := by
+    rw [← aux_fourierReal_eq_fourier]
+    change aux_fourierReal (fun u : ℝ => ∫ p : ℝ, M (u + p, p)) ξ = 0
+    rw [aux_fourierReal_diagonalSlice M hM]
+    exact hcancel ξ
+  have hFourierInt : Integrable (FourierTransform.fourier (fun u : ℝ => (L u : ℂ))) := by
+    apply (integrable_zero ℝ ℂ volume).congr
+    filter_upwards [] with ξ
+    exact (hFourierZero ξ).symm
+  have hinv : FourierTransformInv.fourierInv
+      (FourierTransform.fourier (fun u : ℝ => (L u : ℂ))) =
+      fun u : ℝ => (L u : ℂ) :=
+    hLCont.fourierInv_fourier_eq hLInt hFourierInt
+  have hzeroC : (L x : ℂ) = 0 := by
+    calc
+      (L x : ℂ) = FourierTransformInv.fourierInv
+          (FourierTransform.fourier (fun u : ℝ => (L u : ℂ))) x :=
+        (congrFun hinv x).symm
+      _ = FourierTransformInv.fourierInv (0 : ℝ → ℂ) x := by
+        change VectorFourier.fourierIntegral 𝐞 volume (-innerₗ ℝ)
+            (FourierTransform.fourier (fun u : ℝ => (L u : ℂ))) x =
+          VectorFourier.fourierIntegral 𝐞 volume (-innerₗ ℝ) 0 x
+        apply congrFun
+        apply VectorFourier.fourierIntegral_congr_ae 𝐞 volume (-innerₗ ℝ)
+        filter_upwards [] with ξ
+        exact hFourierZero ξ
+      _ = 0 := by
+        change VectorFourier.fourierIntegral 𝐞 volume (-innerₗ ℝ) (0 : ℝ → ℂ) x = 0
+        unfold VectorFourier.fourierIntegral
+        simp
+  have hzero : L x = 0 := by
+    exact_mod_cast hzeroC
+  simpa [L] using hzero
+
+/-- The coordinate-change form of diagonal cancellation used in the reduction
+bracket estimates.  It permits subtraction at an arbitrary reference value
+of the one-dimensional kernel. -/
+private theorem aux_reduction_diagonal_convolution_cancellation
+    {rho : ℝ → ℝ} (hrho : MemW0 rho) (M : RealPlane → ℝ) (hM : MemW0 M)
+    (hcancel : ∀ x : ℝ, ∫ q : ℝ, M (x + q, q) = 0) (x y c : ℝ) :
+    (∫ p : ℝ, M (x + y - p, y - p) * rho p) =
+      ∫ q : ℝ, M (x + q, q) * (rho (y - q) - rho c) := by
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  let F : RealPlane → ℝ := fun z => M (aux_diagonalShear z)
+  have hF : MemW0 F := by
+    exact Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hM
+      aux_diagonalShear
+  let P : RealPlane × ℝ → ℝ := fun z => F z.1 * rho z.2
+  have hP : MemW0 P := by
+    simpa [P] using hF.aux_mul_prod hrho
+  have hshift : MemW0 (P ∘ aux_lMultiplierAtScale_largeScaleShear) :=
+    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP
+      aux_lMultiplierAtScale_largeScaleShear
+  have hplain : MemW0 (P ∘ aux_lMultiplierAtScale_largeScaleReorder) :=
+    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP
+      aux_lMultiplierAtScale_largeScaleReorder
+  let K : RealPlane × ℝ → ℝ := fun z =>
+    F (z.1.1, z.2) * (rho (z.1.2 - z.2) - rho z.1.2)
+  have hKmem : MemW0 K := by
+    have hsub := Codex.Preliminaries.KKernels.aux_memW0_sub hshift hplain
+    convert hsub using 1
+    funext z
+    rcases z with ⟨⟨u, v⟩, q⟩
+    dsimp [P, Function.comp_def, aux_lMultiplierAtScale_largeScaleShear,
+      aux_lMultiplierAtScale_largeScaleReorder, K]
+    ring
+  have hFslice_mem : MemW0 (fun q : ℝ => F (x, q)) :=
+    hF.aux_memW0_slice_of_addHaar x
+  have hFslice : Integrable (fun q : ℝ => F (x, q)) :=
+    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hFslice_mem
+  have hB : Integrable (fun q : ℝ => F (x, q) * rho y) := hFslice.mul_const _
+  have hKslice : Integrable (fun q : ℝ => K ((x, y), q)) :=
+    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      (hKmem.aux_memW0_slice_of_addHaar (x, y))
+  have hA : Integrable (fun q : ℝ => F (x, q) * rho (y - q)) := by
+    have hsum := hKslice.add hB
+    refine hsum.congr ?_
+    filter_upwards [] with q
+    dsimp [K]
+    ring
+  have hzero : (∫ q : ℝ, F (x, q)) = 0 := by
+    simpa [F, aux_diagonalShear] using hcancel x
+  have hBc : Integrable (fun q : ℝ => F (x, q) * rho c) := hFslice.mul_const _
+  have hBzero : (∫ q : ℝ, F (x, q) * rho c) = 0 := by
+    rw [integral_mul_const, hzero, zero_mul]
+  have hcoordinate :
+      (∫ p : ℝ, M (x + y - p, y - p) * rho p) =
+        ∫ q : ℝ, F (x, q) * rho (y - q) := by
+    let A : ℝ → ℝ := fun p => M (x + y - p, y - p) * rho p
+    calc
+      (∫ p : ℝ, M (x + y - p, y - p) * rho p) = ∫ p : ℝ, A p := by rfl
+      _ = ∫ q : ℝ, A (y - q) := (integral_sub_left_eq_self A volume y).symm
+      _ = ∫ q : ℝ, F (x, q) * rho (y - q) := by
+        apply integral_congr_ae
+        filter_upwards [] with q
+        dsimp [A, F, aux_diagonalShear]
+        ring
+  calc
+    (∫ p : ℝ, M (x + y - p, y - p) * rho p) =
+        ∫ q : ℝ, F (x, q) * rho (y - q) := hcoordinate
+    _ = (∫ q : ℝ, F (x, q) * rho (y - q)) - ∫ q : ℝ, F (x, q) * rho c := by
+      rw [hBzero, sub_zero]
+    _ = ∫ q : ℝ, F (x, q) * rho (y - q) - F (x, q) * rho c :=
+      (integral_sub hA hBc).symm
+    _ = ∫ q : ℝ, M (x + q, q) * (rho (y - q) - rho c) := by
+      apply integral_congr_ae
+      filter_upwards [] with q
+      dsimp [F, aux_diagonalShear]
+      ring
+
+/-- The rotated-coordinate cancellation formula for `reductionNKernel`, used
+to gain the small mean-difference factor when the reduction scale is positive. -/
+private theorem aux_reductionNKernel_caseOne_cancellation {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (h : ℕ) (j : ℤ) (w₀ w₁ : ℝ) :
+    reductionNKernel n D h j (w₀ - w₁, w₀ + w₁) =
+      ∫ p : ℝ, (rhoKernel n D.a h j (w₀ + p) - rhoKernel n D.a h j w₀) *
+        D.kernel j (-w₁ - p, w₁ - p) := by
+  calc
+    reductionNKernel n D h j (w₀ - w₁, w₀ + w₁) =
+        ∫ q : ℝ, D.kernel j (-2 * w₁ + q, q) *
+          (rhoKernel n D.a h j (w₀ + w₁ - q) - rhoKernel n D.a h j w₀) := by
+      rw [reductionNKernel]
+      convert aux_reduction_diagonal_convolution_cancellation
+          (rho := rhoKernel n D.a h j) (rhoKernelsReduction hn D.a D.a_spaced h j |>.1)
+          (D.kernel j) (D.kernel_memW0 j)
+          (fun x => affineDiagonalCancellationReduction (D.kernel j) (D.kernel_memW0 j)
+            (D.diagonal_cancellation j) x)
+          (-2 * w₁) (w₀ + w₁) w₀ using 1
+      apply integral_congr_ae
+      filter_upwards [] with p
+      congr 2 <;> ring
+    _ = ∫ p : ℝ, (rhoKernel n D.a h j (w₀ + p) - rhoKernel n D.a h j w₀) *
+        D.kernel j (-w₁ - p, w₁ - p) := by
+      let A : ℝ → ℝ := fun q => D.kernel j (-2 * w₁ + q, q) *
+        (rhoKernel n D.a h j (w₀ + w₁ - q) - rhoKernel n D.a h j w₀)
+      calc
+        (∫ q : ℝ, D.kernel j (-2 * w₁ + q, q) *
+            (rhoKernel n D.a h j (w₀ + w₁ - q) - rhoKernel n D.a h j w₀)) =
+            ∫ q : ℝ, A q := by rfl
+        _ = ∫ p : ℝ, A (w₁ - p) := (integral_sub_left_eq_self A volume w₁).symm
+        _ = ∫ p : ℝ, (rhoKernel n D.a h j (w₀ + p) - rhoKernel n D.a h j w₀) *
+            D.kernel j (-w₁ - p, w₁ - p) := by
+          apply integral_congr_ae
+          filter_upwards [] with p
+          dsimp [A]
+          ring
+
+/-- The identity orientation in the coordinates used for the bracket
+domination proof. -/
+private theorem aux_reduction_W_zero_coordinates (w₀ w₁ : ℝ) :
+    W 0 (w₀ - w₁, w₀ + w₁) = (w₀ - w₁, w₀ + w₁) := by
+  simp [W]
+
+/-- The rotated orientation in the coordinates used for the bracket
+domination proof. -/
+private theorem aux_reduction_W_one_coordinates (w₀ w₁ : ℝ) :
+    W 1 (w₀ - w₁, w₀ + w₁) = (Real.sqrt 2 * w₀, Real.sqrt 2 * w₁) := by
+  rw [W, if_neg (by decide)]
+  apply Prod.ext <;> dsimp
+  · field_simp [Real.sqrt_ne_zero'.mpr (by norm_num : (0 : ℝ) < 2)]
+    rw [show Real.sqrt 2 ^ 2 = (2 : ℝ) by
+      exact Real.sq_sqrt (by norm_num)]
+    ring
+  · field_simp [Real.sqrt_ne_zero'.mpr (by norm_num : (0 : ℝ) < 2)]
+    rw [show Real.sqrt 2 ^ 2 = (2 : ℝ) by
+      exact Real.sq_sqrt (by norm_num)]
+    ring
+
+/-- The elementary one-third power bound used to turn a mean-difference
+factor into the (2^{-h/3}) gain in bracket domination. -/
+private theorem aux_reduction_min_le_rpow_one_third {x : ℝ} (hx : 0 ≤ x) :
+    min 1 x ≤ Real.rpow x (1 / 3 : ℝ) := by
+  by_cases hxone : x ≤ 1
+  · rw [min_eq_right hxone]
+    have hiff := Real.le_rpow_inv_iff_of_pos hx hx (by norm_num : (0 : ℝ) < 3)
+    norm_num at hiff
+    apply hiff.mpr
+    have hx2 : x ^ 2 ≤ 1 := pow_le_one₀ hx hxone
+    calc
+      x ^ 3 = x * x ^ 2 := by ring
+      _ ≤ x * 1 := mul_le_mul_of_nonneg_left hx2 hx
+      _ = x := by ring
+  · have hone : 1 ≤ x := le_of_not_ge hxone
+    rw [min_eq_left hone]
+    have h := Real.rpow_le_rpow (by norm_num : (0 : ℝ) ≤ 1) hone
+      (by norm_num : (0 : ℝ) ≤ (1 / 3 : ℝ))
+    simpa using h
+
+/-- The one-sided scale condition in `increaseDataBracketDomination` gives
+the dyadic ratio required by the positive-height one-third-loss estimate. -/
+private theorem aux_reduction_positive_scale_ratio (t a : ℝ) (h : ℕ)
+    (ht : 0 ≤ t) (ha : 0 < a) (hta : t ≤ a) :
+    t / ((2 : ℝ) ^ h * a) ≤ Real.rpow 2 (-(h : ℝ)) := by
+  have hp : 0 < (2 : ℝ) ^ h := pow_pos (by norm_num) _
+  calc
+    t / ((2 : ℝ) ^ h * a) ≤ a / ((2 : ℝ) ^ h * a) :=
+      div_le_div_of_nonneg_right hta (mul_pos hp ha).le
+    _ = ((2 : ℝ) ^ h)⁻¹ := by field_simp [ne_of_gt hp, ne_of_gt ha]
+    _ = Real.rpow 2 (-(h : ℝ)) := by
+      calc
+        ((2 : ℝ) ^ h)⁻¹ = (Real.rpow 2 (h : ℝ))⁻¹ := by
+          congr 1
+          exact (Real.rpow_natCast (2 : ℝ) h).symm
+        _ = Real.rpow 2 (-(h : ℝ)) :=
+          (Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2) (h : ℝ)).symm
+
+/-- A scale-ratio loss is bounded by a (1/3)-power bracket loss. -/
+private theorem aux_reduction_min_scale_third_le {t lam : ℝ} {h : ℕ}
+    (ht : 0 < t) (hlam : 0 < lam)
+    (hscale : t / lam ≤ Real.rpow 2 (-(h : ℝ))) (p : ℝ) :
+    min 1 (lam⁻¹ * |p|) ≤ Real.rpow 2 (-((h : ℝ) / 3)) *
+      Real.rpow (1 + t⁻¹ * |p|) (1 / 3 : ℝ) := by
+  let a : ℝ := lam⁻¹ * |p|
+  let b : ℝ := t⁻¹ * |p|
+  let c : ℝ := Real.rpow 2 (-(h : ℝ))
+  have ha : 0 ≤ a := by
+    dsimp [a]
+    positivity
+  have hb : 0 ≤ b := by
+    dsimp [b]
+    positivity
+  have hc : 0 ≤ c := by
+    dsimp [c]
+    exact Real.rpow_nonneg (by norm_num) _
+  have hab : a ≤ c * b := by
+    have hid : a = (t / lam) * b := by
+      dsimp [a, b]
+      field_simp [ne_of_gt ht, ne_of_gt hlam]
+    rw [hid]
+    exact mul_le_mul_of_nonneg_right hscale hb
+  have hmin : min 1 a ≤ Real.rpow a (1 / 3 : ℝ) :=
+    aux_reduction_min_le_rpow_one_third ha
+  have hroot : Real.rpow a (1 / 3 : ℝ) ≤
+      Real.rpow c (1 / 3 : ℝ) * Real.rpow (1 + b) (1 / 3 : ℝ) := by
+    calc
+      Real.rpow a (1 / 3 : ℝ) ≤ Real.rpow (c * b) (1 / 3 : ℝ) :=
+        Real.rpow_le_rpow ha hab (by norm_num)
+      _ = Real.rpow c (1 / 3 : ℝ) * Real.rpow b (1 / 3 : ℝ) :=
+        Real.mul_rpow hc hb
+      _ ≤ Real.rpow c (1 / 3 : ℝ) * Real.rpow (1 + b) (1 / 3 : ℝ) := by
+        apply mul_le_mul_of_nonneg_left
+        · exact Real.rpow_le_rpow hb (by linarith) (by norm_num)
+        · exact Real.rpow_nonneg hc _
+  have hcroot : Real.rpow c (1 / 3 : ℝ) =
+      Real.rpow 2 (-((h : ℝ) / 3)) := by
+    dsimp [c]
+    rw [← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2)]
+    congr 1
+    ring
+  change min 1 a ≤ Real.rpow 2 (-((h : ℝ) / 3)) *
+    Real.rpow (1 + b) (1 / 3 : ℝ)
+  rw [← hcroot]
+  exact hmin.trans hroot
+
+/-- The (1/3)-power loss lowers the exponent (3/2) to the required
+(7/6) in the reduction bracket majorant. -/
+private theorem aux_reduction_one_third_times_bump_eq (t x : ℝ) (ht : 0 < t) :
+    Real.rpow (1 + t⁻¹ * |x|) (1 / 3 : ℝ) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t x =
+    scaledBracketBumpReal (7 / 6 : ℝ) t x := by
+  let z : ℝ := 1 + t⁻¹ * |x|
+  have hz : 0 < z := by
+    dsimp [z]
+    positivity
+  have habs : |t⁻¹ * x| = t⁻¹ * |x| := by
+    rw [abs_mul, abs_inv, abs_of_pos ht]
+  unfold scaledBracketBumpReal
+  rw [habs]
+  change Real.rpow z (1 / 3 : ℝ) *
+      (t⁻¹ * Real.rpow z (-(3 / 2 : ℝ))) =
+    t⁻¹ * Real.rpow z (-(7 / 6 : ℝ))
+  calc
+    Real.rpow z (1 / 3 : ℝ) *
+        (t⁻¹ * Real.rpow z (-(3 / 2 : ℝ))) =
+      t⁻¹ * (Real.rpow z (1 / 3 : ℝ) * Real.rpow z (-(3 / 2 : ℝ))) := by ring
+    _ = t⁻¹ * Real.rpow z ((1 / 3 : ℝ) + (-(3 / 2 : ℝ))) := by
+      exact congrArg (fun y : ℝ => t⁻¹ * y)
+        (Real.rpow_add hz (1 / 3 : ℝ) (-(3 / 2 : ℝ))).symm
+    _ = t⁻¹ * Real.rpow z (-(7 / 6 : ℝ)) := by
+      congr 2
+      norm_num
+
+/-- The orientation-one version of the one-third bracket loss. -/
+private theorem aux_reduction_third_loss_bump_sqrt (t p : ℝ) (ht : 0 < t) :
+    Real.rpow (1 + t⁻¹ * |p|) (1 / 3 : ℝ) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t (-Real.sqrt 2 * p) ≤
+    scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * p) := by
+  have hsqrt : 0 ≤ Real.sqrt (2 : ℝ) := Real.sqrt_nonneg _
+  have hsqrt_one : 1 ≤ Real.sqrt (2 : ℝ) := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+  have hbase : 1 + t⁻¹ * |p| ≤ 1 + t⁻¹ * |Real.sqrt 2 * p| := by
+    rw [abs_mul, abs_of_nonneg hsqrt]
+    gcongr
+    simpa using mul_le_mul_of_nonneg_right hsqrt_one (abs_nonneg p)
+  have hroot : Real.rpow (1 + t⁻¹ * |p|) (1 / 3 : ℝ) ≤
+      Real.rpow (1 + t⁻¹ * |Real.sqrt 2 * p|) (1 / 3 : ℝ) :=
+    Real.rpow_le_rpow (by positivity) hbase (by norm_num)
+  have hB : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t (-Real.sqrt 2 * p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht
+  have hneg : scaledBracketBumpReal (3 / 2 : ℝ) t (-Real.sqrt 2 * p) =
+      scaledBracketBumpReal (3 / 2 : ℝ) t (Real.sqrt 2 * p) := by
+    rw [show -Real.sqrt 2 * p = -(Real.sqrt 2 * p) by ring,
+      aux_scaledBracketBumpReal_neg]
+  calc
+    Real.rpow (1 + t⁻¹ * |p|) (1 / 3 : ℝ) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t (-Real.sqrt 2 * p) ≤
+      Real.rpow (1 + t⁻¹ * |Real.sqrt 2 * p|) (1 / 3 : ℝ) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t (-Real.sqrt 2 * p) :=
+      mul_le_mul_of_nonneg_right hroot hB
+    _ = Real.rpow (1 + t⁻¹ * |Real.sqrt 2 * p|) (1 / 3 : ℝ) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t (Real.sqrt 2 * p) := by rw [hneg]
+    _ = scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * p) :=
+      aux_reduction_one_third_times_bump_eq t (Real.sqrt 2 * p) ht
+
+/-- The numerical two-bump constant needed at the reduction exponent (7/6). -/
+private theorem aux_reduction_two_bump_constant :
+    C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) < 2 ^ (6 : ℕ) := by
+  have hvalue : C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) =
+      (2 : ℝ) ^ (13 / 6 : ℝ) * 7 := by
+    norm_num [C_twoBumpEstimate]
+  rw [hvalue]
+  have hpow : (2 : ℝ) ^ (13 / 6 : ℝ) < (2 : ℝ) ^ (3 : ℝ) :=
+    Real.rpow_lt_rpow_of_exponent_lt (by norm_num) (by norm_num)
+  norm_num [Real.rpow_natCast] at hpow ⊢
+  nlinarith
+
+/-- The fixed √2 rescaling loss for the (7/6)-bracket bump. -/
+private theorem aux_reduction_fixed_scaling_down (s x : ℝ) (hs : 0 < s) :
+    scaledBracketBumpReal (7 / 6 : ℝ) s (x / Real.sqrt 2) ≤
+      2 * scaledBracketBumpReal (7 / 6 : ℝ) s x := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hinv : (Real.sqrt (2 : ℝ))⁻¹ ≤ Real.sqrt 2 := by
+    apply (inv_le_iff_one_le_mul₀ hsqrt).mpr
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+  have habs : |x| ≤ Real.sqrt 2 * |x / Real.sqrt 2| := by
+    rw [abs_div, abs_of_pos hsqrt]
+    field_simp
+    exact le_rfl
+  have hcomp := aux_scaledBracketBumpReal_le_of_abs_le_mul (7 / 6 : ℝ)
+    (by norm_num) hs hsqrt le_rfl hinv habs
+  have hfactor : Real.rpow (Real.sqrt 2) (7 / 6 : ℝ) ≤ 2 := by
+    calc
+      Real.rpow (Real.sqrt 2) (7 / 6 : ℝ) =
+          Real.rpow 2 ((1 / 2 : ℝ) * (7 / 6 : ℝ)) := by
+        rw [Real.sqrt_eq_rpow]
+        exact (Real.rpow_mul (by norm_num : 0 ≤ (2 : ℝ))
+          (1 / 2 : ℝ) (7 / 6 : ℝ)).symm
+      _ ≤ Real.rpow 2 (1 : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le (by norm_num) (by norm_num)
+      _ = 2 := by norm_num
+  calc
+    scaledBracketBumpReal (7 / 6 : ℝ) s (x / Real.sqrt 2) ≤
+        Real.rpow (Real.sqrt 2) (7 / 6 : ℝ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) s x := hcomp
+    _ ≤ 2 * scaledBracketBumpReal (7 / 6 : ℝ) s x :=
+      mul_le_mul_of_nonneg_right hfactor
+        (aux_scaledBracketBumpReal_nonneg _ _ _ hs)
+
+/-- Enlarging the argument by √2 can only decrease the (7/6)-bracket bump. -/
+private theorem aux_reduction_fixed_scaling_up (s x : ℝ) (hs : 0 < s) :
+    scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * x) ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) s x := by
+  have hsqrt0 : 0 ≤ Real.sqrt (2 : ℝ) := Real.sqrt_nonneg _
+  have hsqrt1 : 1 ≤ Real.sqrt (2 : ℝ) := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+  have hbase : 1 + |s⁻¹ * x| ≤ 1 + |s⁻¹ * (Real.sqrt 2 * x)| := by
+    rw [abs_mul, abs_mul, abs_mul, abs_inv, abs_of_pos hs,
+      abs_of_nonneg hsqrt0]
+    gcongr
+    simpa using mul_le_mul_of_nonneg_right hsqrt1 (abs_nonneg x)
+  unfold scaledBracketBumpReal
+  apply mul_le_mul_of_nonneg_left
+  · exact Real.rpow_le_rpow_of_nonpos (by positivity) hbase (by norm_num)
+  · exact inv_nonneg.mpr hs.le
+
+/-- Splitting a truncated factor over two nonnegative summands. -/
+private theorem aux_reduction_min_one_subadd (a b : ℝ) (ha0 : 0 ≤ a) (hb0 : 0 ≤ b) :
+    min 1 (a + b) ≤ min 1 a + min 1 b := by
+  by_cases ha : 1 ≤ a
+  · calc
+      min 1 (a + b) ≤ 1 := min_le_left _ _
+      _ ≤ min 1 a + min 1 b := by
+        rw [min_eq_left ha]
+        linarith [le_min (by norm_num : (0 : ℝ) ≤ 1) hb0]
+  by_cases hb : 1 ≤ b
+  · calc
+      min 1 (a + b) ≤ 1 := min_le_left _ _
+      _ ≤ min 1 a + min 1 b := by
+        rw [min_eq_left hb]
+        linarith [le_min (by norm_num : (0 : ℝ) ≤ 1) ha0]
+  · have ha' : a ≤ 1 := le_of_not_ge ha
+    have hb' : b ≤ 1 := le_of_not_ge hb
+    rw [min_eq_right ha', min_eq_right hb']
+    exact min_le_right _ _
+
+/-- In the horizontal orientation, the mean-difference factor can be charged
+to either of the two translated bracket bumps. -/
+private theorem aux_reduction_min_split (lam p w1 : ℝ) (hlam : 0 < lam) :
+    min 1 (lam⁻¹ * |p|) ≤
+      min 1 ((2 * lam)⁻¹ * |-w1 - p|) +
+        min 1 ((2 * lam)⁻¹ * |w1 - p|) := by
+  let a : ℝ := (2 * lam)⁻¹ * |-w1 - p|
+  let b : ℝ := (2 * lam)⁻¹ * |w1 - p|
+  have hfactor : 0 ≤ (2 * lam)⁻¹ := inv_nonneg.mpr (by positivity)
+  have ha : 0 ≤ a := mul_nonneg hfactor (abs_nonneg _)
+  have hb : 0 ≤ b := mul_nonneg hfactor (abs_nonneg _)
+  have habs : 2 * |p| ≤ |-w1 - p| + |w1 - p| := by
+    calc
+      2 * |p| = |(-2 : ℝ) * p| := by rw [abs_mul]; norm_num
+      _ = |(-w1 - p) + (w1 - p)| := by congr 1 <;> ring
+      _ ≤ |-w1 - p| + |w1 - p| := abs_add_le _ _
+  have hlin := mul_le_mul_of_nonneg_left habs hfactor
+  have hlin' : lam⁻¹ * |p| ≤ a + b := by
+    dsimp [a, b]
+    calc
+      lam⁻¹ * |p| = (2 * lam)⁻¹ * (2 * |p|) := by
+        field_simp [ne_of_gt hlam]
+      _ ≤ (2 * lam)⁻¹ * (|-w1 - p| + |w1 - p|) := hlin
+      _ = (2 * lam)⁻¹ * |-w1 - p| + (2 * lam)⁻¹ * |w1 - p| := by ring
+  calc
+    min 1 (lam⁻¹ * |p|) ≤ min 1 (a + b) := min_le_min_left _ hlin'
+    _ ≤ min 1 a + min 1 b := aux_reduction_min_one_subadd a b ha hb
+    _ = min 1 ((2 * lam)⁻¹ * |-w1 - p|) +
+        min 1 ((2 * lam)⁻¹ * |w1 - p|) := by rfl
+
+/-- The complete one-third loss estimate in the horizontal (`W 0`) case. -/
+private theorem aux_reduction_loss_u0 {t0 t1 lam : ℝ} {h : ℕ}
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1)
+    (hscale0 : t0 / lam ≤ Real.rpow 2 (-(h : ℝ)))
+    (hscale1 : t1 / lam ≤ Real.rpow 2 (-(h : ℝ)))
+    (p w1 : ℝ) :
+    min 1 (lam⁻¹ * |p|) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) ≤
+      2 * Real.rpow 2 (-((h : ℝ) / 3)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+  let r : ℝ := Real.rpow 2 (-((h : ℝ) / 3))
+  let z0 : ℝ := Real.rpow (1 + t0⁻¹ * |w1 + p|) (1 / 3 : ℝ)
+  let z1 : ℝ := Real.rpow (1 + t1⁻¹ * |w1 - p|) (1 / 3 : ℝ)
+  have hlam2 : 0 < 2 * lam := by positivity
+  have hscale0half : t0 / (2 * lam) ≤ Real.rpow 2 (-(h : ℝ)) := by
+    calc
+      t0 / (2 * lam) = (1 / 2 : ℝ) * (t0 / lam) := by
+        field_simp [ne_of_gt hlam]
+      _ ≤ t0 / lam := by
+        have hnon : 0 ≤ t0 / lam := div_nonneg ht0.le hlam.le
+        nlinarith
+      _ ≤ Real.rpow 2 (-(h : ℝ)) := hscale0
+  have hscale1half : t1 / (2 * lam) ≤ Real.rpow 2 (-(h : ℝ)) := by
+    calc
+      t1 / (2 * lam) = (1 / 2 : ℝ) * (t1 / lam) := by
+        field_simp [ne_of_gt hlam]
+      _ ≤ t1 / lam := by
+        have hnon : 0 ≤ t1 / lam := div_nonneg ht1.le hlam.le
+        nlinarith
+      _ ≤ Real.rpow 2 (-(h : ℝ)) := hscale1
+  have hsplit := aux_reduction_min_split lam p w1 hlam
+  have hmin0 := aux_reduction_min_scale_third_le ht0 hlam2 hscale0half (-w1 - p)
+  have hmin1 := aux_reduction_min_scale_third_le ht1 hlam2 hscale1half (w1 - p)
+  have hmin0' : min 1 ((2 * lam)⁻¹ * |-w1 - p|) ≤ r * z0 := by
+    rw [show -w1 - p = -(w1 + p) by ring, abs_neg]
+    change min 1 ((2 * lam)⁻¹ * |w1 + p|) ≤
+      Real.rpow 2 (-((h : ℝ) / 3)) *
+        Real.rpow (1 + t0⁻¹ * |w1 + p|) (1 / 3 : ℝ)
+    rw [show -w1 - p = -(w1 + p) by ring, abs_neg] at hmin0
+    exact hmin0
+  have hmin1' : min 1 ((2 * lam)⁻¹ * |w1 - p|) ≤ r * z1 := by
+    exact hmin1
+  have hmin : min 1 (lam⁻¹ * |p|) ≤ r * z0 + r * z1 := by
+    exact hsplit.trans (add_le_add hmin0' hmin1')
+  have hB0 : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht0
+  have hB1 : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht1
+  have hprod : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := mul_nonneg hB0 hB1
+  have hfirst := mul_le_mul_of_nonneg_right hmin hprod
+  have hred0 : scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) :=
+    aux_scaledBracketBumpReal_exponent_reduce (7 / 6 : ℝ) (3 / 2 : ℝ) t0 (w1 + p)
+      ht0 (by norm_num)
+  have hred1 : scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) :=
+    aux_scaledBracketBumpReal_exponent_reduce (7 / 6 : ℝ) (3 / 2 : ℝ) t1 (w1 - p)
+      ht1 (by norm_num)
+  have hreal0 := aux_reduction_one_third_times_bump_eq t0 (w1 + p) ht0
+  have hreal1 := aux_reduction_one_third_times_bump_eq t1 (w1 - p) ht1
+  have hr : 0 ≤ r := by
+    dsimp [r]
+    positivity
+  have hR0 : r * z0 * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) ≤
+        r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+    calc
+      r * z0 * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) =
+          r * (z0 * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by ring
+      _ = r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by
+          change r *
+              (Real.rpow (1 + t0⁻¹ * |w1 + p|) (1 / 3 : ℝ) *
+                scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p)) *
+                scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) = _
+          exact congrArg (fun q : ℝ => r * q *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) hreal0
+      _ ≤ r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+          exact mul_le_mul_of_nonneg_left hred1
+            (mul_nonneg hr (aux_scaledBracketBumpReal_nonneg _ _ _ ht0))
+  have hR1 : r * z1 * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) ≤
+        r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+    calc
+      r * z1 * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) =
+          r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+            (z1 * scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) := by ring
+      _ = r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+          change r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+              (Real.rpow (1 + t1⁻¹ * |w1 - p|) (1 / 3 : ℝ) *
+                scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) = _
+          exact congrArg (fun q : ℝ => r *
+            scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) * q) hreal1
+      _ ≤ r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+          calc
+            r * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+                scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) =
+                (r * scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) *
+                  scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) := by ring
+            _ ≤ (r * scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) *
+                  scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) :=
+              mul_le_mul_of_nonneg_left hred0
+                (mul_nonneg hr (aux_scaledBracketBumpReal_nonneg _ _ _ ht1))
+            _ = r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+                  scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by ring
+  calc
+    min 1 (lam⁻¹ * |p|) * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) ≤
+        (r * z0 + r * z1) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p)) := by
+      simpa only [mul_assoc] using hfirst
+    _ = r * z0 * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) +
+        r * z1 * scaledBracketBumpReal (3 / 2 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by ring
+    _ ≤ r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) +
+        r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) :=
+      add_le_add hR0 hR1
+    _ = 2 * Real.rpow 2 (-((h : ℝ) / 3)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+      dsimp [r]
+      ring
+
+/-- The complete one-third loss estimate in the rotated (`W 1`) case. -/
+private theorem aux_reduction_loss_u1 {t0 t1 lam : ℝ} {h : ℕ}
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1)
+    (hscale0 : t0 / lam ≤ Real.rpow 2 (-(h : ℝ)))
+    (p w1 : ℝ) :
+    min 1 (lam⁻¹ * |p|) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t0 (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (Real.sqrt 2 * w1) ≤
+      2 * Real.rpow 2 (-((h : ℝ) / 3)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) := by
+  let r : ℝ := Real.rpow 2 (-((h : ℝ) / 3))
+  have hmin := aux_reduction_min_scale_third_le ht0 hlam hscale0 p
+  have hB0 : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t0 (Real.sqrt 2 * p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht0
+  have hB1 : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t1 (Real.sqrt 2 * w1) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht1
+  have hprod : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t0 (Real.sqrt 2 * p) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 (Real.sqrt 2 * w1) := mul_nonneg hB0 hB1
+  have hfirst := mul_le_mul_of_nonneg_right hmin hprod
+  have hlossRaw := aux_reduction_third_loss_bump_sqrt t0 (-p) ht0
+  have hloss : Real.rpow (1 + t0⁻¹ * |p|) (1 / 3 : ℝ) *
+      scaledBracketBumpReal (3 / 2 : ℝ) t0 (Real.sqrt 2 * p) ≤
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) := by
+    simpa [abs_neg, aux_scaledBracketBumpReal_neg] using hlossRaw
+  have hred1 : scaledBracketBumpReal (3 / 2 : ℝ) t1 (Real.sqrt 2 * w1) ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) :=
+    aux_scaledBracketBumpReal_exponent_reduce (7 / 6 : ℝ) (3 / 2 : ℝ) t1
+      (Real.sqrt 2 * w1) ht1 (by norm_num)
+  have hr : 0 ≤ r := by
+    dsimp [r]
+    positivity
+  have htarget : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) :=
+    mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  calc
+    min 1 (lam⁻¹ * |p|) * scaledBracketBumpReal (3 / 2 : ℝ) t0 (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (3 / 2 : ℝ) t1 (Real.sqrt 2 * w1) ≤
+      (r * Real.rpow (1 + t0⁻¹ * |p|) (1 / 3 : ℝ)) *
+        (scaledBracketBumpReal (3 / 2 : ℝ) t0 (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 (Real.sqrt 2 * w1)) := by
+      simpa only [mul_assoc] using hfirst
+    _ = r *
+        (Real.rpow (1 + t0⁻¹ * |p|) (1 / 3 : ℝ) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t0 (Real.sqrt 2 * p)) *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 (Real.sqrt 2 * w1) := by ring
+    _ ≤ r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) := by
+      calc
+        r *
+            (Real.rpow (1 + t0⁻¹ * |p|) (1 / 3 : ℝ) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t0 (Real.sqrt 2 * p)) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t1 (Real.sqrt 2 * w1) ≤
+            r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t1 (Real.sqrt 2 * w1) :=
+          mul_le_mul_of_nonneg_right
+            (mul_le_mul_of_nonneg_left hloss hr) hB1
+        _ ≤ r * scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) :=
+          mul_le_mul_of_nonneg_left hred1
+            (mul_nonneg hr (aux_scaledBracketBumpReal_nonneg _ _ _ ht0))
+    _ ≤ 2 * Real.rpow 2 (-((h : ℝ) / 3)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) := by
+      dsimp [r] at *
+      nlinarith [htarget]
+
+/-- A product of two post-loss bracket bumps is integrable. -/
+private theorem aux_reduction_bracket_product_integrable
+    (a s₀ s₁ : ℝ) (hs₀ : 0 < s₀) (hs₁ : 0 < s₁) :
+    Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) s₀ (a + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) s₁ p) := by
+  have hbase : Integrable (fun p : ℝ => scaledBracketBumpReal (7 / 6 : ℝ) s₁ p) :=
+    aux_integrable_scaledBracketBumpReal (7 / 6 : ℝ) s₁ (by norm_num) hs₁
+  refine (hbase.const_mul s₀⁻¹).mono' ?_ ?_
+  · apply Continuous.aestronglyMeasurable
+    have hleftBase : Continuous (fun p : ℝ => 1 + |s₀⁻¹ * (a + p)|) := by fun_prop
+    have hrightBase : Continuous (fun p : ℝ => 1 + |s₁⁻¹ * p|) := by fun_prop
+    have hleft : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) s₀ (a + p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hleftBase.continuousAt.rpow_const (Or.inl (by positivity))
+    have hright : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) s₁ p) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hrightBase.continuousAt.rpow_const (Or.inl (by positivity))
+    exact hleft.mul hright
+  · filter_upwards [] with p
+    have hleft : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) s₀ (a + p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs₀
+    have hright : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) s₁ p :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs₁
+    have hle : scaledBracketBumpReal (7 / 6 : ℝ) s₀ (a + p) ≤ s₀⁻¹ := by
+      unfold scaledBracketBumpReal
+      have hbase : 1 ≤ 1 + |s₀⁻¹ * (a + p)| := by
+        linarith [abs_nonneg (s₀⁻¹ * (a + p))]
+      have hpow : Real.rpow (1 + |s₀⁻¹ * (a + p)|) (-(7 / 6 : ℝ)) ≤ 1 :=
+        Real.rpow_le_one_of_one_le_of_nonpos hbase (by norm_num)
+      calc
+        s₀⁻¹ * Real.rpow (1 + |s₀⁻¹ * (a + p)|) (-(7 / 6 : ℝ)) ≤
+            s₀⁻¹ * 1 :=
+          mul_le_mul_of_nonneg_left hpow (inv_nonneg.mpr hs₀.le)
+        _ = s₀⁻¹ := by ring
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hleft hright)]
+    exact mul_le_mul_of_nonneg_right hle hright
+
+/-- The stationary (`α = 0`) post-loss occurrence in the positive-height
+rotated case is controlled in exact `W 1` coordinates. -/
+private theorem aux_reduction_orientation_one_alpha_zero (w₀ w₁ lam t₀ t₁ : ℝ)
+    (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
+    (∫ p : ℝ,
+      scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)) ≤
+      2 ^ (9 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁) := by
+  let A : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) lam w₀
+  let D : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)
+  let f : ℝ → ℝ := fun p => A * scaledBracketBumpReal (7 / 6 : ℝ) t₀
+    (Real.sqrt 2 * p) * D
+  let g : ℝ → ℝ := fun p => A * scaledBracketBumpReal (7 / 6 : ℝ) t₀ p * D
+  have hA : 0 ≤ A := by
+    dsimp [A]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hD : 0 ≤ D := by
+    dsimp [D]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  have hg : Integrable g := by
+    have hbase := aux_integrable_scaledBracketBumpReal (7 / 6 : ℝ) t₀ (by norm_num) ht₀
+    simpa [g, mul_assoc, mul_left_comm, mul_comm] using (hbase.const_mul (A * D))
+  have hfnon (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    exact mul_nonneg
+      (mul_nonneg hA (aux_scaledBracketBumpReal_nonneg _ _ _ ht₀)) hD
+  have hpoint (p : ℝ) : f p ≤ g p := by
+    dsimp [f, g]
+    have hmid := aux_reduction_fixed_scaling_up t₀ p ht₀
+    calc
+      A * scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D =
+          A * (scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D) := by ring
+      _ ≤ A * (scaledBracketBumpReal (7 / 6 : ℝ) t₀ p * D) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hmid hD) hA
+      _ = A * scaledBracketBumpReal (7 / 6 : ℝ) t₀ p * D := by ring
+  have hint : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, g p :=
+    integral_mono_of_nonneg (ae_of_all _ hfnon) hg (ae_of_all _ hpoint)
+  have hmass : (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t₀ p) = 12 := by
+    have h := aux_integral_scaledBracketBumpReal_eq (7 / 6 : ℝ) t₀ 0 (by norm_num) ht₀
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t₀ p) =
+          2 / ((7 / 6 : ℝ) - 1) := by
+        simpa [aux_scaledBracketBumpReal_neg] using h
+      _ = 12 := by norm_num
+  have hval : (∫ p : ℝ, g p) = A * 12 * D := by
+    dsimp [g]
+    rw [integral_mul_const, integral_const_mul, hmass]
+  have hscale : A ≤ 2 * scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀) := by
+    dsimp [A]
+    convert aux_reduction_fixed_scaling_down lam (Real.sqrt 2 * w₀) hlam using 1 <;>
+      field_simp [Real.sqrt_ne_zero']
+  have htarget : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀) * D := by
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam) hD
+  change (∫ p : ℝ, f p) ≤ _
+  calc
+    (∫ p : ℝ, f p) ≤ ∫ p : ℝ, g p := hint
+    _ = A * 12 * D := hval
+    _ ≤ (2 * scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀)) * 12 * D := by
+      gcongr
+    _ ≤ 2 ^ (9 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀) * D := by
+      norm_num
+      nlinarith [htarget]
+
+/-- The translated (`α = 1`) post-loss occurrence in the positive-height
+rotated case is controlled in exact `W 1` coordinates. -/
+private theorem aux_reduction_orientation_one_alpha_one (w₀ w₁ lam t₀ t₁ : ℝ)
+    (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) (ht₀lam : t₀ ≤ lam) :
+    (∫ p : ℝ,
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)) ≤
+      2 ^ (9 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁) := by
+  let A : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) lam w₀
+  let D : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)
+  let f : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D
+  let g : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t₀ p * D
+  have hD : 0 ≤ D := by
+    dsimp [D]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  have hA : 0 ≤ A := by
+    dsimp [A]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hg0 : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ p) :=
+    aux_reduction_bracket_product_integrable w₀ lam t₀ hlam ht₀
+  have hg : Integrable g := by
+    simpa [g] using hg0.mul_const D
+  have hfnon (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    exact mul_nonneg
+      (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht₀)) hD
+  have hpoint (p : ℝ) : f p ≤ g p := by
+    dsimp [f, g]
+    have hmid := aux_reduction_fixed_scaling_up t₀ p ht₀
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D =
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+            (scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D) := by ring
+      _ ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+            (scaledBracketBumpReal (7 / 6 : ℝ) t₀ p * D) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hmid hD)
+          (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      _ = scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₀ p * D := by ring
+  have hint : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, g p :=
+    integral_mono_of_nonneg (ae_of_all _ hfnon) hg (ae_of_all _ hpoint)
+  have hgnon (p : ℝ) : 0 ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ p := by
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht₀)
+  have htwoRaw := twoBumpEstimate (-w₀) 0 lam t₀ (7 / 6 : ℝ) (7 / 6 : ℝ)
+    hlam ht₀ ht₀lam (by norm_num) (by norm_num)
+  have htwo : (∫ p : ℝ,
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ p) ≤
+      C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) * A := by
+    rw [← abs_of_nonneg (integral_nonneg hgnon)]
+    calc
+      |∫ p : ℝ,
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t₀ p| =
+          |∫ p : ℝ,
+            scaledBracketBumpReal (7 / 6 : ℝ) lam ((-w₀) - p) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t₀ (0 - p)| := by
+        congr 1
+        apply integral_congr_ae
+        filter_upwards [] with p
+        rw [show (-w₀) - p = -(w₀ + p) by ring,
+          show 0 - p = -p by ring,
+          aux_scaledBracketBumpReal_neg, aux_scaledBracketBumpReal_neg]
+      _ ≤ C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) *
+          scaledBracketBumpReal (min (7 / 6 : ℝ) (7 / 6 : ℝ)) lam ((-w₀) - 0) := htwoRaw
+      _ = C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) * A := by
+        dsimp [A]
+        rw [min_self, show -w₀ - 0 = -w₀ by ring, aux_scaledBracketBumpReal_neg]
+  have hval : (∫ p : ℝ, g p) =
+      (∫ p : ℝ,
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₀ p) * D := by
+    simpa [g] using (integral_mul_const D (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ p))
+  have hC : C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) ≤ 2 ^ (6 : ℕ) :=
+    aux_reduction_two_bump_constant.le
+  have hCnon : 0 ≤ C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) := by
+    norm_num [C_twoBumpEstimate]
+    positivity
+  have hscale : A ≤ 2 * scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀) := by
+    dsimp [A]
+    convert aux_reduction_fixed_scaling_down lam (Real.sqrt 2 * w₀) hlam using 1 <;>
+      field_simp [Real.sqrt_ne_zero']
+  have htarget : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀) * D := by
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam) hD
+  change (∫ p : ℝ, f p) ≤ _
+  calc
+    (∫ p : ℝ, f p) ≤ ∫ p : ℝ, g p := hint
+    _ = (∫ p : ℝ,
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₀ p) * D := hval
+    _ ≤ (C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) * A) * D :=
+      mul_le_mul_of_nonneg_right htwo hD
+    _ ≤ (C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) * (2 *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀))) * D := by
+      exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hscale hCnon) hD
+    _ ≤ ((2 ^ (6 : ℕ) : ℝ) * (2 *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀))) * D := by
+      exact mul_le_mul_of_nonneg_right
+        (mul_le_mul_of_nonneg_right hC
+          (mul_nonneg (by norm_num) (aux_scaledBracketBumpReal_nonneg _ _ _ hlam))) hD
+    _ ≤ 2 ^ (9 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w₀) * D := by
+      have hp6 : ((2 : ℝ) ^ (6 : ℕ)) = 64 := by norm_num
+      have hp9 : ((2 : ℝ) ^ (9 : ℕ)) = 512 := by norm_num
+      rw [hp6, hp9]
+      nlinarith [htarget]
+
+/-- The reduction-exponent two-bump convolution estimate in a symmetric
+max-scale form. -/
+private theorem aux_reduction_two_bump_seven_six (x0 x1 t0 t1 : ℝ)
+    (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t0 (x0 - p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (x1 - p)) ≤
+      (2 : ℝ) ^ (6 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (x0 - x1) := by
+  have hnonneg (p : ℝ) : 0 ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (x0 - p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (x1 - p) :=
+    mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  have hraw : (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t0 (x0 - p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (x1 - p)) ≤
+      C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (x0 - x1) := by
+    rw [← abs_of_nonneg (integral_nonneg hnonneg)]
+    by_cases h : t0 ≤ t1
+    · have htwo := twoBumpEstimate x1 x0 t1 t0 (7 / 6 : ℝ) (7 / 6 : ℝ)
+        ht1 ht0 h (by norm_num) (by norm_num)
+      calc
+        |∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t0 (x0 - p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (x1 - p)| =
+            |∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t1 (x1 - p) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t0 (x0 - p)| := by
+              congr 1
+              apply integral_congr_ae
+              filter_upwards [] with p
+              ring
+        _ ≤ C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) *
+            scaledBracketBumpReal (min (7 / 6 : ℝ) (7 / 6 : ℝ)) t1 (x1 - x0) := htwo
+        _ = C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (x0 - x1) := by
+              rw [min_self, max_eq_right h, show x1 - x0 = -(x0 - x1) by ring,
+                aux_scaledBracketBumpReal_neg]
+    · have h' : t1 ≤ t0 := le_of_not_ge h
+      have htwo := twoBumpEstimate x0 x1 t0 t1 (7 / 6 : ℝ) (7 / 6 : ℝ)
+        ht0 ht1 h' (by norm_num) (by norm_num)
+      simpa [max_eq_left h'] using htwo
+  have hmax : 0 < max t0 t1 := lt_of_lt_of_le ht0 (le_max_left _ _)
+  have hB : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (x0 - x1) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ hmax
+  exact hraw.trans (mul_le_mul_of_nonneg_right aux_reduction_two_bump_constant.le hB)
+
+/-- A convenient boundedness form for reduction-exponent bracket bumps. -/
+private theorem aux_reduction_seven_six_bump_le_inv (s x : ℝ) (hs : 0 < s) :
+    scaledBracketBumpReal (7 / 6 : ℝ) s x ≤ s⁻¹ := by
+  unfold scaledBracketBumpReal
+  have hbase : 1 ≤ 1 + |s⁻¹ * x| := by linarith [abs_nonneg (s⁻¹ * x)]
+  have hpow : Real.rpow (1 + |s⁻¹ * x|) (-(7 / 6 : ℝ)) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos hbase (by norm_num)
+  calc
+    s⁻¹ * Real.rpow (1 + |s⁻¹ * x|) (-(7 / 6 : ℝ)) ≤ s⁻¹ * 1 :=
+      mul_le_mul_of_nonneg_left hpow (inv_nonneg.mpr hs.le)
+    _ = s⁻¹ := by ring
+
+/-- Integrability of two translated reduction-exponent bracket bumps. -/
+private theorem aux_reduction_seven_six_product_integrable
+    (x0 x1 s0 s1 : ℝ) (hs0 : 0 < s0) (hs1 : 0 < s1) :
+    Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) s0 (x0 - p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) s1 (x1 - p)) := by
+  have hbase : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) s0 (x0 - p)) :=
+    aux_integrable_scaledBracketBumpReal_translate (7 / 6 : ℝ) s0 x0
+      (by norm_num) hs0
+  refine (hbase.const_mul s1⁻¹).mono' ?_ ?_
+  · apply Continuous.aestronglyMeasurable
+    have hleftBase : Continuous (fun p : ℝ => 1 + |s0⁻¹ * (x0 - p)|) := by
+      fun_prop
+    have hrightBase : Continuous (fun p : ℝ => 1 + |s1⁻¹ * (x1 - p)|) := by
+      fun_prop
+    have hleft : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) s0 (x0 - p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hleftBase.continuousAt.rpow_const (Or.inl (by positivity))
+    have hright : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) s1 (x1 - p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hrightBase.continuousAt.rpow_const (Or.inl (by positivity))
+    exact hleft.mul hright
+  · filter_upwards [] with p
+    have hleft : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) s0 (x0 - p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs0
+    have hright : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) s1 (x1 - p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs1
+    have hle := aux_reduction_seven_six_bump_le_inv s1 (x1 - p) hs1
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hleft hright)]
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) s0 (x0 - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) s1 (x1 - p) ≤
+        scaledBracketBumpReal (7 / 6 : ℝ) s0 (x0 - p) * s1⁻¹ :=
+          mul_le_mul_of_nonneg_left hle hleft
+      _ = s1⁻¹ * scaledBracketBumpReal (7 / 6 : ℝ) s0 (x0 - p) := by ring
+
+/-- The reverse form of the fixed `√2` rescaling loss. -/
+private theorem aux_reduction_fixed_scaling_w0 (s x : ℝ) (hs : 0 < s) :
+    scaledBracketBumpReal (7 / 6 : ℝ) s x ≤
+      2 * scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * x) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have h := aux_reduction_fixed_scaling_down s (Real.sqrt 2 * x) hs
+  have harg : (Real.sqrt 2 * x) / Real.sqrt 2 = x := by
+    field_simp [hsqrt.ne']
+  simpa [harg] using h
+
+/-- The elementary coordinate dichotomy behind the two mixed orientation-zero
+bracket estimates. -/
+private theorem aux_reduction_mixed_dichotomy (w0 w1 : ℝ) :
+    |w0 + w1| ≤ 3 * |w1| ∨
+      |Real.sqrt 2 * w0| ≤ 3 * |w0 - w1| := by
+  by_cases h : |w0 + w1| ≤ 3 * |w1|
+  · exact Or.inl h
+  · right
+    have hstrict : 3 * |w1| < |w0 + w1| := lt_of_not_ge h
+    have hadd : |w0 + w1| ≤ |w0| + |w1| := abs_add_le _ _
+    have hw1 : 2 * |w1| < |w0| := by linarith
+    have hsub : |w0| ≤ |w0 - w1| + |w1| := by
+      simpa using (abs_sub_le w0 w1 0)
+    have hsqrt : Real.sqrt (2 : ℝ) ≤ 3 / 2 := by
+      nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg (2 : ℝ)]
+    rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)]
+    nlinarith [abs_nonneg w0, abs_nonneg w1, abs_nonneg (w0 - w1),
+      Real.sqrt_nonneg (2 : ℝ)]
+
+private theorem aux_reduction_mixed_dichotomy_swap (w0 w1 : ℝ) :
+    |Real.sqrt 2 * w0| ≤ 3 * |w0 + w1| ∨
+      |w0 - w1| ≤ 3 * |w1| := by
+  rcases aux_reduction_mixed_dichotomy w0 (-w1) with h | h
+  · right
+    simpa [sub_eq_add_neg] using h
+  · left
+    simpa [sub_eq_add_neg] using h
+
+private theorem aux_reduction_three_rpow_seven_six_le_four :
+    Real.rpow 3 (7 / 6 : ℝ) ≤ 4 := by
+  apply (Real.rpow_le_rpow_iff
+    (Real.rpow_nonneg (by norm_num) _) (by norm_num) (by norm_num : (0 : ℝ) < 6)).mp
+  rw [← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 3)]
+  norm_num [Real.rpow_natCast]
+
+/-- The first mixed coordinate estimate used in the positive-height
+orientation-zero convolution bound. -/
+private theorem aux_reduction_mixed_zero_bound (w0 w1 lam t : ℝ)
+    (hlam : 0 < lam) (ht : 0 < t) :
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+      8 *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by
+  let X : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+    scaledBracketBumpReal (7 / 6 : ℝ) t (w0 + w1)
+  let Y : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+    scaledBracketBumpReal (7 / 6 : ℝ) t w1
+  let Z : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+    scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)
+  have hraw := aux_orthogonalDecay_from_domination
+    (A := (3 : ℝ)) (n₀ := (7 / 6 : ℝ)) (n₁ := (7 / 6 : ℝ))
+    (s₀ := lam) (s₁ := t) (u₀ := w0 - w1) (u₁ := w1)
+    (p₀ := w0 + w1) (p₁ := Real.sqrt 2 * w0)
+    (by norm_num) (by norm_num) (by norm_num) (by norm_num) hlam ht
+    (aux_reduction_mixed_dichotomy w0 w1)
+  have hcoef : max (Real.rpow 3 (7 / 6 : ℝ)) (Real.rpow 3 (7 / 6 : ℝ)) ≤ 4 := by
+    simpa using aux_reduction_three_rpow_seven_six_le_four
+  have hX : 0 ≤ X := by
+    dsimp [X]
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht)
+  have hY : 0 ≤ Y := by
+    dsimp [Y]
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht)
+  have hZ : 0 ≤ Z := by
+    dsimp [Z]
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht)
+  have hYle : Y ≤ 2 * Z := by
+    dsimp [Y, Z]
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+          (2 * scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) :=
+        mul_le_mul_of_nonneg_left
+          (aux_reduction_fixed_scaling_w0 t w1 ht)
+          (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      _ = 2 * (scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by ring
+  have hinside : X + Y ≤ 2 * (X + Z) := by nlinarith
+  have hXY : 0 ≤ X + Y := add_nonneg hX hY
+  change scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤ 8 * (X + Z)
+  calc
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+        max (Real.rpow 3 (7 / 6 : ℝ)) (Real.rpow 3 (7 / 6 : ℝ)) * (X + Y) := by
+          simpa [X, Y] using hraw
+    _ ≤ 4 * (X + Y) := mul_le_mul_of_nonneg_right hcoef hXY
+    _ ≤ 4 * (2 * (X + Z)) := mul_le_mul_of_nonneg_left hinside (by norm_num)
+    _ = 8 * (X + Z) := by ring
+
+/-- The second mixed coordinate estimate used in the positive-height
+orientation-zero convolution bound. -/
+private theorem aux_reduction_mixed_one_bound (w0 w1 lam t : ℝ)
+    (hlam : 0 < lam) (ht : 0 < t) :
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+      8 *
+        (scaledBracketBumpReal (7 / 6 : ℝ) t (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by
+  let X : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) t (w0 - w1) *
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1)
+  let Y : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) t w1 *
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0)
+  let Z : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) *
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0)
+  have hraw := aux_orthogonalDecay_from_domination
+    (A := (3 : ℝ)) (n₀ := (7 / 6 : ℝ)) (n₁ := (7 / 6 : ℝ))
+    (s₀ := t) (s₁ := lam) (u₀ := w1) (u₁ := w0 + w1)
+    (p₀ := Real.sqrt 2 * w0) (p₁ := w0 - w1)
+    (by norm_num) (by norm_num) (by norm_num) (by norm_num) ht hlam
+    (aux_reduction_mixed_dichotomy_swap w0 w1)
+  have hcoef : max (Real.rpow 3 (7 / 6 : ℝ)) (Real.rpow 3 (7 / 6 : ℝ)) ≤ 4 := by
+    simpa using aux_reduction_three_rpow_seven_six_le_four
+  have hX : 0 ≤ X := by
+    dsimp [X]
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+  have hY : 0 ≤ Y := by
+    dsimp [Y]
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+  have hZ : 0 ≤ Z := by
+    dsimp [Z]
+    exact mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+  have hYle : Y ≤ 2 * Z := by
+    dsimp [Y, Z]
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) t w1 *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) ≤
+        (2 * scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) :=
+        mul_le_mul_of_nonneg_right
+          (aux_reduction_fixed_scaling_w0 t w1 ht)
+          (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      _ = 2 * (scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0)) := by ring
+  have hinside : X + Y ≤ 2 * (X + Z) := by nlinarith
+  have hXY : 0 ≤ X + Y := add_nonneg hX hY
+  suffices h : scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤ 8 * (X + Z) by
+    simpa [X, Z, mul_comm] using h
+  calc
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+        max (Real.rpow 3 (7 / 6 : ℝ)) (Real.rpow 3 (7 / 6 : ℝ)) * (X + Y) := by
+          simpa [X, Y, mul_comm, add_comm] using hraw
+    _ ≤ 4 * (X + Y) := mul_le_mul_of_nonneg_right hcoef hXY
+    _ ≤ 4 * (2 * (X + Z)) := mul_le_mul_of_nonneg_left hinside (by norm_num)
+    _ = 8 * (X + Z) := by ring
+
+/-- Integrability needed to split the two positive-height orientation-zero
+rho contributions. -/
+private theorem aux_reduction_orientation_zero_alpha1_integrable (w0 w1 lam t0 t1 : ℝ)
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+  have hbase := aux_reduction_seven_six_product_integrable (-w0) (-w1) lam t0 hlam ht0
+  have hmajor : Integrable (fun p : ℝ => t1⁻¹ *
+      (scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (-w1 - p))) :=
+    hbase.const_mul t1⁻¹
+  have hcont : Continuous (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+    have hlamBase : Continuous (fun p : ℝ => 1 + |lam⁻¹ * (w0 + p)|) := by
+      fun_prop
+    have ht0Base : Continuous (fun p : ℝ => 1 + |t0⁻¹ * (w1 + p)|) := by
+      fun_prop
+    have ht1Base : Continuous (fun p : ℝ => 1 + |t1⁻¹ * (w1 - p)|) := by
+      fun_prop
+    have hlamC : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hlamBase.continuousAt.rpow_const (Or.inl (by positivity))
+    have ht0C : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact ht0Base.continuousAt.rpow_const (Or.inl (by positivity))
+    have ht1C : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact ht1Base.continuousAt.rpow_const (Or.inl (by positivity))
+    exact (hlamC.mul ht0C).mul ht1C
+  refine hmajor.mono' hcont.aestronglyMeasurable ?_
+  filter_upwards [] with p
+  have hleft : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hmid : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht0
+  have hright : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht1
+  have hle := aux_reduction_seven_six_bump_le_inv t1 (w1 - p) ht1
+  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (mul_nonneg hleft hmid) hright),
+    show -w0 - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg,
+    show -w1 - p = -(w1 + p) by ring, aux_scaledBracketBumpReal_neg]
+  calc
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) ≤
+      (scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) * t1⁻¹ := by
+        apply mul_le_mul_of_nonneg_left hle
+        exact mul_nonneg hleft hmid
+    _ = t1⁻¹ *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) := by ring
+
+/-- The stationary positive-height orientation-zero post-loss contribution. -/
+private theorem aux_reduction_orientation_zero_alpha0_integral_bound (w0 w1 lam t0 t1 : ℝ)
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    (∫ p : ℝ,
+      scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+      (2 : ℝ) ^ (9 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (Real.sqrt 2 * w1) := by
+  have hmax : 0 < max t0 t1 := lt_of_lt_of_le ht0 (le_max_left _ _)
+  have hpair :
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+        (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (2 * w1) := by
+    have hraw := aux_reduction_two_bump_seven_six (-w1) w1 t0 t1 ht0 ht1
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) =
+        ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t0 (-w1 - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+          apply integral_congr_ae
+          filter_upwards [] with p
+          rw [show -w1 - p = -(w1 + p) by ring,
+            aux_scaledBracketBumpReal_neg]
+      _ ≤ (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) ((-w1) - w1) := hraw
+      _ = (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (2 * w1) := by
+          have hneg :
+              scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) ((-w1) - w1) =
+                scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (2 * w1) := by
+            rw [show -w1 - w1 = -(2 * w1) by ring,
+              aux_scaledBracketBumpReal_neg]
+          rw [hneg]
+  have hlamnon : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam w0 :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hB0non : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hB1non : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1)
+      (2 * w1) := aux_scaledBracketBumpReal_nonneg _ _ _ hmax
+  have hB2non : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1)
+      (Real.sqrt 2 * w1) := aux_scaledBracketBumpReal_nonneg _ _ _ hmax
+  have hlam_scale := aux_reduction_fixed_scaling_w0 lam w0 hlam
+  have hsquare : Real.sqrt (2 : ℝ) * Real.sqrt 2 = 2 :=
+    Real.mul_self_sqrt (by norm_num)
+  have harg : Real.sqrt 2 * (Real.sqrt 2 * w1) = 2 * w1 := by
+    calc
+      Real.sqrt 2 * (Real.sqrt 2 * w1) = (Real.sqrt 2 * Real.sqrt 2) * w1 := by ring
+      _ = 2 * w1 := by rw [hsquare]
+  have hscale : scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (2 * w1) ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (Real.sqrt 2 * w1) := by
+    simpa [harg] using aux_reduction_fixed_scaling_up (max t0 t1) (Real.sqrt 2 * w1) hmax
+  calc
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) =
+      scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+        ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+        calc
+          (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+              scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+                scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) =
+            ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+              (scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+                scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+              apply integral_congr_ae
+              filter_upwards [] with p
+              ring
+          _ = scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+              ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+                scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) :=
+              integral_const_mul _ _
+    _ ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+        ((2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (2 * w1)) :=
+      mul_le_mul_of_nonneg_left hpair hlamnon
+    _ ≤ (2 * scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0)) *
+        ((2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (2 * w1)) :=
+      mul_le_mul_of_nonneg_right hlam_scale
+        (mul_nonneg (by positivity) hB1non)
+    _ = (2 : ℝ) ^ (7 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (2 * w1)) := by ring
+    _ ≤ (2 : ℝ) ^ (7 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (Real.sqrt 2 * w1)) := by
+      apply mul_le_mul_of_nonneg_left
+      · exact mul_le_mul_of_nonneg_left hscale hB0non
+      · positivity
+    _ ≤ (2 : ℝ) ^ (9 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (Real.sqrt 2 * w1)) := by
+      have hprod := mul_nonneg hB0non hB2non
+      norm_num [pow_succ]
+      nlinarith
+    _ = (2 : ℝ) ^ (9 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (Real.sqrt 2 * w1) := by ring
+
+/-- The translated positive-height orientation-zero post-loss contribution. -/
+private theorem aux_reduction_orientation_zero_alpha1_integral_bound (w0 w1 lam t0 t1 : ℝ)
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1)
+    (ht0lam : t0 ≤ lam) (ht1lam : t1 ≤ lam) :
+    (∫ p : ℝ,
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+      (2 : ℝ) ^ (9 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1)) := by
+  let f : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)
+  let g0 : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (-w1 - p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 w1
+  let g1 : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 w1
+  have hC : C_bumpTriangle (1 / 2 : ℝ) (1 / 2 : ℝ)
+      (7 / 6 : ℝ) (7 / 6 : ℝ) = 1 := by
+    norm_num [C_bumpTriangle, C_bumpTriangleTilde]
+  have hpoint (p : ℝ) : f p ≤ g0 p + g1 p := by
+    have htri := aux_bumpTriangleReal
+      (n₀ := (7 / 6 : ℝ)) (n₁ := (7 / 6 : ℝ))
+      (u := w1 + p) (v := w1 - p) (w := w1)
+      (s₀ := t0) (s₁ := t1)
+      (by norm_num) (by norm_num) (by norm_num) (by norm_num) ht0 ht1
+      (by ring : w1 = (1 / 2 : ℝ) * (w1 + p) + (1 / 2 : ℝ) * (w1 - p))
+    rw [hC] at htri
+    have htri' :
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) ≤
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 +
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+      simpa using htri
+    have hmult := mul_le_mul_of_nonneg_left htri'
+      (aux_scaledBracketBumpReal_nonneg (7 / 6 : ℝ) lam (w0 + p) hlam)
+    dsimp [f, g0, g1]
+    rw [show -w0 - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg,
+      show -w1 - p = -(w1 + p) by ring, aux_scaledBracketBumpReal_neg]
+    convert hmult using 1
+    · rfl
+    · ring
+    · ring
+  have hg0 : Integrable g0 := by
+    have hbase := aux_reduction_seven_six_product_integrable (-w0) (-w1) lam t0 hlam ht0
+    simpa [g0] using hbase.mul_const
+      (scaledBracketBumpReal (7 / 6 : ℝ) t1 w1)
+  have hg1 : Integrable g1 := by
+    have hbase := aux_reduction_seven_six_product_integrable (-w0) w1 lam t1 hlam ht1
+    simpa [g1] using hbase.mul_const
+      (scaledBracketBumpReal (7 / 6 : ℝ) t0 w1)
+  have hfnon (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    exact mul_nonneg
+      (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht0))
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  have hmono : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, g0 p + g1 p :=
+    integral_mono_of_nonneg (Filter.Eventually.of_forall hfnon) (hg0.add hg1)
+      (Filter.Eventually.of_forall hpoint)
+  have hpair0 :
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (-w1 - p)) ≤
+        (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) := by
+    have hneg :
+        scaledBracketBumpReal (7 / 6 : ℝ) lam ((-w0) - (-w1)) =
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) := by
+      rw [show -w0 - -w1 = -(w0 - w1) by ring,
+        aux_scaledBracketBumpReal_neg]
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (-w1 - p)) ≤
+        (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max lam t0) ((-w0) - (-w1)) :=
+        aux_reduction_two_bump_seven_six (-w0) (-w1) lam t0 hlam ht0
+      _ = (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) := by
+        rw [max_eq_left ht0lam, hneg]
+  have hpair1 :
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+        (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) := by
+    have hneg :
+        scaledBracketBumpReal (7 / 6 : ℝ) lam ((-w0) - w1) =
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) := by
+      rw [show -w0 - w1 = -(w0 + w1) by ring,
+        aux_scaledBracketBumpReal_neg]
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+        (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max lam t1) ((-w0) - w1) :=
+        aux_reduction_two_bump_seven_six (-w0) w1 lam t1 hlam ht1
+      _ = (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) := by
+        rw [max_eq_left ht1lam, hneg]
+  have ht1non : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht1
+  have ht0non : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht0
+  have hI0 : (∫ p : ℝ, g0 p) ≤ (2 : ℝ) ^ (6 : ℕ) *
+      (scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 w1) := by
+    rw [show (∫ p : ℝ, g0 p) =
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (-w1 - p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 by
+      rw [integral_mul_const]]
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (-w1 - p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 ≤
+        ((2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 :=
+        mul_le_mul_of_nonneg_right hpair0 ht1non
+      _ = (2 : ℝ) ^ (6 : ℕ) *
+          (scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 w1) := by ring
+  have hI1 : (∫ p : ℝ, g1 p) ≤ (2 : ℝ) ^ (6 : ℕ) *
+      (scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1)) := by
+    rw [show (∫ p : ℝ, g1 p) =
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 by
+      rw [integral_mul_const]]
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (-w0 - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 ≤
+        ((2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 :=
+        mul_le_mul_of_nonneg_right hpair1 ht0non
+      _ = (2 : ℝ) ^ (6 : ℕ) *
+          (scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 *
+            scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1)) := by ring
+  have hmix0 := aux_reduction_mixed_zero_bound w0 w1 lam t1 hlam ht1
+  have hmix1 :
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 *
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) ≤
+      8 *
+        (scaledBracketBumpReal (7 / 6 : ℝ) t0 (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1)) := by
+    convert aux_reduction_mixed_one_bound w0 w1 lam t0 hlam ht0 using 1 <;> ring
+  have hsum : (2 : ℝ) ^ (6 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 w1) +
+      (2 : ℝ) ^ (6 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1)) ≤
+      (2 : ℝ) ^ (9 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1)) := by
+    norm_num [pow_succ] at hmix0 hmix1 ⊢
+    nlinarith
+  change (∫ p : ℝ, f p) ≤ _
+  calc
+    (∫ p : ℝ, f p) ≤ ∫ p : ℝ, g0 p + g1 p := hmono
+    _ = (∫ p : ℝ, g0 p) + ∫ p : ℝ, g1 p := integral_add hg0 hg1
+    _ ≤ _ := add_le_add hI0 hI1 |>.trans hsum
+
+/-- The entire positive-height orientation-zero post-loss convolution.  Its
+five output products are exactly slots `0,1,2,3,4` of the tagged witness. -/
+private theorem aux_reduction_orientation_zero_total_integral_bound (w0 w1 lam t0 t1 : ℝ)
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1)
+    (ht0lam : t0 ≤ lam) (ht1lam : t1 ≤ lam) :
+    (∫ p : ℝ,
+      (scaledBracketBumpReal (7 / 6 : ℝ) lam w0 +
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+      (2 : ℝ) ^ (9 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1)) := by
+  have hpair : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+    have hbase := aux_reduction_seven_six_product_integrable (-w1) w1 t0 t1 ht0 ht1
+    convert hbase using 1
+    funext p
+    rw [show -w1 - p = -(w1 + p) by ring,
+      aux_scaledBracketBumpReal_neg]
+  have h0 : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+    convert hpair.const_mul (scaledBracketBumpReal (7 / 6 : ℝ) lam w0) using 1
+    funext p
+    ring
+  have h1 := aux_reduction_orientation_zero_alpha1_integrable w0 w1 lam t0 t1
+    hlam ht0 ht1
+  have hI0 := aux_reduction_orientation_zero_alpha0_integral_bound w0 w1 lam t0 t1
+    hlam ht0 ht1
+  have hI1 := aux_reduction_orientation_zero_alpha1_integral_bound w0 w1 lam t0 t1
+    hlam ht0 ht1 ht0lam ht1lam
+  calc
+    (∫ p : ℝ,
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam w0 +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) =
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) +
+        ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+        rw [← integral_add h0 h1]
+        apply integral_congr_ae
+        filter_upwards [] with p
+        ring
+    _ ≤ (2 : ℝ) ^ (9 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (Real.sqrt 2 * w1) +
+        (2 : ℝ) ^ (9 : ℕ) *
+          (scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1)) :=
+      add_le_add hI0 hI1
+    _ = (2 : ℝ) ^ (9 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (max t0 t1) (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1)) := by ring
+
+/-- Integrability of the two combined post-loss occurrences in the
+positive-height orientation-one case. -/
+private theorem aux_reduction_orientation_one_total_integrable (w₀ w₁ lam t₀ t₁ : ℝ)
+    (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
+    Integrable (fun p : ℝ =>
+      (scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ +
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)) := by
+  let A : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) lam w₀
+  let D : ℝ := scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)
+  let f : ℝ → ℝ := fun p =>
+    (A + scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D
+  let g : ℝ → ℝ := fun p =>
+    (A + lam⁻¹) * scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D
+  have hsqrt : Real.sqrt (2 : ℝ) ≠ 0 :=
+    ne_of_gt (Real.sqrt_pos.2 (by norm_num))
+  have hbase : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) t₀ p) :=
+    aux_integrable_scaledBracketBumpReal (7 / 6 : ℝ) t₀ (by norm_num) ht₀
+  have hscaled : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p)) :=
+    hbase.comp_mul_left' hsqrt
+  have hg : Integrable g := by
+    simpa [g, mul_assoc, mul_left_comm, mul_comm] using
+      (hscaled.const_mul ((A + lam⁻¹) * D))
+  have hcont : Continuous f := by
+    have hlamBase : Continuous (fun p : ℝ => 1 + |lam⁻¹ * (w₀ + p)|) := by
+      fun_prop
+    have ht₀Base : Continuous (fun p : ℝ => 1 + |t₀⁻¹ * (Real.sqrt 2 * p)|) := by
+      fun_prop
+    have hlamC : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hlamBase.continuousAt.rpow_const (Or.inl (by positivity))
+    have ht₀C : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact ht₀Base.continuousAt.rpow_const (Or.inl (by positivity))
+    exact ((continuous_const.add hlamC).mul ht₀C).mul continuous_const
+  refine hg.mono' hcont.aestronglyMeasurable ?_
+  filter_upwards [] with p
+  have hA : 0 ≤ A := by
+    dsimp [A]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have htrans : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hmid : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht₀
+  have hD : 0 ≤ D := by
+    dsimp [D]
+    exact aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  have hbound : scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) ≤ lam⁻¹ :=
+    aux_reduction_seven_six_bump_le_inv lam (w₀ + p) hlam
+  rw [Real.norm_eq_abs,
+    abs_of_nonneg (mul_nonneg (mul_nonneg (add_nonneg hA htrans) hmid) hD)]
+  calc
+    (A + scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D =
+      (A + scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D) := by ring
+    _ ≤ (A + lam⁻¹) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) * D) :=
+      mul_le_mul_of_nonneg_right (add_le_add_right hbound A) (mul_nonneg hmid hD)
+    _ = (A + lam⁻¹) * scaledBracketBumpReal (7 / 6 : ℝ) t₀
+        (Real.sqrt 2 * p) * D := by ring
+
+/-- The stationary summand of the positive-height `W 1` profile is
+integrable; it is extracted from the already integrable combined profile. -/
+private theorem aux_reduction_orientation_one_alpha_zero_integrable
+    (w₀ w₁ lam t₀ t₁ : ℝ) (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
+    Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)) := by
+  let f : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ *
+      scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)
+  let F : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ +
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)
+  have hF : Integrable F :=
+    aux_reduction_orientation_one_total_integrable w₀ w₁ lam t₀ t₁ hlam ht₀ ht₁
+  have hcont : Continuous f := by
+    have hbase : Continuous (fun p : ℝ => 1 + |t₀⁻¹ * (Real.sqrt 2 * p)|) := by
+      fun_prop
+    have hmid : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hbase.continuousAt.rpow_const (Or.inl (by positivity))
+    exact (continuous_const.mul hmid).mul continuous_const
+  refine hF.mono' hcont.aestronglyMeasurable ?_
+  filter_upwards [] with p
+  have hA : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have htrans : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hmid : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht₀
+  have hlast : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (mul_nonneg hA hmid) hlast)]
+  dsimp [f, F]
+  calc
+    scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁) =
+        scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ *
+          (scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)) := by ring
+    _ ≤ (scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) *
+          (scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)) :=
+      mul_le_mul_of_nonneg_right (le_add_of_nonneg_right htrans) (mul_nonneg hmid hlast)
+    _ = F p := by ring
+
+/-- The translated summand of the positive-height `W 1` profile is
+integrable; it is extracted from the same combined profile. -/
+private theorem aux_reduction_orientation_one_alpha_one_integrable
+    (w₀ w₁ lam t₀ t₁ : ℝ) (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
+    Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)) := by
+  let f : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)
+  let F : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ +
+      scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)
+  have hF : Integrable F :=
+    aux_reduction_orientation_one_total_integrable w₀ w₁ lam t₀ t₁ hlam ht₀ ht₁
+  have hcont : Continuous f := by
+    have hlamBase : Continuous (fun p : ℝ => 1 + |lam⁻¹ * (w₀ + p)|) := by
+      fun_prop
+    have ht₀Base : Continuous (fun p : ℝ => 1 + |t₀⁻¹ * (Real.sqrt 2 * p)|) := by
+      fun_prop
+    have hlamC : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hlamBase.continuousAt.rpow_const (Or.inl (by positivity))
+    have ht₀C : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact ht₀Base.continuousAt.rpow_const (Or.inl (by positivity))
+    exact (hlamC.mul ht₀C).mul continuous_const
+  refine hF.mono' hcont.aestronglyMeasurable ?_
+  filter_upwards [] with p
+  have hA : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have htrans : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ hlam
+  have hmid : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht₀
+  have hlast : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁) :=
+    aux_scaledBracketBumpReal_nonneg _ _ _ ht₁
+  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (mul_nonneg htrans hmid) hlast)]
+  dsimp [f, F]
+  calc
+    scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁) =
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p) *
+          (scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)) := by ring
+    _ ≤ (scaledBracketBumpReal (7 / 6 : ℝ) lam w₀ +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w₀ + p)) *
+          (scaledBracketBumpReal (7 / 6 : ℝ) t₀ (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t₁ (Real.sqrt 2 * w₁)) :=
+      mul_le_mul_of_nonneg_right (le_add_of_nonneg_left hA) (mul_nonneg hmid hlast)
+    _ = F p := by ring
+
+/-- The combined positive-height orientation-zero post-loss profile is
+integrable; this is the companion of its explicit integral estimate. -/
+private theorem aux_reduction_orientation_zero_total_integrable (w0 w1 lam t0 t1 : ℝ)
+    (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    Integrable (fun p : ℝ =>
+      (scaledBracketBumpReal (7 / 6 : ℝ) lam w0 +
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+  have hpair : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+    have hbase := aux_reduction_seven_six_product_integrable (-w1) w1 t0 t1 ht0 ht1
+    convert hbase using 1
+    funext p
+    rw [show -w1 - p = -(w1 + p) by ring,
+      aux_scaledBracketBumpReal_neg]
+  have hzero : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+    convert hpair.const_mul (scaledBracketBumpReal (7 / 6 : ℝ) lam w0) using 1
+    funext p
+    ring
+  have hone := aux_reduction_orientation_zero_alpha1_integrable w0 w1 lam t0 t1
+    hlam ht0 ht1
+  rw [show (fun p : ℝ =>
+      (scaledBracketBumpReal (7 / 6 : ℝ) lam w0 +
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) =
+      (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) by
+    funext p
+    ring]
+  exact hzero.add hone
+
+/-- Nonnegativity of the reduction rho constant. -/
+private theorem aux_reduction_Crho_nonneg : 0 ≤ C_rhoKernelsReduction := by
+  unfold C_rhoKernelsReduction
+  exact mul_nonneg (by positivity)
+    (add_nonneg (aux_rho_cmean_nonneg 2) (aux_rho_cfour_nonneg 2))
+
+/-- The `W 1` coordinates of a kernel occurrence after diagonal cancellation. -/
+private theorem aux_reduction_W_one_kernel_coordinates (w₁ p : ℝ) :
+    W 1 (-w₁ - p, w₁ - p) =
+      (-Real.sqrt 2 * p, Real.sqrt 2 * w₁) := by
+  calc
+    W 1 (-w₁ - p, w₁ - p) = W 1 ((-p) - w₁, (-p) + w₁) := by
+      congr 2 <;> ring
+    _ = (Real.sqrt 2 * (-p), Real.sqrt 2 * w₁) :=
+      aux_reduction_W_one_coordinates (-p) w₁
+    _ = (-Real.sqrt 2 * p, Real.sqrt 2 * w₁) := by ring
+
+/-- The common analytic core of the two positive-height occurrence bounds.
+The supplied loss estimate has already lowered the two kernel bumps from
+`3/2` to `7/6`; this lemma only combines it with rho domination. -/
+private theorem aux_reduction_rho_occurrence_of_loss {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (h : ℕ) (hh : 1 ≤ h) (j : ℤ)
+    (t0 t1 x0 x1 w0 p : ℝ) (ht0 : 0 < t0) (ht1 : 0 < t1)
+    (hloss :
+      min 1 (((2 : ℝ) ^ h * D.a j)⁻¹ * |p|) *
+          scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 x1 ≤
+        2 * Real.rpow 2 (-((h : ℝ) / 3)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 x1) :
+    |rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0| *
+        (scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 x1) ≤
+      C_rhoKernelsReduction * (2 * Real.rpow 2 (-((h : ℝ) / 3))) *
+        ((scaledBracketBumpReal (7 / 6 : ℝ) ((2 : ℝ) ^ h * D.a j) w0 +
+          scaledBracketBumpReal (7 / 6 : ℝ) ((2 : ℝ) ^ h * D.a j) (w0 + p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 x1) := by
+  let lam : ℝ := (2 : ℝ) ^ h * D.a j
+  let r : ℝ := Real.rpow 2 (-((h : ℝ) / 3))
+  have hlam : 0 < lam := by
+    dsimp [lam]
+    exact mul_pos (pow_pos (by norm_num) _) (D.a_spaced j).1
+  have hC : 0 ≤ C_rhoKernelsReduction := aux_reduction_Crho_nonneg
+  have hr : 0 ≤ r := by
+    dsimp [r]
+    positivity
+  have hrho := (rhoKernelsReduction hn D.a D.a_spaced h j).2.1 w0 p hh
+  dsimp [lam, r] at hrho ⊢
+  rw [rhoUpperScale] at hrho
+  have hkernel : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+      scaledBracketBumpReal (3 / 2 : ℝ) t1 x1 :=
+    mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  have hmul := mul_le_mul_of_nonneg_right hrho hkernel
+  have hreduce0 := aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2
+    lam w0 hlam (by norm_num)
+  have hreduce1 := aux_scaledBracketBumpReal_exponent_reduce (3 / 2 : ℝ) 2
+    lam (w0 + p) hlam (by norm_num)
+  have hsum : scaledBracketBumpReal 2 lam (w0 + p) +
+      scaledBracketBumpReal 2 lam w0 ≤
+      scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p) := by
+    calc
+      scaledBracketBumpReal 2 lam (w0 + p) +
+          scaledBracketBumpReal 2 lam w0 ≤
+          scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p) +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam w0 :=
+        add_le_add hreduce1 hreduce0
+      _ = _ := by ring
+  have hsum0 : 0 ≤ scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+      scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p) :=
+    add_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ hlam)
+  have hfirst : C_rhoKernelsReduction * min 1 (lam⁻¹ * |p|) *
+      (scaledBracketBumpReal 2 lam (w0 + p) + scaledBracketBumpReal 2 lam w0) *
+      (scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+        scaledBracketBumpReal (3 / 2 : ℝ) t1 x1) ≤
+      C_rhoKernelsReduction * min 1 (lam⁻¹ * |p|) *
+      (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p)) *
+      (scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+        scaledBracketBumpReal (3 / 2 : ℝ) t1 x1) := by
+    gcongr
+  have hafter : C_rhoKernelsReduction * min 1 (lam⁻¹ * |p|) *
+      (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+        scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p)) *
+      (scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+        scaledBracketBumpReal (3 / 2 : ℝ) t1 x1) ≤
+      C_rhoKernelsReduction * (2 * r) *
+        ((scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+          scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 x1) := by
+    have hC' : 0 ≤ C_rhoKernelsReduction *
+        (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+          scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p)) := mul_nonneg hC hsum0
+    calc
+      C_rhoKernelsReduction * min 1 (lam⁻¹ * |p|) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p)) *
+          (scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+            scaledBracketBumpReal (3 / 2 : ℝ) t1 x1) =
+          (C_rhoKernelsReduction *
+            (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p))) *
+            (min 1 (lam⁻¹ * |p|) *
+              scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+                scaledBracketBumpReal (3 / 2 : ℝ) t1 x1) := by ring
+      _ ≤ (C_rhoKernelsReduction *
+            (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p))) *
+            (2 * r * scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 x1) :=
+        mul_le_mul_of_nonneg_left (by simpa [lam, r] using hloss) hC'
+      _ = C_rhoKernelsReduction * (2 * r) *
+          ((scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+            scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p)) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 x1) := by ring
+  have hreduce0' := aux_scaledBracketBumpReal_exponent_reduce (7 / 6 : ℝ) (3 / 2 : ℝ)
+    lam w0 hlam (by norm_num)
+  have hreduce1' := aux_scaledBracketBumpReal_exponent_reduce (7 / 6 : ℝ) (3 / 2 : ℝ)
+    lam (w0 + p) hlam (by norm_num)
+  have hsum' : scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+      scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p) ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) lam w0 +
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) :=
+    add_le_add hreduce0' hreduce1'
+  have hpost : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 x1 :=
+    mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  calc
+    |rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0| *
+        (scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 x1) ≤
+      C_rhoKernelsReduction * min 1 (lam⁻¹ * |p|) *
+        (scaledBracketBumpReal 2 lam (w0 + p) + scaledBracketBumpReal 2 lam w0) *
+        (scaledBracketBumpReal (3 / 2 : ℝ) t0 x0 *
+          scaledBracketBumpReal (3 / 2 : ℝ) t1 x1) := by
+        convert hmul using 1 <;> ring
+    _ ≤ _ := hfirst
+    _ ≤ _ := hafter
+    _ ≤ C_rhoKernelsReduction * (2 * r) *
+        ((scaledBracketBumpReal (7 / 6 : ℝ) lam w0 +
+          scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 x1) := by
+      apply mul_le_mul_of_nonneg_left
+      · calc
+          (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+              scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p)) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+                scaledBracketBumpReal (7 / 6 : ℝ) t1 x1 =
+              (scaledBracketBumpReal (3 / 2 : ℝ) lam w0 +
+                scaledBracketBumpReal (3 / 2 : ℝ) lam (w0 + p)) *
+                (scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+                  scaledBracketBumpReal (7 / 6 : ℝ) t1 x1) := by ring
+          _ ≤ (scaledBracketBumpReal (7 / 6 : ℝ) lam w0 +
+                scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p)) *
+                (scaledBracketBumpReal (7 / 6 : ℝ) t0 x0 *
+                  scaledBracketBumpReal (7 / 6 : ℝ) t1 x1) :=
+              mul_le_mul_of_nonneg_right hsum' hpost
+          _ = _ := by ring
+      · exact mul_nonneg hC (mul_nonneg (by positivity) hr)
+
+/-- Positive-height rho domination for one horizontal (`W 0`) kernel
+occurrence, after expressing the diagonal translate in `(w₀,w₁)` coordinates. -/
+private theorem aux_reduction_occurrence_zero_pointwise {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (h : ℕ) (hh : 1 ≤ h) (q : ReductionScaleTriple D.a)
+    (j : ℤ) (w0 w1 p : ℝ) (hu : q.orientation = 0) :
+    |rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0| *
+      (scaledBracketBumpReal (3 / 2 : ℝ) (q.left j)
+          ((W q.orientation (-w1 - p, w1 - p)).1) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (q.right j)
+          ((W q.orientation (-w1 - p, w1 - p)).2)) ≤
+      C_rhoKernelsReduction * (2 * Real.rpow 2 (-((h : ℝ) / 3))) *
+        ((scaledBracketBumpReal (7 / 6 : ℝ) ((2 : ℝ) ^ h * D.a j) w0 +
+          scaledBracketBumpReal (7 / 6 : ℝ) ((2 : ℝ) ^ h * D.a j) (w0 + p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p)) := by
+  let lam : ℝ := (2 : ℝ) ^ h * D.a j
+  let t0 : ℝ := q.left j
+  let t1 : ℝ := q.right j
+  have hbase : 0 < D.a j := (D.a_spaced j).1
+  have hlam : 0 < lam := by
+    dsimp [lam]
+    exact mul_pos (by positivity) hbase
+  have ht0 : 0 < t0 := q.left_spaced j |>.1
+  have ht1 : 0 < t1 := q.right_spaced j |>.1
+  have hratio0 : t0 / lam ≤ Real.rpow 2 (-(h : ℝ)) :=
+    aux_reduction_positive_scale_ratio t0 (D.a j) h ht0.le hbase (q.left_le_base j)
+  have hratio1 : t1 / lam ≤ Real.rpow 2 (-(h : ℝ)) :=
+    aux_reduction_positive_scale_ratio t1 (D.a j) h ht1.le hbase (q.right_le_base j)
+  have hloss := aux_reduction_loss_u0 hlam ht0 ht1 hratio0 hratio1 p w1
+  have hcore := aux_reduction_rho_occurrence_of_loss hn D h hh j t0 t1
+    (w1 + p) (w1 - p) w0 p ht0 ht1 (by simpa [lam] using hloss)
+  have hcoord : W q.orientation (-w1 - p, w1 - p) = (-w1 - p, w1 - p) := by
+    rw [hu]
+    simp [W]
+  rw [hcoord, show -w1 - p = -(w1 + p) by ring,
+    aux_scaledBracketBumpReal_neg]
+  simpa [lam, t0, t1] using hcore
+
+/-- Positive-height rho domination for one rotated (`W 1`) kernel occurrence,
+in the exact square-root coordinates of the two duplicated output slots. -/
+private theorem aux_reduction_occurrence_one_pointwise {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (h : ℕ) (hh : 1 ≤ h) (q : ReductionScaleTriple D.a)
+    (j : ℤ) (w0 w1 p : ℝ) (hu : q.orientation = 1) :
+    |rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0| *
+      (scaledBracketBumpReal (3 / 2 : ℝ) (q.left j)
+          ((W q.orientation (-w1 - p, w1 - p)).1) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (q.right j)
+          ((W q.orientation (-w1 - p, w1 - p)).2)) ≤
+      C_rhoKernelsReduction * (2 * Real.rpow 2 (-((h : ℝ) / 3))) *
+        ((scaledBracketBumpReal (7 / 6 : ℝ) ((2 : ℝ) ^ h * D.a j) w0 +
+          scaledBracketBumpReal (7 / 6 : ℝ) ((2 : ℝ) ^ h * D.a j) (w0 + p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) := by
+  let lam : ℝ := (2 : ℝ) ^ h * D.a j
+  let t0 : ℝ := q.left j
+  let t1 : ℝ := q.right j
+  have hbase : 0 < D.a j := (D.a_spaced j).1
+  have hlam : 0 < lam := by
+    dsimp [lam]
+    exact mul_pos (by positivity) hbase
+  have ht0 : 0 < t0 := q.left_spaced j |>.1
+  have ht1 : 0 < t1 := q.right_spaced j |>.1
+  have hratio0 : t0 / lam ≤ Real.rpow 2 (-(h : ℝ)) :=
+    aux_reduction_positive_scale_ratio t0 (D.a j) h ht0.le hbase (q.left_le_base j)
+  have hloss := aux_reduction_loss_u1 hlam ht0 ht1 hratio0 p w1
+  have hcore := aux_reduction_rho_occurrence_of_loss hn D h hh j t0 t1
+    (Real.sqrt 2 * p) (Real.sqrt 2 * w1) w0 p ht0 ht1
+    (by simpa [lam] using hloss)
+  rw [hu, aux_reduction_W_one_kernel_coordinates,
+    show -Real.sqrt 2 * p = -(Real.sqrt 2 * p) by ring,
+    aux_scaledBracketBumpReal_neg]
+  simpa [lam, t0, t1] using hcore
+
+/-- Integrability of a finite sum of one-dimensional occurrence bounds. -/
+private theorem aux_reduction_integrable_finset_sum {α : Type*} (Q : Finset α)
+    (f : α → ℝ → ℝ) (hf : ∀ q ∈ Q, Integrable (f q)) :
+    Integrable (fun p : ℝ => ∑ q ∈ Q, f q p) := by
+  classical
+  induction Q using Finset.induction_on with
+  | empty => simp
+  | insert q Q hq ih =>
+      simp only [Finset.sum_insert hq]
+      apply Integrable.add
+      · exact hf q (by simp)
+      · apply ih
+        intro q hqmem
+        exact hf q (by simp [hqmem])
+
+/-- Pointwise finite kernel decay can be integrated occurrence by occurrence.
+This packages the finite-sum/Fubini bookkeeping in the proof of
+`increaseDataBracketDomination`. -/
+private theorem aux_reduction_finite_integral_bridge {α : Type*} (Q : Finset α)
+    (C : ℝ) (rho H : ℝ → ℝ) (B : α → ℝ → ℝ)
+    (_hC : 0 ≤ C) (hrho : ∀ p, 0 ≤ rho p) (hH : ∀ p, 0 ≤ H p)
+    (hbound : ∀ p, H p ≤ C * ∑ q ∈ Q, B q p)
+    (hint : ∀ q ∈ Q, Integrable (fun p : ℝ => rho p * B q p)) :
+    (∫ p : ℝ, rho p * H p) ≤
+      C * ∑ q ∈ Q, ∫ p : ℝ, rho p * B q p := by
+  classical
+  let S : ℝ → ℝ := fun p => ∑ q ∈ Q, rho p * B q p
+  have hS : Integrable S := by
+    dsimp [S]
+    exact aux_reduction_integrable_finset_sum Q (fun q p => rho p * B q p) hint
+  have hpoint (p : ℝ) : rho p * H p ≤ C * S p := by
+    have h := mul_le_mul_of_nonneg_left (hbound p) (hrho p)
+    change rho p * H p ≤ rho p * (C * ∑ q ∈ Q, B q p) at h
+    calc
+      rho p * H p ≤ rho p * (C * ∑ q ∈ Q, B q p) := h
+      _ = C * (rho p * ∑ q ∈ Q, B q p) := by ring
+      _ = C * ∑ q ∈ Q, rho p * B q p := by rw [Finset.mul_sum]
+      _ = C * S p := by rfl
+  have hleft (p : ℝ) : 0 ≤ rho p * H p := mul_nonneg (hrho p) (hH p)
+  calc
+    (∫ p : ℝ, rho p * H p) ≤ ∫ p : ℝ, C * S p :=
+      integral_mono_of_nonneg (ae_of_all _ hleft) (hS.const_mul C)
+        (ae_of_all _ hpoint)
+    _ = C * (∫ p : ℝ, S p) := by rw [integral_const_mul]
+    _ = C * ∑ q ∈ Q, ∫ p : ℝ, rho p * B q p := by
+      rw [show (∫ p : ℝ, S p) = ∑ q ∈ Q, ∫ p : ℝ, rho p * B q p by
+        dsimp [S]
+        exact integral_finsetSum Q hint]
+
+/-- Scale a finite family of occurrence estimates by a common nonnegative
+coefficient. -/
+private theorem aux_reduction_finset_sum_le_scaled {α : Type*} (Q : Finset α)
+    (f g : α → ℝ) (C : ℝ)
+    (h : ∀ q ∈ Q, f q ≤ C * g q) :
+    (∑ q ∈ Q, f q) ≤ C * ∑ q ∈ Q, g q := by
+  classical
+  calc
+    (∑ q ∈ Q, f q) ≤ ∑ q ∈ Q, C * g q :=
+      Finset.sum_le_sum (fun q hq => h q hq)
+    _ = C * ∑ q ∈ Q, g q := (Finset.mul_sum Q g C).symm
+
+/-- The enlarged base scale used by the positive-height bracket witnesses. -/
+private noncomputable def aux_reductionBracketLambda (D : ReductionData) (h : ℕ) :
+    ℤ → ℝ := fun j => (2 : ℝ) ^ h * D.a j
+
+/-- The one-step predecessor of the base scale sequence. -/
+private noncomputable def aux_reductionBracketPrev (D : ReductionData) : ℤ → ℝ :=
+  fun j => D.a (j - 1)
+
+/-- Pointwise maxima of two scale sequences. -/
+private noncomputable def aux_reductionBracketMax
+    (a b : ℤ → ℝ) : ℤ → ℝ := fun j => max (a j) (b j)
+
+/-- The coordinate orientation attached to one of the eight labeled bracket
+slots.  Labels, rather than decoded pairs, are retained so that coincident
+terms still occur with their manuscript multiplicities. -/
+private noncomputable def aux_reductionBracketOrientation
+    (D : ReductionData) (h : ℕ) (b : ReductionScaleTriple D.a × Fin 8) : Fin 2 :=
+  if h = 0 then
+    if b.1.orientation = 0 then
+      match b.2.1 with
+      | 0 | 1 | 4 | 5 => 0
+      | _ => 1
+    else 1
+  else
+    if b.1.orientation = 0 then
+      match b.2.1 with
+      | 1 | 2 => 0
+      | _ => 1
+    else 1
+
+/-- The scale pair attached to one of the eight labeled bracket slots.  The
+cases are the two orientation cases in the proof of
+`increaseDataBracketDomination`; inactive slots repeat an already available
+nonnegative term. -/
+private noncomputable def aux_reductionBracketScales
+    (D : ReductionData) (h : ℕ) (b : ReductionScaleTriple D.a × Fin 8) :
+    SequencePair :=
+  let q := b.1
+  let lam := aux_reductionBracketLambda D h
+  let d0 := aux_reductionBracketPrev D
+  let d1 := D.a
+  let r00 := aux_reductionBracketMax d0 q.left
+  let r01 := aux_reductionBracketMax d0 q.right
+  let r10 := aux_reductionBracketMax d1 q.left
+  let r11 := aux_reductionBracketMax d1 q.right
+  if h = 0 then
+    if q.orientation = 0 then
+      match b.2.1 with
+      | 0 => fun r => if r = 0 then r00 else q.right
+      | 1 => fun r => if r = 0 then q.left else r01
+      | 2 => fun r => if r = 0 then r00 else q.right
+      | 3 => fun r => if r = 0 then r01 else q.left
+      | 4 => fun r => if r = 0 then r10 else q.right
+      | 5 => fun r => if r = 0 then q.left else r11
+      | 6 => fun r => if r = 0 then r10 else q.right
+      | _ => fun r => if r = 0 then r11 else q.left
+    else
+      match b.2.1 with
+      | 0 => fun r => if r = 0 then r00 else q.right
+      | 1 => fun r => if r = 0 then r10 else q.right
+      | _ => fun r => if r = 0 then q.left else q.right
+  else
+    if q.orientation = 0 then
+      match b.2.1 with
+      | 0 => fun r => if r = 0 then lam else aux_reductionBracketMax q.left q.right
+      | 1 => fun r => if r = 0 then lam else q.right
+      | 2 => fun r => if r = 0 then q.left else lam
+      | 3 => fun r => if r = 0 then lam else q.right
+      | 4 => fun r => if r = 0 then lam else q.left
+      | _ => fun r => if r = 0 then q.left else q.right
+    else
+      match b.2.1 with
+      | 0 | 1 => fun r => if r = 0 then lam else q.right
+      | _ => fun r => if r = 0 then q.left else q.right
+
+/-- The enlarged base scale remains multiplicatively spaced. -/
+private theorem aux_reductionBracketLambda_spaced (D : ReductionData) (h : ℕ) :
+    SpacedSequence (aux_reductionBracketLambda D h) := by
+  unfold aux_reductionBracketLambda
+  exact smul_mem_A D.a_spaced (pow_pos (by norm_num) _)
+
+/-- The predecessor scale remains multiplicatively spaced. -/
+private theorem aux_reductionBracketPrev_spaced (D : ReductionData) :
+    SpacedSequence (aux_reductionBracketPrev D) := by
+  unfold aux_reductionBracketPrev
+  convert shift_mem_A D.a_spaced (-1) using 1 <;> ring
+
+/-- Pointwise maxima of the scale sequences used in the bracket slots remain
+multiplicatively spaced. -/
+private theorem aux_reductionBracketMax_spaced {a b : ℤ → ℝ}
+    (ha : SpacedSequence a) (hb : SpacedSequence b) :
+    SpacedSequence (aux_reductionBracketMax a b) := by
+  exact max_mem_A ha hb
+
+/-- The enlarged base scale lies within the expected height budget. -/
+private theorem aux_reductionBracketLambda_within (D : ReductionData) (h : ℕ) :
+    WithinSequenceDistance D.a (aux_reductionBracketLambda D h) h := by
+  apply Codex.MainArgument.GaussianDomination.aux_withinSequenceDistance_of_sequenceDistance_le
+    D.a_spaced
+  change SequenceDistance D.a (fun j => (2 : ℝ) ^ h * D.a j) ≤ (h : WithTop ℕ)
+  simpa only [zpow_natCast, Int.natAbs_natCast] using
+    (sequenceDistance_pow_two_smul_le D.a_spaced (h : ℤ))
+
+/-- The predecessor of the base scale lies at distance at most one. -/
+private theorem aux_reductionBracketPrev_within (D : ReductionData) :
+    WithinSequenceDistance D.a (aux_reductionBracketPrev D) 1 := by
+  intro j
+  constructor
+  · simp [aux_reductionBracketPrev]
+  · change D.a (j - 1) ≤ D.a (j + 1)
+    exact aux_spacedSequence_monotone D.a_spaced (by omega)
+
+/-- The original base scale lies within every nonzero height budget of itself. -/
+private theorem aux_reductionBracketBase_within (D : ReductionData) (k : ℕ) :
+    WithinSequenceDistance D.a D.a k := by
+  intro j
+  constructor <;> exact aux_spacedSequence_monotone D.a_spaced (by omega)
+
+/-- Every scale occurring in one of the labeled bracket slots is a spaced
+sequence. -/
+private theorem aux_reductionBracketScales_spaced (D : ReductionData) (h : ℕ)
+    (b : ReductionScaleTriple D.a × Fin 8) :
+    ∀ r : Fin 2, SpacedSequence (aux_reductionBracketScales D h b r) := by
+  rcases b with ⟨q, slot⟩
+  intro r
+  have hleft : SpacedSequence q.left := q.left_spaced
+  have hright : SpacedSequence q.right := q.right_spaced
+  have hprev : SpacedSequence (aux_reductionBracketPrev D) :=
+    aux_reductionBracketPrev_spaced D
+  have hlam : SpacedSequence (aux_reductionBracketLambda D h) :=
+    aux_reductionBracketLambda_spaced D h
+  have hmaxLR : SpacedSequence (aux_reductionBracketMax q.left q.right) :=
+    aux_reductionBracketMax_spaced hleft hright
+  have hmaxPrevLeft : SpacedSequence
+      (aux_reductionBracketMax (aux_reductionBracketPrev D) q.left) :=
+    aux_reductionBracketMax_spaced hprev hleft
+  have hmaxPrevRight : SpacedSequence
+      (aux_reductionBracketMax (aux_reductionBracketPrev D) q.right) :=
+    aux_reductionBracketMax_spaced hprev hright
+  have hmaxBaseLeft : SpacedSequence (aux_reductionBracketMax D.a q.left) :=
+    aux_reductionBracketMax_spaced D.a_spaced hleft
+  have hmaxBaseRight : SpacedSequence (aux_reductionBracketMax D.a q.right) :=
+    aux_reductionBracketMax_spaced D.a_spaced hright
+  by_cases hh : h = 0
+  · subst h
+    by_cases hu : q.orientation = 0
+    · fin_cases slot <;> fin_cases r <;> simp [aux_reductionBracketScales, hu]
+      all_goals assumption
+    · fin_cases slot <;> fin_cases r <;> simp [aux_reductionBracketScales, hu]
+      all_goals assumption
+  · by_cases hu : q.orientation = 0
+    · fin_cases slot <;> fin_cases r <;> simp [aux_reductionBracketScales, hh, hu]
+      all_goals assumption
+    · fin_cases slot <;> fin_cases r <;> simp [aux_reductionBracketScales, hh, hu]
+      all_goals assumption
+
+/-- Every tagged bracket scale stays within the distance budget required by
+the reduction witness.  The maximum cases use the common-distance maximum
+lemma, so the `h = 0` and positive-height slot tables are handled uniformly. -/
+private theorem aux_reductionBracketScales_distance (D : ReductionData) (h : ℕ)
+    (b : ReductionScaleTriple D.a × Fin 8) :
+    ∀ r : Fin 2,
+      SequenceDistance D.a (aux_reductionBracketScales D h b r) ≤
+        ((1 + h : ℕ) : WithTop ℕ) := by
+  rcases b with ⟨q, slot⟩
+  intro r
+  have hleft : SequenceDistance D.a q.left ≤ ((1 + h : ℕ) : WithTop ℕ) := by
+    calc
+      SequenceDistance D.a q.left ≤ (1 : WithTop ℕ) := q.left_distance
+      _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
+  have hright : SequenceDistance D.a q.right ≤ ((1 + h : ℕ) : WithTop ℕ) := by
+    calc
+      SequenceDistance D.a q.right ≤ (1 : WithTop ℕ) := q.right_distance
+      _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
+  have hprevzero : SequenceDistance D.a (aux_reductionBracketPrev D) ≤ (1 : WithTop ℕ) :=
+    aux_sequenceDistance_le_of_within (aux_reductionBracketPrev_within D)
+  have hprev : SequenceDistance D.a (aux_reductionBracketPrev D) ≤
+      ((1 + h : ℕ) : WithTop ℕ) := by
+    calc
+      SequenceDistance D.a (aux_reductionBracketPrev D) ≤ (1 : WithTop ℕ) := hprevzero
+      _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
+  have hleftwithin : WithinSequenceDistance D.a q.left 1 :=
+    Codex.MainArgument.GaussianDomination.aux_withinSequenceDistance_of_sequenceDistance_le
+      D.a_spaced q.left_distance
+  have hrightwithin : WithinSequenceDistance D.a q.right 1 :=
+    Codex.MainArgument.GaussianDomination.aux_withinSequenceDistance_of_sequenceDistance_le
+      D.a_spaced q.right_distance
+  have hmaxwithin : WithinSequenceDistance D.a
+      (aux_reductionBracketMax q.left q.right) 1 :=
+    aux_withinSequenceDistance_max hleftwithin hrightwithin
+  have hmaxzero : SequenceDistance D.a (aux_reductionBracketMax q.left q.right) ≤
+      (1 : WithTop ℕ) := aux_sequenceDistance_le_of_within hmaxwithin
+  have hmax : SequenceDistance D.a (aux_reductionBracketMax q.left q.right) ≤
+      ((1 + h : ℕ) : WithTop ℕ) := by
+    calc
+      SequenceDistance D.a (aux_reductionBracketMax q.left q.right) ≤ (1 : WithTop ℕ) :=
+        hmaxzero
+      _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
+  have hmaxPrevLeftWithin : WithinSequenceDistance D.a
+      (aux_reductionBracketMax (aux_reductionBracketPrev D) q.left) 1 :=
+    aux_withinSequenceDistance_max (aux_reductionBracketPrev_within D) hleftwithin
+  have hmaxPrevRightWithin : WithinSequenceDistance D.a
+      (aux_reductionBracketMax (aux_reductionBracketPrev D) q.right) 1 :=
+    aux_withinSequenceDistance_max (aux_reductionBracketPrev_within D) hrightwithin
+  have hmaxBaseLeftWithin : WithinSequenceDistance D.a
+      (aux_reductionBracketMax D.a q.left) 1 :=
+    aux_withinSequenceDistance_max (aux_reductionBracketBase_within D 1) hleftwithin
+  have hmaxBaseRightWithin : WithinSequenceDistance D.a
+      (aux_reductionBracketMax D.a q.right) 1 :=
+    aux_withinSequenceDistance_max (aux_reductionBracketBase_within D 1) hrightwithin
+  have hmaxPrevLeft : SequenceDistance D.a
+      (aux_reductionBracketMax (aux_reductionBracketPrev D) q.left) ≤
+        ((1 + h : ℕ) : WithTop ℕ) := by
+    calc
+      SequenceDistance D.a (aux_reductionBracketMax (aux_reductionBracketPrev D) q.left) ≤
+          (1 : WithTop ℕ) := aux_sequenceDistance_le_of_within hmaxPrevLeftWithin
+      _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
+  have hmaxPrevRight : SequenceDistance D.a
+      (aux_reductionBracketMax (aux_reductionBracketPrev D) q.right) ≤
+        ((1 + h : ℕ) : WithTop ℕ) := by
+    calc
+      SequenceDistance D.a (aux_reductionBracketMax (aux_reductionBracketPrev D) q.right) ≤
+          (1 : WithTop ℕ) := aux_sequenceDistance_le_of_within hmaxPrevRightWithin
+      _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
+  have hmaxBaseLeft : SequenceDistance D.a (aux_reductionBracketMax D.a q.left) ≤
+      ((1 + h : ℕ) : WithTop ℕ) := by
+    calc
+      SequenceDistance D.a (aux_reductionBracketMax D.a q.left) ≤ (1 : WithTop ℕ) :=
+        aux_sequenceDistance_le_of_within hmaxBaseLeftWithin
+      _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
+  have hmaxBaseRight : SequenceDistance D.a (aux_reductionBracketMax D.a q.right) ≤
+      ((1 + h : ℕ) : WithTop ℕ) := by
+    calc
+      SequenceDistance D.a (aux_reductionBracketMax D.a q.right) ≤ (1 : WithTop ℕ) :=
+        aux_sequenceDistance_le_of_within hmaxBaseRightWithin
+      _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
+  have hlam : SequenceDistance D.a (aux_reductionBracketLambda D h) ≤
+      ((1 + h : ℕ) : WithTop ℕ) := by
+    calc
+      SequenceDistance D.a (aux_reductionBracketLambda D h) ≤ (h : WithTop ℕ) :=
+        aux_sequenceDistance_le_of_within (aux_reductionBracketLambda_within D h)
+      _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
+  by_cases hh : h = 0
+  · subst h
+    norm_num at hleft hright hprev hmax hmaxPrevLeft hmaxPrevRight hmaxBaseLeft hmaxBaseRight hlam
+    by_cases hu : q.orientation = 0
+    · fin_cases slot <;> fin_cases r <;> simp [aux_reductionBracketScales, hu]
+      all_goals assumption
+    · fin_cases slot <;> fin_cases r <;> simp [aux_reductionBracketScales, hu]
+      all_goals assumption
+  · by_cases hu : q.orientation = 0
+    · fin_cases slot <;> fin_cases r <;> simp [aux_reductionBracketScales, hh, hu]
+      all_goals assumption
+    · fin_cases slot <;> fin_cases r <;> simp [aux_reductionBracketScales, hh, hu]
+      all_goals assumption
+
+/-- The two components of every tagged bracket scale pair have the advertised
+pair-distance bound, by symmetry and the triangle inequality through the
+original base scale. -/
+private theorem aux_reductionBracketScales_pair_distance (D : ReductionData) (h : ℕ)
+    (b : ReductionScaleTriple D.a × Fin 8) :
+    sequencePairDistance (aux_reductionBracketScales D h b) ≤
+      ((2 * (1 + h) : ℕ) : WithTop ℕ) := by
+  unfold sequencePairDistance
+  calc
+    SequenceDistance (aux_reductionBracketScales D h b 0)
+        (aux_reductionBracketScales D h b 1) ≤
+        SequenceDistance (aux_reductionBracketScales D h b 0) D.a +
+          SequenceDistance D.a (aux_reductionBracketScales D h b 1) :=
+      sequenceDistance_triangle _ _ _
+    _ = SequenceDistance D.a (aux_reductionBracketScales D h b 0) +
+          SequenceDistance D.a (aux_reductionBracketScales D h b 1) := by
+      rw [sequenceDistance_comm (aux_reductionBracketScales D h b 0) D.a]
+    _ ≤ ((1 + h : ℕ) : WithTop ℕ) + ((1 + h : ℕ) : WithTop ℕ) :=
+      add_le_add (aux_reductionBracketScales_distance D h b 0)
+        (aux_reductionBracketScales_distance D h b 1)
+    _ = ((2 * (1 + h) : ℕ) : WithTop ℕ) := by
+      norm_cast
+      ring
 
 /-- The cardinality constant in bracket domination. -/
 def C_increaseDataBracketDominationCard : ℕ := 2 ^ 6
 
+/-- There are at most eight labeled bracket slots per input scale triple. -/
+private theorem aux_reductionBracket_card (D : ReductionData) :
+    (D.triples.product Finset.univ : Finset (ReductionScaleTriple D.a × Fin 8)).card ≤
+      C_increaseDataBracketDominationCard := by
+  calc
+    (D.triples.product Finset.univ : Finset (ReductionScaleTriple D.a × Fin 8)).card =
+        D.triples.card * 8 := by simp
+    _ ≤ 5 * 8 := Nat.mul_le_mul_right 8 D.triples_card
+    _ ≤ C_increaseDataBracketDominationCard := by
+      norm_num [C_increaseDataBracketDominationCard]
+
 /-- The pointwise constant in Proposition \ref{lem:increase-data-bracket-domination}. -/
 noncomputable def C_increaseDataBracketDomination : ℝ :=
   (2 : ℝ) ^ (10 : ℕ) * C_rhoKernelsReduction
+
+/-- The bracket product attached to one labeled occurrence in the reduction
+majorant. -/
+private noncomputable def aux_reductionBracketTerm (D : ReductionData) (h : ℕ)
+    (b : ReductionScaleTriple D.a × Fin 8) (j : ℤ) (v : RealPlane) : ℝ :=
+  scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketScales D h b 0 j)
+      ((W (aux_reductionBracketOrientation D h b) v).1) *
+    scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketScales D h b 1 j)
+      ((W (aux_reductionBracketOrientation D h b) v).2)
+
+/-- Every labeled bracket product is nonnegative, including the padding
+slots used to keep the finite carrier uniform. -/
+private theorem aux_reductionBracketTerm_nonneg (D : ReductionData) (h : ℕ)
+    (b : ReductionScaleTriple D.a × Fin 8) (j : ℤ) (v : RealPlane) :
+    0 ≤ aux_reductionBracketTerm D h b j v := by
+  unfold aux_reductionBracketTerm
+  apply mul_nonneg
+  · exact aux_scaledBracketBumpReal_nonneg _ _ _
+      (aux_spacedSequence_pos (aux_reductionBracketScales_spaced D h b 0) j)
+  · exact aux_scaledBracketBumpReal_nonneg _ _ _
+      (aux_spacedSequence_pos (aux_reductionBracketScales_spaced D h b 1) j)
+
+/-- Keeping the three padding slots in a finite eight-slot table can only
+increase the sum of its first five entries. -/
+private theorem aux_reductionBracket_five_le_sum (f : Fin 8 → ℝ)
+    (h5 : 0 ≤ f 5) (h6 : 0 ≤ f 6) (h7 : 0 ≤ f 7) :
+    f 0 + f 1 + f 2 + f 3 + f 4 ≤ ∑ slot : Fin 8, f slot := by
+  simp [Fin.sum_univ_succ]
+  nlinarith
+
+/-- Keeping the six padding slots in a finite eight-slot table can only
+increase the sum of its first two entries. -/
+private theorem aux_reductionBracket_two_le_sum (f : Fin 8 → ℝ)
+    (h2 : 0 ≤ f 2) (h3 : 0 ≤ f 3) (h4 : 0 ≤ f 4) (h5 : 0 ≤ f 5)
+    (h6 : 0 ≤ f 6) (h7 : 0 ≤ f 7) :
+    f 0 + f 1 ≤ ∑ slot : Fin 8, f slot := by
+  simp [Fin.sum_univ_succ]
+  nlinarith
+
+/-- The five output products from the positive-height orientation-zero
+convolution are dominated by the corresponding tagged-slot sum. -/
+private theorem aux_reductionBracket_positive_slots_u0 (D : ReductionData) (h : ℕ)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ)
+    (hh : h ≠ 0) (hu : q.orientation = 0) :
+    scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketLambda D h j)
+        (Real.sqrt 2 * w0) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (max (q.left j) (q.right j))
+        (Real.sqrt 2 * w1) +
+    scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketLambda D h j)
+        (w0 - w1) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w0 + w1) +
+    scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w0 - w1) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketLambda D h j)
+        (w0 + w1) +
+    scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketLambda D h j)
+        (Real.sqrt 2 * w0) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+    scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketLambda D h j)
+        (Real.sqrt 2 * w0) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * w1) ≤
+      ∑ slot : Fin 8,
+        aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1) := by
+  let f : Fin 8 → ℝ := fun slot =>
+    aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1)
+  have h5 : 0 ≤ f 5 := by
+    dsimp [f]
+    exact aux_reductionBracketTerm_nonneg D h (q, 5) j (w0 - w1, w0 + w1)
+  have h6 : 0 ≤ f 6 := by
+    dsimp [f]
+    exact aux_reductionBracketTerm_nonneg D h (q, 6) j (w0 - w1, w0 + w1)
+  have h7 : 0 ≤ f 7 := by
+    dsimp [f]
+    exact aux_reductionBracketTerm_nonneg D h (q, 7) j (w0 - w1, w0 + w1)
+  have hactive := aux_reductionBracket_five_le_sum f h5 h6 h7
+  simpa [f, aux_reductionBracketTerm, aux_reductionBracketScales,
+    aux_reductionBracketOrientation, aux_reductionBracketMax, hh, hu,
+    aux_reduction_W_zero_coordinates, aux_reduction_W_one_coordinates] using hactive
+
+/-- The two positive-height orientation-one occurrences are the first two
+tagged slots, and their duplicated sum is bounded by the full table. -/
+private theorem aux_reductionBracket_positive_slots_u1 (D : ReductionData) (h : ℕ)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ)
+    (hh : h ≠ 0) (hu : q.orientation = 1) :
+    scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketLambda D h j)
+        (Real.sqrt 2 * w0) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+    scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketLambda D h j)
+        (Real.sqrt 2 * w0) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) ≤
+      ∑ slot : Fin 8,
+        aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1) := by
+  let f : Fin 8 → ℝ := fun slot =>
+    aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1)
+  have h2 : 0 ≤ f 2 := by
+    dsimp [f]
+    exact aux_reductionBracketTerm_nonneg D h (q, 2) j (w0 - w1, w0 + w1)
+  have h3 : 0 ≤ f 3 := by
+    dsimp [f]
+    exact aux_reductionBracketTerm_nonneg D h (q, 3) j (w0 - w1, w0 + w1)
+  have h4 : 0 ≤ f 4 := by
+    dsimp [f]
+    exact aux_reductionBracketTerm_nonneg D h (q, 4) j (w0 - w1, w0 + w1)
+  have h5 : 0 ≤ f 5 := by
+    dsimp [f]
+    exact aux_reductionBracketTerm_nonneg D h (q, 5) j (w0 - w1, w0 + w1)
+  have h6 : 0 ≤ f 6 := by
+    dsimp [f]
+    exact aux_reductionBracketTerm_nonneg D h (q, 6) j (w0 - w1, w0 + w1)
+  have h7 : 0 ≤ f 7 := by
+    dsimp [f]
+    exact aux_reductionBracketTerm_nonneg D h (q, 7) j (w0 - w1, w0 + w1)
+  have hactive := aux_reductionBracket_two_le_sum f h2 h3 h4 h5 h6 h7
+  simpa [f, aux_reductionBracketTerm, aux_reductionBracketScales,
+    aux_reductionBracketOrientation, hh, hu,
+    aux_reduction_W_one_coordinates] using hactive
+
+/-- A symmetric two-bump convolution estimate at the height-zero exponent. -/
+private theorem aux_reduction_hzero_two_bump (x y s t : ℝ) (hs : 0 < s) (ht : 0 < t) :
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) s (x - p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t (y - p)) ≤
+      (2 : ℝ) ^ (6 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max s t) (x - y) := by
+  have hC : C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) ≤ (2 : ℝ) ^ (6 : ℕ) :=
+    aux_reduction_two_bump_constant.le
+  have hN : 1 < (7 / 6 : ℝ) := by norm_num
+  have hnon (p : ℝ) : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) s (x - p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t (y - p) :=
+    mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hs)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht)
+  by_cases hts : t ≤ s
+  · have htwo := twoBumpEstimate x y s t (7 / 6 : ℝ) (7 / 6 : ℝ)
+      hs ht hts hN hN
+    have hint : 0 ≤ ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) s (x - p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t (y - p) := integral_nonneg hnon
+    rw [max_eq_left hts]
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) s (x - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (y - p)) ≤
+          |∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) s (x - p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (y - p)| := le_abs_self _
+      _ ≤ C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) *
+          scaledBracketBumpReal (min (7 / 6 : ℝ) (7 / 6 : ℝ)) s (x - y) := htwo
+      _ ≤ (2 : ℝ) ^ (6 : ℕ) * scaledBracketBumpReal (7 / 6 : ℝ) s (x - y) := by
+        norm_num at hC ⊢
+        exact mul_le_mul_of_nonneg_right hC
+          (aux_scaledBracketBumpReal_nonneg _ _ _ hs)
+  · have hst : s ≤ t := le_of_not_ge hts
+    have htwo := twoBumpEstimate y x t s (7 / 6 : ℝ) (7 / 6 : ℝ)
+      ht hs hst hN hN
+    have hswap :
+        (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) s (x - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (y - p)) =
+        ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t (y - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) s (x - p) := by
+      apply integral_congr_ae
+      filter_upwards [] with p
+      ring
+    rw [hswap, max_eq_right hst]
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t (y - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) s (x - p)) ≤
+          |∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t (y - p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) s (x - p)| := le_abs_self _
+      _ ≤ C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) *
+          scaledBracketBumpReal (min (7 / 6 : ℝ) (7 / 6 : ℝ)) t (y - x) := htwo
+      _ = C_twoBumpEstimate (7 / 6 : ℝ) (7 / 6 : ℝ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (x - y) := by
+        rw [show min (7 / 6 : ℝ) (7 / 6 : ℝ) = 7 / 6 by norm_num]
+        congr 1
+        rw [show y - x = -(x - y) by ring, aux_scaledBracketBumpReal_neg]
+      _ ≤ (2 : ℝ) ^ (6 : ℕ) * scaledBracketBumpReal (7 / 6 : ℝ) t (x - y) := by
+        norm_num at hC ⊢
+        exact mul_le_mul_of_nonneg_right hC
+          (aux_scaledBracketBumpReal_nonneg _ _ _ ht)
+
+/-- The coordinate dichotomy used to split the first mixed height-zero term. -/
+private theorem aux_reduction_hzero_orthogonal_dichotomy_zero (w0 w1 : ℝ) :
+    |w0 + w1| ≤ (2 * Real.sqrt 2) * |Real.sqrt 2 * w1| ∨
+      |Real.sqrt 2 * w0| ≤ (2 * Real.sqrt 2) * |w0 - w1| := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqr : (Real.sqrt (2 : ℝ)) ^ 2 = 2 := by norm_num
+  by_cases hright : |w0| ≤ 2 * |w0 - w1|
+  · right
+    rw [abs_mul, abs_of_pos hsqrt]
+    have hmul := mul_le_mul_of_nonneg_left hright hsqrt.le
+    nlinarith
+  · left
+    have hmore : 2 * |w0 - w1| < |w0| := lt_of_not_ge hright
+    have htri0 : |w0| ≤ |w0 - w1| + |w1| := by
+      calc
+        |w0| = |(w0 - w1) + w1| := by congr 1 <;> ring
+        _ ≤ |w0 - w1| + |w1| := abs_add_le _ _
+    have hsmall : |w0 - w1| < |w1| := by linarith
+    have htri1 : |w0 + w1| ≤ |w0 - w1| + 2 * |w1| := by
+      calc
+        |w0 + w1| = |(w0 - w1) + 2 * w1| := by congr 1 <;> ring
+        _ ≤ |w0 - w1| + |2 * w1| := abs_add_le _ _
+        _ = |w0 - w1| + 2 * |w1| := by rw [abs_mul]; norm_num
+    have hbound : |w0 + w1| ≤ 4 * |w1| := by nlinarith [abs_nonneg w1]
+    calc
+      |w0 + w1| ≤ 4 * |w1| := hbound
+      _ = (2 * Real.sqrt 2) * |Real.sqrt 2 * w1| := by
+        rw [abs_mul, abs_of_pos hsqrt]
+        nlinarith
+
+/-- The coordinate dichotomy used to split the second mixed height-zero term. -/
+private theorem aux_reduction_hzero_orthogonal_dichotomy_one (w0 w1 : ℝ) :
+    |w0 - w1| ≤ (2 * Real.sqrt 2) * |Real.sqrt 2 * w1| ∨
+      |Real.sqrt 2 * w0| ≤ (2 * Real.sqrt 2) * |w0 + w1| := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqr : (Real.sqrt (2 : ℝ)) ^ 2 = 2 := by norm_num
+  by_cases hright : |w0| ≤ 2 * |w0 + w1|
+  · right
+    rw [abs_mul, abs_of_pos hsqrt]
+    have hmul := mul_le_mul_of_nonneg_left hright hsqrt.le
+    nlinarith
+  · left
+    have hmore : 2 * |w0 + w1| < |w0| := lt_of_not_ge hright
+    have htri0 : |w0| ≤ |w0 + w1| + |w1| := by
+      calc
+        |w0| = |(w0 + w1) - w1| := by congr 1 <;> ring
+        _ ≤ |w0 + w1| + |-w1| := abs_add_le _ _
+        _ = |w0 + w1| + |w1| := by rw [abs_neg]
+    have hsmall : |w0 + w1| < |w1| := by linarith
+    have htri1 : |w0 - w1| ≤ |w0 + w1| + 2 * |w1| := by
+      calc
+        |w0 - w1| = |(w0 + w1) - 2 * w1| := by congr 1 <;> ring
+        _ = |(w0 + w1) + (-(2 * w1))| := by congr 1 <;> ring
+        _ ≤ |w0 + w1| + |-(2 * w1)| := abs_add_le _ _
+        _ = |w0 + w1| + 2 * |w1| := by rw [abs_neg, abs_mul]; norm_num
+    have hbound : |w0 - w1| ≤ 4 * |w1| := by nlinarith [abs_nonneg w1]
+    calc
+      |w0 - w1| ≤ 4 * |w1| := hbound
+      _ = (2 * Real.sqrt 2) * |Real.sqrt 2 * w1| := by
+        rw [abs_mul, abs_of_pos hsqrt]
+        nlinarith
+
+/-- Numerical bound for the orthogonal-decay constant in the height-zero split. -/
+private theorem aux_reduction_hzero_orthogonal_constant :
+    max (Real.rpow (2 * Real.sqrt 2) (7 / 6 : ℝ))
+      (Real.rpow (2 * Real.sqrt 2) (7 / 6 : ℝ)) ≤ 4 := by
+  rw [max_self]
+  have hA : 2 * Real.sqrt 2 = Real.rpow 2 (3 / 2 : ℝ) := by
+    calc
+      2 * Real.sqrt 2 = 2 * Real.rpow 2 (1 / 2 : ℝ) := by
+        change 2 * Real.sqrt 2 = 2 * ((2 : ℝ) ^ (1 / (2 : ℝ)))
+        rw [Real.sqrt_eq_rpow]
+      _ = Real.rpow 2 (1 : ℝ) * Real.rpow 2 (1 / 2 : ℝ) := by norm_num
+      _ = Real.rpow 2 ((1 : ℝ) + 1 / 2) :=
+        (Real.rpow_add (by norm_num : 0 < (2 : ℝ)) _ _).symm
+      _ = Real.rpow 2 (3 / 2 : ℝ) := by congr 1 <;> ring
+  apply le_of_lt
+  calc
+    Real.rpow (2 * Real.sqrt 2) (7 / 6 : ℝ) =
+        Real.rpow 2 ((3 / 2 : ℝ) * (7 / 6 : ℝ)) := by
+      rw [hA]
+      exact (Real.rpow_mul (by norm_num : 0 ≤ (2 : ℝ))
+        (3 / 2 : ℝ) (7 / 6 : ℝ)).symm
+    _ = Real.rpow 2 (7 / 4 : ℝ) := by congr 1 <;> ring
+    _ < Real.rpow 2 (2 : ℝ) :=
+      Real.rpow_lt_rpow_of_exponent_lt (by norm_num) (by norm_num)
+    _ = 4 := by norm_num
+
+/-- The first mixed-coordinate bracket product is controlled by two slot products. -/
+private theorem aux_reduction_hzero_mixed_zero (s t w0 w1 : ℝ) (hs : 0 < s) (ht : 0 < t) :
+    scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+      8 *
+        (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have hsqrt_one : 1 ≤ Real.sqrt (2 : ℝ) := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+  have harg : (Real.sqrt 2 * w1) / Real.sqrt 2 = w1 := by
+    field_simp [ne_of_gt hsqrt]
+  have hdown : scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+      2 * scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) := by
+    simpa [harg] using aux_reduction_fixed_scaling_down t (Real.sqrt 2 * w1) ht
+  have hleft :
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+        2 * (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+          scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+            (2 * scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) :=
+        mul_le_mul_of_nonneg_left hdown
+          (aux_scaledBracketBumpReal_nonneg _ _ _ hs)
+      _ = 2 * (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by ring
+  have hraw := aux_orthogonalDecay_from_domination
+    (A := 2 * Real.sqrt 2) (n₀ := (7 / 6 : ℝ)) (n₁ := (7 / 6 : ℝ))
+    (s₀ := s) (s₁ := t) (u₀ := w0 - w1) (u₁ := Real.sqrt 2 * w1)
+    (p₀ := w0 + w1) (p₁ := Real.sqrt 2 * w0)
+    (by positivity) (by nlinarith) (by norm_num) (by norm_num) hs ht
+    (aux_reduction_hzero_orthogonal_dichotomy_zero w0 w1)
+  have hsum : 0 ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (w0 + w1) +
+        scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) := by
+    exact add_nonneg
+      (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hs)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht))
+      (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hs)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht))
+  have hraw4 :
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) ≤
+        4 *
+          (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) ≤
+          max (Real.rpow (2 * Real.sqrt 2) (7 / 6 : ℝ))
+            (Real.rpow (2 * Real.sqrt 2) (7 / 6 : ℝ)) *
+            (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+                scaledBracketBumpReal (7 / 6 : ℝ) t (w0 + w1) +
+              scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+                scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := hraw
+      _ ≤ 4 *
+          (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) :=
+        mul_le_mul_of_nonneg_right aux_reduction_hzero_orthogonal_constant hsum
+  calc
+    scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+        2 * (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := hleft
+    _ ≤ 2 * (4 *
+        (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1))) :=
+      mul_le_mul_of_nonneg_left hraw4 (by norm_num)
+    _ = 8 *
+        (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by ring
+
+/-- The second mixed-coordinate bracket product is controlled by two slot products. -/
+private theorem aux_reduction_hzero_mixed_one (s t w0 w1 : ℝ) (hs : 0 < s) (ht : 0 < t) :
+    scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+      8 *
+        (scaledBracketBumpReal (7 / 6 : ℝ) t (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by
+  have hsqrt : 0 < Real.sqrt (2 : ℝ) := Real.sqrt_pos.2 (by norm_num)
+  have harg : (Real.sqrt 2 * w1) / Real.sqrt 2 = w1 := by
+    field_simp [ne_of_gt hsqrt]
+  have hdown : scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+      2 * scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) := by
+    simpa [harg] using aux_reduction_fixed_scaling_down t (Real.sqrt 2 * w1) ht
+  have hleft :
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+        2 * (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+          scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+            (2 * scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) :=
+        mul_le_mul_of_nonneg_left hdown
+          (aux_scaledBracketBumpReal_nonneg _ _ _ hs)
+      _ = 2 * (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by ring
+  have hraw := aux_orthogonalDecay_from_domination
+    (A := 2 * Real.sqrt 2) (n₀ := (7 / 6 : ℝ)) (n₁ := (7 / 6 : ℝ))
+    (s₀ := s) (s₁ := t) (u₀ := w0 + w1) (u₁ := Real.sqrt 2 * w1)
+    (p₀ := w0 - w1) (p₁ := Real.sqrt 2 * w0)
+    (by positivity) (by nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)])
+    (by norm_num) (by norm_num) hs ht
+    (aux_reduction_hzero_orthogonal_dichotomy_one w0 w1)
+  have hsum : 0 ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (w0 - w1) +
+        scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) := by
+    exact add_nonneg
+      (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hs)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht))
+      (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hs)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht))
+  have hraw4 :
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) ≤
+        4 *
+          (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t (w0 - w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1) ≤
+          max (Real.rpow (2 * Real.sqrt 2) (7 / 6 : ℝ))
+            (Real.rpow (2 * Real.sqrt 2) (7 / 6 : ℝ)) *
+            (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+                scaledBracketBumpReal (7 / 6 : ℝ) t (w0 - w1) +
+              scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+                scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := hraw
+      _ ≤ 4 *
+          (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t (w0 - w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) :=
+        mul_le_mul_of_nonneg_right aux_reduction_hzero_orthogonal_constant hsum
+  calc
+    scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t w1 ≤
+        2 * (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := hleft
+    _ ≤ 2 * (4 *
+        (scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (w0 - w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1))) :=
+      mul_le_mul_of_nonneg_left hraw4 (by norm_num)
+    _ = 8 *
+        (scaledBracketBumpReal (7 / 6 : ℝ) t (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) s (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) s (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t (Real.sqrt 2 * w1)) := by ring
+
+/-- A unit-constant bump-triangle split for the two translated kernel factors. -/
+private theorem aux_reduction_hzero_bump_triangle (t0 t1 w1 p : ℝ) (ht0 : 0 < t0)
+    (ht1 : 0 < t1) :
+    scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) ≤
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 +
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+  have hraw := aux_bumpTriangleReal
+    (c₀ := (1 / 2 : ℝ)) (c₁ := (1 / 2 : ℝ))
+    (u := w1 + p) (v := w1 - p) (w := w1)
+    (s₀ := t0) (s₁ := t1) (n₀ := (7 / 6 : ℝ)) (n₁ := (7 / 6 : ℝ))
+    (by norm_num) (by norm_num) (by norm_num) (by norm_num) ht0 ht1 (by ring)
+  have hC : C_bumpTriangle (1 / 2 : ℝ) (1 / 2 : ℝ) (7 / 6 : ℝ) (7 / 6 : ℝ) = 1 := by
+    norm_num [C_bumpTriangle, C_bumpTriangleTilde]
+  rw [hC] at hraw
+  simpa using hraw
+
+/-- A bracket bump is bounded by the reciprocal of its positive scale. -/
+private theorem aux_reduction_hzero_bump_le_inv (N s x : ℝ) (hN : 0 ≤ N) (hs : 0 < s) :
+    scaledBracketBumpReal N s x ≤ s⁻¹ := by
+  unfold scaledBracketBumpReal
+  have hbase : 1 ≤ 1 + |s⁻¹ * x| := by linarith [abs_nonneg (s⁻¹ * x)]
+  have hpow : Real.rpow (1 + |s⁻¹ * x|) (-N) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos hbase (by linarith)
+  calc
+    s⁻¹ * Real.rpow (1 + |s⁻¹ * x|) (-N) ≤ s⁻¹ * 1 :=
+      mul_le_mul_of_nonneg_left hpow (inv_nonneg.mpr hs.le)
+    _ = s⁻¹ := by ring
+
+/-- Integrability of a translated two-bump product used in height-zero bounds. -/
+private theorem aux_reduction_hzero_product_integrable
+    (n0 n1 s0 s1 x0 x1 : ℝ) (hn0 : 1 < n0) (hn1 : 0 ≤ n1)
+    (hs0 : 0 < s0) (hs1 : 0 < s1) :
+    Integrable (fun p : ℝ => scaledBracketBumpReal n0 s0 (x0 - p) *
+      scaledBracketBumpReal n1 s1 (x1 - p)) := by
+  have hbase : Integrable (fun p : ℝ => scaledBracketBumpReal n0 s0 (x0 - p)) :=
+    aux_integrable_scaledBracketBumpReal_translate n0 s0 x0 hn0 hs0
+  refine (hbase.const_mul s1⁻¹).mono' ?_ ?_
+  · apply Continuous.aestronglyMeasurable
+    have hleftBase : Continuous (fun p : ℝ => 1 + |s0⁻¹ * (x0 - p)|) := by fun_prop
+    have hrightBase : Continuous (fun p : ℝ => 1 + |s1⁻¹ * (x1 - p)|) := by fun_prop
+    have hleft : Continuous (fun p : ℝ => scaledBracketBumpReal n0 s0 (x0 - p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hleftBase.continuousAt.rpow_const (Or.inl (by positivity))
+    have hright : Continuous (fun p : ℝ => scaledBracketBumpReal n1 s1 (x1 - p)) := by
+      unfold scaledBracketBumpReal
+      apply continuous_const.mul
+      rw [continuous_iff_continuousAt]
+      intro p
+      exact hrightBase.continuousAt.rpow_const (Or.inl (by positivity))
+    exact hleft.mul hright
+  · filter_upwards [] with p
+    have hleft : 0 ≤ scaledBracketBumpReal n0 s0 (x0 - p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs0
+    have hright : 0 ≤ scaledBracketBumpReal n1 s1 (x1 - p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hs1
+    have hle := aux_reduction_hzero_bump_le_inv n1 s1 (x1 - p) hn1 hs1
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hleft hright)]
+    calc
+      scaledBracketBumpReal n0 s0 (x0 - p) *
+          scaledBracketBumpReal n1 s1 (x1 - p) ≤
+        scaledBracketBumpReal n0 s0 (x0 - p) * s1⁻¹ :=
+          mul_le_mul_of_nonneg_left hle hleft
+      _ = s1⁻¹ * scaledBracketBumpReal n0 s0 (x0 - p) := by ring
+
+/-- The preliminary orientation-zero three-bump integral estimate. -/
+private theorem aux_reduction_hzero_u0_base (d t0 t1 w0 w1 : ℝ)
+    (hd : 0 < d) (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+      (2 : ℝ) ^ (6 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 +
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 w1) := by
+  let f : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)
+  let g0 : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 w1
+  let g1 : ℝ → ℝ := fun p =>
+    (scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 w1
+  have hfnon (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    exact mul_nonneg
+      (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hd)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht0))
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  have hprod0 : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) := by
+    have h := aux_reduction_hzero_product_integrable (7 / 6 : ℝ) (7 / 6 : ℝ)
+      d t0 (-w0) (-w1) (by norm_num) (by norm_num) hd ht0
+    convert h using 1
+    funext p
+    rw [show (-w0) - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg,
+      show (-w1) - p = -(w1 + p) by ring, aux_scaledBracketBumpReal_neg]
+  have hprod1 : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+    have h := aux_reduction_hzero_product_integrable (7 / 6 : ℝ) (7 / 6 : ℝ)
+      d t1 (-w0) w1 (by norm_num) (by norm_num) hd ht1
+    convert h using 1
+    funext p
+    rw [show (-w0) - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg]
+  have hg0 : Integrable g0 := by
+    convert hprod0.const_mul (scaledBracketBumpReal (7 / 6 : ℝ) t1 w1) using 1
+    funext p
+    dsimp [g0]
+    ring
+  have hg1 : Integrable g1 := by
+    convert hprod1.const_mul (scaledBracketBumpReal (7 / 6 : ℝ) t0 w1) using 1
+    funext p
+    dsimp [g1]
+    ring
+  have hmajor : Integrable (fun p : ℝ => g0 p + g1 p) := hg0.add hg1
+  have hpoint (p : ℝ) : f p ≤ g0 p + g1 p := by
+    have htri := aux_reduction_hzero_bump_triangle t0 t1 w1 p ht0 ht1
+    have hdB : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hd
+    dsimp [f, g0, g1]
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) =
+          scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+            (scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by ring
+      _ ≤ scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          (scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 +
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) :=
+          mul_le_mul_of_nonneg_left htri hdB
+      _ = ((scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 w1) +
+          ((scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t0 w1) := by ring
+  have hint : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, g0 p + g1 p :=
+    integral_mono_of_nonneg (ae_of_all _ hfnon) hmajor (ae_of_all _ hpoint)
+  have htwo0 := aux_reduction_hzero_two_bump (-w0) (-w1) d t0 hd ht0
+  have htwo1 := aux_reduction_hzero_two_bump (-w0) w1 d t1 hd ht1
+  have htwo0' : (∫ p : ℝ,
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) ≤
+      (2 : ℝ) ^ (6 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1) := by
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) =
+          ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d ((-w0) - p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 ((-w1) - p) := by
+        apply integral_congr_ae
+        filter_upwards [] with p
+        rw [show (-w0) - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg,
+          show (-w1) - p = -(w1 + p) by ring, aux_scaledBracketBumpReal_neg]
+      _ ≤ (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) ((-w0) - (-w1)) := htwo0
+      _ = (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1) := by
+        rw [show (-w0) - (-w1) = -(w0 - w1) by ring,
+          aux_scaledBracketBumpReal_neg]
+  have htwo1' : (∫ p : ℝ,
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+      (2 : ℝ) ^ (6 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1) := by
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) =
+          ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d ((-w0) - p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) := by
+        apply integral_congr_ae
+        filter_upwards [] with p
+        rw [show (-w0) - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg]
+      _ ≤ (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) ((-w0) - w1) := htwo1
+      _ = (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1) := by
+        rw [show (-w0) - w1 = -(w0 + w1) by ring,
+          aux_scaledBracketBumpReal_neg]
+  have hg0bound : (∫ p : ℝ, g0 p) ≤
+      ((2 : ℝ) ^ (6 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 := by
+    rw [show (∫ p : ℝ, g0 p) =
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 by
+      rw [integral_mul_const]]
+    exact mul_le_mul_of_nonneg_right htwo0'
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  have hg1bound : (∫ p : ℝ, g1 p) ≤
+      ((2 : ℝ) ^ (6 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 := by
+    rw [show (∫ p : ℝ, g1 p) =
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 by
+      rw [integral_mul_const]]
+    exact mul_le_mul_of_nonneg_right htwo1'
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+  dsimp [f] at hint
+  calc
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) = ∫ p : ℝ, f p := by rfl
+    _ ≤ ∫ p : ℝ, g0 p + g1 p := hint
+    _ = (∫ p : ℝ, g0 p) + ∫ p : ℝ, g1 p := by rw [integral_add hg0 hg1]
+    _ ≤ ((2 : ℝ) ^ (6 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 +
+        ((2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 w1 :=
+      add_le_add hg0bound hg1bound
+    _ = (2 : ℝ) ^ (6 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 +
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 w1) := by ring
+
+/-- One orientation-zero rho-scale contribution is bounded by four slot products. -/
+private theorem aux_reduction_hzero_u0_per_epsilon (d t0 t1 w0 w1 : ℝ)
+    (hd : 0 < d) (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+      (2 : ℝ) ^ (9 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1)) := by
+  have hbase := aux_reduction_hzero_u0_base d t0 t1 w0 w1 hd ht0 ht1
+  have hmix0 := aux_reduction_hzero_mixed_zero (max d t0) t1 w0 w1
+    (lt_max_of_lt_left hd) ht1
+  have hmix1 := aux_reduction_hzero_mixed_one (max d t1) t0 w0 w1
+    (lt_max_of_lt_left hd) ht0
+  calc
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) ≤
+        (2 : ℝ) ^ (6 : ℕ) *
+          (scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 w1 +
+            scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t0 w1) := hbase
+    _ ≤ (2 : ℝ) ^ (6 : ℕ) *
+          (8 * (scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1)) +
+          8 * (scaledBracketBumpReal (7 / 6 : ℝ) t0 (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1))) :=
+      mul_le_mul_of_nonneg_left (add_le_add hmix0 hmix1) (by positivity)
+    _ = (2 : ℝ) ^ (9 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w0 - w1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (w0 + w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t1) (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1)) := by
+      norm_num
+      ring
+
+/-- One orientation-one rho-scale contribution is bounded by its active slot. -/
+private theorem aux_reduction_hzero_u1_per_epsilon (d t0 t1 w0 w1 : ℝ)
+    (hd : 0 < d) (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1)) ≤
+      (2 : ℝ) ^ (7 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) := by
+  let f : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1)
+  let g : ℝ → ℝ := fun p =>
+    scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 p *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1)
+  have hfnon (p : ℝ) : 0 ≤ f p := by
+    dsimp [f]
+    exact mul_nonneg
+      (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hd)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht0))
+      (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+  have hprod : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 p) := by
+    have h := aux_reduction_hzero_product_integrable (7 / 6 : ℝ) (7 / 6 : ℝ)
+      d t0 (-w0) 0 (by norm_num) (by norm_num) hd ht0
+    convert h using 1
+    funext p
+    rw [show (-w0) - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg,
+      show (0 : ℝ) - p = -p by ring, aux_scaledBracketBumpReal_neg]
+  have hg : Integrable g := by
+    convert hprod.const_mul (scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1)) using 1
+    funext p
+    dsimp [g]
+    ring
+  have hpoint (p : ℝ) : f p ≤ g p := by
+    have hup := aux_reduction_fixed_scaling_up t0 p ht0
+    have hleft : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hd
+    have hright : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ ht1
+    dsimp [f, g]
+    exact mul_le_mul_of_nonneg_right
+      (mul_le_mul_of_nonneg_left hup hleft) hright
+  have hint : (∫ p : ℝ, f p) ≤ ∫ p : ℝ, g p :=
+    integral_mono_of_nonneg (ae_of_all _ hfnon) hg (ae_of_all _ hpoint)
+  have htwo := aux_reduction_hzero_two_bump (-w0) 0 d t0 hd ht0
+  have htwo' : (∫ p : ℝ,
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 p) ≤
+      (2 : ℝ) ^ (6 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) w0 := by
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 p) =
+          ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d ((-w0) - p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t0 (0 - p) := by
+        apply integral_congr_ae
+        filter_upwards [] with p
+        rw [show (-w0) - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg,
+          show (0 : ℝ) - p = -p by ring, aux_scaledBracketBumpReal_neg]
+      _ ≤ (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) ((-w0) - 0) := htwo
+      _ = (2 : ℝ) ^ (6 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) w0 := by
+        rw [show (-w0) - 0 = -w0 by ring, aux_scaledBracketBumpReal_neg]
+  have hdown := aux_reduction_fixed_scaling_down (max d t0) (Real.sqrt 2 * w0)
+    (lt_max_of_lt_left hd)
+  have hdown' : scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) w0 ≤
+      2 * scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (Real.sqrt 2 * w0) := by
+    have harg : (Real.sqrt 2 * w0) / Real.sqrt 2 = w0 := by
+      field_simp [Real.sqrt_ne_zero'.mpr (by norm_num : (0 : ℝ) < 2)]
+    simpa [harg] using hdown
+  have hg_bound : (∫ p : ℝ, g p) ≤
+      ((2 : ℝ) ^ (6 : ℕ) *
+        (2 * scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (Real.sqrt 2 * w0))) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) := by
+    rw [show (∫ p : ℝ, g p) =
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) by
+      rw [integral_mul_const]]
+    calc
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) ≤
+          ((2 : ℝ) ^ (6 : ℕ) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) :=
+        mul_le_mul_of_nonneg_right htwo'
+          (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+      _ ≤ ((2 : ℝ) ^ (6 : ℕ) *
+          (2 * scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (Real.sqrt 2 * w0))) *
+            scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) := by
+        apply mul_le_mul_of_nonneg_right
+        apply mul_le_mul_of_nonneg_left hdown'
+        positivity
+        exact aux_scaledBracketBumpReal_nonneg _ _ _ ht1
+  dsimp [f] at hint
+  calc
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1)) = ∫ p : ℝ, f p := by rfl
+    _ ≤ ∫ p : ℝ, g p := hint
+    _ ≤ ((2 : ℝ) ^ (6 : ℕ) *
+        (2 * scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (Real.sqrt 2 * w0))) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) := hg_bound
+    _ = (2 : ℝ) ^ (7 : ℕ) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (max d t0) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) := by
+      ring
+
+/-- Continuity of a bracket bump, used for the height-zero integrability checks. -/
+private theorem aux_reduction_hzero_bump_continuous (N s : ℝ) :
+    Continuous (fun x : ℝ => scaledBracketBumpReal N s x) := by
+  unfold scaledBracketBumpReal
+  have hbase : Continuous (fun x : ℝ => 1 + |s⁻¹ * x|) := by fun_prop
+  apply continuous_const.mul
+  rw [continuous_iff_continuousAt]
+  intro x
+  exact hbase.continuousAt.rpow_const (Or.inl (by positivity))
+
+/-- Integrability of an orientation-zero height-zero three-bump majorant. -/
+private theorem aux_reduction_hzero_u0_integrable (d t0 t1 w0 w1 : ℝ)
+    (hd : 0 < d) (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) := by
+  have hprod : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) := by
+    have h := aux_reduction_hzero_product_integrable (7 / 6 : ℝ) (7 / 6 : ℝ)
+      d t0 (-w0) (-w1) (by norm_num) (by norm_num) hd ht0
+    convert h using 1
+    funext p
+    rw [show (-w0) - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg,
+      show (-w1) - p = -(w1 + p) by ring, aux_scaledBracketBumpReal_neg]
+  refine (hprod.const_mul t1⁻¹).mono' ?_ ?_
+  · apply Continuous.aestronglyMeasurable
+    have hdcont : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p)) :=
+      (aux_reduction_hzero_bump_continuous (7 / 6 : ℝ) d).comp
+        (continuous_const.add continuous_id)
+    have ht0cont : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) :=
+      (aux_reduction_hzero_bump_continuous (7 / 6 : ℝ) t0).comp
+        (continuous_const.add continuous_id)
+    have ht1cont : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p)) :=
+      (aux_reduction_hzero_bump_continuous (7 / 6 : ℝ) t1).comp
+        (continuous_const.sub continuous_id)
+    exact (hdcont.mul ht0cont).mul ht1cont
+  · filter_upwards [] with p
+    have hleft : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p) :=
+      mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hd)
+        (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+    have hright : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ ht1
+    have hle := aux_reduction_hzero_bump_le_inv (7 / 6 : ℝ) t1 (w1 - p)
+      (by norm_num) ht1
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hleft hright)]
+    calc
+      (scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (w1 - p) ≤
+        (scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) * t1⁻¹ :=
+        mul_le_mul_of_nonneg_left hle hleft
+      _ = t1⁻¹ * (scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (w1 + p)) := by ring
+
+/-- Integrability of an orientation-one height-zero three-bump majorant. -/
+private theorem aux_reduction_hzero_u1_integrable (d t0 t1 w0 w1 : ℝ)
+    (hd : 0 < d) (ht0 : 0 < t0) (ht1 : 0 < t1) :
+    Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1)) := by
+  have hprod : Integrable (fun p : ℝ =>
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 p) := by
+    have h := aux_reduction_hzero_product_integrable (7 / 6 : ℝ) (7 / 6 : ℝ)
+      d t0 (-w0) 0 (by norm_num) (by norm_num) hd ht0
+    convert h using 1
+    funext p
+    rw [show (-w0) - p = -(w0 + p) by ring, aux_scaledBracketBumpReal_neg,
+      show (0 : ℝ) - p = -p by ring, aux_scaledBracketBumpReal_neg]
+  refine (hprod.const_mul (t1⁻¹)).mono' ?_ ?_
+  · apply Continuous.aestronglyMeasurable
+    have hdcont : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p)) :=
+      (aux_reduction_hzero_bump_continuous (7 / 6 : ℝ) d).comp
+        (continuous_const.add continuous_id)
+    have ht0cont : Continuous (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p)) :=
+      (aux_reduction_hzero_bump_continuous (7 / 6 : ℝ) t0).comp
+        (continuous_const.mul continuous_id)
+    exact (hdcont.mul ht0cont).mul
+      (continuous_const : Continuous (fun _ : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1)))
+  · filter_upwards [] with p
+    have h0 : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ hd
+    have h1 : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ ht0
+    have h2 : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) :=
+      aux_scaledBracketBumpReal_nonneg _ _ _ ht1
+    have hsmall := aux_reduction_fixed_scaling_up t0 p ht0
+    have hinv := aux_reduction_hzero_bump_le_inv (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1)
+      (by norm_num) ht1
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (mul_nonneg h0 h1) h2)]
+    calc
+      scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) ≤
+        (scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t1 (Real.sqrt 2 * w1) := by
+        apply mul_le_mul_of_nonneg_right
+        apply mul_le_mul_of_nonneg_left hsmall h0
+        exact h2
+      _ ≤ (scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 p) * t1⁻¹ :=
+        mul_le_mul_of_nonneg_left hinv
+          (mul_nonneg h0 (aux_scaledBracketBumpReal_nonneg _ _ _ ht0))
+      _ = t1⁻¹ * (scaledBracketBumpReal (7 / 6 : ℝ) d (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) t0 p) := by ring
+
+/-- Expand the finite sum over the eight labeled bracket slots. -/
+private theorem aux_reduction_hzero_sum_fin8 (f : Fin 8 → ℝ) :
+    (∑ r : Fin 8, f r) =
+      f 0 + f 1 + f 2 + f 3 + f 4 + f 5 + f 6 + f 7 := by
+  simp [Fin.sum_univ_succ]
+  ring
+
+/-- Decode the eight height-zero slots for an orientation-zero input triple. -/
+private theorem aux_reduction_hzero_u0_slots (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ)
+    (hqu : q.orientation = 0) :
+    (∑ slot : Fin 8,
+      aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1)) =
+      scaledBracketBumpReal (7 / 6 : ℝ)
+          (max (D.a (j - 1)) (q.left j)) (w0 - w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w0 + w1) +
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w0 - w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ)
+          (max (D.a (j - 1)) (q.right j)) (w0 + w1) +
+      scaledBracketBumpReal (7 / 6 : ℝ)
+          (max (D.a (j - 1)) (q.left j)) (Real.sqrt 2 * w0) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+      scaledBracketBumpReal (7 / 6 : ℝ)
+          (max (D.a (j - 1)) (q.right j)) (Real.sqrt 2 * w0) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * w1) +
+      scaledBracketBumpReal (7 / 6 : ℝ)
+          (max (D.a j) (q.left j)) (w0 - w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w0 + w1) +
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w0 - w1) *
+        scaledBracketBumpReal (7 / 6 : ℝ)
+          (max (D.a j) (q.right j)) (w0 + w1) +
+      scaledBracketBumpReal (7 / 6 : ℝ)
+          (max (D.a j) (q.left j)) (Real.sqrt 2 * w0) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+      scaledBracketBumpReal (7 / 6 : ℝ)
+          (max (D.a j) (q.right j)) (Real.sqrt 2 * w0) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * w1) := by
+  rw [aux_reduction_hzero_sum_fin8]
+  have hW0 := aux_reduction_W_zero_coordinates w0 w1
+  have hW1 := aux_reduction_W_one_coordinates w0 w1
+  simp [aux_reductionBracketTerm, aux_reductionBracketScales,
+    aux_reductionBracketOrientation, aux_reductionBracketPrev,
+    aux_reductionBracketMax, hqu, hW0, hW1]
+
+/-- The two active orientation-one slots are bounded by the padded eight-slot sum. -/
+private theorem aux_reduction_hzero_u1_slots_le (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ)
+    (hqu : q.orientation = 1) :
+    scaledBracketBumpReal (7 / 6 : ℝ)
+        (max (D.a (j - 1)) (q.left j)) (Real.sqrt 2 * w0) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+    scaledBracketBumpReal (7 / 6 : ℝ)
+        (max (D.a j) (q.left j)) (Real.sqrt 2 * w0) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) ≤
+      ∑ slot : Fin 8,
+        aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) := by
+  have hleft : 0 < q.left j := q.left_spaced j |>.1
+  have hright : 0 < q.right j := q.right_spaced j |>.1
+  have hpad : 0 ≤ scaledBracketBumpReal (7 / 6 : ℝ) (q.left j)
+      (Real.sqrt 2 * w0) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) :=
+    mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ hleft)
+      (aux_scaledBracketBumpReal_nonneg _ _ _ hright)
+  rw [aux_reduction_hzero_sum_fin8]
+  have hW1 := aux_reduction_W_one_coordinates w0 w1
+  simp [aux_reductionBracketTerm, aux_reductionBracketScales,
+    aux_reductionBracketOrientation, aux_reductionBracketPrev,
+    aux_reductionBracketMax, hqu, hW1]
+  nlinarith
+
+/-- The two rho scales in orientation zero are controlled by the eight tagged slots. -/
+private theorem aux_reduction_hzero_u0_two_epsilon_slots (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ)
+    (hqu : q.orientation = 0) :
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p)) +
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p)) ≤
+      (2 : ℝ) ^ (9 : ℕ) *
+        ∑ slot : Fin 8,
+          aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) := by
+  have hd0 : 0 < D.a (j - 1) := D.a_spaced (j - 1) |>.1
+  have hd1 : 0 < D.a j := D.a_spaced j |>.1
+  have ht0 : 0 < q.left j := q.left_spaced j |>.1
+  have ht1 : 0 < q.right j := q.right_spaced j |>.1
+  have he0 := aux_reduction_hzero_u0_per_epsilon
+    (D.a (j - 1)) (q.left j) (q.right j) w0 w1 hd0 ht0 ht1
+  have he1 := aux_reduction_hzero_u0_per_epsilon
+    (D.a j) (q.left j) (q.right j) w0 w1 hd1 ht0 ht1
+  rw [aux_reduction_hzero_u0_slots D q j w0 w1 hqu]
+  calc
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p)) +
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p)) ≤
+        (2 : ℝ) ^ (9 : ℕ) *
+          (scaledBracketBumpReal (7 / 6 : ℝ)
+              (max (D.a (j - 1)) (q.left j)) (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ)
+                (max (D.a (j - 1)) (q.right j)) (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ)
+                (max (D.a (j - 1)) (q.left j)) (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ)
+                (max (D.a (j - 1)) (q.right j)) (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ)
+                (max (D.a j) (q.left j)) (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w0 - w1) *
+              scaledBracketBumpReal (7 / 6 : ℝ)
+                (max (D.a j) (q.right j)) (w0 + w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ)
+                (max (D.a j) (q.left j)) (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ)
+                (max (D.a j) (q.right j)) (Real.sqrt 2 * w0) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * w1)) := by
+      simpa [mul_add, add_assoc] using add_le_add he0 he1
+    _ = _ := by ring
+
+/-- The two rho scales in orientation one are controlled by the padded slots. -/
+private theorem aux_reduction_hzero_u1_two_epsilon_slots (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ)
+    (hqu : q.orientation = 1) :
+    (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) +
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) ≤
+      (2 : ℝ) ^ (9 : ℕ) *
+        ∑ slot : Fin 8,
+          aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) := by
+  have hd0 : 0 < D.a (j - 1) := D.a_spaced (j - 1) |>.1
+  have hd1 : 0 < D.a j := D.a_spaced j |>.1
+  have ht0 : 0 < q.left j := q.left_spaced j |>.1
+  have ht1 : 0 < q.right j := q.right_spaced j |>.1
+  have he0 := aux_reduction_hzero_u1_per_epsilon
+    (D.a (j - 1)) (q.left j) (q.right j) w0 w1 hd0 ht0 ht1
+  have he1 := aux_reduction_hzero_u1_per_epsilon
+    (D.a j) (q.left j) (q.right j) w0 w1 hd1 ht0 ht1
+  have hslots := aux_reduction_hzero_u1_slots_le D q j w0 w1 hqu
+  have hsum :
+      (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) +
+        (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) ≤
+        (2 : ℝ) ^ (7 : ℕ) *
+          (scaledBracketBumpReal (7 / 6 : ℝ)
+              (max (D.a (j - 1)) (q.left j)) (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+            scaledBracketBumpReal (7 / 6 : ℝ)
+              (max (D.a j) (q.left j)) (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) := by
+    calc
+      _ ≤ (2 : ℝ) ^ (7 : ℕ) *
+          scaledBracketBumpReal (7 / 6 : ℝ)
+            (max (D.a (j - 1)) (q.left j)) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+          (2 : ℝ) ^ (7 : ℕ) *
+            scaledBracketBumpReal (7 / 6 : ℝ)
+              (max (D.a j) (q.left j)) (Real.sqrt 2 * w0) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) :=
+        add_le_add he0 he1
+      _ = _ := by ring
+  calc
+    _ ≤ (2 : ℝ) ^ (7 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ)
+            (max (D.a (j - 1)) (q.left j)) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ)
+            (max (D.a j) (q.left j)) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) := hsum
+    _ ≤ (2 : ℝ) ^ (9 : ℕ) *
+        (scaledBracketBumpReal (7 / 6 : ℝ)
+            (max (D.a (j - 1)) (q.left j)) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ)
+            (max (D.a j) (q.left j)) (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) := by
+      apply mul_le_mul_of_nonneg_right
+      · norm_num
+      · exact add_nonneg
+          (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ (lt_max_of_lt_left hd0))
+            (aux_scaledBracketBumpReal_nonneg _ _ _ ht1))
+          (mul_nonneg (aux_scaledBracketBumpReal_nonneg _ _ _ (lt_max_of_lt_left hd1))
+            (aux_scaledBracketBumpReal_nonneg _ _ _ ht1))
+    _ ≤ (2 : ℝ) ^ (9 : ℕ) *
+        ∑ slot : Fin 8,
+          aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) :=
+      mul_le_mul_of_nonneg_left hslots (by positivity)
+
+/-- The reduced-exponent integrand associated to one height-zero kernel triple. -/
+private noncomputable def aux_reduction_hzero_integrand (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 p : ℝ) : ℝ :=
+  if q.orientation = 0 then
+    scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p) +
+      scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p)
+  else
+    scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+      scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)
+
+/-- The kernel part of a height-zero reduced-exponent integrand. -/
+private noncomputable def aux_reduction_hzero_kernel_factor
+    (q : ReductionScaleTriple a) (j : ℤ) (w1 p : ℝ) : ℝ :=
+  if q.orientation = 0 then
+    scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p)
+  else
+    scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+      scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)
+
+/-- Factor the height-zero integrand into the rho and kernel contributions. -/
+private theorem aux_reduction_hzero_integrand_factor (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 p : ℝ) :
+    aux_reduction_hzero_integrand D q j w0 w1 p =
+      (scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) +
+        scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p)) *
+        aux_reduction_hzero_kernel_factor q j w1 p := by
+  by_cases hq : q.orientation = 0 <;>
+    simp [aux_reduction_hzero_integrand, aux_reduction_hzero_kernel_factor, hq] <;>
+    ring
+
+/-- Lower the kernel bracket exponents in the exact height-zero coordinates. -/
+private theorem aux_reduction_hzero_kernel_factor_bound
+    (q : ReductionScaleTriple a) (j : ℤ) (w1 p : ℝ) :
+    scaledBracketBumpReal (3 / 2 : ℝ) (q.left j)
+        ((W q.orientation (-w1 - p, w1 - p)).1) *
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.right j)
+        ((W q.orientation (-w1 - p, w1 - p)).2) ≤
+      aux_reduction_hzero_kernel_factor q j w1 p := by
+  have ht0 : 0 < q.left j := q.left_spaced j |>.1
+  have ht1 : 0 < q.right j := q.right_spaced j |>.1
+  by_cases hq : q.orientation = 0
+  · rw [show W q.orientation (-w1 - p, w1 - p) = (-w1 - p, w1 - p) by
+      rw [hq]
+      simp [W], aux_reduction_hzero_kernel_factor, if_pos hq]
+    have h0 := aux_scaledBracketBumpReal_exponent_reduce
+      (7 / 6 : ℝ) (3 / 2 : ℝ) (q.left j) (-w1 - p) ht0 (by norm_num)
+    have h1 := aux_scaledBracketBumpReal_exponent_reduce
+      (7 / 6 : ℝ) (3 / 2 : ℝ) (q.right j) (w1 - p) ht1 (by norm_num)
+    calc
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) (-w1 - p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) (w1 - p) ≤
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (-w1 - p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p) :=
+        mul_le_mul h0 h1
+          (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+          (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+      _ = scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p) := by
+        rw [show -w1 - p = -(w1 + p) by ring, aux_scaledBracketBumpReal_neg]
+  · have hq1 : q.orientation = 1 := by omega
+    rw [show W q.orientation (-w1 - p, w1 - p) =
+        (-Real.sqrt 2 * p, Real.sqrt 2 * w1) by
+      rw [hq1]
+      calc
+        W 1 (-w1 - p, w1 - p) = W 1 ((-p) - w1, (-p) + w1) := by
+          congr 1 <;> ring
+        _ = (Real.sqrt 2 * (-p), Real.sqrt 2 * w1) :=
+          aux_reduction_W_one_coordinates (-p) w1
+        _ = (-Real.sqrt 2 * p, Real.sqrt 2 * w1) := by
+          congr 1 <;> ring,
+      aux_reduction_hzero_kernel_factor, if_neg hq]
+    have h0 := aux_scaledBracketBumpReal_exponent_reduce
+      (7 / 6 : ℝ) (3 / 2 : ℝ) (q.left j) (-Real.sqrt 2 * p) ht0 (by norm_num)
+    have h1 := aux_scaledBracketBumpReal_exponent_reduce
+      (7 / 6 : ℝ) (3 / 2 : ℝ) (q.right j) (Real.sqrt 2 * w1) ht1 (by norm_num)
+    calc
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) (-Real.sqrt 2 * p) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) (Real.sqrt 2 * w1) ≤
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (-Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) :=
+        mul_le_mul h0 h1
+          (aux_scaledBracketBumpReal_nonneg _ _ _ ht1)
+          (aux_scaledBracketBumpReal_nonneg _ _ _ ht0)
+      _ = scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) := by
+        rw [show -Real.sqrt 2 * p = -(Real.sqrt 2 * p) by ring,
+          aux_scaledBracketBumpReal_neg]
+
+/-- Each height-zero reduced-exponent integrand is integrable. -/
+private theorem aux_reduction_hzero_integrand_integrable (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ) :
+    Integrable (fun p : ℝ => aux_reduction_hzero_integrand D q j w0 w1 p) := by
+  have hd0 : 0 < D.a (j - 1) := D.a_spaced (j - 1) |>.1
+  have hd1 : 0 < D.a j := D.a_spaced j |>.1
+  have ht0 : 0 < q.left j := q.left_spaced j |>.1
+  have ht1 : 0 < q.right j := q.right_spaced j |>.1
+  by_cases hq : q.orientation = 0
+  · rw [show (fun p : ℝ => aux_reduction_hzero_integrand D q j w0 w1 p) =
+      fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p) +
+          scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p) by
+      funext p
+      simp [aux_reduction_hzero_integrand, hq]]
+    exact (aux_reduction_hzero_u0_integrable (D.a (j - 1)) (q.left j) (q.right j)
+      w0 w1 hd0 ht0 ht1).add
+        (aux_reduction_hzero_u0_integrable (D.a j) (q.left j) (q.right j)
+          w0 w1 hd1 ht0 ht1)
+  · rw [show (fun p : ℝ => aux_reduction_hzero_integrand D q j w0 w1 p) =
+      fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) by
+      funext p
+      simp [aux_reduction_hzero_integrand, hq]]
+    exact (aux_reduction_hzero_u1_integrable (D.a (j - 1)) (q.left j) (q.right j)
+      w0 w1 hd0 ht0 ht1).add
+        (aux_reduction_hzero_u1_integrable (D.a j) (q.left j) (q.right j)
+          w0 w1 hd1 ht0 ht1)
+
+/-- Integrate one height-zero integrand and charge it to its labeled slots. -/
+private theorem aux_reduction_hzero_integrand_integral_slots (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ) :
+    (∫ p : ℝ, aux_reduction_hzero_integrand D q j w0 w1 p) ≤
+      (2 : ℝ) ^ (9 : ℕ) *
+        ∑ slot : Fin 8,
+          aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) := by
+  have hd0 : 0 < D.a (j - 1) := D.a_spaced (j - 1) |>.1
+  have hd1 : 0 < D.a j := D.a_spaced j |>.1
+  have ht0 : 0 < q.left j := q.left_spaced j |>.1
+  have ht1 : 0 < q.right j := q.right_spaced j |>.1
+  by_cases hq : q.orientation = 0
+  · have h0 := aux_reduction_hzero_u0_integrable (D.a (j - 1)) (q.left j) (q.right j)
+      w0 w1 hd0 ht0 ht1
+    have h1 := aux_reduction_hzero_u0_integrable (D.a j) (q.left j) (q.right j)
+      w0 w1 hd1 ht0 ht1
+    rw [show (fun p : ℝ => aux_reduction_hzero_integrand D q j w0 w1 p) =
+      fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p) +
+          scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p) by
+      funext p
+      simp [aux_reduction_hzero_integrand, hq], integral_add h0 h1]
+    exact aux_reduction_hzero_u0_two_epsilon_slots D q j w0 w1 hq
+  · have hq1 : q.orientation = 1 := by
+      omega
+    have h0 := aux_reduction_hzero_u1_integrable (D.a (j - 1)) (q.left j) (q.right j)
+      w0 w1 hd0 ht0 ht1
+    have h1 := aux_reduction_hzero_u1_integrable (D.a j) (q.left j) (q.right j)
+      w0 w1 hd1 ht0 ht1
+    rw [show (fun p : ℝ => aux_reduction_hzero_integrand D q j w0 w1 p) =
+      fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+          scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) by
+      funext p
+      simp [aux_reduction_hzero_integrand, hq], integral_add h0 h1]
+    exact aux_reduction_hzero_u1_two_epsilon_slots D q j w0 w1 hq1
+
+/-- The finite sum of height-zero integrands is integrable. -/
+private theorem aux_reduction_hzero_sum_integrable (D : ReductionData)
+    (j : ℤ) (w0 w1 : ℝ) :
+    Integrable (fun p : ℝ => ∑ q ∈ D.triples,
+      aux_reduction_hzero_integrand D q j w0 w1 p) := by
+  exact aux_reduction_integrable_finset_sum D.triples
+    (fun q p => aux_reduction_hzero_integrand D q j w0 w1 p)
+    (fun q _ => aux_reduction_hzero_integrand_integrable D q j w0 w1)
+
+/-- The finite sum of height-zero integrands is controlled by all slot products. -/
+private theorem aux_reduction_hzero_sum_integral_slots (D : ReductionData)
+    (j : ℤ) (w0 w1 : ℝ) :
+    (∫ p : ℝ, ∑ q ∈ D.triples,
+      aux_reduction_hzero_integrand D q j w0 w1 p) ≤
+      (2 : ℝ) ^ (9 : ℕ) *
+        ∑ q ∈ D.triples, ∑ slot : Fin 8,
+          aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) := by
+  rw [MeasureTheory.integral_finset_sum]
+  · calc
+      (∑ q ∈ D.triples, ∫ p : ℝ,
+        aux_reduction_hzero_integrand D q j w0 w1 p) ≤
+          ∑ q ∈ D.triples, (2 : ℝ) ^ (9 : ℕ) *
+            ∑ slot : Fin 8,
+              aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) := by
+        apply Finset.sum_le_sum
+        intro q hq
+        exact aux_reduction_hzero_integrand_integral_slots D q j w0 w1
+      _ = (2 : ℝ) ^ (9 : ℕ) *
+          ∑ q ∈ D.triples, ∑ slot : Fin 8,
+            aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) := by
+        rw [Finset.mul_sum]
+  · intro q _
+    exact aux_reduction_hzero_integrand_integrable D q j w0 w1
+
+/-- Nonnegativity of the reduction rho constant for the height-zero wrapper. -/
+private theorem aux_reduction_hzero_Crho_nonneg : 0 ≤ C_rhoKernelsReduction := by
+  unfold C_rhoKernelsReduction
+  exact mul_nonneg (by positivity)
+    (add_nonneg (aux_rho_cmean_nonneg 2) (aux_rho_cfour_nonneg 2))
+
+/-- Pointwise height-zero reduction to the finite integrable majorant. -/
+private theorem aux_reduction_hzero_pointwise {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (j : ℤ) (w0 w1 p : ℝ) :
+    |rhoKernel n D.a 0 j (w0 + p) * D.kernel j (-w1 - p, w1 - p)| ≤
+      C_rhoKernelsReduction * ∑ q ∈ D.triples,
+        aux_reduction_hzero_integrand D q j w0 w1 p := by
+  let A2 : ℝ :=
+    scaledBracketBumpReal 2 (D.a (j - 1)) (w0 + p) +
+      scaledBracketBumpReal 2 (D.a j) (w0 + p)
+  let A : ℝ :=
+    scaledBracketBumpReal (7 / 6 : ℝ) (D.a (j - 1)) (w0 + p) +
+      scaledBracketBumpReal (7 / 6 : ℝ) (D.a j) (w0 + p)
+  let K : ℝ := ∑ q ∈ D.triples,
+    scaledBracketBumpReal (3 / 2 : ℝ) (q.left j)
+        ((W q.orientation (-w1 - p, w1 - p)).1) *
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.right j)
+        ((W q.orientation (-w1 - p, w1 - p)).2)
+  let L : ℝ := ∑ q ∈ D.triples,
+    aux_reduction_hzero_kernel_factor q j w1 p
+  let F : ℝ := ∑ q ∈ D.triples,
+    aux_reduction_hzero_integrand D q j w0 w1 p
+  have hrhoRaw := (rhoKernelsReduction hn D.a D.a_spaced 0 j).2.2 (w0 + p)
+  have hrho : |rhoKernel n D.a 0 j (w0 + p)| ≤ C_rhoKernelsReduction * A2 := by
+    simpa [A, A2, rhoLowerScale, rhoUpperScale] using hrhoRaw
+  have hkernelRaw := D.kernel_decay j (-w1 - p, w1 - p)
+  have hkernel : |D.kernel j (-w1 - p, w1 - p)| ≤ K := by
+    simpa [K] using hkernelRaw
+  have hC : 0 ≤ C_rhoKernelsReduction := aux_reduction_hzero_Crho_nonneg
+  have hA2non : 0 ≤ A2 := by
+    dsimp [A2]
+    exact add_nonneg
+      (aux_scaledBracketBumpReal_nonneg _ _ _ (D.a_spaced (j - 1) |>.1))
+      (aux_scaledBracketBumpReal_nonneg _ _ _ (D.a_spaced j |>.1))
+  have hAnon : 0 ≤ A := by
+    dsimp [A]
+    exact add_nonneg
+      (aux_scaledBracketBumpReal_nonneg _ _ _ (D.a_spaced (j - 1) |>.1))
+      (aux_scaledBracketBumpReal_nonneg _ _ _ (D.a_spaced j |>.1))
+  have hKnon : 0 ≤ K := by
+    dsimp [K]
+    apply Finset.sum_nonneg
+    intro q hq
+    exact mul_nonneg
+      (aux_scaledBracketBumpReal_nonneg _ _ _ (q.left_spaced j |>.1))
+      (aux_scaledBracketBumpReal_nonneg _ _ _ (q.right_spaced j |>.1))
+  have hA : A2 ≤ A := by
+    dsimp [A2, A]
+    apply add_le_add
+    · exact aux_scaledBracketBumpReal_exponent_reduce (7 / 6 : ℝ) 2
+        (D.a (j - 1)) (w0 + p) (D.a_spaced (j - 1) |>.1) (by norm_num)
+    · exact aux_scaledBracketBumpReal_exponent_reduce (7 / 6 : ℝ) 2
+        (D.a j) (w0 + p) (D.a_spaced j |>.1) (by norm_num)
+  have hK : K ≤ L := by
+    dsimp [K, L]
+    apply Finset.sum_le_sum
+    intro q hq
+    exact aux_reduction_hzero_kernel_factor_bound q j w1 p
+  have hF : F = A * L := by
+    calc
+      F = ∑ q ∈ D.triples,
+          A * aux_reduction_hzero_kernel_factor q j w1 p := by
+        dsimp [F]
+        apply Finset.sum_congr rfl
+        intro q hq
+        rw [aux_reduction_hzero_integrand_factor]
+      _ = A * L := by
+        dsimp [L]
+        rw [Finset.mul_sum]
+  have hraw : |rhoKernel n D.a 0 j (w0 + p) * D.kernel j (-w1 - p, w1 - p)| ≤
+      (C_rhoKernelsReduction * A2) * K := by
+    rw [abs_mul]
+    exact mul_le_mul hrho hkernel (abs_nonneg _) (mul_nonneg hC hA2non)
+  calc
+    |rhoKernel n D.a 0 j (w0 + p) * D.kernel j (-w1 - p, w1 - p)| ≤
+        (C_rhoKernelsReduction * A2) * K := hraw
+    _ = (C_rhoKernelsReduction * K) * A2 := by ring
+    _ ≤ (C_rhoKernelsReduction * K) * A :=
+      mul_le_mul_of_nonneg_left hA (mul_nonneg hC hKnon)
+    _ = (C_rhoKernelsReduction * A) * K := by ring
+    _ ≤ (C_rhoKernelsReduction * A) * L :=
+      mul_le_mul_of_nonneg_left hK (mul_nonneg hC hAnon)
+    _ = C_rhoKernelsReduction * F := by rw [hF]; ring
+    _ = C_rhoKernelsReduction * ∑ q ∈ D.triples,
+        aux_reduction_hzero_integrand D q j w0 w1 p := by rfl
+
+/-- The raw diagonal coordinate change used by the height-zero wrapper. -/
+private theorem aux_reduction_hzero_coordinate_change {n : ℕ} (D : ReductionData)
+    (j : ℤ) (w0 w1 : ℝ) :
+    reductionNKernel n D 0 j (w0 - w1, w0 + w1) =
+      ∫ p : ℝ, rhoKernel n D.a 0 j (w0 + p) *
+        D.kernel j (-w1 - p, w1 - p) := by
+  let f : ℝ → ℝ := fun x =>
+    D.kernel j (w0 - w1 - x, w0 + w1 - x) * rhoKernel n D.a 0 j x
+  calc
+    reductionNKernel n D 0 j (w0 - w1, w0 + w1) = ∫ x : ℝ, f x := by
+      rfl
+    _ = ∫ p : ℝ, f (p + w0) := (integral_add_right_eq_self f w0).symm
+    _ = ∫ p : ℝ, rhoKernel n D.a 0 j (w0 + p) *
+        D.kernel j (-w1 - p, w1 - p) := by
+      apply integral_congr_ae
+      filter_upwards [] with p
+      dsimp [f]
+      ring
+
+/-- The analytic tagged-slot majorant at height zero. -/
+private theorem aux_reductionBracket_zero_majorant {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (j : ℤ) (v : RealPlane) :
+    |reductionNKernel n D 0 j v| ≤
+      C_increaseDataBracketDomination * Real.rpow 2 (-(0 : ℝ) / 3) *
+        ∑ q ∈ D.triples, ∑ slot : Fin 8,
+          aux_reductionBracketTerm D 0 (q, slot) j v := by
+  let w0 : ℝ := (v.1 + v.2) / 2
+  let w1 : ℝ := (v.2 - v.1) / 2
+  have hv : v = (w0 - w1, w0 + w1) := by
+    rcases v with ⟨v0, v1⟩
+    ext <;> dsimp [w0, w1] <;> ring
+  rw [hv, aux_reduction_hzero_coordinate_change D j w0 w1]
+  let F : ℝ → ℝ := fun p => ∑ q ∈ D.triples,
+    aux_reduction_hzero_integrand D q j w0 w1 p
+  let T : ℝ := ∑ q ∈ D.triples, ∑ slot : Fin 8,
+    aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1)
+  have hFint : Integrable F := by
+    dsimp [F]
+    exact aux_reduction_hzero_sum_integrable D j w0 w1
+  have hC : 0 ≤ C_rhoKernelsReduction := aux_reduction_hzero_Crho_nonneg
+  have hpoint (p : ℝ) :
+      |rhoKernel n D.a 0 j (w0 + p) * D.kernel j (-w1 - p, w1 - p)| ≤
+        C_rhoKernelsReduction * F p := by
+    dsimp [F]
+    exact aux_reduction_hzero_pointwise hn D j w0 w1 p
+  have hmono : (∫ p : ℝ,
+      |rhoKernel n D.a 0 j (w0 + p) * D.kernel j (-w1 - p, w1 - p)|) ≤
+      ∫ p : ℝ, C_rhoKernelsReduction * F p := by
+    exact integral_mono_of_nonneg
+      (ae_of_all _ (fun p => abs_nonneg _))
+      (hFint.const_mul C_rhoKernelsReduction) (ae_of_all _ hpoint)
+  have hslots : (∫ p : ℝ, F p) ≤ (2 : ℝ) ^ (9 : ℕ) * T := by
+    dsimp [F, T]
+    exact aux_reduction_hzero_sum_integral_slots D j w0 w1
+  have hTnon : 0 ≤ T := by
+    dsimp [T]
+    apply Finset.sum_nonneg
+    intro q hq
+    apply Finset.sum_nonneg
+    intro slot hslot
+    exact aux_reductionBracketTerm_nonneg D 0 (q, slot) j (w0 - w1, w0 + w1)
+  have hscaled : C_rhoKernelsReduction * ((2 : ℝ) ^ (9 : ℕ) * T) ≤
+      C_increaseDataBracketDomination * Real.rpow 2 (-(0 : ℝ) / 3) * T := by
+    have hrpow : Real.rpow 2 (-(0 : ℝ) / 3) = 1 := by norm_num
+    rw [C_increaseDataBracketDomination, hrpow]
+    calc
+      C_rhoKernelsReduction * ((2 : ℝ) ^ (9 : ℕ) * T) =
+          (C_rhoKernelsReduction * (2 : ℝ) ^ (9 : ℕ)) * T := by ring
+      _ ≤ ((2 : ℝ) ^ (10 : ℕ) * C_rhoKernelsReduction) * T := by
+        apply mul_le_mul_of_nonneg_right
+        calc
+          C_rhoKernelsReduction * (2 : ℝ) ^ (9 : ℕ) ≤
+              C_rhoKernelsReduction * (2 : ℝ) ^ (10 : ℕ) :=
+            mul_le_mul_of_nonneg_left (by norm_num) hC
+          _ = (2 : ℝ) ^ (10 : ℕ) * C_rhoKernelsReduction := by ring
+        exact hTnon
+      _ = ((2 : ℝ) ^ (10 : ℕ) * C_rhoKernelsReduction) * 1 * T := by ring
+  calc
+    |∫ p : ℝ, rhoKernel n D.a 0 j (w0 + p) * D.kernel j (-w1 - p, w1 - p)| ≤
+        ∫ p : ℝ,
+          |rhoKernel n D.a 0 j (w0 + p) * D.kernel j (-w1 - p, w1 - p)| :=
+      abs_integral_le_integral_abs
+    _ ≤ ∫ p : ℝ, C_rhoKernelsReduction * F p := hmono
+    _ = C_rhoKernelsReduction * (∫ p : ℝ, F p) := by rw [integral_const_mul]
+    _ ≤ C_rhoKernelsReduction * ((2 : ℝ) ^ (9 : ℕ) * T) :=
+      mul_le_mul_of_nonneg_left hslots hC
+    _ ≤ C_increaseDataBracketDomination * Real.rpow 2 (-(0 : ℝ) / 3) * T := hscaled
+    _ = C_increaseDataBracketDomination * Real.rpow 2 (-(0 : ℝ) / 3) *
+        ∑ q ∈ D.triples, ∑ slot : Fin 8,
+          aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) := by rfl
+
+/-- The positive-height analytic bracket majorant.  Diagonal cancellation,
+the rho mean-difference gain, and the tagged positive-height slot table give
+the exact `2^{-h/3}` bound used to build the reduction witness. -/
+private theorem aux_reductionBracket_positive_majorant {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (h : ℕ) (hh : 1 ≤ h) (j : ℤ) (v : RealPlane) :
+    |reductionNKernel n D h j v| ≤
+      C_increaseDataBracketDomination * Real.rpow 2 (-(h : ℝ) / 3) *
+        ∑ q ∈ D.triples, ∑ slot : Fin 8,
+          aux_reductionBracketTerm D h (q, slot) j v := by
+  classical
+  let w0 : ℝ := (v.1 + v.2) / 2
+  let w1 : ℝ := (v.2 - v.1) / 2
+  have hv : v = (w0 - w1, w0 + w1) := by
+    rcases v with ⟨v0, v1⟩
+    ext <;> dsimp [w0, w1] <;> ring
+  rw [hv, aux_reductionNKernel_caseOne_cancellation hn D h j w0 w1]
+  let lam : ℝ := (2 : ℝ) ^ h * D.a j
+  let r : ℝ := Real.rpow 2 (-((h : ℝ) / 3))
+  let c : ℝ := C_rhoKernelsReduction * (2 * r)
+  let P : ReductionScaleTriple D.a → ℝ → ℝ := fun q p =>
+    if q.orientation = 0 then
+      (scaledBracketBumpReal (7 / 6 : ℝ) lam w0 +
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w1 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w1 - p)
+    else
+      (scaledBracketBumpReal (7 / 6 : ℝ) lam w0 +
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p)) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)
+  let H : ℝ → ℝ := fun p =>
+    |rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0| *
+      |D.kernel j (-w1 - p, w1 - p)|
+  let T : ℝ := ∑ q ∈ D.triples, ∑ slot : Fin 8,
+    aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1)
+  have hbase : 0 < D.a j := (D.a_spaced j).1
+  have hlam : 0 < lam := by
+    dsimp [lam]
+    exact mul_pos (by positivity) hbase
+  have hr : 0 ≤ r := by
+    dsimp [r]
+    positivity
+  have hC : 0 ≤ C_rhoKernelsReduction := aux_reduction_Crho_nonneg
+  have hc : 0 ≤ c := mul_nonneg hC (mul_nonneg (by norm_num) hr)
+  have hscaleLeft (q : ReductionScaleTriple D.a) : q.left j ≤ lam := by
+    calc
+      q.left j ≤ D.a j := q.left_le_base j
+      _ ≤ (2 : ℝ) ^ h * D.a j := by
+        have hp : 1 ≤ (2 : ℝ) ^ h := one_le_pow₀ (by norm_num)
+        nlinarith [mul_le_mul_of_nonneg_right hp hbase.le]
+  have hscaleRight (q : ReductionScaleTriple D.a) : q.right j ≤ lam := by
+    calc
+      q.right j ≤ D.a j := q.right_le_base j
+      _ ≤ (2 : ℝ) ^ h * D.a j := by
+        have hp : 1 ≤ (2 : ℝ) ^ h := one_le_pow₀ (by norm_num)
+        nlinarith [mul_le_mul_of_nonneg_right hp hbase.le]
+  have hPint (q : ReductionScaleTriple D.a) (_hq : q ∈ D.triples) : Integrable (P q) := by
+    have ht0 : 0 < q.left j := q.left_spaced j |>.1
+    have ht1 : 0 < q.right j := q.right_spaced j |>.1
+    by_cases hu : q.orientation = 0
+    · simpa [P, hu] using
+        aux_reduction_orientation_zero_total_integrable w0 w1 lam (q.left j) (q.right j)
+          hlam ht0 ht1
+    · simpa [P, hu] using
+        aux_reduction_orientation_one_total_integrable w0 w1 lam (q.left j) (q.right j)
+          hlam ht0 ht1
+  have hHnon (p : ℝ) : 0 ≤ H p := by
+    dsimp [H]
+    exact mul_nonneg (abs_nonneg _) (abs_nonneg _)
+  have hocc (q : ReductionScaleTriple D.a) (hq : q ∈ D.triples) (p : ℝ) :
+      |rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0| *
+        (scaledBracketBumpReal (3 / 2 : ℝ) (q.left j)
+            ((W q.orientation (-w1 - p, w1 - p)).1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (q.right j)
+            ((W q.orientation (-w1 - p, w1 - p)).2)) ≤
+        c * P q p := by
+    by_cases hu : q.orientation = 0
+    · simpa [c, P, lam, r, hu] using
+        aux_reduction_occurrence_zero_pointwise hn D h hh q j w0 w1 p hu
+    · have hu1 : q.orientation = 1 := by
+        omega
+      simpa [c, P, lam, r, hu] using
+        aux_reduction_occurrence_one_pointwise hn D h hh q j w0 w1 p hu1
+  have hbound (p : ℝ) : H p ≤ c * ∑ q ∈ D.triples, P q p := by
+    have hdecay := D.kernel_decay j (-w1 - p, w1 - p)
+    have hmul := mul_le_mul_of_nonneg_left hdecay
+      (abs_nonneg (rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0))
+    dsimp [H]
+    calc
+      |rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0| *
+          |D.kernel j (-w1 - p, w1 - p)| ≤
+          |rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0| *
+            ∑ q ∈ D.triples,
+              scaledBracketBumpReal (3 / 2 : ℝ) (q.left j)
+                ((W q.orientation (-w1 - p, w1 - p)).1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (q.right j)
+                ((W q.orientation (-w1 - p, w1 - p)).2) := hmul
+      _ = ∑ q ∈ D.triples,
+          |rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0| *
+            (scaledBracketBumpReal (3 / 2 : ℝ) (q.left j)
+                ((W q.orientation (-w1 - p, w1 - p)).1) *
+              scaledBracketBumpReal (3 / 2 : ℝ) (q.right j)
+                ((W q.orientation (-w1 - p, w1 - p)).2)) := by
+          rw [Finset.mul_sum]
+      _ ≤ ∑ q ∈ D.triples, c * P q p := by
+          apply Finset.sum_le_sum
+          intro q hq
+          exact hocc q hq p
+      _ = c * ∑ q ∈ D.triples, P q p := (Finset.mul_sum _ _ _).symm
+  have hbridge := aux_reduction_finite_integral_bridge D.triples c
+    (fun _ : ℝ => 1) H P hc (fun _ => by norm_num) hHnon hbound
+    (fun q hq => by simpa using hPint q hq)
+  have hmain : (∫ p : ℝ, H p) ≤ c * ∑ q ∈ D.triples, ∫ p : ℝ, P q p := by
+    simpa using hbridge
+  have hslot (q : ReductionScaleTriple D.a) (hq : q ∈ D.triples) :
+      (∫ p : ℝ, P q p) ≤ (2 : ℝ) ^ (9 : ℕ) *
+        ∑ slot : Fin 8,
+          aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1) := by
+    have ht0 : 0 < q.left j := q.left_spaced j |>.1
+    have ht1 : 0 < q.right j := q.right_spaced j |>.1
+    have hh0 : h ≠ 0 := Nat.ne_of_gt hh
+    by_cases hu : q.orientation = 0
+    · have hI := aux_reduction_orientation_zero_total_integral_bound w0 w1 lam
+        (q.left j) (q.right j) hlam ht0 ht1 (hscaleLeft q) (hscaleRight q)
+      have hactive := aux_reductionBracket_positive_slots_u0 D h q j w0 w1 hh0 hu
+      calc
+        (∫ p : ℝ, P q p) ≤ (2 : ℝ) ^ (9 : ℕ) *
+            (scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+                scaledBracketBumpReal (7 / 6 : ℝ) (max (q.left j) (q.right j))
+                  (Real.sqrt 2 * w1) +
+              scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
+                scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (w0 + w1) +
+              scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (w0 - w1) *
+                scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) +
+              scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+                scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+              scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+                scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * w1)) := by
+          simpa [P, hu] using hI
+        _ ≤ (2 : ℝ) ^ (9 : ℕ) *
+            ∑ slot : Fin 8,
+              aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1) :=
+          mul_le_mul_of_nonneg_left (by simpa [lam, aux_reductionBracketLambda] using hactive)
+            (by positivity)
+    · have hu1 : q.orientation = 1 := by
+        omega
+      let S : ℝ :=
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)
+      have h0int := aux_reduction_orientation_one_alpha_zero_integrable w0 w1 lam
+        (q.left j) (q.right j) hlam ht0 ht1
+      have h1int := aux_reduction_orientation_one_alpha_one_integrable w0 w1 lam
+        (q.left j) (q.right j) hlam ht0 ht1
+      have hI0 := aux_reduction_orientation_one_alpha_zero w0 w1 lam
+        (q.left j) (q.right j) hlam ht0 ht1
+      have hI1 := aux_reduction_orientation_one_alpha_one w0 w1 lam
+        (q.left j) (q.right j) hlam ht0 ht1 (hscaleLeft q)
+      have hactive := aux_reductionBracket_positive_slots_u1 D h q j w0 w1 hh0 hu1
+      rw [show P q = (fun p : ℝ =>
+        scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) +
+        scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) by
+          funext p
+          simp [P, hu]
+          ring]
+      rw [integral_add h0int h1int]
+      calc
+        (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam w0 *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1)) +
+          ∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + p) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (q.left j) (Real.sqrt 2 * p) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (q.right j) (Real.sqrt 2 * w1) ≤
+            (2 : ℝ) ^ (9 : ℕ) * S + (2 : ℝ) ^ (9 : ℕ) * S := by
+              simpa only [S, mul_assoc] using add_le_add hI0 hI1
+        _ = (2 : ℝ) ^ (9 : ℕ) * (S + S) := by ring
+        _ ≤ (2 : ℝ) ^ (9 : ℕ) *
+            ∑ slot : Fin 8,
+              aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1) :=
+          mul_le_mul_of_nonneg_left (by simpa [S, lam, aux_reductionBracketLambda] using hactive)
+            (by positivity)
+  have hsum : (∑ q ∈ D.triples, ∫ p : ℝ, P q p) ≤ (2 : ℝ) ^ (9 : ℕ) * T := by
+    calc
+      (∑ q ∈ D.triples, ∫ p : ℝ, P q p) ≤
+          ∑ q ∈ D.triples, (2 : ℝ) ^ (9 : ℕ) *
+            ∑ slot : Fin 8,
+              aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1) := by
+        apply Finset.sum_le_sum
+        intro q hq
+        exact hslot q hq
+      _ = (2 : ℝ) ^ (9 : ℕ) * T := by
+        dsimp [T]
+        rw [Finset.mul_sum]
+  calc
+    |∫ p : ℝ, (rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0) *
+        D.kernel j (-w1 - p, w1 - p)| ≤
+        ∫ p : ℝ, |(rhoKernel n D.a h j (w0 + p) - rhoKernel n D.a h j w0) *
+          D.kernel j (-w1 - p, w1 - p)| := abs_integral_le_integral_abs
+    _ = ∫ p : ℝ, H p := by
+      apply integral_congr_ae
+      filter_upwards [] with p
+      simp [H, abs_mul]
+    _ ≤ c * ∑ q ∈ D.triples, ∫ p : ℝ, P q p := hmain
+    _ ≤ c * ((2 : ℝ) ^ (9 : ℕ) * T) := mul_le_mul_of_nonneg_left hsum hc
+    _ = C_increaseDataBracketDomination * r * T := by
+      dsimp [c]
+      rw [C_increaseDataBracketDomination]
+      norm_num
+      ring
+    _ = C_increaseDataBracketDomination * Real.rpow 2 (-(h : ℝ) / 3) *
+        ∑ q ∈ D.triples, ∑ slot : Fin 8,
+          aux_reductionBracketTerm D h (q, slot) j (w0 - w1, w0 + w1) := by
+      dsimp [r, T]
+      have hneg : -(h : ℝ) / 3 = -((h : ℝ) / 3) := by ring
+      rw [hneg]
+
+/-- A labeled finite family witnessing the conclusion of
+`\ref{lem:increase-data-bracket-domination}`.  The labels are kept separate
+from their decoded orientations and scale pairs so that coincident generated
+bracket products retain their multiplicities, exactly as in the manuscript. -/
+structure aux_ReductionBracketDominationWitness {n : ℕ} (D : ReductionData)
+    (h : ℕ) where
+  B : Finset (ReductionScaleTriple D.a × Fin 8)
+  card_le : B.card ≤ C_increaseDataBracketDominationCard
+  orientation : ReductionScaleTriple D.a × Fin 8 → Fin 2
+  scales : ReductionScaleTriple D.a × Fin 8 → SequencePair
+  scales_in_A : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (scales b r)
+  base_distance : ∀ b ∈ B, ∀ r : Fin 2,
+    SequenceDistance D.a (scales b r) ≤ ((1 + h : ℕ) : WithTop ℕ)
+  pair_distance : ∀ b ∈ B,
+    sequencePairDistance (scales b) ≤ ((2 * (1 + h) : ℕ) : WithTop ℕ)
+  estimate : ∀ j : ℤ, ∀ v : RealPlane,
+    |reductionNKernel n D h j v| ≤
+      C_increaseDataBracketDomination * Real.rpow 2 (-(h : ℝ) / 3) *
+        ∑ b ∈ B,
+          scaledBracketBumpReal (7 / 6 : ℝ) (scales b 0 j) ((W (orientation b) v).1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (scales b 1 j) ((W (orientation b) v).2)
+
+/-- Reassemble a pointwise analytic bound indexed by all labeled slots into
+the finite witness required by bracket domination. -/
+private theorem aux_reductionBracketWitness_of_analytic {n : ℕ} (D : ReductionData)
+    (h : ℕ)
+    (hmajorant : ∀ j : ℤ, ∀ v : RealPlane,
+      |reductionNKernel n D h j v| ≤
+        C_increaseDataBracketDomination * Real.rpow 2 (-(h : ℝ) / 3) *
+          ∑ q ∈ D.triples, ∑ slot : Fin 8,
+            aux_reductionBracketTerm D h (q, slot) j v) :
+    Nonempty (aux_ReductionBracketDominationWitness (n := n) D h) := by
+  let B : Finset (ReductionScaleTriple D.a × Fin 8) := D.triples.product Finset.univ
+  refine ⟨{
+    B := B
+    card_le := aux_reductionBracket_card D
+    orientation := aux_reductionBracketOrientation D h
+    scales := aux_reductionBracketScales D h
+    scales_in_A := ?_
+    base_distance := ?_
+    pair_distance := ?_
+    estimate := ?_ }⟩
+  · intro b _ r
+    exact aux_reductionBracketScales_spaced D h b r
+  · intro b _ r
+    exact aux_reductionBracketScales_distance D h b r
+  · intro b _
+    exact aux_reductionBracketScales_pair_distance D h b
+  · intro j v
+    change |reductionNKernel n D h j v| ≤
+      C_increaseDataBracketDomination * Real.rpow 2 (-(h : ℝ) / 3) *
+        ∑ b ∈ B, aux_reductionBracketTerm D h b j v
+    dsimp [B]
+    rw [Finset.sum_product]
+    exact hmajorant j v
 
 /--
 Proposition \ref{lem:increase-data-bracket-domination}.  It supplies a finite
@@ -162,27 +4781,538 @@ products of \(7/6\)-bracket bumps.
 -/
 theorem increaseDataBracketDomination {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (h : ℕ) :
-    ∃ B : Finset (SequencePair × Fin 2),
-      B.card ≤ C_increaseDataBracketDominationCard ∧
-      (∀ b ∈ B, ∀ r : Fin 2,
-        SequenceDistance D.a (b.1 r) ≤ ((1 + h : ℕ) : WithTop ℕ)) ∧
-      (∀ j : ℤ, ∀ v : RealPlane,
-        |reductionNKernel n D h j v| ≤
-          C_increaseDataBracketDomination * Real.rpow 2 (-(h : ℝ) / 3) *
-            ∑ b ∈ B,
-              scaledBracketBumpReal (7 / 6 : ℝ) (b.1 0 j) ((W b.2 v).1) *
-                scaledBracketBumpReal (7 / 6 : ℝ) (b.1 1 j) ((W b.2 v).2)) := by
-  sorry
+    Nonempty (aux_ReductionBracketDominationWitness (n := n) D h) := by
+  apply aux_reductionBracketWitness_of_analytic D h
+  intro j v
+  by_cases hzero : h = 0
+  · subst h
+    simpa using aux_reductionBracket_zero_majorant hn D j v
+  · have hh : 1 ≤ h := Nat.one_le_iff_ne_zero.mpr hzero
+    exact aux_reductionBracket_positive_majorant hn D h hh j v
 
 /-- The numerical estimate in Lemma \ref{constant increase data bracket domination}. -/
 theorem constantIncreaseDataBracketDomination :
     C_increaseDataBracketDomination < (3 / 5 : ℝ) * (2 : ℝ) ^ (76 : ℕ) := by
-  sorry
+  unfold C_increaseDataBracketDomination
+  calc
+    (2 : ℝ) ^ 10 * C_rhoKernelsReduction <
+        (2 : ℝ) ^ 10 * ((3 / 5 : ℝ) * (2 : ℝ) ^ (66 : ℕ)) :=
+      mul_lt_mul_of_pos_left aux_rhoKernelsReduction_lt_three_fifths_two_pow_66
+        (by positivity)
+    _ = (3 / 5 : ℝ) * (2 : ℝ) ^ (76 : ℕ) := by norm_num
 
 /-- The constant in Proposition \ref{lem:increase-data-Gaussian-expansion}. -/
 noncomputable def C_increaseDataGaussianExpansion : ℝ :=
   (2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ) *
     C_increaseDataBracketDomination
+
+/-- The label-preserving Gaussian expansion of the bracket witness from
+Proposition \ref{lem:increase-data-bracket-domination}.  Keeping the original
+finite labels prevents coincident decoded scale pairs from losing their
+multiplicity. -/
+structure aux_ReductionGaussianExpansionWitness {n : ℕ} (D : ReductionData)
+    (h : ℕ) where
+  bracket : aux_ReductionBracketDominationWitness (n := n) D h
+  scales_in_A : ∀ b ∈ bracket.B, ∀ m : Fin 2 → ℕ, ∀ r : Fin 2,
+    SpacedSequence (gaussianExpansionPair (bracket.scales b) m r)
+  pair_distance : ∀ b ∈ bracket.B, ∀ m : Fin 2 → ℕ,
+    sequencePairDistance (gaussianExpansionPair (bracket.scales b) m) ≤
+      ((2 * (1 + h) + m 0 + m 1 : ℕ) : WithTop ℕ)
+  estimate : ∀ j : ℤ, ∀ v : RealPlane,
+    |reductionNKernel n D h j v| ≤
+      C_increaseDataGaussianExpansion * Real.rpow 2 (-(h : ℝ) / 3) *
+        ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          ∑ b ∈ bracket.B,
+            twoDimensionalGaussian
+              (fun r => gaussianExpansionPair (bracket.scales b) m r j)
+              (bracket.orientation b) v
+  series_summable : ∀ j : ℤ, ∀ v : RealPlane,
+    Summable (fun m : Fin 2 → ℕ => gaussianExpansionWeight m *
+      ∑ b ∈ bracket.B,
+        twoDimensionalGaussian
+          (fun r => gaussianExpansionPair (bracket.scales b) m r j)
+          (bracket.orientation b) v)
+  series_integrable : ∀ j : ℤ,
+    Integrable (fun v : RealPlane => ∑' m : Fin 2 → ℕ,
+      gaussianExpansionWeight m *
+        ∑ b ∈ bracket.B,
+          twoDimensionalGaussian
+            (fun r => gaussianExpansionPair (bracket.scales b) m r j)
+            (bracket.orientation b) v)
+
+/-- Coordinatewise dyadic dilation preserves the spaced-sequence condition in
+the Gaussian expansion of `increaseDataBracketDomination`. -/
+private theorem aux_reductionGaussianExpansion_scales_in_A {n : ℕ}
+    (D : ReductionData) (h : ℕ)
+    (w : aux_ReductionBracketDominationWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.B)
+    (m : Fin 2 → ℕ) (r : Fin 2) :
+    SpacedSequence (gaussianExpansionPair (w.scales b) m r) := by
+  change SpacedSequence (fun j => (2 : ℝ) ^ (m r) * w.scales b r j)
+  exact smul_mem_A (w.scales_in_A b hb r) (pow_pos (by norm_num) _)
+
+/-- The dyadic Gaussian expansion adds at most the total dyadic exponent to
+the pair-distance budget from `increaseDataBracketDomination`. -/
+private theorem aux_reductionGaussianExpansion_pair_distance {n : ℕ}
+    (D : ReductionData) (h : ℕ)
+    (w : aux_ReductionBracketDominationWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.B)
+    (m : Fin 2 → ℕ) :
+    sequencePairDistance (gaussianExpansionPair (w.scales b) m) ≤
+      ((2 * (1 + h) + m 0 + m 1 : ℕ) : WithTop ℕ) := by
+  let p : SequencePair := w.scales b
+  have hp0 : SpacedSequence (p 0) := by
+    simpa [p] using w.scales_in_A b hb 0
+  have hp1 : SpacedSequence (p 1) := by
+    simpa [p] using w.scales_in_A b hb 1
+  have hbase : SequenceDistance (p 0) (p 1) ≤
+      ((2 * (1 + h) : ℕ) : WithTop ℕ) := by
+    simpa [sequencePairDistance, p] using w.pair_distance b hb
+  have hleft : SequenceDistance (fun j => (2 : ℝ) ^ (m 0) * p 0 j) (p 0) ≤
+      ((m 0 : ℕ) : WithTop ℕ) := by
+    rw [sequenceDistance_comm]
+    have hdist := sequenceDistance_pow_two_smul_le hp0 ((m 0 : ℕ) : ℤ)
+    simpa [zpow_natCast, Int.natAbs_natCast] using hdist
+  have hright : SequenceDistance (p 1) (fun j => (2 : ℝ) ^ (m 1) * p 1 j) ≤
+      ((m 1 : ℕ) : WithTop ℕ) := by
+    have hdist := sequenceDistance_pow_two_smul_le hp1 ((m 1 : ℕ) : ℤ)
+    simpa [zpow_natCast, Int.natAbs_natCast] using hdist
+  change SequenceDistance (fun j => (2 : ℝ) ^ (m 0) * p 0 j)
+      (fun j => (2 : ℝ) ^ (m 1) * p 1 j) ≤ _
+  calc
+    SequenceDistance (fun j => (2 : ℝ) ^ (m 0) * p 0 j)
+        (fun j => (2 : ℝ) ^ (m 1) * p 1 j) ≤
+        SequenceDistance (fun j => (2 : ℝ) ^ (m 0) * p 0 j) (p 0) +
+          SequenceDistance (p 0) (fun j => (2 : ℝ) ^ (m 1) * p 1 j) :=
+      sequenceDistance_triangle _ _ _
+    _ ≤ (m 0 : WithTop ℕ) +
+          (SequenceDistance (p 0) (p 1) +
+            SequenceDistance (p 1) (fun j => (2 : ℝ) ^ (m 1) * p 1 j)) := by
+      gcongr
+      exact sequenceDistance_triangle _ _ _
+    _ ≤ (m 0 : WithTop ℕ) + ((2 * (1 + h) : ℕ) : WithTop ℕ) + m 1 := by
+      simpa [add_assoc] using add_le_add hbase hright
+    _ ≤ ((2 * (1 + h) + m 0 + m 1 : ℕ) : WithTop ℕ) := by
+      norm_cast
+      omega
+
+/-- Splits the two-coordinate Gaussian-expansion weight into its one-dimensional
+dyadic factors. -/
+private theorem aux_reductionGaussianExpansion_weight_split (m : Fin 2 → ℕ) :
+    gaussianExpansionWeight m =
+      Real.rpow 2 (-((m 0 : ℕ) : ℝ) / 6) *
+        Real.rpow 2 (-((m 1 : ℕ) : ℝ) / 6) := by
+  unfold gaussianExpansionWeight
+  calc
+    Real.rpow 2 (-((m 0 + m 1 : ℕ) : ℝ) / 6) =
+        Real.rpow 2 (-((m 0 : ℕ) : ℝ) / 6 +
+          -((m 1 : ℕ) : ℝ) / 6) := by
+      congr 1
+      push_cast
+      ring
+    _ = _ := Real.rpow_add (by norm_num) _ _
+
+/-- A product of reduction-exponent bracket bumps is dominated by its
+label-preserving two-coordinate Gaussian expansion. -/
+private theorem aux_reductionGaussianExpansion_pair_majorant
+    (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
+    (u : Fin 2) (j : ℤ) (v : RealPlane) :
+    scaledBracketBumpReal (7 / 6 : ℝ) (p 0 j) ((W u v).1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (p 1 j) ((W u v).2) ≤
+      (2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ) *
+        ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v := by
+  let f0 : ℕ → ℝ := fun a =>
+    Real.rpow 2 (-((a : ℝ) / 6)) *
+      gaussianRescale ((2 : ℝ) ^ a * p 0 j) ((W u v).1)
+  let f1 : ℕ → ℝ := fun a =>
+    Real.rpow 2 (-((a : ℝ) / 6)) *
+      gaussianRescale ((2 : ℝ) ^ a * p 1 j) ((W u v).2)
+  have hp0 : 0 < p 0 j := aux_spacedSequence_pos (hp 0) j
+  have hp1 : 0 < p 1 j := aux_spacedSequence_pos (hp 1) j
+  have hsixth (a : ℕ) : (1 - (7 / 6 : ℝ)) * (a : ℝ) = -((a : ℝ) / 6) := by
+    ring
+  have hbr0 := gaussianDomination (7 / 6 : ℝ) (p 0 j) ((W u v).1)
+    (by norm_num) hp0
+  have hbr1 := gaussianDomination (7 / 6 : ℝ) (p 1 j) ((W u v).2)
+    (by norm_num) hp1
+  have hbr0' : scaledBracketBumpReal (7 / 6 : ℝ) (p 0 j) ((W u v).1) ≤
+      C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ) * ∑' a : ℕ, f0 a := by
+    simpa [f0, hsixth] using hbr0
+  have hbr1' : scaledBracketBumpReal (7 / 6 : ℝ) (p 1 j) ((W u v).2) ≤
+      C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ) * ∑' a : ℕ, f1 a := by
+    simpa [f1, hsixth] using hbr1
+  have hf0 : Summable f0 := by
+    simpa [f0, hsixth] using
+      aux_gaussianDomination_weight_summable (7 / 6 : ℝ) (p 0 j) ((W u v).1)
+        (by norm_num) hp0
+  have hf1 : Summable f1 := by
+    simpa [f1, hsixth] using
+      aux_gaussianDomination_weight_summable (7 / 6 : ℝ) (p 1 j) ((W u v).2)
+        (by norm_num) hp1
+  have hf0nonneg (a : ℕ) : 0 ≤ f0 a := by
+    dsimp [f0]
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (aux_gaussianDomination_gaussianRescale_nonneg
+        (mul_pos (pow_pos (by norm_num) _) hp0) _)
+  have hf1nonneg (a : ℕ) : 0 ≤ f1 a := by
+    dsimp [f1]
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (aux_gaussianDomination_gaussianRescale_nonneg
+        (mul_pos (pow_pos (by norm_num) _) hp1) _)
+  have hprod : Summable (fun m : Fin 2 → ℕ => f0 (m 0) * f1 (m 1)) :=
+    aux_summable_finTwo_product hf0nonneg hf1nonneg hf0 hf1
+  have hprodPair : Summable (fun z : ℕ × ℕ => f0 z.1 * f1 z.2) := by
+    refine (aux_finTwoNatEquivProd.symm.summable_iff
+      (f := fun m : Fin 2 → ℕ => f0 (m 0) * f1 (m 1))).mpr ?_
+    exact hprod
+  have hprodEq : (∑' a : ℕ, f0 a) * (∑' a : ℕ, f1 a) =
+      ∑' m : Fin 2 → ℕ, f0 (m 0) * f1 (m 1) := by
+    calc
+      (∑' a : ℕ, f0 a) * (∑' a : ℕ, f1 a) =
+          ∑' z : ℕ × ℕ, f0 z.1 * f1 z.2 := hf0.tsum_mul_tsum hf1 hprodPair
+      _ = ∑' m : Fin 2 → ℕ, f0 (m 0) * f1 (m 1) := by
+        simpa [aux_finTwoNatEquivProd] using
+          (aux_finTwoNatEquivProd.symm.tsum_eq
+            (fun m : Fin 2 → ℕ => f0 (m 0) * f1 (m 1)))
+  have hterm (m : Fin 2 → ℕ) : f0 (m 0) * f1 (m 1) =
+      gaussianExpansionWeight m *
+        twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v := by
+    rw [aux_reductionGaussianExpansion_weight_split]
+    simp only [twoDimensionalGaussian, gaussianExpansionPair]
+    dsimp [f0, f1]
+    ring
+  have hseriesEq : (∑' a : ℕ, f0 a) * (∑' a : ℕ, f1 a) =
+      ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+        twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v := by
+    rw [hprodEq]
+    exact tsum_congr hterm
+  have hcoeffnonneg : 0 ≤ C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ) := by
+    rw [C_gaussianDomination]
+    exact mul_nonneg (Real.exp_pos _).le (Real.rpow_nonneg (by norm_num) _)
+  have hsum0 : 0 ≤ ∑' a : ℕ, f0 a := tsum_nonneg hf0nonneg
+  have hpow : Real.rpow 2 (7 / 6 : ℝ) * Real.rpow 2 (7 / 6 : ℝ) ≤ 8 := by
+    have hle : (7 / 6 : ℝ) + 7 / 6 ≤ 3 := by norm_num
+    calc
+      Real.rpow 2 (7 / 6 : ℝ) * Real.rpow 2 (7 / 6 : ℝ) =
+          Real.rpow 2 ((7 / 6 : ℝ) + 7 / 6) :=
+        (Real.rpow_add (by norm_num) _ _).symm
+      _ ≤ Real.rpow 2 (3 : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le (by norm_num) hle
+      _ = 8 := by norm_num
+  have hcoeff :
+      (C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ)) *
+        (C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ)) ≤
+      (2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ) := by
+    calc
+      (C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ)) *
+          (C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ)) =
+          (Real.rpow 2 (7 / 6 : ℝ) * Real.rpow 2 (7 / 6 : ℝ)) *
+            C_gaussianDomination ^ (2 : ℕ) := by ring
+      _ ≤ 8 * C_gaussianDomination ^ (2 : ℕ) :=
+        mul_le_mul_of_nonneg_right hpow (sq_nonneg _)
+      _ = (2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ) := by norm_num
+  have hseriesnonneg : 0 ≤ ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+      twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v := by
+    rw [← hseriesEq]
+    exact mul_nonneg (tsum_nonneg hf0nonneg) (tsum_nonneg hf1nonneg)
+  calc
+    scaledBracketBumpReal (7 / 6 : ℝ) (p 0 j) ((W u v).1) *
+        scaledBracketBumpReal (7 / 6 : ℝ) (p 1 j) ((W u v).2) ≤
+        (C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ) * ∑' a : ℕ, f0 a) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (p 1 j) ((W u v).2) :=
+      mul_le_mul_of_nonneg_right hbr0'
+        (aux_scaledBracketBumpReal_nonneg _ _ _ hp1)
+    _ ≤ (C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ) * ∑' a : ℕ, f0 a) *
+        (C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ) * ∑' a : ℕ, f1 a) :=
+      mul_le_mul_of_nonneg_left hbr1' (mul_nonneg hcoeffnonneg hsum0)
+    _ = ((C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ)) *
+        (C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ))) *
+          ((∑' a : ℕ, f0 a) * ∑' a : ℕ, f1 a) := by ring
+    _ = ((C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ)) *
+        (C_gaussianDomination * Real.rpow 2 (7 / 6 : ℝ))) *
+          (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+            twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v) := by
+      rw [hseriesEq]
+    _ ≤ (2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ) *
+        ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v :=
+      mul_le_mul_of_nonneg_right hcoeff hseriesnonneg
+
+/-- Pointwise convergence of the Gaussian expansion associated with one base
+scale pair. -/
+private theorem aux_reductionGaussianExpansion_pair_summable
+    (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
+    (u : Fin 2) (j : ℤ) (v : RealPlane) :
+    Summable (fun m : Fin 2 → ℕ => gaussianExpansionWeight m *
+      twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v) := by
+  let f0 : ℕ → ℝ := fun a =>
+    Real.rpow 2 (-((a : ℝ) / 6)) *
+      gaussianRescale ((2 : ℝ) ^ a * p 0 j) ((W u v).1)
+  let f1 : ℕ → ℝ := fun a =>
+    Real.rpow 2 (-((a : ℝ) / 6)) *
+      gaussianRescale ((2 : ℝ) ^ a * p 1 j) ((W u v).2)
+  have hp0 : 0 < p 0 j := aux_spacedSequence_pos (hp 0) j
+  have hp1 : 0 < p 1 j := aux_spacedSequence_pos (hp 1) j
+  have hsixth (a : ℕ) : (1 - (7 / 6 : ℝ)) * (a : ℝ) = -((a : ℝ) / 6) := by
+    ring
+  have hf0 : Summable f0 := by
+    simpa [f0, hsixth] using
+      aux_gaussianDomination_weight_summable (7 / 6 : ℝ) (p 0 j) ((W u v).1)
+        (by norm_num) hp0
+  have hf1 : Summable f1 := by
+    simpa [f1, hsixth] using
+      aux_gaussianDomination_weight_summable (7 / 6 : ℝ) (p 1 j) ((W u v).2)
+        (by norm_num) hp1
+  have hf0nonneg (a : ℕ) : 0 ≤ f0 a := by
+    dsimp [f0]
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (aux_gaussianDomination_gaussianRescale_nonneg
+        (mul_pos (pow_pos (by norm_num) _) hp0) _)
+  have hf1nonneg (a : ℕ) : 0 ≤ f1 a := by
+    dsimp [f1]
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (aux_gaussianDomination_gaussianRescale_nonneg
+        (mul_pos (pow_pos (by norm_num) _) hp1) _)
+  have hprod := aux_summable_finTwo_product hf0nonneg hf1nonneg hf0 hf1
+  convert hprod using 1
+  funext m
+  rw [aux_reductionGaussianExpansion_weight_split]
+  simp only [twoDimensionalGaussian, gaussianExpansionPair]
+  dsimp [f0, f1]
+  ring
+
+/-- The reduction Gaussian-expansion weights form a summable two-parameter
+geometric family. -/
+private theorem aux_reductionGaussianExpansion_weight_summable :
+    Summable gaussianExpansionWeight := by
+  let r : ℝ := Real.rpow 2 (-(1 / 6 : ℝ))
+  have hrpos : 0 < r := Real.rpow_pos_of_pos (by norm_num) _
+  have hrlt : r < 1 :=
+    Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (by norm_num)
+  have hr : |r| < 1 := by simpa [abs_of_pos hrpos] using hrlt
+  have hgeom : Summable (fun a : ℕ => r ^ a) :=
+    summable_geometric_of_abs_lt_one hr
+  have hterm (a : ℕ) : r ^ a = Real.rpow 2 (-((a : ℝ) / 6)) := by
+    dsimp [r]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num)]
+    congr 1
+    ring
+  have hprod := aux_summable_finTwo_product
+    (fun a => pow_nonneg hrpos.le a) (fun a => pow_nonneg hrpos.le a) hgeom hgeom
+  convert hprod using 1
+  funext m
+  rw [hterm (m 0), hterm (m 1), aux_reductionGaussianExpansion_weight_split]
+  congr 1 <;> ring
+
+/-- Each weighted dyadic two-dimensional Gaussian term is measurable. -/
+private theorem aux_reductionGaussianExpansion_term_measurable
+    (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
+    (u : Fin 2) (j : ℤ) (m : Fin 2 → ℕ) :
+    Measurable (fun v : RealPlane => gaussianExpansionWeight m *
+      twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v) := by
+  apply (aux_twoDimensionalGaussian_memW0
+    (fun r => gaussianExpansionPair p m r j) u ?_).aux_continuous.measurable.const_mul
+  intro r
+  simp only [gaussianExpansionPair]
+  exact mul_pos (pow_pos (by norm_num) _) (aux_spacedSequence_pos (hp r) j)
+
+/-- Each weighted dyadic two-dimensional Gaussian term is integrable. -/
+private theorem aux_reductionGaussianExpansion_term_integrable
+    (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
+    (u : Fin 2) (j : ℤ) (m : Fin 2 → ℕ) :
+    Integrable (fun v : RealPlane => gaussianExpansionWeight m *
+      twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v) := by
+  apply (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    (aux_twoDimensionalGaussian_memW0
+      (fun r => gaussianExpansionPair p m r j) u ?_)).const_mul
+  intro r
+  simp only [gaussianExpansionPair]
+  exact mul_pos (pow_pos (by norm_num) _) (aux_spacedSequence_pos (hp r) j)
+
+/-- Pointwise convergence for a finite, label-preserving family of Gaussian
+expansions. -/
+private theorem aux_reductionGaussianExpansion_finite_summable
+    {α : Type*} [DecidableEq α] (B : Finset α) (p : α → SequencePair)
+    (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
+    (u : α → Fin 2) (j : ℤ) (v : RealPlane) :
+    Summable (fun m : Fin 2 → ℕ => gaussianExpansionWeight m *
+      ∑ b ∈ B, twoDimensionalGaussian
+        (fun r => gaussianExpansionPair (p b) m r j) (u b) v) := by
+  let F : α → (Fin 2 → ℕ) → ℝ := fun b m => gaussianExpansionWeight m *
+    twoDimensionalGaussian (fun r => gaussianExpansionPair (p b) m r j) (u b) v
+  have hF (b : α) (hb : b ∈ B) : Summable (F b) := by
+    simpa [F] using aux_reductionGaussianExpansion_pair_summable
+      (p b) (hp b hb) (u b) j v
+  have hsum (s : Finset α) (hs : ∀ b ∈ s, Summable (F b)) :
+      Summable (fun m => ∑ b ∈ s, F b m) := by
+    induction s using Finset.induction_on with
+    | empty => simp
+    | insert b s hb ih =>
+      simp only [Finset.sum_insert hb]
+      exact (hs b (Finset.mem_insert_self b s)).add
+        (ih (fun c hc => hs c (Finset.mem_insert_of_mem hc)))
+  have hmain := hsum B hF
+  convert hmain using 1
+  funext m
+  dsimp [F]
+  rw [Finset.mul_sum]
+
+/-- Integrability of the pointwise Gaussian expansion for a finite,
+label-preserving family. -/
+private theorem aux_reductionGaussianExpansion_finite_integrable
+    {α : Type*} [DecidableEq α] (B : Finset α) (p : α → SequencePair)
+    (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
+    (u : α → Fin 2) (j : ℤ) :
+    Integrable (fun v : RealPlane => ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+      ∑ b ∈ B, twoDimensionalGaussian
+        (fun r => gaussianExpansionPair (p b) m r j) (u b) v) := by
+  let F : (Fin 2 → ℕ) → RealPlane → ℝ := fun m v =>
+    ∑ b ∈ B, gaussianExpansionWeight m *
+      twoDimensionalGaussian (fun r => gaussianExpansionPair (p b) m r j) (u b) v
+  have hmeas (m : Fin 2 → ℕ) : Measurable (F m) := by
+    apply Finset.measurable_sum
+    intro b hb
+    exact aux_reductionGaussianExpansion_term_measurable (p b) (hp b hb) (u b) j m
+  have hnonneg (m : Fin 2 → ℕ) (v : RealPlane) : 0 ≤ F m v := by
+    apply Finset.sum_nonneg
+    intro b hb
+    apply mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+    apply aux_twoDimensionalGaussian_nonneg
+    intro r
+    simp only [gaussianExpansionPair]
+    exact mul_pos (pow_pos (by norm_num) _) (aux_spacedSequence_pos (hp b hb r) j)
+  have hsum (v : RealPlane) : Summable (fun m : Fin 2 → ℕ => F m v) := by
+    simpa [F, Finset.mul_sum] using
+      aux_reductionGaussianExpansion_finite_summable B p hp u j v
+  have hint (m : Fin 2 → ℕ) : Integrable (F m) := by
+    dsimp [F]
+    apply integrable_finsetSum
+    intro b hb
+    exact aux_reductionGaussianExpansion_term_integrable (p b) (hp b hb) (u b) j m
+  have hFint (m : Fin 2 → ℕ) :
+      (∫ v : RealPlane, F m v) = (B.card : ℝ) * gaussianExpansionWeight m := by
+    dsimp [F]
+    rw [integral_finsetSum]
+    · calc
+        ∑ b ∈ B, ∫ v : RealPlane, gaussianExpansionWeight m *
+            twoDimensionalGaussian (fun r => gaussianExpansionPair (p b) m r j) (u b) v =
+            ∑ b ∈ B, gaussianExpansionWeight m := by
+              apply Finset.sum_congr rfl
+              intro b hb
+              rw [integral_const_mul]
+              rw [aux_integral_twoDimensionalGaussian]
+              · ring
+              · intro r
+                simp only [gaussianExpansionPair]
+                exact mul_pos (pow_pos (by norm_num) _)
+                  (aux_spacedSequence_pos (hp b hb r) j)
+        _ = (B.card : ℝ) * gaussianExpansionWeight m := by
+          simp [nsmul_eq_mul]
+    · intro b hb
+      exact aux_reductionGaussianExpansion_term_integrable (p b) (hp b hb) (u b) j m
+  have hintsum : Summable (fun m : Fin 2 → ℕ => ∫ v : RealPlane, F m v) := by
+    refine (aux_reductionGaussianExpansion_weight_summable.mul_left (B.card : ℝ)).congr ?_
+    intro m
+    exact (hFint m).symm
+  have hmain := aux_integrable_tsum_of_nonneg F hmeas hnonneg hsum hint hintsum
+  have hfun :
+      (fun v : RealPlane => ∑' m : Fin 2 → ℕ, F m v) =
+        (fun v : RealPlane => ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          ∑ b ∈ B, twoDimensionalGaussian
+            (fun r => gaussianExpansionPair (p b) m r j) (u b) v) := by
+    funext v
+    apply tsum_congr
+    intro m
+    dsimp [F]
+    rw [Finset.mul_sum]
+  rw [← hfun]
+  exact hmain
+
+/-- Converts the tagged bracket witness into its Gaussian series majorant
+without collapsing coincident decoded scale pairs. -/
+private theorem aux_reductionBracket_to_gaussian_estimate {n : ℕ} (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionBracketDominationWitness (n := n) D h)
+    (hC : 0 ≤ C_increaseDataBracketDomination) (j : ℤ) (v : RealPlane) :
+    |reductionNKernel n D h j v| ≤
+      C_increaseDataGaussianExpansion * Real.rpow 2 (-(h : ℝ) / 3) *
+        ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          ∑ b ∈ w.B, twoDimensionalGaussian
+            (fun r => gaussianExpansionPair (w.scales b) m r j) (w.orientation b) v := by
+  classical
+  let A : ℝ := (2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ)
+  let F : (ReductionScaleTriple D.a × Fin 8) → (Fin 2 → ℕ) → ℝ := fun b m =>
+    gaussianExpansionWeight m * twoDimensionalGaussian
+      (fun r => gaussianExpansionPair (w.scales b) m r j) (w.orientation b) v
+  have hF (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.B) : Summable (F b) := by
+    simpa [F] using aux_reductionGaussianExpansion_pair_summable (w.scales b)
+      (w.scales_in_A b hb) (w.orientation b) j v
+  have hslot (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.B) :
+      scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 0 j) ((W (w.orientation b) v).1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 1 j) ((W (w.orientation b) v).2) ≤
+        A * ∑' m : Fin 2 → ℕ, F b m := by
+    simpa [A, F] using aux_reductionGaussianExpansion_pair_majorant (w.scales b)
+      (w.scales_in_A b hb) (w.orientation b) j v
+  have hsum :
+      ∑ b ∈ w.B,
+        scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 0 j) ((W (w.orientation b) v).1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 1 j) ((W (w.orientation b) v).2) ≤
+        A * ∑' m : Fin 2 → ℕ, ∑ b ∈ w.B, F b m := by
+    calc
+      ∑ b ∈ w.B,
+          scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 0 j) ((W (w.orientation b) v).1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 1 j) ((W (w.orientation b) v).2) ≤
+          ∑ b ∈ w.B, A * ∑' m : Fin 2 → ℕ, F b m := by
+            apply Finset.sum_le_sum
+            intro b hb
+            exact hslot b hb
+      _ = A * ∑ b ∈ w.B, ∑' m : Fin 2 → ℕ, F b m := by
+            rw [Finset.mul_sum]
+      _ = A * ∑' m : Fin 2 → ℕ, ∑ b ∈ w.B, F b m := by
+            congr 1
+            rw [Summable.tsum_finsetSum hF]
+  have hsum' :
+      ∑ b ∈ w.B,
+        scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 0 j) ((W (w.orientation b) v).1) *
+          scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 1 j) ((W (w.orientation b) v).2) ≤
+        A * ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          ∑ b ∈ w.B, twoDimensionalGaussian
+            (fun r => gaussianExpansionPair (w.scales b) m r j) (w.orientation b) v := by
+    calc
+      ∑ b ∈ w.B,
+          scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 0 j) ((W (w.orientation b) v).1) *
+            scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 1 j) ((W (w.orientation b) v).2) ≤
+          A * ∑' m : Fin 2 → ℕ, ∑ b ∈ w.B, F b m := hsum
+      _ = A * ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          ∑ b ∈ w.B, twoDimensionalGaussian
+            (fun r => gaussianExpansionPair (w.scales b) m r j) (w.orientation b) v := by
+        congr 1
+        apply tsum_congr
+        intro m
+        dsimp [F]
+        rw [Finset.mul_sum]
+  have hfactor : 0 ≤ C_increaseDataBracketDomination *
+      Real.rpow 2 (-(h : ℝ) / 3) :=
+    mul_nonneg hC (Real.rpow_nonneg (by norm_num) _)
+  calc
+    |reductionNKernel n D h j v| ≤
+        C_increaseDataBracketDomination * Real.rpow 2 (-(h : ℝ) / 3) *
+          ∑ b ∈ w.B,
+            scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 0 j) ((W (w.orientation b) v).1) *
+              scaledBracketBumpReal (7 / 6 : ℝ) (w.scales b 1 j) ((W (w.orientation b) v).2) :=
+      w.estimate j v
+    _ ≤ C_increaseDataBracketDomination * Real.rpow 2 (-(h : ℝ) / 3) *
+        (A * ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          ∑ b ∈ w.B, twoDimensionalGaussian
+            (fun r => gaussianExpansionPair (w.scales b) m r j) (w.orientation b) v) :=
+      mul_le_mul_of_nonneg_left hsum' hfactor
+    _ = C_increaseDataGaussianExpansion * Real.rpow 2 (-(h : ℝ) / 3) *
+        ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          ∑ b ∈ w.B, twoDimensionalGaussian
+            (fun r => gaussianExpansionPair (w.scales b) m r j) (w.orientation b) v := by
+      unfold C_increaseDataGaussianExpansion
+      dsimp [A]
+      ring
 
 /--
 Proposition \ref{lem:increase-data-Gaussian-expansion}.  This is the
@@ -190,43 +5320,1446 @@ Gaussian-expansion version of the preceding bracket domination estimate.
 -/
 theorem increaseDataGaussianExpansion {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (h : ℕ) :
-    ∃ B : Finset (SequencePair × Fin 2),
-      B.card ≤ C_increaseDataBracketDominationCard ∧
-      (∀ b ∈ B, ∀ m : Fin 2 → ℕ,
-        SequenceDistance (b.1 0) (gaussianExpansionPair b.1 m 0) ≤
-          ((m 0 : ℕ) : WithTop ℕ) ∧
-        SequenceDistance (b.1 1) (gaussianExpansionPair b.1 m 1) ≤
-          ((m 1 : ℕ) : WithTop ℕ)) ∧
-      (∀ j : ℤ, ∀ v : RealPlane,
-        |reductionNKernel n D h j v| ≤
-          C_increaseDataGaussianExpansion * Real.rpow 2 (-(h : ℝ) / 3) *
-            ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
-              ∑ b ∈ B,
-                twoDimensionalGaussian (fun r => gaussianExpansionPair b.1 m r j) b.2 v) := by
-  sorry
+    Nonempty (aux_ReductionGaussianExpansionWitness (n := n) D h) := by
+  classical
+  rcases increaseDataBracketDomination hn D h with ⟨w⟩
+  have hC : 0 ≤ C_increaseDataBracketDomination := by
+    unfold C_increaseDataBracketDomination
+    exact mul_nonneg (by positivity) aux_reduction_Crho_nonneg
+  refine ⟨{
+    bracket := w
+    scales_in_A := fun b hb m r =>
+      aux_reductionGaussianExpansion_scales_in_A D h w b hb m r
+    pair_distance := fun b hb m =>
+      aux_reductionGaussianExpansion_pair_distance D h w b hb m
+    estimate := ?_
+    series_summable := ?_
+    series_integrable := ?_ }⟩
+  · intro j v
+    exact aux_reductionBracket_to_gaussian_estimate D h w hC j v
+  · intro j v
+    exact aux_reductionGaussianExpansion_finite_summable w.B w.scales
+      (fun b hb => w.scales_in_A b hb) w.orientation j v
+  · intro j
+    exact aux_reductionGaussianExpansion_finite_integrable w.B w.scales
+      (fun b hb => w.scales_in_A b hb) w.orientation j
 
 /-- The numerical estimate in Lemma \ref{constant increase data Gaussian expansion}. -/
 theorem constantIncreaseDataGaussianExpansion :
     C_increaseDataGaussianExpansion < (123 / 128 : ℝ) * (2 : ℝ) ^ (91 : ℕ) := by
-  sorry
+  have aux_exp_pi_lt_81 : Real.exp Real.pi < (81 : ℝ) := by
+    have hpi : Real.pi < 4 := Real.pi_lt_four
+    have hexp : Real.exp (4 : ℝ) = (Real.exp 1) ^ (4 : ℕ) := by
+      convert Real.exp_nat_mul (1 : ℝ) 4 using 1 <;> norm_num
+    calc
+      Real.exp Real.pi < Real.exp (4 : ℝ) := Real.exp_lt_exp.mpr hpi
+      _ = (Real.exp 1) ^ (4 : ℕ) := hexp
+      _ < (3 : ℝ) ^ (4 : ℕ) := by
+        exact pow_lt_pow_left₀ Real.exp_one_lt_three (Real.exp_nonneg _) (by norm_num)
+      _ = 81 := by norm_num
+  have hCG : C_gaussianDomination ^ (2 : ℕ) < (6561 : ℝ) := by
+    calc
+      C_gaussianDomination ^ (2 : ℕ) = Real.exp Real.pi * Real.exp Real.pi := by
+        rw [C_gaussianDomination, pow_two]
+      _ < (81 : ℝ) * 81 :=
+        mul_self_lt_mul_self (Real.exp_nonneg _) aux_exp_pi_lt_81
+      _ = 6561 := by norm_num
+  have hrho := aux_rhoKernelsReduction_lt_numeric
+  have hCGnonneg : 0 ≤ C_gaussianDomination ^ (2 : ℕ) := sq_nonneg _
+  have hrhononneg : 0 ≤ C_rhoKernelsReduction := aux_reduction_Crho_nonneg
+  unfold C_increaseDataGaussianExpansion C_increaseDataBracketDomination
+  calc
+    (2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ) *
+        ((2 : ℝ) ^ (10 : ℕ) * C_rhoKernelsReduction) <
+      (2 : ℝ) ^ (3 : ℕ) * (6561 : ℝ) *
+        ((2 : ℝ) ^ (10 : ℕ) * (44114430494276321280 : ℝ)) := by
+      gcongr
+    _ < (123 / 128 : ℝ) * (2 : ℝ) ^ (91 : ℕ) := by norm_num
 
 /-- The constant in Lemma \ref{lem:N-reduction}. -/
 noncomputable def C_nReduction : ℝ := (2 : ℝ) ^ (9 : ℕ) * C_rhoKernelsReduction
+
+/-- The `L¹` mass estimate for the reduction rho kernel used in `nReduction`. -/
+private theorem aux_reduction_rho_l1_bound {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (j : ℤ) :
+    (∫ x : ℝ, |rhoKernel n D.a h j x|) ≤ 4 * C_rhoKernelsReduction := by
+  let B : ℝ → ℝ := fun x =>
+    scaledBracketBumpReal 2 (rhoLowerScale D.a h j) x +
+      scaledBracketBumpReal 2 (rhoUpperScale D.a h j) x
+  have hminus : 0 < rhoLowerScale D.a h j := by
+    unfold rhoLowerScale
+    split
+    · exact (D.a_spaced _).1
+    · exact mul_pos (by positivity) (D.a_spaced _).1
+  have hplus : 0 < rhoUpperScale D.a h j :=
+    mul_pos (by positivity) (D.a_spaced _).1
+  have hrho : Integrable (rhoKernel n D.a h j) :=
+    aux_memW0_integrable_of_addHaar (rhoKernelsReduction hn D.a D.a_spaced h j).1
+  have hB : Integrable B := by
+    dsimp [B]
+    exact (aux_integrable_scaledBracketBumpReal 2 _ (by norm_num) hminus).add
+      (aux_integrable_scaledBracketBumpReal 2 _ (by norm_num) hplus)
+  have hCB : Integrable (fun x => C_rhoKernelsReduction * B x) := hB.const_mul _
+  have hpoint (x : ℝ) : |rhoKernel n D.a h j x| ≤ C_rhoKernelsReduction * B x := by
+    simpa [B] using (rhoKernelsReduction hn D.a D.a_spaced h j).2.2 x
+  have hmono : (∫ x : ℝ, |rhoKernel n D.a h j x|) ≤
+      ∫ x : ℝ, C_rhoKernelsReduction * B x := by
+    apply integral_mono
+    · simpa only [Real.norm_eq_abs] using hrho.norm
+    · exact hCB
+    · exact hpoint
+  have hBint : (∫ x : ℝ, B x) = 4 := by
+    dsimp [B]
+    rw [integral_add
+      (aux_integrable_scaledBracketBumpReal 2 _ (by norm_num) hminus)
+      (aux_integrable_scaledBracketBumpReal 2 _ (by norm_num) hplus)]
+    have hm : (∫ x : ℝ, scaledBracketBumpReal 2 (rhoLowerScale D.a h j) x) = 2 := by
+      calc
+        (∫ x : ℝ, scaledBracketBumpReal 2 (rhoLowerScale D.a h j) x) =
+            2 / (2 - 1) := by
+              simpa [aux_scaledBracketBumpReal_neg] using
+                (aux_integral_scaledBracketBumpReal_eq 2 (rhoLowerScale D.a h j) 0
+                  (by norm_num) hminus)
+        _ = 2 := by norm_num
+    have hp : (∫ x : ℝ, scaledBracketBumpReal 2 (rhoUpperScale D.a h j) x) = 2 := by
+      calc
+        (∫ x : ℝ, scaledBracketBumpReal 2 (rhoUpperScale D.a h j) x) =
+            2 / (2 - 1) := by
+              simpa [aux_scaledBracketBumpReal_neg] using
+                (aux_integral_scaledBracketBumpReal_eq 2 (rhoUpperScale D.a h j) 0
+                  (by norm_num) hplus)
+        _ = 2 := by norm_num
+    rw [hm, hp]
+    norm_num
+  calc
+    (∫ x : ℝ, |rhoKernel n D.a h j x|) ≤
+        ∫ x : ℝ, C_rhoKernelsReduction * B x := hmono
+    _ = C_rhoKernelsReduction * (∫ x : ℝ, B x) := by rw [integral_const_mul]
+    _ = 4 * C_rhoKernelsReduction := by rw [hBint]; ring
+
+/-- The mass of one planar bracket product in the kernel-decay hypothesis of `nReduction`. -/
+private theorem aux_reduction_plane_bracket_integral (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) :
+    (∫ v : RealPlane,
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) ((W q.orientation v).1) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) ((W q.orientation v).2)) = 16 := by
+  let f : ℝ → ℝ := fun x => scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) x
+  let g : ℝ → ℝ := fun x => scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) x
+  let F : RealPlane → ℝ := fun v => f v.1 * g v.2
+  have hleft : 0 < q.left j := (q.left_spaced j).1
+  have hright : 0 < q.right j := (q.right_spaced j).1
+  have hf : Integrable f := by
+    exact aux_integrable_scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) (by norm_num) hleft
+  have hg : Integrable g := by
+    exact aux_integrable_scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) (by norm_num) hright
+  have hintf : (∫ x : ℝ, f x) = 4 := by
+    calc
+      (∫ x : ℝ, f x) = 2 / ((3 / 2 : ℝ) - 1) := by
+        simpa [f, aux_scaledBracketBumpReal_neg] using
+          (aux_integral_scaledBracketBumpReal_eq (3 / 2 : ℝ) (q.left j) 0
+            (by norm_num) hleft)
+      _ = 4 := by norm_num
+  have hintg : (∫ x : ℝ, g x) = 4 := by
+    calc
+      (∫ x : ℝ, g x) = 2 / ((3 / 2 : ℝ) - 1) := by
+        simpa [g, aux_scaledBracketBumpReal_neg] using
+          (aux_integral_scaledBracketBumpReal_eq (3 / 2 : ℝ) (q.right j) 0
+            (by norm_num) hright)
+      _ = 4 := by norm_num
+  have hFint : (∫ v : RealPlane, F v) = 16 := by
+    calc
+      (∫ v : RealPlane, F v) = (∫ x : ℝ, f x) * ∫ y : ℝ, g y := by
+        simpa only [F, Measure.volume_eq_prod] using integral_prod_mul f g
+      _ = 16 := by rw [hintf, hintg]; norm_num
+  have horientation : q.orientation = 0 ∨ q.orientation = 1 := by omega
+  rcases horientation with hu | hu
+  · rw [hu]
+    simpa [F, f, g, W] using hFint
+  · rw [hu]
+    have hchange : (∫ v : RealPlane, F (aux_WOneContinuousLinearEquiv v)) =
+        ∫ v : RealPlane, F v :=
+      aux_measurePreserving_WOne.integral_comp
+        aux_WOneContinuousLinearEquiv.toHomeomorph.measurableEmbedding F
+    calc
+      (∫ v : RealPlane,
+        scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) ((W 1 v).1) *
+          scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) ((W 1 v).2)) =
+          ∫ v : RealPlane, F (aux_WOneContinuousLinearEquiv v) := by
+            apply integral_congr_ae
+            filter_upwards [] with v
+            change f ((W 1 v).1) * g ((W 1 v).2) =
+              f ((aux_WContinuousLinearEquiv 1 v).1) *
+                g ((aux_WContinuousLinearEquiv 1 v).2)
+            rw [aux_WContinuousLinearEquiv_apply]
+      _ = ∫ v : RealPlane, F v := hchange
+      _ = 16 := hFint
+
+/-- Integrability of the planar bracket product used to sum the kernel-decay majorant. -/
+private theorem aux_reduction_plane_bracket_integrable (D : ReductionData)
+    (q : ReductionScaleTriple D.a) (j : ℤ) :
+    Integrable (fun v : RealPlane =>
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) ((W q.orientation v).1) *
+        scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) ((W q.orientation v).2)) := by
+  let f : ℝ → ℝ := fun x => scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) x
+  let g : ℝ → ℝ := fun x => scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) x
+  let F : RealPlane → ℝ := fun v => f v.1 * g v.2
+  have hleft : 0 < q.left j := (q.left_spaced j).1
+  have hright : 0 < q.right j := (q.right_spaced j).1
+  have hf : Integrable f :=
+    aux_integrable_scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) (by norm_num) hleft
+  have hg : Integrable g :=
+    aux_integrable_scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) (by norm_num) hright
+  have hF : Integrable F := by
+    simpa only [F, Measure.volume_eq_prod] using hf.mul_prod hg
+  have horientation : q.orientation = 0 ∨ q.orientation = 1 := by omega
+  rcases horientation with hu | hu
+  · rw [hu]
+    simpa [F, f, g, W] using hF
+  · rw [hu]
+    have hcomp : Integrable (F ∘ aux_WOneContinuousLinearEquiv) :=
+      (aux_measurePreserving_WOne.integrable_comp hF.aestronglyMeasurable).mpr hF
+    convert hcomp using 1
+    funext v
+    change f ((W 1 v).1) * g ((W 1 v).2) =
+      f ((aux_WContinuousLinearEquiv 1 v).1) * g ((aux_WContinuousLinearEquiv 1 v).2)
+    rw [aux_WContinuousLinearEquiv_apply]
+
+/-- The `80`-bound for the base kernel's `L¹` norm required by `nReduction`. -/
+private theorem aux_reduction_kernel_l1_bound (D : ReductionData) (j : ℤ) :
+    (∫ v : RealPlane, ‖D.kernel j v‖) ≤ 80 := by
+  let F : ReductionScaleTriple D.a → RealPlane → ℝ := fun q v =>
+    scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) ((W q.orientation v).1) *
+      scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) ((W q.orientation v).2)
+  let S : RealPlane → ℝ := fun v => ∑ q ∈ D.triples, F q v
+  have hF (q : ReductionScaleTriple D.a) (_hq : q ∈ D.triples) : Integrable (F q) := by
+    simpa [F] using aux_reduction_plane_bracket_integrable D q j
+  have hS : Integrable S := by
+    dsimp [S]
+    exact integrable_finsetSum D.triples hF
+  have hkernel : Integrable (fun v : RealPlane => ‖D.kernel j v‖) :=
+    (aux_memW0_integrable_of_addHaar (D.kernel_memW0 j)).norm
+  have hmono : (∫ v : RealPlane, ‖D.kernel j v‖) ≤ ∫ v : RealPlane, S v := by
+    apply integral_mono hkernel hS
+    intro v
+    simpa [S, F, Real.norm_eq_abs] using D.kernel_decay j v
+  calc
+    (∫ v : RealPlane, ‖D.kernel j v‖) ≤ ∫ v : RealPlane, S v := hmono
+    _ = ∑ q ∈ D.triples, (16 : ℝ) := by
+      rw [show (∫ v : RealPlane, S v) = ∑ q ∈ D.triples, ∫ v : RealPlane, F q v by
+        dsimp [S]
+        exact integral_finsetSum D.triples hF]
+      apply Finset.sum_congr rfl
+      intro q hq
+      simpa [F] using aux_reduction_plane_bracket_integral D q j
+    _ = (D.triples.card : ℝ) * 16 := by simp
+    _ ≤ 80 := by
+      have hcard : (D.triples.card : ℝ) ≤ 5 := by exact_mod_cast D.triples_card
+      nlinarith
+
+/-- The Fubini `L¹` bound for the diagonal convolution that defines `reductionNKernel`. -/
+private theorem aux_reduction_diagonal_convolution_l1_bound
+    (M : RealPlane → ℝ) (hM : MemW0 M) (rho : ℝ → ℝ) (hrho : MemW0 rho) :
+    eLpNorm (fun v : RealPlane =>
+      ∫ p : ℝ, M (v.1 - p, v.2 - p) * rho p) 1 volume ≤
+      ENNReal.ofReal ((∫ v : RealPlane, ‖M v‖) * ∫ p : ℝ, ‖rho p‖) := by
+  let K : RealPlane × ℝ → ℝ := fun vp =>
+    M (vp.1.1 - vp.2, vp.1.2 - vp.2) * rho vp.2
+  have hKmeas : AEStronglyMeasurable K
+      ((volume : Measure RealPlane).prod (volume : Measure ℝ)) := by
+    apply Continuous.aestronglyMeasurable
+    dsimp [K]
+    exact (hM.1.comp ((continuous_fst.fst.sub continuous_snd).prodMk
+      (continuous_fst.snd.sub continuous_snd))).mul
+      (hrho.1.comp continuous_snd)
+  have hMint : Integrable M := aux_memW0_integrable_of_addHaar hM
+  have hrhoint : Integrable rho := aux_memW0_integrable_of_addHaar hrho
+  have hK : Integrable K ((volume : Measure RealPlane).prod (volume : Measure ℝ)) := by
+    rw [integrable_prod_iff' hKmeas]
+    refine ⟨Filter.Eventually.of_forall fun p => ?_, ?_⟩
+    · dsimp [K]
+      convert (hMint.comp_sub_right (p, p)).mul_const (rho p) using 1
+      funext x
+      rcases x with ⟨x₀, x₁⟩
+      simp [sub_eq_add_neg]
+    · have hnorm (p : ℝ) :
+          (∫ v : RealPlane, ‖K (v, p)‖) =
+            (∫ v : RealPlane, ‖M v‖) * ‖rho p‖ := by
+        simp only [K, norm_mul]
+        rw [integral_mul_const]
+        congr 1
+        exact integral_sub_right_eq_self (fun v : RealPlane => ‖M v‖) (p, p)
+      convert hrhoint.norm.const_mul (∫ v : RealPlane, ‖M v‖) using 1
+      ext p
+      rw [hnorm]
+  have hKnorm :
+      (∫ vp : RealPlane × ℝ, ‖K vp‖ ∂((volume : Measure RealPlane).prod volume)) =
+        (∫ v : RealPlane, ‖M v‖) * ∫ p : ℝ, ‖rho p‖ := by
+    calc
+      (∫ vp : RealPlane × ℝ, ‖K vp‖ ∂((volume : Measure RealPlane).prod volume)) =
+          ∫ v : RealPlane, ∫ p : ℝ, ‖K (v, p)‖ :=
+        integral_prod _ hK.norm
+      _ = ∫ p : ℝ, ∫ v : RealPlane, ‖K (v, p)‖ :=
+        integral_integral_swap hK.norm
+      _ = ∫ p : ℝ, (∫ v : RealPlane, ‖M v‖) * ‖rho p‖ := by
+        congr with p
+        simp only [K, norm_mul]
+        rw [integral_mul_const]
+        congr 1
+        exact integral_sub_right_eq_self (fun v : RealPlane => ‖M v‖) (p, p)
+      _ = (∫ v : RealPlane, ‖M v‖) * ∫ p : ℝ, ‖rho p‖ := by
+        rw [integral_const_mul]
+  have hslice := aux_eLpNorm_one_integral_slice_le
+    (volume : Measure RealPlane) (volume : Measure ℝ) hK.aestronglyMeasurable
+  calc
+    eLpNorm (fun v : RealPlane => ∫ p : ℝ, M (v.1 - p, v.2 - p) * rho p) 1 volume =
+        eLpNorm (fun v : RealPlane => ∫ p : ℝ, K (v, p)) 1 volume := by rfl
+    _ ≤ eLpNorm K 1 ((volume : Measure RealPlane).prod volume) := hslice
+    _ ≤ ENNReal.ofReal ((∫ vp : RealPlane × ℝ, ‖K vp‖
+          ∂((volume : Measure RealPlane).prod volume))) :=
+      aux_eLpNorm_one_le_of_integral_norm_le hK le_rfl
+    _ = ENNReal.ofReal ((∫ v : RealPlane, ‖M v‖) * ∫ p : ℝ, ‖rho p‖) := by
+      rw [hKnorm]
 
 /-- Lemma \ref{lem:N-reduction}. -/
 theorem nReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) (h : ℕ) (j : ℤ) :
     MemW0 (reductionNKernel n D h j) ∧
       eLpNorm (reductionNKernel n D h j) 1 volume ≤ ENNReal.ofReal C_nReduction := by
-  sorry
+  have hrho : MemW0 (rhoKernel n D.a h j) :=
+    (rhoKernelsReduction hn D.a D.a_spaced h j).1
+  have hN : MemW0 (reductionNKernel n D h j) := by
+    have hconv := aux_memW0_convolutionAlong (D.kernel j) (D.kernel_memW0 j)
+      (rhoKernel n D.a h j) hrho (1, 1)
+    convert hconv using 1
+    funext v
+    apply integral_congr_ae
+    filter_upwards [] with p
+    rcases v with ⟨v₀, v₁⟩
+    simp [smul_eq_mul, sub_eq_add_neg]
+  have hM : (∫ v : RealPlane, ‖D.kernel j v‖) ≤ 80 :=
+    aux_reduction_kernel_l1_bound D j
+  have hR : (∫ p : ℝ, ‖rhoKernel n D.a h j p‖) ≤ 4 * C_rhoKernelsReduction := by
+    simpa only [Real.norm_eq_abs] using aux_reduction_rho_l1_bound hn D h j
+  have hRnonneg : 0 ≤ (∫ p : ℝ, ‖rhoKernel n D.a h j p‖) :=
+    integral_nonneg fun _ => norm_nonneg _
+  have hC : 0 ≤ C_rhoKernelsReduction := aux_reduction_Crho_nonneg
+  have hproduct :
+      (∫ v : RealPlane, ‖D.kernel j v‖) *
+          (∫ p : ℝ, ‖rhoKernel n D.a h j p‖) ≤
+        (2 : ℝ) ^ (9 : ℕ) * C_rhoKernelsReduction := by
+    calc
+      (∫ v : RealPlane, ‖D.kernel j v‖) *
+          (∫ p : ℝ, ‖rhoKernel n D.a h j p‖) ≤
+          80 * (∫ p : ℝ, ‖rhoKernel n D.a h j p‖) :=
+        mul_le_mul_of_nonneg_right hM hRnonneg
+      _ ≤ 80 * (4 * C_rhoKernelsReduction) :=
+        mul_le_mul_of_nonneg_left hR (by norm_num)
+      _ = 320 * C_rhoKernelsReduction := by ring
+      _ ≤ 512 * C_rhoKernelsReduction :=
+        mul_le_mul_of_nonneg_right (by norm_num) hC
+      _ = (2 : ℝ) ^ (9 : ℕ) * C_rhoKernelsReduction := by norm_num
+  refine ⟨hN, ?_⟩
+  have hconv := aux_reduction_diagonal_convolution_l1_bound (D.kernel j) (D.kernel_memW0 j)
+    (rhoKernel n D.a h j) hrho
+  calc
+    eLpNorm (reductionNKernel n D h j) 1 volume =
+        eLpNorm (fun v : RealPlane =>
+          ∫ p : ℝ, D.kernel j (v.1 - p, v.2 - p) * rhoKernel n D.a h j p) 1 volume := by rfl
+    _ ≤ ENNReal.ofReal ((∫ v : RealPlane, ‖D.kernel j v‖) *
+          ∫ p : ℝ, ‖rhoKernel n D.a h j p‖) := hconv
+    _ ≤ ENNReal.ofReal C_nReduction := by
+      apply ENNReal.ofReal_le_ofReal
+      simpa [C_nReduction] using hproduct
 
 /-- The numerical estimate in Lemma \ref{constant N reduction}. -/
 theorem constantNReduction : C_nReduction < (3 / 5 : ℝ) * (2 : ℝ) ^ (75 : ℕ) := by
-  sorry
+  unfold C_nReduction
+  calc
+    (2 : ℝ) ^ (9 : ℕ) * C_rhoKernelsReduction <
+        (2 : ℝ) ^ (9 : ℕ) * ((3 / 5 : ℝ) * (2 : ℝ) ^ (66 : ℕ)) :=
+      mul_lt_mul_of_pos_left aux_rhoKernelsReduction_lt_three_fifths_two_pow_66 (by positivity)
+    _ = (3 / 5 : ℝ) * (2 : ℝ) ^ (75 : ℕ) := by ring
+
+/-- The coordinate identification used to view a one-coordinate kernel as a
+planar kernel. -/
+private noncomputable def aux_reductionBasePlaneEquiv :
+    (RealVector 1 × RealVector 1) ≃L[ℝ] RealPlane :=
+  (ContinuousLinearEquiv.piUnique ℝ (fun _ : Fin 1 => ℝ)).prodCongr
+    (ContinuousLinearEquiv.piUnique ℝ (fun _ : Fin 1 => ℝ))
+
+/-- The absolute reduction kernel, regarded as a one-coordinate base kernel. -/
+private noncomputable def aux_reductionBase (n : ℕ) (D : ReductionData) (h : ℕ) (j : ℤ) :
+    MKernel 1 :=
+  fun x => |reductionNKernel n D h j (x.1 0, x.2 0)|
+
+/-- Pointwise evaluation of the one-coordinate reduction base kernel. -/
+private theorem aux_reductionBase_apply (n : ℕ) (D : ReductionData) (h : ℕ) (j : ℤ)
+    (x : RealVector 1 × RealVector 1) :
+    aux_reductionBase n D h j x = |reductionNKernel n D h j (x.1 0, x.2 0)| := rfl
+
+/-- The absolute reduction base kernel belongs to the Wiener space. -/
+private theorem aux_reductionBase_memW0 {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (j : ℤ) :
+    MemW0 (aux_reductionBase n D h j) := by
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector 1 × RealVector 1)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure (volume : Measure RealPlane) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  have hN : MemW0 (fun v : RealPlane => |reductionNKernel n D h j v|) :=
+    aux_memW0_abs (nReduction hn D h j).1
+  have hcomp : MemW0 ((fun v : RealPlane => |reductionNKernel n D h j v|) ∘
+      aux_reductionBasePlaneEquiv) :=
+    aux_memW0_comp_continuousLinearEquiv hN aux_reductionBasePlaneEquiv
+  convert hcomp using 1
+  funext x
+  rfl
+
+/-- Nonnegativity of the absolute reduction base kernel. -/
+private theorem aux_reductionBase_nonneg (n : ℕ) (D : ReductionData) (h : ℕ) (j : ℤ)
+    (x : RealVector 1 × RealVector 1) :
+    0 ≤ aux_reductionBase n D h j x := by
+  exact abs_nonneg _
+
+/-- An enumeration of the two-parameter dyadic Gaussian expansion by naturals. -/
+private noncomputable def aux_reductionFinTwoNatEnum : ℕ ≃ (Fin 2 → ℕ) :=
+  (aux_finTwoNatEquivProd.trans Nat.pairEquiv).symm
+
+/-- Nonnegativity of the constant in the increase-data Gaussian expansion. -/
+private theorem aux_reduction_CincreaseDataGaussianExpansion_nonneg :
+    0 ≤ C_increaseDataGaussianExpansion := by
+  unfold C_increaseDataGaussianExpansion C_increaseDataBracketDomination
+  exact mul_nonneg (mul_nonneg (by positivity) (sq_nonneg _))
+    (mul_nonneg (by positivity) aux_reduction_Crho_nonneg)
+
+/-- The finite Gaussian sum attached to one dyadic expansion index. -/
+private noncomputable def aux_reductionGaussianSum {n : ℕ} (D : ReductionData) (h : ℕ)
+    (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (m : Fin 2 → ℕ) (j : ℤ) : MKernel 1 :=
+  fun x => ∑ b ∈ w.bracket.B,
+    twoDimensionalGaussian
+      (fun r => gaussianExpansionPair (w.bracket.scales b) m r j)
+      (w.bracket.orientation b) (x.1 0, x.2 0)
+
+/-- The finite Gaussian sum is a Wiener-space kernel. -/
+private theorem aux_reductionGaussianSum_memW0 {n : ℕ} (D : ReductionData) (h : ℕ)
+    (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (m : Fin 2 → ℕ) (j : ℤ) : MemW0 (aux_reductionGaussianSum D h w m j) := by
+  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector 1 × RealVector 1)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  letI : Measure.IsAddHaarMeasure (volume : Measure RealPlane) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  have hplane : MemW0 (fun v : RealPlane => ∑ b ∈ w.bracket.B,
+      twoDimensionalGaussian
+        (fun r => gaussianExpansionPair (w.bracket.scales b) m r j)
+        (w.bracket.orientation b) v) := by
+    apply aux_memW0_finset_sum
+    intro b hb
+    apply aux_twoDimensionalGaussian_memW0
+    intro r
+    exact aux_spacedSequence_pos (w.scales_in_A b hb m r) j
+  have hcomp : MemW0 ((fun v : RealPlane => ∑ b ∈ w.bracket.B,
+      twoDimensionalGaussian
+        (fun r => gaussianExpansionPair (w.bracket.scales b) m r j)
+        (w.bracket.orientation b) v) ∘ aux_reductionBasePlaneEquiv) :=
+    aux_memW0_comp_continuousLinearEquiv hplane aux_reductionBasePlaneEquiv
+  convert hcomp using 1
+  funext x
+  rfl
+
+/-- Pointwise nonnegativity of the finite Gaussian sum. -/
+private theorem aux_reductionGaussianSum_nonneg {n : ℕ} (D : ReductionData) (h : ℕ)
+    (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (m : Fin 2 → ℕ) (j : ℤ) (x : RealVector 1 × RealVector 1) :
+    0 ≤ aux_reductionGaussianSum D h w m j x := by
+  apply Finset.sum_nonneg
+  intro b hb
+  apply aux_twoDimensionalGaussian_nonneg
+  intro r
+  exact aux_spacedSequence_pos (w.scales_in_A b hb m r) j
+
+/-- One enumerated summand in the Gaussian majorant for the reduction kernel. -/
+private noncomputable def aux_reductionGaussianTerm {n : ℕ} (D : ReductionData) (h : ℕ)
+    (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (N : ℕ) (j : ℤ) : MKernel 1 :=
+  fun x => C_increaseDataGaussianExpansion * Real.rpow 2 (-((h : ℝ) / 3)) *
+    gaussianExpansionWeight (aux_reductionFinTwoNatEnum N) *
+    aux_reductionGaussianSum D h w (aux_reductionFinTwoNatEnum N) j x
+
+/-- Each enumerated Gaussian-majorant term belongs to the Wiener space. -/
+private theorem aux_reductionGaussianTerm_memW0 {n : ℕ} (D : ReductionData) (h : ℕ)
+    (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (N : ℕ) (j : ℤ) : MemW0 (aux_reductionGaussianTerm D h w N j) := by
+  have hscalar : 0 ≤ C_increaseDataGaussianExpansion * Real.rpow 2 (-((h : ℝ) / 3)) *
+      gaussianExpansionWeight (aux_reductionFinTwoNatEnum N) := by
+    exact mul_nonneg
+      (mul_nonneg aux_reduction_CincreaseDataGaussianExpansion_nonneg
+        (Real.rpow_nonneg (by norm_num) _))
+      (Real.rpow_nonneg (by norm_num) _)
+  convert aux_memW0_const_mul_nonneg
+    (aux_reductionGaussianSum_memW0 D h w (aux_reductionFinTwoNatEnum N) j) _ hscalar using 1
+  funext x
+  unfold aux_reductionGaussianTerm
+  ring
+
+/-- Pointwise nonnegativity of each enumerated Gaussian-majorant term. -/
+private theorem aux_reductionGaussianTerm_nonneg {n : ℕ} (D : ReductionData) (h : ℕ)
+    (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (N : ℕ) (j : ℤ) (x : RealVector 1 × RealVector 1) :
+    0 ≤ aux_reductionGaussianTerm D h w N j x := by
+  unfold aux_reductionGaussianTerm
+  exact mul_nonneg
+    (mul_nonneg
+      (mul_nonneg aux_reduction_CincreaseDataGaussianExpansion_nonneg
+        (Real.rpow_nonneg (by norm_num) _))
+      (Real.rpow_nonneg (by norm_num) _))
+    (aux_reductionGaussianSum_nonneg D h w _ j x)
+
+set_option maxHeartbeats 800000 in
+-- The summability congruence unfolds a finite Gaussian family below a tsum.
+/-- The enumerated Gaussian-majorant series is pointwise summable. -/
+private theorem aux_reductionGaussianTerm_summable {n : ℕ} (D : ReductionData) (h : ℕ)
+    (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (j : ℤ) (x : RealVector 1 × RealVector 1) :
+    Summable (fun N => aux_reductionGaussianTerm D h w N j x) := by
+  let c : ℝ := C_increaseDataGaussianExpansion * Real.rpow 2 (-((h : ℝ) / 3))
+  let f : (Fin 2 → ℕ) → ℝ := fun m => gaussianExpansionWeight m *
+    ∑ b ∈ w.bracket.B,
+      twoDimensionalGaussian
+        (fun r => gaussianExpansionPair (w.bracket.scales b) m r j)
+        (w.bracket.orientation b) (x.1 0, x.2 0)
+  have hf : Summable f := by
+    simpa [f] using w.series_summable j (x.1 0, x.2 0)
+  have henum : Summable (fun N => f (aux_reductionFinTwoNatEnum N)) :=
+    aux_reductionFinTwoNatEnum.summable_iff.mpr hf
+  apply (henum.mul_left c).congr
+  intro N
+  dsimp [c, f]
+  unfold aux_reductionGaussianTerm aux_reductionGaussianSum
+  change C_increaseDataGaussianExpansion * (2 : ℝ) ^ (-((h : ℝ) / 3)) *
+      (gaussianExpansionWeight (aux_reductionFinTwoNatEnum N) *
+        ∑ b ∈ w.bracket.B,
+          twoDimensionalGaussian
+            (fun r => gaussianExpansionPair (w.bracket.scales b) (aux_reductionFinTwoNatEnum N) r j)
+            (w.bracket.orientation b) (x.1 0, x.2 0)) =
+    C_increaseDataGaussianExpansion * Real.rpow 2 (-((h : ℝ) / 3)) *
+      gaussianExpansionWeight (aux_reductionFinTwoNatEnum N) *
+      ∑ b ∈ w.bracket.B,
+        twoDimensionalGaussian
+          (fun r => gaussianExpansionPair (w.bracket.scales b) (aux_reductionFinTwoNatEnum N) r j)
+          (w.bracket.orientation b) (x.1 0, x.2 0)
+  rw [show (2 : ℝ) ^ (-((h : ℝ) / 3)) = Real.rpow 2 (-((h : ℝ) / 3)) by rfl]
+  ring
+
+/-- The equal pair of scales whose square-root multiplier is `reductionSigma`. -/
+private noncomputable def aux_reductionSigmaScalePair (D : ReductionData) (h : ℕ) :
+    SequencePair :=
+  fun _ r => (Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r)
+
+/-- The two auxiliary sigma scales are multiplicatively spaced. -/
+private theorem aux_reductionSigmaScalePair_spaced (D : ReductionData) (h : ℕ) (r : Fin 2) :
+    SpacedSequence (aux_reductionSigmaScalePair D h r) := by
+  unfold aux_reductionSigmaScalePair
+  apply smul_mem_A
+  · apply smul_mem_A D.a_spaced
+    positivity
+  · exact inv_pos.mpr (Real.sqrt_pos.2 (by norm_num))
+
+/-- The Euclidean combination of the two auxiliary sigma scales recovers the
+original dilated scale. -/
+private theorem aux_reductionSigmaScalePair_sqrt (D : ReductionData) (h : ℕ) (r : ℤ) :
+    Real.sqrt ((aux_reductionSigmaScalePair D h 0 r) ^ 2 +
+      (aux_reductionSigmaScalePair D h 1 r) ^ 2) = (2 : ℝ) ^ h * D.a r := by
+  have hpos : 0 < (2 : ℝ) ^ h * D.a r :=
+    mul_pos (pow_pos (by norm_num) _) (D.a_spaced r).1
+  have hsqrt : (Real.sqrt 2) ^ 2 = 2 := by norm_num
+  rw [show aux_reductionSigmaScalePair D h 0 r =
+    (Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r) by rfl]
+  rw [show aux_reductionSigmaScalePair D h 1 r =
+    (Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r) by rfl]
+  have hsq : ((Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r)) ^ 2 +
+      ((Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r)) ^ 2 =
+        ((2 : ℝ) ^ h * D.a r) ^ 2 := by
+    have hinv_sq : (Real.sqrt 2)⁻¹ ^ 2 = (2 : ℝ)⁻¹ := by
+      rw [inv_pow, hsqrt]
+    calc
+      ((Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r)) ^ 2 +
+          ((Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r)) ^ 2 =
+          (Real.sqrt 2)⁻¹ ^ 2 *
+            (((2 : ℝ) ^ h * D.a r) ^ 2 + ((2 : ℝ) ^ h * D.a r) ^ 2) := by ring
+      _ = (Real.sqrt 2)⁻¹ ^ 2 * (2 * ((2 : ℝ) ^ h * D.a r) ^ 2) := by ring
+      _ = (2 : ℝ)⁻¹ * (2 * ((2 : ℝ) ^ h * D.a r) ^ 2) := by rw [hinv_sq]
+      _ = ((2 : ℝ) ^ h * D.a r) ^ 2 := by
+        rw [← mul_assoc, inv_mul_cancel₀ (by norm_num), one_mul]
+  rw [hsq, Real.sqrt_sq_eq_abs, abs_of_pos hpos]
+
+/-- A sequence has finite distance from itself. -/
+private theorem aux_reductionSequenceDistance_self_lt_top (a : ℤ → ℝ) :
+    SequenceDistance a a < ⊤ := by
+  apply lt_of_le_of_lt (aux_sequenceDistance_le_of_within (a := a) (b := a) (k := 0) ?_)
+    (WithTop.coe_lt_top 0)
+  intro j
+  simp
+
+/-- The distance from a sequence to itself is zero. -/
+private theorem aux_reductionSequenceDistance_self_eq_zero (a : ℤ → ℝ) :
+    SequenceDistance a a = 0 := by
+  apply le_antisymm
+  · apply aux_sequenceDistance_le_of_within
+    intro j
+    simp
+  · exact bot_le
+
+/-- The two-coordinate geometric data used to apply the positive-terms
+induction to one Gaussian summand. -/
+private noncomputable def aux_reductionGamma {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
+    GeometricParameters n where
+  k := 2
+  one_le_k := by omega
+  k_le_n := hn
+  orientation := Fin.lastCases 0 (fun _ => w.bracket.orientation b)
+  scales := Fin.lastCases (aux_reductionSigmaScalePair D h)
+    (fun _ => gaussianExpansionPair (w.bracket.scales b) m)
+  scales_spaced := by
+    intro i r
+    refine Fin.lastCases ?_ (fun q => ?_) i
+    · simpa only [Fin.lastCases_last] using aux_reductionSigmaScalePair_spaced D h r
+    · simpa only [Fin.lastCases_castSucc] using w.scales_in_A b hb m r
+  finite_distance := by
+    intro i
+    refine Fin.lastCases ?_ (fun q => ?_) i
+    · change SequenceDistance (fun r => (Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r))
+        (fun r => (Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r)) < ⊤
+      exact aux_reductionSequenceDistance_self_lt_top _
+    · simpa only [Fin.lastCases_castSucc, sequencePairDistance] using
+        lt_of_le_of_lt (w.pair_distance b hb m) (WithTop.coe_lt_top _)
+
+/-- The first geometric coordinate has the bracket orientation. -/
+private theorem aux_reductionGamma_orientation_zero {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
+    (aux_reductionGamma hn D h w b hb m).orientation (0 : Fin 2) = w.bracket.orientation b := by
+  unfold aux_reductionGamma
+  change Fin.lastCases (n := 1) (motive := fun _ : Fin 2 => Fin 2) (0 : Fin 2)
+    (fun _ : Fin 1 => w.bracket.orientation b) ((0 : Fin 1).castSucc) = _
+  rw [Fin.lastCases_castSucc]
+
+/-- The terminal geometric coordinate has orientation zero. -/
+private theorem aux_reductionGamma_orientation_last {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
+    (aux_reductionGamma hn D h w b hb m).orientation (Fin.last 1) = 0 := by
+  unfold aux_reductionGamma
+  change Fin.lastCases (n := 1) (motive := fun _ : Fin 2 => Fin 2) (0 : Fin 2)
+    (fun _ : Fin 1 => w.bracket.orientation b) (Fin.last 1) = _
+  rw [Fin.lastCases_last]
+
+/-- The first scale pair of the geometric data is the Gaussian expansion pair. -/
+private theorem aux_reductionGamma_scales_zero {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
+    (aux_reductionGamma hn D h w b hb m).scales (0 : Fin 2) =
+      gaussianExpansionPair (w.bracket.scales b) m := by
+  unfold aux_reductionGamma
+  change Fin.lastCases (n := 1) (motive := fun _ : Fin 2 => SequencePair)
+    (aux_reductionSigmaScalePair D h)
+    (fun _ : Fin 1 => gaussianExpansionPair (w.bracket.scales b) m) ((0 : Fin 1).castSucc) = _
+  rw [Fin.lastCases_castSucc]
+
+/-- The terminal scale pair is the equal pair producing `reductionSigma`. -/
+private theorem aux_reductionGamma_scales_last {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
+    (aux_reductionGamma hn D h w b hb m).scales (Fin.last 1) =
+      aux_reductionSigmaScalePair D h := by
+  unfold aux_reductionGamma
+  change Fin.lastCases (n := 1) (motive := fun _ : Fin 2 => SequencePair)
+    (aux_reductionSigmaScalePair D h)
+    (fun _ : Fin 1 => gaussianExpansionPair (w.bracket.scales b) m) (Fin.last 1) = _
+  rw [Fin.lastCases_last]
+
+/-- The terminal multiplier of the geometric data is `reductionSigma`. -/
+private theorem aux_reductionGamma_sMultiplier_last {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) (j : ℤ) :
+    sMultiplier (aux_reductionGamma hn D h w b hb m) (Fin.last 1) j = reductionSigma D h j := by
+  funext x
+  unfold sMultiplier reductionSigma squareRootGaussianDifference
+  rw [dif_pos (aux_reductionGamma_orientation_last hn D h w b hb m)]
+  simp_rw [aux_reductionGamma_scales_last hn D h w b hb m]
+  simp_rw [aux_reductionSigmaScalePair_sqrt]
+
+/-- The terminal sandwich kernel is the tensor-square extension of its first
+Gaussian factor by `reductionSigma`. -/
+private theorem aux_reductionGamma_terminal_sandwich {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) (j : ℤ) :
+    sandwichKernel (aux_reductionGamma hn D h w b hb m)
+      (aux_sMultiplierTensorSquare (aux_reductionGamma hn D h w b hb m)) (Fin.last 1) j =
+      tensorSquareExtension 2 (by omega) (Fin.last 1)
+        (fun x => twoDimensionalGaussian
+          (fun r => gaussianExpansionPair (w.bracket.scales b) m r j)
+          (w.bracket.orientation b) (x.1 0, x.2 0))
+        (reductionSigma D h j) := by
+  funext y
+  have hleftset : Finset.univ.filter (fun r : Fin 2 => r < Fin.last 1) = {0} := by
+    ext r
+    fin_cases r <;> simp
+  have hrightset : Finset.univ.filter (fun r : Fin 2 => Fin.last 1 < r) = ∅ := by
+    ext r
+    fin_cases r <;> simp
+  have herase (x : RealVector 2) :
+      aux_eraseVector 2 (by omega) (Fin.last 1) x = fun q => x q.castSucc := by
+    funext q
+    fin_cases q
+    rfl
+  unfold sandwichKernel tensorSquareExtension tensorSquare
+  change
+    (∏ r ∈ Finset.univ.filter (fun r : Fin 2 => r < Fin.last 1),
+      gammaGaussian (aux_reductionGamma hn D h w b hb m) r j (y.1 r, y.2 r)) *
+      aux_sMultiplierTensorSquare (aux_reductionGamma hn D h w b hb m) (Fin.last 1) j
+        (y.1 (Fin.last 1), y.2 (Fin.last 1)) *
+      (∏ r ∈ Finset.univ.filter (fun r : Fin 2 => Fin.last 1 < r),
+        gammaGaussian (aux_reductionGamma hn D h w b hb m) r (j - 1) (y.1 r, y.2 r)) =
+      twoDimensionalGaussian
+          (fun r => gaussianExpansionPair (w.bracket.scales b) m r j)
+          (w.bracket.orientation b)
+          ((aux_eraseVector 2 (by omega) (Fin.last 1) y.1) 0,
+           (aux_eraseVector 2 (by omega) (Fin.last 1) y.2) 0) *
+        (reductionSigma D h j (y.1 (Fin.last 1)) *
+          reductionSigma D h j (y.2 (Fin.last 1)))
+  rw [hleftset, hrightset, Finset.prod_singleton, Finset.prod_empty, mul_one]
+  unfold aux_sMultiplierTensorSquare gammaGaussian
+  rw [aux_reductionGamma_sMultiplier_last hn D h w b hb m j,
+    aux_reductionGamma_scales_zero hn D h w b hb m,
+    aux_reductionGamma_orientation_zero hn D h w b hb m]
+  simp [aux_eraseVector]
+
+/-- The separation budget of the two-coordinate geometric data. -/
+private theorem aux_reductionGamma_delta_le {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
+    geometricDelta (aux_reductionGamma hn D h w b hb m) ≤ 1 + 2 * (1 + h) + m 0 + m 1 := by
+  let γ := aux_reductionGamma hn D h w b hb m
+  have hlast : sequencePairDistance (γ.scales (Fin.last 1)) = 0 := by
+    change SequenceDistance (fun r => (Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r))
+      (fun r => (Real.sqrt 2)⁻¹ * ((2 : ℝ) ^ h * D.a r)) = 0
+    exact aux_reductionSequenceDistance_self_eq_zero _
+  have hfirst : sequencePairDistance (γ.scales (0 : Fin 2)) ≤
+      ((2 * (1 + h) + m 0 + m 1 : ℕ) : WithTop ℕ) := by
+    simpa [γ, aux_reductionGamma_scales_zero] using w.pair_distance b hb m
+  have hfirstfinite : sequencePairDistance (γ.scales (0 : Fin 2)) < ⊤ :=
+    lt_of_le_of_lt hfirst (WithTop.coe_lt_top _)
+  have hfirstuntop :
+      (sequencePairDistance (γ.scales (0 : Fin 2))).untop
+        (ne_of_lt hfirstfinite) ≤ 2 * (1 + h) + m 0 + m 1 := by
+    rw [← WithTop.coe_le_coe]
+    simpa using hfirst
+  have hlast' : sequencePairDistance (γ.scales (1 : Fin 2)) = 0 := by
+    change sequencePairDistance (γ.scales (Fin.last 1)) = 0
+    exact hlast
+  have hfirstuntop' :
+      (sequencePairDistance (γ.scales (0 : Fin 2))).untop
+        (ne_of_lt (γ.finite_distance (0 : Fin 2))) ≤ 2 * (1 + h) + m 0 + m 1 := by
+    simpa only using hfirstuntop
+  have hzero :
+      (sequencePairDistance (γ.scales (1 : Fin 2))).untop
+        (ne_of_lt (γ.finite_distance (1 : Fin 2))) = 0 := by
+    simp [hlast']
+  change geometricDelta γ ≤ _
+  unfold geometricDelta
+  change 1 + ∑ i : Fin 2,
+      (sequencePairDistance (γ.scales i)).untop (ne_of_lt (γ.finite_distance i)) ≤ _
+  rw [Fin.sum_univ_two, hzero]
+  omega
+
+/-- The positive-terms delta factor is controlled by the dyadic Gaussian
+expansion weight budget. -/
+private theorem aux_reductionGamma_delta_rpow_le {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
+    Real.rpow (geometricDelta (aux_reductionGamma hn D h w b hb m) : ℝ)
+      (2 - (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1)) ≤
+      16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ))
+        (2 - (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1)) := by
+  let q : ℝ := 2 - (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1)
+  have hindex : (2 : ℤ) - (n : ℤ) + 1 ≤ 1 := by omega
+  have hpowle : (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1) ≤ 2 := by
+    calc
+      (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1) ≤ (2 : ℝ) ^ (1 : ℤ) :=
+        zpow_le_zpow_right₀ (a := (2 : ℝ)) (by norm_num) hindex
+      _ = 2 := by norm_num
+  have hq0 : 0 ≤ q := by
+    dsimp [q]
+    linarith [zpow_nonneg (by norm_num : (0 : ℝ) ≤ 2) ((2 : ℤ) - (n : ℤ) + 1)]
+  have hq2 : q ≤ 2 := by
+    dsimp [q]
+    have hpow0 : 0 ≤ (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1) := by positivity
+    linarith
+  have hdeltaNat : geometricDelta (aux_reductionGamma hn D h w b hb m) ≤
+      4 * (1 + h + m 0 + m 1) := by
+    calc
+      geometricDelta (aux_reductionGamma hn D h w b hb m) ≤ 1 + 2 * (1 + h) + m 0 + m 1 :=
+        aux_reductionGamma_delta_le hn D h w b hb m
+      _ ≤ 4 * (1 + h + m 0 + m 1) := by omega
+  have hdelta : (geometricDelta (aux_reductionGamma hn D h w b hb m) : ℝ) ≤
+      4 * ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) := by
+    have hdeltaNat' : geometricDelta (aux_reductionGamma hn D h w b hb m) ≤
+        4 * (h + 1 + m 0 + m 1) := by
+      simpa [Nat.add_comm] using hdeltaNat
+    exact_mod_cast hdeltaNat'
+  have hbase : 1 ≤ (geometricDelta (aux_reductionGamma hn D h w b hb m) : ℝ) := by
+    have hbaseNat : 1 ≤ geometricDelta (aux_reductionGamma hn D h w b hb m) := by
+      unfold geometricDelta
+      omega
+    exact_mod_cast hbaseNat
+  have hH : 1 ≤ (h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ) := by
+    have hh : 0 ≤ (h : ℝ) := Nat.cast_nonneg _
+    have hm0 : 0 ≤ (m 0 : ℝ) := Nat.cast_nonneg _
+    have hm1 : 0 ≤ (m 1 : ℝ) := Nat.cast_nonneg _
+    linarith
+  change Real.rpow (geometricDelta (aux_reductionGamma hn D h w b hb m) : ℝ) q ≤
+    16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q
+  calc
+    Real.rpow (geometricDelta (aux_reductionGamma hn D h w b hb m) : ℝ) q ≤
+        Real.rpow (4 * ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ))) q :=
+      Real.rpow_le_rpow (by positivity) hdelta hq0
+    _ = Real.rpow 4 q * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q :=
+      Real.mul_rpow (by positivity) (by positivity)
+    _ ≤ 16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q := by
+      apply mul_le_mul_of_nonneg_right
+        (show Real.rpow 4 q ≤ 16 by
+          calc
+            Real.rpow 4 q ≤ Real.rpow 4 (2 : ℝ) :=
+              Real.rpow_le_rpow_of_exponent_le (by norm_num) hq2
+            _ = 16 := by norm_num)
+        (Real.rpow_nonneg (by positivity) _)
+
+/-- The geometric data used in the reduction has exactly two coordinates. -/
+private theorem aux_reductionGamma_k {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
+    (aux_reductionGamma hn D h w b hb m).k = 2 := rfl
+
+/-- A square-moment summation bound for the dyadic Gaussian expansion
+weights, including the needed loss in `h`. -/
+private theorem aux_reductionDecay_sum (h : ℕ) :
+    Summable (fun m : Fin 2 → ℕ => gaussianExpansionWeight m *
+      ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) ∧
+    Real.rpow 2 (-((h : ℝ) / 12)) *
+      (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+        ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) ≤
+      (2 : ℝ) ^ (18 : ℕ) := by
+  have hqM : Real.rpow 2 (-(1 / 6 : ℝ)) ≤ (9 / 10 : ℝ) := by
+    apply (pow_le_pow_iff_left₀
+      (Real.rpow_nonneg (by norm_num) _) (by norm_num) (by norm_num : (6 : ℕ) ≠ 0)).mp
+    calc
+      (Real.rpow 2 (-(1 / 6 : ℝ))) ^ (6 : ℕ) = Real.rpow 2 (-1 : ℝ) := by
+        convert (Real.rpow_mul_natCast (x := (2 : ℝ)) (by norm_num) (-(1 / 6 : ℝ)) 6).symm using 1 <;>
+          norm_num
+      _ = (1 / 2 : ℝ) := by
+        norm_num [Real.rpow_neg]
+      _ ≤ (9 / 10 : ℝ) ^ (6 : ℕ) := by norm_num
+  have hqH : Real.rpow 2 (-(1 / 12 : ℝ)) ≤ (19 / 20 : ℝ) := by
+    apply (pow_le_pow_iff_left₀
+      (Real.rpow_nonneg (by norm_num) _) (by norm_num) (by norm_num : (12 : ℕ) ≠ 0)).mp
+    calc
+      (Real.rpow 2 (-(1 / 12 : ℝ))) ^ (12 : ℕ) = Real.rpow 2 (-1 : ℝ) := by
+        convert (Real.rpow_mul_natCast (x := (2 : ℝ)) (by norm_num) (-(1 / 12 : ℝ)) 12).symm using 1 <;>
+          norm_num
+      _ = (1 / 2 : ℝ) := by
+        norm_num [Real.rpow_neg]
+      _ ≤ (19 / 20 : ℝ) ^ (12 : ℕ) := by norm_num
+  let rH : ℝ := 19 / 20
+  let rM : ℝ := 9 / 10
+  let H : ℝ := (h : ℝ) + 1
+  let f0 : ℕ → ℝ := fun a => rM ^ a
+  let f2 : ℕ → ℝ := fun a => ((a : ℝ) + 1) ^ (2 : ℕ) * rM ^ a
+  let F : (Fin 2 → ℕ) → ℝ := fun m =>
+    3 * (H ^ (2 : ℕ) * (f0 (m 0) * f0 (m 1)) +
+      (f2 (m 0) * f0 (m 1) + f0 (m 0) * f2 (m 1)))
+  have hrHnonneg : 0 ≤ rH := by
+    dsimp [rH]
+    norm_num
+  have hrMnonneg : 0 ≤ rM := by
+    dsimp [rM]
+    norm_num
+  have hrMnorm : ‖rM‖ < 1 := by
+    dsimp [rM]
+    norm_num [Real.norm_eq_abs]
+  have hqHpow : Real.rpow 2 (-((h : ℝ) / 12)) =
+      (Real.rpow 2 (-(1 / 12 : ℝ))) ^ h := by
+    calc
+      Real.rpow 2 (-((h : ℝ) / 12)) =
+          Real.rpow 2 (-(1 / 12 : ℝ) * (h : ℝ)) := by
+            congr 1
+            ring
+      _ = (Real.rpow 2 (-(1 / 12 : ℝ))) ^ h :=
+        Real.rpow_mul_natCast (by norm_num : (0 : ℝ) ≤ 2) _ h
+  have hqHle : Real.rpow 2 (-((h : ℝ) / 12)) ≤ rH ^ h := by
+    rw [hqHpow]
+    apply pow_le_pow_left₀ (Real.rpow_nonneg (by norm_num) _)
+    dsimp [rH]
+    exact hqH
+  have hweight (m : Fin 2 → ℕ) : gaussianExpansionWeight m =
+      (Real.rpow 2 (-(1 / 6 : ℝ))) ^ (m 0 + m 1) := by
+    unfold gaussianExpansionWeight
+    calc
+      Real.rpow 2 (-((m 0 + m 1 : ℕ) : ℝ) / 6) =
+          Real.rpow 2 (-(1 / 6 : ℝ) * ((m 0 + m 1 : ℕ) : ℝ)) := by
+            congr 1
+            ring
+      _ = (Real.rpow 2 (-(1 / 6 : ℝ))) ^ (m 0 + m 1) :=
+        Real.rpow_mul_natCast (by norm_num : (0 : ℝ) ≤ 2) _ _
+  have hweightle (m : Fin 2 → ℕ) : gaussianExpansionWeight m ≤ rM ^ (m 0 + m 1) := by
+    rw [hweight]
+    apply pow_le_pow_left₀ (Real.rpow_nonneg (by norm_num) _)
+    dsimp [rM]
+    exact hqM
+  have hf0 : Summable f0 := by
+    dsimp [f0]
+    exact summable_geometric_of_norm_lt_one hrMnorm
+  have hchoose1 := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 1 hrMnorm
+  have hchoose2 := hasSum_choose_mul_geometric_of_norm_lt_one (𝕜 := ℝ) 2 hrMnorm
+  have hchoose := (hchoose2.mul_left (2 : ℝ)).sub hchoose1
+  have hf2 : Summable f2 := by
+    apply hchoose.summable.congr
+    intro a
+    dsimp [f2]
+    norm_num [Nat.cast_choose_two]
+    ring
+  have hf0nonneg (a : ℕ) : 0 ≤ f0 a := by
+    exact pow_nonneg hrMnonneg _
+  have hf2nonneg (a : ℕ) : 0 ≤ f2 a := by
+    exact mul_nonneg (sq_nonneg _) (pow_nonneg hrMnonneg _)
+  have h00 : Summable (fun m : Fin 2 → ℕ => f0 (m 0) * f0 (m 1)) :=
+    aux_summable_finTwo_product hf0nonneg hf0nonneg hf0 hf0
+  have h20 : Summable (fun m : Fin 2 → ℕ => f2 (m 0) * f0 (m 1)) :=
+    aux_summable_finTwo_product hf2nonneg hf0nonneg hf2 hf0
+  have h02 : Summable (fun m : Fin 2 → ℕ => f0 (m 0) * f2 (m 1)) :=
+    aux_summable_finTwo_product hf0nonneg hf2nonneg hf0 hf2
+  have hproduct (g k : ℕ → ℝ) (hg0 : ∀ a, 0 ≤ g a) (hk0 : ∀ a, 0 ≤ k a)
+      (hg : Summable g) (hk : Summable k) :
+      (∑' m : Fin 2 → ℕ, g (m 0) * k (m 1)) =
+        (∑' a : ℕ, g a) * (∑' a : ℕ, k a) := by
+    have hprod : Summable (fun m : Fin 2 → ℕ => g (m 0) * k (m 1)) :=
+      aux_summable_finTwo_product hg0 hk0 hg hk
+    have hprodPair : Summable (fun z : ℕ × ℕ => g z.1 * k z.2) := by
+      refine (aux_finTwoNatEquivProd.symm.summable_iff
+        (f := fun m : Fin 2 → ℕ => g (m 0) * k (m 1))).mpr hprod
+    calc
+      (∑' m : Fin 2 → ℕ, g (m 0) * k (m 1)) =
+          ∑' z : ℕ × ℕ, g z.1 * k z.2 :=
+        (aux_finTwoNatEquivProd.symm.tsum_eq
+          (fun m : Fin 2 → ℕ => g (m 0) * k (m 1))).symm
+      _ = (∑' a : ℕ, g a) * (∑' a : ℕ, k a) :=
+        (hg.tsum_mul_tsum hk hprodPair).symm
+  have hf0tsum : (∑' a : ℕ, f0 a) = 10 := by
+    dsimp [f0]
+    rw [tsum_geometric_of_norm_lt_one hrMnorm]
+    dsimp [rM]
+    norm_num
+  have hf2tsum : (∑' a : ℕ, f2 a) = 1900 := by
+    calc
+      (∑' a : ℕ, f2 a) =
+          2 * (1 / (1 - rM) ^ (2 + 1)) - 1 / (1 - rM) ^ (1 + 1) := by
+        rw [← hchoose.tsum_eq]
+        apply tsum_congr
+        intro a
+        dsimp [f2]
+        norm_num [Nat.cast_choose_two]
+        ring
+      _ = 1900 := by
+        dsimp [rM]
+        norm_num
+  have h00tsum : (∑' m : Fin 2 → ℕ, f0 (m 0) * f0 (m 1)) = 100 := by
+    rw [hproduct f0 f0 hf0nonneg hf0nonneg hf0 hf0, hf0tsum]
+    norm_num
+  have h20tsum : (∑' m : Fin 2 → ℕ, f2 (m 0) * f0 (m 1)) = 1900 * 10 := by
+    rw [hproduct f2 f0 hf2nonneg hf0nonneg hf2 hf0, hf2tsum, hf0tsum]
+  have h02tsum : (∑' m : Fin 2 → ℕ, f0 (m 0) * f2 (m 1)) = 10 * 1900 := by
+    rw [hproduct f0 f2 hf0nonneg hf2nonneg hf0 hf2, hf0tsum, hf2tsum]
+  have hF : Summable F := by
+    dsimp [F]
+    exact Summable.mul_left 3 ((h00.mul_left (H ^ (2 : ℕ))).add (h20.add h02))
+  have hFtsum : (∑' m : Fin 2 → ℕ, F m) = 300 * H ^ (2 : ℕ) + 114000 := by
+    change (∑' m : Fin 2 → ℕ,
+      3 * (H ^ (2 : ℕ) * (f0 (m 0) * f0 (m 1)) +
+        (f2 (m 0) * f0 (m 1) + f0 (m 0) * f2 (m 1)))) = _
+    rw [tsum_mul_left]
+    rw [Summable.tsum_add (h00.mul_left _) (h20.add h02)]
+    rw [Summable.tsum_add h20 h02]
+    rw [tsum_mul_left]
+    rw [h00tsum, h20tsum, h02tsum]
+    ring
+  have hsquare (m : Fin 2 → ℕ) :
+      (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ) ≤
+        3 * (H ^ (2 : ℕ) + ((m 0 : ℝ) + 1) ^ (2 : ℕ) +
+          ((m 1 : ℝ) + 1) ^ (2 : ℕ)) := by
+    have h0 : 0 ≤ (m 0 : ℝ) := Nat.cast_nonneg _
+    have h1 : 0 ≤ (m 1 : ℝ) := Nat.cast_nonneg _
+    nlinarith [sq_nonneg (H - (m 0 : ℝ)), sq_nonneg (H - (m 1 : ℝ)),
+      sq_nonneg ((m 0 : ℝ) - (m 1 : ℝ))]
+  have hpoint (m : Fin 2 → ℕ) : gaussianExpansionWeight m *
+      (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ) ≤ F m := by
+    calc
+      gaussianExpansionWeight m *
+          (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ) ≤
+          rM ^ (m 0 + m 1) *
+            (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ) :=
+        mul_le_mul_of_nonneg_right (hweightle m) (sq_nonneg _)
+      _ ≤ rM ^ (m 0 + m 1) *
+          (3 * (H ^ (2 : ℕ) + ((m 0 : ℝ) + 1) ^ (2 : ℕ) +
+            ((m 1 : ℝ) + 1) ^ (2 : ℕ))) :=
+        mul_le_mul_of_nonneg_left (hsquare m) (pow_nonneg hrMnonneg _)
+      _ = F m := by
+        rw [pow_add]
+        dsimp [F, f0, f2]
+        ring
+  have hsource : Summable (fun m : Fin 2 → ℕ => gaussianExpansionWeight m *
+      (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) :=
+    Summable.of_nonneg_of_le (fun m =>
+      mul_nonneg (Real.rpow_nonneg (by norm_num) _) (sq_nonneg _)) hpoint hF
+  have hsum : (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+      (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) ≤
+      300 * H ^ (2 : ℕ) + 114000 := by
+    calc
+      (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) ≤ ∑' m : Fin 2 → ℕ, F m :=
+        Summable.tsum_le_tsum hpoint hsource hF
+      _ = 300 * H ^ (2 : ℕ) + 114000 := hFtsum
+  have hstep (k : ℕ) : rH * (300 * ((k : ℝ) + 2) ^ (2 : ℕ) + 114000) ≤
+      300 * ((k : ℝ) + 1) ^ (2 : ℕ) + 114000 := by
+    dsimp [rH]
+    nlinarith [sq_nonneg ((k : ℝ) - 18)]
+  have hpoly : ∀ k : ℕ,
+      rH ^ k * (300 * ((k : ℝ) + 1) ^ (2 : ℕ) + 114000) ≤ 114300 := by
+    intro k
+    induction k with
+    | zero =>
+        dsimp [rH]
+        norm_num
+    | succ k ih =>
+        change rH ^ Nat.succ k *
+          (300 * (((Nat.succ k : ℕ) : ℝ) + 1) ^ (2 : ℕ) + 114000) ≤ 114300
+        calc
+          rH ^ (Nat.succ k) *
+              (300 * (((Nat.succ k : ℕ) : ℝ) + 1) ^ (2 : ℕ) + 114000) =
+              rH ^ k * (rH * (300 * ((k : ℝ) + 2) ^ (2 : ℕ) + 114000)) := by
+                simp only [pow_succ, Nat.cast_succ]
+                ring
+          _ ≤ rH ^ k * (300 * ((k : ℝ) + 1) ^ (2 : ℕ) + 114000) :=
+            mul_le_mul_of_nonneg_left (hstep k) (pow_nonneg hrHnonneg _)
+          _ ≤ 114300 := ih
+  have hsum_mul : rH ^ h *
+      (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+        (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) ≤
+      rH ^ h * (300 * H ^ (2 : ℕ) + 114000) :=
+    mul_le_mul_of_nonneg_left hsum (pow_nonneg hrHnonneg _)
+  refine ⟨?_, ?_⟩
+  · simpa [H] using hsource
+  calc
+    Real.rpow 2 (-((h : ℝ) / 12)) *
+        (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) =
+        Real.rpow 2 (-((h : ℝ) / 12)) *
+          (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+            (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) := by
+          simp [H]
+    _ ≤ rH ^ h *
+          (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+            (H + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) :=
+      mul_le_mul_of_nonneg_right hqHle (tsum_nonneg fun m =>
+        mul_nonneg (Real.rpow_nonneg (by norm_num) _) (sq_nonneg _))
+    _ ≤ rH ^ h * (300 * H ^ (2 : ℕ) + 114000) := hsum_mul
+    _ = rH ^ h * (300 * ((h : ℝ) + 1) ^ (2 : ℕ) + 114000) := by rfl
+    _ ≤ 114300 := hpoly h
+    _ ≤ (2 : ℝ) ^ (18 : ℕ) := by norm_num
+
+/-- The dyadic Gaussian expansion has the required one-quarter decay for
+every exponent at most two. -/
+private theorem aux_reductionDecay_sum_rpow (h : ℕ) {q : ℝ} (hq : q ≤ 2) :
+    Real.rpow 2 (-((h : ℝ) / 3)) *
+      (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+        Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q) ≤
+      (2 : ℝ) ^ (18 : ℕ) * Real.rpow 2 (-((h : ℝ) / 4)) := by
+  let G : (Fin 2 → ℕ) → ℝ := fun m => gaussianExpansionWeight m *
+    ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)
+  have hG := (aux_reductionDecay_sum h).1
+  have hG' : Summable G := by
+    simpa [G] using hG
+  have hbaseone (m : Fin 2 → ℕ) :
+      1 ≤ (h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ) := by
+    have hh : 0 ≤ (h : ℝ) := Nat.cast_nonneg _
+    have hm0 : 0 ≤ (m 0 : ℝ) := Nat.cast_nonneg _
+    have hm1 : 0 ≤ (m 1 : ℝ) := Nat.cast_nonneg _
+    linarith
+  have hbasenonneg (m : Fin 2 → ℕ) :
+      0 ≤ (h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ) := by
+    linarith [hbaseone m]
+  have hpoint (m : Fin 2 → ℕ) : gaussianExpansionWeight m *
+      Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q ≤ G m := by
+    dsimp [G]
+    apply mul_le_mul_of_nonneg_left
+      (show Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q ≤
+        ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ) by
+        calc
+          Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q ≤
+              Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) (2 : ℝ) :=
+            Real.rpow_le_rpow_of_exponent_le (hbaseone m) hq
+          _ = ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ) :=
+            Real.rpow_natCast _ _)
+      (Real.rpow_nonneg (by norm_num) _)
+  have hsource : Summable (fun m : Fin 2 → ℕ => gaussianExpansionWeight m *
+      Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q) :=
+    Summable.of_nonneg_of_le (fun m =>
+      mul_nonneg (Real.rpow_nonneg (by norm_num) _) (Real.rpow_nonneg (hbasenonneg m) _))
+      hpoint hG'
+  have hsum : (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+      Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q) ≤ ∑' m : Fin 2 → ℕ, G m :=
+    Summable.tsum_le_tsum hpoint hsource hG'
+  have hsplit : Real.rpow 2 (-((h : ℝ) / 3)) =
+      Real.rpow 2 (-((h : ℝ) / 4)) * Real.rpow 2 (-((h : ℝ) / 12)) := by
+    change (2 : ℝ) ^ (-((h : ℝ) / 3)) =
+      (2 : ℝ) ^ (-((h : ℝ) / 4)) * (2 : ℝ) ^ (-((h : ℝ) / 12))
+    rw [← Real.rpow_add (by norm_num : (0 : ℝ) < 2)]
+    congr 1
+    ring
+  have hcore := (aux_reductionDecay_sum h).2
+  calc
+    Real.rpow 2 (-((h : ℝ) / 3)) *
+        (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+          Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q) =
+        Real.rpow 2 (-((h : ℝ) / 4)) *
+          (Real.rpow 2 (-((h : ℝ) / 12)) *
+            (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+              Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q)) := by
+          rw [hsplit]
+          ring
+    _ ≤ Real.rpow 2 (-((h : ℝ) / 4)) *
+          (Real.rpow 2 (-((h : ℝ) / 12)) * (∑' m : Fin 2 → ℕ, G m)) := by
+      apply mul_le_mul_of_nonneg_left
+        (mul_le_mul_of_nonneg_left hsum (Real.rpow_nonneg (by norm_num) _))
+        (Real.rpow_nonneg (by norm_num) _)
+    _ = Real.rpow 2 (-((h : ℝ) / 4)) *
+          (Real.rpow 2 (-((h : ℝ) / 12)) *
+            (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+              ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ))) := by
+      simp [G]
+    _ ≤ Real.rpow 2 (-((h : ℝ) / 4)) * (2 : ℝ) ^ (18 : ℕ) := by
+      exact mul_le_mul_of_nonneg_left hcore (Real.rpow_nonneg (by norm_num) _)
+    _ = (2 : ℝ) ^ (18 : ℕ) * Real.rpow 2 (-((h : ℝ) / 4)) := by ring
+
+/-- Summability of the polynomially weighted Gaussian expansion used for the
+finite-prefix estimates. -/
+private theorem aux_reductionDecay_summable (h : ℕ) {q : ℝ} (_hq0 : 0 ≤ q) (hq : q ≤ 2) :
+    Summable (fun m : Fin 2 → ℕ => gaussianExpansionWeight m *
+      Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q) := by
+  let G : (Fin 2 → ℕ) → ℝ := fun m => gaussianExpansionWeight m *
+    ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)
+  have hG : Summable G := by
+    simpa [G] using (aux_reductionDecay_sum h).1
+  have hpoint (m : Fin 2 → ℕ) : gaussianExpansionWeight m *
+      Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q ≤ G m := by
+    have hbase : 1 ≤ (h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ) := by
+      have hh : 0 ≤ (h : ℝ) := Nat.cast_nonneg _
+      have hm0 : 0 ≤ (m 0 : ℝ) := Nat.cast_nonneg _
+      have hm1 : 0 ≤ (m 1 : ℝ) := Nat.cast_nonneg _
+      linarith
+    dsimp [G]
+    apply mul_le_mul_of_nonneg_left
+      (show Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q ≤
+        ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ) by
+        calc
+          Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q ≤
+              Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) (2 : ℝ) :=
+            Real.rpow_le_rpow_of_exponent_le hbase hq
+          _ = ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ) :=
+            Real.rpow_natCast _ _)
+      (Real.rpow_nonneg (by norm_num) _)
+  exact Summable.of_nonneg_of_le (fun m =>
+    mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (Real.rpow_nonneg (by positivity) _)) hpoint hG
 
 /-- The constant in Proposition \ref{P:increase-data-reduction}. -/
 noncomputable def C_increaseDataReduction : ℝ :=
   (2 : ℝ) ^ (22 : ℕ) * C_inductPositiveTermsTheorem *
     C_increaseDataGaussianExpansion * C_increaseDataBracketDominationCard
+
+/-- Expanding one tensor-square Gaussian majorant into its finite family of
+terminal sandwich kernels. -/
+private theorem aux_reductionGaussianTerm_tensor_eq_sum {n : ℕ} (hn : 2 ≤ n)
+    (D : ReductionData) (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
+    (N : ℕ) (j : ℤ) :
+    tensorSquareExtension 2 (by omega) (Fin.last 1)
+      (aux_reductionGaussianTerm D h w N j) (reductionSigma D h j) =
+      fun y => ∑ b ∈ w.bracket.B.attach,
+        (C_increaseDataGaussianExpansion * Real.rpow 2 (-((h : ℝ) / 3)) *
+          gaussianExpansionWeight (aux_reductionFinTwoNatEnum N)) *
+        sandwichKernel (aux_reductionGamma hn D h w b.1 b.2 (aux_reductionFinTwoNatEnum N))
+          (aux_sMultiplierTensorSquare
+            (aux_reductionGamma hn D h w b.1 b.2 (aux_reductionFinTwoNatEnum N)))
+          (Fin.last 1) j y := by
+  funext y
+  simp_rw [aux_reductionGamma_terminal_sandwich]
+  unfold tensorSquareExtension tensorSquare
+  simp [aux_reductionGaussianTerm, aux_reductionGaussianSum, aux_reductionFinTwoNatEnum]
+  rw [← Finset.sum_attach]
+  rw [Finset.mul_sum]
+  rw [Finset.sum_mul]
+  apply Finset.sum_congr rfl
+  intro b _
+  ring
+
+/-- The positive-terms bound for one enumerated Gaussian-majorant term. -/
+private theorem aux_reduction_per_term_bound {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h) (N : ℕ) :
+    kernelSequenceSeminorm n 2 (by omega) hn
+      (fun j => tensorSquareExtension 2 (by omega) (Fin.last 1)
+        (aux_reductionGaussianTerm D h w N j) (reductionSigma D h j)) ≤
+      ENNReal.ofReal
+        (C_inductPositiveTermsTheorem * C_increaseDataGaussianExpansion *
+          C_increaseDataBracketDominationCard * 16 *
+          Real.rpow 2 (-((h : ℝ) / 3)) *
+          (gaussianExpansionWeight (aux_reductionFinTwoNatEnum N) *
+            Real.rpow ((h : ℝ) + 1 + ((aux_reductionFinTwoNatEnum N) 0 : ℝ) +
+              ((aux_reductionFinTwoNatEnum N) 1 : ℝ))
+              (2 - (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1)))) := by
+  classical
+  let m := aux_reductionFinTwoNatEnum N
+  let q : ℝ := 2 - (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1)
+  let c : ℝ := C_increaseDataGaussianExpansion * Real.rpow 2 (-((h : ℝ) / 3)) *
+    gaussianExpansionWeight m
+  let S : {b // b ∈ w.bracket.B} → KernelSequence 2 := fun b =>
+    sandwichKernel (aux_reductionGamma hn D h w b.1 b.2 m)
+      (aux_sMultiplierTensorSquare (aux_reductionGamma hn D h w b.1 b.2 m)) (Fin.last 1)
+  have hCexpand : 0 ≤ C_increaseDataGaussianExpansion :=
+    aux_reduction_CincreaseDataGaussianExpansion_nonneg
+  have hc : 0 ≤ c := by
+    dsimp [c]
+    exact mul_nonneg (mul_nonneg hCexpand (Real.rpow_nonneg (by norm_num) _))
+      (Real.rpow_nonneg (by norm_num) _)
+  have hS (b : {b // b ∈ w.bracket.B}) : MemKernelSequence 2 (S b) := by
+    dsimp [S]
+    exact sandwichKernel_memKernelSequence _ _
+      (aux_sMultiplierTensorSquare_memDoubleSequence _) _
+  have hrewrite :
+      (fun j => tensorSquareExtension 2 (by omega) (Fin.last 1)
+        (aux_reductionGaussianTerm D h w N j) (reductionSigma D h j)) =
+      fun j y => ∑ b ∈ w.bracket.B.attach, c * S b j y := by
+    funext j y
+    simpa [S, c, m] using congrFun (aux_reductionGaussianTerm_tensor_eq_sum hn D h w N j) y
+  have hq0 : 0 ≤ q := by
+    have hindex : (2 : ℤ) - (n : ℤ) + 1 ≤ 1 := by omega
+    have hpow : (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1) ≤ 2 := by
+      calc
+        (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1) ≤ (2 : ℝ) ^ (1 : ℤ) :=
+          zpow_le_zpow_right₀ (a := (2 : ℝ)) (by norm_num) hindex
+        _ = 2 := by norm_num
+    dsimp [q]
+    linarith
+  have hC : 0 ≤ C_inductPositiveTermsTheorem :=
+    aux_C_inductPositiveTermsTheorem_pos.le
+  have hmain (b : {b // b ∈ w.bracket.B}) :
+      kernelSequenceSeminorm n 2 (by omega) hn (S b) ≤
+        ENNReal.ofReal (C_inductPositiveTermsTheorem *
+          Real.rpow (geometricDelta (aux_reductionGamma hn D h w b.1 b.2 m) : ℝ) q) := by
+    dsimp [S]
+    have hipt := inductPositiveTermsTheorem n hn
+    simpa [q, aux_reductionGamma_k hn D h w b.1 b.2 m] using
+      hipt (aux_reductionGamma hn D h w b.1 b.2 m)
+        (aux_reductionGamma_k hn D h w b.1 b.2 m) (Fin.last 1)
+  have hdelta (b : {b // b ∈ w.bracket.B}) :
+      C_inductPositiveTermsTheorem *
+        Real.rpow (geometricDelta (aux_reductionGamma hn D h w b.1 b.2 m) : ℝ) q ≤
+      C_inductPositiveTermsTheorem *
+        (16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q) :=
+    mul_le_mul_of_nonneg_left
+      (by simpa [q] using aux_reductionGamma_delta_rpow_le hn D h w b.1 b.2 m) hC
+  rw [hrewrite]
+  calc
+    kernelSequenceSeminorm n 2 (by omega) hn
+        (fun j y => ∑ b ∈ w.bracket.B.attach, c * S b j y) ≤
+        ∑ b ∈ w.bracket.B.attach,
+          kernelSequenceSeminorm n 2 (by omega) hn (fun j y => c * S b j y) := by
+      exact aux_kernelSequenceSeminorm_finset_sum_le (n := n) (k := 2) (by omega) hn
+        w.bracket.B.attach (fun b => fun j y => c * S b j y)
+        (fun b _ j => aux_memW0_const_mul_nonneg (hS b j) c hc)
+    _ = ∑ b ∈ w.bracket.B.attach, ENNReal.ofReal c *
+        kernelSequenceSeminorm n 2 (by omega) hn (S b) := by
+      apply Finset.sum_congr rfl
+      intro b _
+      rw [aux_kernelSequenceSeminorm_const_mul (n := n) (k := 2) (by omega) hn c hc]
+    _ ≤ ∑ b ∈ w.bracket.B.attach, ENNReal.ofReal c *
+        ENNReal.ofReal (C_inductPositiveTermsTheorem *
+          Real.rpow (geometricDelta (aux_reductionGamma hn D h w b.1 b.2 m) : ℝ) q) := by
+      apply Finset.sum_le_sum
+      intro b _
+      gcongr
+      exact hmain b
+    _ ≤ ∑ b ∈ w.bracket.B.attach, ENNReal.ofReal c *
+        ENNReal.ofReal (C_inductPositiveTermsTheorem *
+          (16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q)) := by
+      apply Finset.sum_le_sum
+      intro b _
+      gcongr
+      exact aux_reductionGamma_delta_rpow_le hn D h w b.1 b.2 m
+    _ = ENNReal.ofReal (∑ b ∈ w.bracket.B.attach, c *
+        (C_inductPositiveTermsTheorem *
+          (16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q))) := by
+      rw [ENNReal.ofReal_sum_of_nonneg]
+      · apply Finset.sum_congr rfl
+        intro b _
+        rw [ENNReal.ofReal_mul hc]
+      · intro b _
+        exact mul_nonneg hc (mul_nonneg hC
+          (mul_nonneg (by norm_num) (Real.rpow_nonneg (by positivity) _)))
+    _ ≤ ENNReal.ofReal
+        (c * (C_inductPositiveTermsTheorem *
+          (16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q) *
+          C_increaseDataBracketDominationCard)) := by
+      apply ENNReal.ofReal_le_ofReal
+      have hnonneg : 0 ≤ c * (C_inductPositiveTermsTheorem *
+          (16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q)) := by
+        exact mul_nonneg hc (mul_nonneg hC
+          (mul_nonneg (by norm_num) (Real.rpow_nonneg (by positivity) _)))
+      have hcard : (w.bracket.B.attach.card : ℝ) ≤ C_increaseDataBracketDominationCard := by
+        have hcard' : (w.bracket.B.card : ℝ) ≤ C_increaseDataBracketDominationCard := by
+          exact_mod_cast w.bracket.card_le
+        simpa using hcard'
+      calc
+        (∑ b ∈ w.bracket.B.attach, c *
+          (C_inductPositiveTermsTheorem *
+            (16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q))) =
+            (w.bracket.B.attach.card : ℝ) *
+              (c * (C_inductPositiveTermsTheorem *
+                (16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q))) := by
+              rw [Finset.sum_const, nsmul_eq_mul]
+        _ ≤ C_increaseDataBracketDominationCard *
+              (c * (C_inductPositiveTermsTheorem *
+                (16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q))) :=
+              mul_le_mul_of_nonneg_right hcard hnonneg
+        _ = c * (C_inductPositiveTermsTheorem *
+          (16 * Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q) *
+          C_increaseDataBracketDominationCard) := by ring
+    _ = _ := by
+      dsimp [c, m, q]
+      ring
+
+set_option maxHeartbeats 800000 in
+-- The finite-prefix seminorm estimate combines several nontrivial tsum bounds.
+/-- The uniform finite-prefix estimate needed to pass from the Gaussian
+majorant to the original reduction kernel. -/
+private theorem aux_reduction_partial_bound {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
+    (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h) (N : ℕ) :
+    kernelSequenceSeminorm n 2 (by omega) hn
+      (fun j => tensorSquareExtension 2 (by omega) (Fin.last 1)
+        (fun x => ∑ r ∈ Finset.range N, aux_reductionGaussianTerm D h w r j x)
+        (reductionSigma D h j)) ≤
+      ENNReal.ofReal (C_increaseDataReduction * Real.rpow 2 (-((h : ℝ) / 4))) := by
+  classical
+  let q : ℝ := 2 - (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1)
+  let B : ℝ := C_inductPositiveTermsTheorem * C_increaseDataGaussianExpansion *
+    C_increaseDataBracketDominationCard * 16
+  let W : (Fin 2 → ℕ) → ℝ := fun m => gaussianExpansionWeight m *
+    Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q
+  let P : ℕ → KernelSequence 2 := fun r j =>
+    tensorSquareExtension 2 (by omega) (Fin.last 1) (aux_reductionGaussianTerm D h w r j)
+      (reductionSigma D h j)
+  have hq0 : 0 ≤ q := by
+    have hindex : (2 : ℤ) - (n : ℤ) + 1 ≤ 1 := by omega
+    have hpow : (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1) ≤ 2 := by
+      calc
+        (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1) ≤ (2 : ℝ) ^ (1 : ℤ) :=
+          zpow_le_zpow_right₀ (a := (2 : ℝ)) (by norm_num) hindex
+        _ = 2 := by norm_num
+    dsimp [q]
+    linarith
+  have hq : q ≤ 2 := by
+    dsimp [q]
+    have hpow : 0 ≤ (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1) := by positivity
+    linarith
+  have hphi (j : ℤ) : MemW0 (reductionSigma D h j) := by
+    simpa [reductionSigma] using squareRootGaussianDifference_memW0
+      (smul_mem_A D.a_spaced (by positivity)) j
+  have hP (r : ℕ) : MemKernelSequence 2 (P r) := by
+    intro j
+    dsimp [P]
+    exact positivityM_memW0 n 2 (by omega) hn (Fin.last 1)
+      (aux_reductionGaussianTerm D h w r j) (aux_reductionGaussianTerm_memW0 D h w r j)
+      (aux_reductionGaussianTerm_nonneg D h w r j) (reductionSigma D h j) (hphi j)
+  have hB : 0 ≤ B := by
+    dsimp [B]
+    exact mul_nonneg
+      (mul_nonneg
+        (mul_nonneg aux_C_inductPositiveTermsTheorem_pos.le
+          aux_reduction_CincreaseDataGaussianExpansion_nonneg)
+        (by positivity))
+      (by norm_num)
+  have hW (m : Fin 2 → ℕ) : 0 ≤ W m := by
+    dsimp [W]
+    exact mul_nonneg (Real.rpow_nonneg (by norm_num) _)
+      (Real.rpow_nonneg (by positivity) _)
+  have hsum : Summable W := aux_reductionDecay_summable h hq0 hq
+  have hsumEnum : Summable (fun r : ℕ => W (aux_reductionFinTwoNatEnum r)) :=
+    aux_reductionFinTwoNatEnum.summable_iff.mpr hsum
+  have hterm (r : ℕ) :
+      kernelSequenceSeminorm n 2 (by omega) hn (P r) ≤
+        ENNReal.ofReal (B * Real.rpow 2 (-((h : ℝ) / 3)) * W (aux_reductionFinTwoNatEnum r)) := by
+    simpa [P, B, W, q] using aux_reduction_per_term_bound hn D h w r
+  have hrewrite :
+      (fun j => tensorSquareExtension 2 (by omega) (Fin.last 1)
+        (fun x => ∑ r ∈ Finset.range N, aux_reductionGaussianTerm D h w r j x)
+        (reductionSigma D h j)) =
+      fun j y => ∑ r ∈ Finset.range N, P r j y := by
+    funext j y
+    unfold P tensorSquareExtension
+    rw [Finset.sum_mul]
+  have hpref : (∑ r ∈ Finset.range N, W (aux_reductionFinTwoNatEnum r)) ≤
+      ∑' m : Fin 2 → ℕ, W m := by
+    calc
+      (∑ r ∈ Finset.range N, W (aux_reductionFinTwoNatEnum r)) ≤
+          ∑' r : ℕ, W (aux_reductionFinTwoNatEnum r) :=
+        hsumEnum.sum_le_tsum _ (fun r _ => hW _)
+      _ = ∑' m : Fin 2 → ℕ, W m := aux_reductionFinTwoNatEnum.tsum_eq W
+  rw [hrewrite]
+  calc
+    kernelSequenceSeminorm n 2 (by omega) hn
+        (fun j y => ∑ r ∈ Finset.range N, P r j y) ≤
+        ∑ r ∈ Finset.range N, kernelSequenceSeminorm n 2 (by omega) hn (P r) :=
+      aux_kernelSequenceSeminorm_finset_sum_le (n := n) (k := 2) (by omega) hn
+        (Finset.range N) P (fun r _ => hP r)
+    _ ≤ ∑ r ∈ Finset.range N,
+        ENNReal.ofReal (B * Real.rpow 2 (-((h : ℝ) / 3)) * W (aux_reductionFinTwoNatEnum r)) := by
+      apply Finset.sum_le_sum
+      intro r _
+      exact hterm r
+    _ = ENNReal.ofReal (∑ r ∈ Finset.range N,
+        B * Real.rpow 2 (-((h : ℝ) / 3)) * W (aux_reductionFinTwoNatEnum r)) := by
+      rw [ENNReal.ofReal_sum_of_nonneg]
+      intro r _
+      exact mul_nonneg (mul_nonneg hB (Real.rpow_nonneg (by norm_num) _)) (hW _)
+    _ ≤ ENNReal.ofReal
+        (B * (Real.rpow 2 (-((h : ℝ) / 3)) * ∑' m : Fin 2 → ℕ, W m)) := by
+      apply ENNReal.ofReal_le_ofReal
+      calc
+        (∑ r ∈ Finset.range N,
+          B * Real.rpow 2 (-((h : ℝ) / 3)) * W (aux_reductionFinTwoNatEnum r)) =
+            (B * Real.rpow 2 (-((h : ℝ) / 3))) *
+              (∑ r ∈ Finset.range N, W (aux_reductionFinTwoNatEnum r)) := by
+              rw [Finset.mul_sum]
+        _ ≤ (B * Real.rpow 2 (-((h : ℝ) / 3))) * (∑' m : Fin 2 → ℕ, W m) :=
+          mul_le_mul_of_nonneg_left hpref
+            (mul_nonneg hB (Real.rpow_nonneg (by norm_num) _))
+        _ = B * (Real.rpow 2 (-((h : ℝ) / 3)) * ∑' m : Fin 2 → ℕ, W m) := by ring
+    _ ≤ ENNReal.ofReal
+        (B * ((2 : ℝ) ^ (18 : ℕ) * Real.rpow 2 (-((h : ℝ) / 4)))) := by
+      apply ENNReal.ofReal_le_ofReal
+      exact mul_le_mul_of_nonneg_left (aux_reductionDecay_sum_rpow h hq) hB
+    _ = ENNReal.ofReal (C_increaseDataReduction * Real.rpow 2 (-((h : ℝ) / 4))) := by
+      unfold B C_increaseDataReduction
+      norm_num
+      ring
 
 /--
 Proposition \ref{P:increase-data-reduction}.  Its proof is the point at
@@ -236,12 +6769,161 @@ theorem increaseDataReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) (h : 
     kernelSequenceSeminorm n 2 (by omega) hn
       (fun j => reductionMajorantKernel n D h j) ≤
       ENNReal.ofReal (C_increaseDataReduction * Real.rpow 2 (-(h : ℝ) / 4)) := by
-  sorry
+  classical
+  rcases increaseDataGaussianExpansion hn D h with ⟨w⟩
+  let M : ℤ → MKernel 1 := aux_reductionBase n D h
+  let G : ℕ → ℤ → MKernel 1 := aux_reductionGaussianTerm D h w
+  let phi : ℤ → ℝ → ℝ := reductionSigma D h
+  let A : ℝ≥0∞ := ENNReal.ofReal
+    (C_increaseDataReduction * Real.rpow 2 (-(h : ℝ) / 4))
+  have hM (j : ℤ) : MemW0 (M j) := by
+    exact aux_reductionBase_memW0 hn D h j
+  have hM_nonneg (j : ℤ) (x : RealVector 1 × RealVector 1) : 0 ≤ M j x := by
+    exact aux_reductionBase_nonneg n D h j x
+  have hG (N : ℕ) (j : ℤ) : MemW0 (G N j) := by
+    exact aux_reductionGaussianTerm_memW0 D h w N j
+  have hG_nonneg (N : ℕ) (j : ℤ) (x : RealVector 1 × RealVector 1) : 0 ≤ G N j x := by
+    exact aux_reductionGaussianTerm_nonneg D h w N j x
+  have hG_sum (j : ℤ) (x : RealVector 1 × RealVector 1) :
+      Summable (fun N => G N j x) := by
+    exact aux_reductionGaussianTerm_summable D h w j x
+  have hM_le (j : ℤ) (x : RealVector 1 × RealVector 1) :
+      M j x ≤ ∑' N, G N j x := by
+    have hest := w.estimate j (x.1 0, x.2 0)
+    have heq : (∑' N, G N j x) =
+        C_increaseDataGaussianExpansion * Real.rpow 2 (-((h : ℝ) / 3)) *
+          ∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
+            ∑ b ∈ w.bracket.B,
+              twoDimensionalGaussian
+                (fun r => gaussianExpansionPair (w.bracket.scales b) m r j)
+                (w.bracket.orientation b) (x.1 0, x.2 0) := by
+      rw [← aux_reductionFinTwoNatEnum.tsum_eq]
+      rw [← tsum_mul_left]
+      apply tsum_congr
+      intro N
+      unfold G aux_reductionGaussianTerm aux_reductionGaussianSum
+      ring
+    change |reductionNKernel n D h j (x.1 0, x.2 0)| ≤ ∑' N, G N j x
+    rw [heq]
+    simpa only [neg_div] using hest
+  have hphi (j : ℤ) : MemW0 (phi j) := by
+    simpa [phi, reductionSigma] using squareRootGaussianDifference_memW0
+      (smul_mem_A D.a_spaced (by positivity)) j
+  have hpartial (N : ℕ) :
+      kernelSequenceSeminorm n 2 (by omega) hn
+        (fun j => tensorSquareExtension 2 (by omega) (Fin.last 1)
+          (fun x => ∑ r ∈ Finset.range N, G r j x) (phi j)) ≤ A := by
+    simpa [G, phi, A, neg_div] using aux_reduction_partial_bound hn D h w N
+  have hmain := aux_kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
+    (n := n) (k := 1) (by omega) hn M G phi A hM hM_nonneg hG hG_nonneg hG_sum
+      hM_le hphi hpartial
+  have heq : (fun j => reductionMajorantKernel n D h j) =
+      fun j => tensorSquareExtension 2 (by omega) (Fin.last 1) (M j) (phi j) := by
+    funext j y
+    unfold M phi reductionMajorantKernel tensorSquareExtension tensorSquare
+    rw [aux_reductionBase_apply]
+    simp [aux_eraseVector]
+    ring
+  rw [heq]
+  simpa [A] using hmain
 
 /-- The numerical estimate in Lemma \ref{constant increase data reduction}. -/
 theorem constantIncreaseDataReduction :
     C_increaseDataReduction < (31 / 32 : ℝ) * (2 : ℝ) ^ (477 : ℕ) := by
-  sorry
+  have hexp : Real.exp Real.pi < (56 : ℝ) := by
+    have hlarge : Real.exp (3 : ℝ) < 27 := by
+      calc
+        Real.exp (3 : ℝ) = (Real.exp 1) ^ (3 : ℕ) := by
+          rw [← Real.exp_nat_mul]
+          norm_num
+        _ < (3 : ℝ) ^ (3 : ℕ) := by
+          exact pow_lt_pow_left₀ Real.exp_one_lt_three (Real.exp_nonneg _) (by norm_num)
+        _ = 27 := by norm_num
+    have hsmall : Real.exp (3 / 20 : ℝ) < 6 / 5 := by
+      apply (pow_lt_pow_iff_left₀ (Real.exp_nonneg _) (by norm_num)
+        (by norm_num : (20 : ℕ) ≠ 0)).mp
+      calc
+        Real.exp (3 / 20 : ℝ) ^ (20 : ℕ) = Real.exp (3 : ℝ) := by
+          rw [← Real.exp_nat_mul]
+          norm_num
+        _ < 27 := hlarge
+        _ < (6 / 5 : ℝ) ^ (20 : ℕ) := by norm_num
+    have hpi : Real.pi < (3 : ℝ) + 3 / 20 := by
+      calc
+        Real.pi < 3.15 := Real.pi_lt_d2
+        _ = (3 : ℝ) + 3 / 20 := by norm_num
+    calc
+      Real.exp Real.pi < Real.exp ((3 : ℝ) + 3 / 20) := Real.exp_lt_exp.mpr hpi
+      _ = Real.exp (3 : ℝ) * Real.exp (3 / 20 : ℝ) := Real.exp_add _ _
+      _ < (27 : ℝ) * (6 / 5 : ℝ) := by gcongr
+      _ < 56 := by norm_num
+  have hCG : C_gaussianDomination ^ (2 : ℕ) < (56 : ℝ) ^ (2 : ℕ) := by
+    calc
+      C_gaussianDomination ^ (2 : ℕ) = Real.exp Real.pi * Real.exp Real.pi := by
+        rw [C_gaussianDomination, pow_two]
+      _ < (56 : ℝ) * 56 := mul_self_lt_mul_self (Real.exp_nonneg _) hexp
+      _ = (56 : ℝ) ^ (2 : ℕ) := by norm_num
+  have hrho : C_rhoKernelsReduction < (44114430494276321280 : ℝ) :=
+    aux_rhoKernelsReduction_lt_numeric
+  have hCinduct := constantInductPositiveTermsTheorem
+  have hCinductnonneg : 0 ≤ C_inductPositiveTermsTheorem :=
+    aux_C_inductPositiveTermsTheorem_pos.le
+  have hCGnonneg : 0 ≤ C_gaussianDomination ^ (2 : ℕ) := sq_nonneg _
+  have hrhononneg : 0 ≤ C_rhoKernelsReduction := aux_reduction_Crho_nonneg
+  unfold C_increaseDataReduction C_increaseDataGaussianExpansion
+    C_increaseDataBracketDomination C_increaseDataBracketDominationCard
+  have hnumeric : (56 : ℝ) ^ (2 : ℕ) * (44114430494276321280 : ℝ) <
+      (31 : ℝ) * (2 : ℝ) ^ (72 : ℕ) := by
+    norm_num
+  have hpower :
+      (2 : ℝ) ^ (22 : ℕ) * (2 : ℝ) ^ (359 : ℕ) * (2 : ℝ) ^ (3 : ℕ) *
+        (2 : ℝ) ^ (10 : ℕ) * (2 : ℝ) ^ (6 : ℕ) = (2 : ℝ) ^ (400 : ℕ) := by
+    rw [← pow_add, ← pow_add, ← pow_add, ← pow_add]
+  have hleft :
+      (2 : ℝ) ^ (22 : ℕ) * (2 : ℝ) ^ (359 : ℕ) *
+          ((2 : ℝ) ^ (3 : ℕ) * (56 : ℝ) ^ (2 : ℕ) *
+            ((2 : ℝ) ^ (10 : ℕ) * (44114430494276321280 : ℝ))) *
+          ((2 ^ 6 : ℕ) : ℝ) =
+        (2 : ℝ) ^ (400 : ℕ) *
+          ((56 : ℝ) ^ (2 : ℕ) * (44114430494276321280 : ℝ)) := by
+    rw [show ((2 ^ 6 : ℕ) : ℝ) = (2 : ℝ) ^ (6 : ℕ) by norm_num]
+    calc
+      (2 : ℝ) ^ (22 : ℕ) * (2 : ℝ) ^ (359 : ℕ) *
+          ((2 : ℝ) ^ (3 : ℕ) * (56 : ℝ) ^ (2 : ℕ) *
+            ((2 : ℝ) ^ (10 : ℕ) * (44114430494276321280 : ℝ))) *
+          (2 : ℝ) ^ (6 : ℕ) =
+        ((2 : ℝ) ^ (22 : ℕ) * (2 : ℝ) ^ (359 : ℕ) * (2 : ℝ) ^ (3 : ℕ) *
+          (2 : ℝ) ^ (10 : ℕ) * (2 : ℝ) ^ (6 : ℕ)) *
+          ((56 : ℝ) ^ (2 : ℕ) * (44114430494276321280 : ℝ)) := by ac_rfl
+      _ = _ := by rw [hpower]
+  have hdiv : (2 : ℝ) ^ (477 : ℕ) / 32 = (2 : ℝ) ^ (472 : ℕ) := by
+    apply (div_eq_iff (by norm_num : (32 : ℝ) ≠ 0)).mpr
+    rw [show (32 : ℝ) = (2 : ℝ) ^ (5 : ℕ) by norm_num, ← pow_add]
+  have hpow472 : (2 : ℝ) ^ (400 : ℕ) * (2 : ℝ) ^ (72 : ℕ) =
+      (2 : ℝ) ^ (472 : ℕ) := by
+    rw [← pow_add]
+  have hright : (31 / 32 : ℝ) * (2 : ℝ) ^ (477 : ℕ) =
+      (2 : ℝ) ^ (400 : ℕ) * ((31 : ℝ) * (2 : ℝ) ^ (72 : ℕ)) := by
+    calc
+      (31 / 32 : ℝ) * (2 : ℝ) ^ (477 : ℕ) =
+          31 * ((2 : ℝ) ^ (477 : ℕ) / 32) := by
+        simp only [div_eq_mul_inv]
+        ac_rfl
+      _ = 31 * (2 : ℝ) ^ (472 : ℕ) := by rw [hdiv]
+      _ = 31 * ((2 : ℝ) ^ (400 : ℕ) * (2 : ℝ) ^ (72 : ℕ)) := by rw [hpow472]
+      _ = (2 : ℝ) ^ (400 : ℕ) * ((31 : ℝ) * (2 : ℝ) ^ (72 : ℕ)) := by ac_rfl
+  calc
+    (2 : ℝ) ^ (22 : ℕ) * C_inductPositiveTermsTheorem *
+        ((2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ) *
+          ((2 : ℝ) ^ (10 : ℕ) * C_rhoKernelsReduction)) * ((2 ^ 6 : ℕ) : ℝ) <
+      (2 : ℝ) ^ (22 : ℕ) * (2 : ℝ) ^ (359 : ℕ) *
+        ((2 : ℝ) ^ (3 : ℕ) * (56 : ℝ) ^ (2 : ℕ) *
+          ((2 : ℝ) ^ (10 : ℕ) * (44114430494276321280 : ℝ))) *
+        ((2 ^ 6 : ℕ) : ℝ) := by
+        gcongr
+    _ < (31 / 32 : ℝ) * (2 : ℝ) ^ (477 : ℕ) := by
+      rw [hleft, hright]
+      exact mul_lt_mul_of_pos_left hnumeric (by positivity)
 
 end
 

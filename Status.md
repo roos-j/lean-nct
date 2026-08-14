@@ -338,17 +338,17 @@ Lean file: Reduction/OnDiagonalMainArgument.lean
 
 #### Theorems
 
-\label{lem:rho-kernels-reduction}: [Statement completed] (Lean: rhoKernelsReduction) (2026-08-12 08:32:42 EDT)
-\label{constant rho kernels reduction}: [Statement completed] (Lean: constantRhoKernelsReduction) (2026-08-12 08:32:42 EDT)
-\label{lem:affine-diagonal-cancellation-reduction}: [Statement completed] (Lean: affineDiagonalCancellationReduction) (2026-08-12 08:32:42 EDT)
-\label{lem:increase-data-bracket-domination}: [Statement completed] (Lean: increaseDataBracketDomination) (2026-08-12 08:32:42 EDT)
-\label{constant increase data bracket domination}: [Statement completed] (Lean: constantIncreaseDataBracketDomination) (2026-08-12 08:32:42 EDT)
-\label{lem:increase-data-Gaussian-expansion}: [Statement completed] (Lean: increaseDataGaussianExpansion) (2026-08-12 08:32:42 EDT)
-\label{constant increase data Gaussian expansion}: [Statement completed] (Lean: constantIncreaseDataGaussianExpansion) (2026-08-12 08:32:42 EDT)
-\label{lem:N-reduction}: [Statement completed] (Lean: nReduction) (2026-08-12 08:32:42 EDT)
-\label{constant N reduction}: [Statement completed] (Lean: constantNReduction) (2026-08-12 08:32:42 EDT)
-\label{P:increase-data-reduction}: [Statement completed] (Lean: increaseDataReduction) (2026-08-12 08:32:42 EDT)
-\label{constant increase data reduction}: [Statement completed] (Lean: constantIncreaseDataReduction) (2026-08-12 08:32:42 EDT)
+\label{lem:rho-kernels-reduction}: [Proof completed] (Lean: rhoKernelsReduction) (2026-08-13 21:30:00 PDT)
+\label{constant rho kernels reduction}: [Proof completed] (Lean: constantRhoKernelsReduction) (2026-08-13 21:30:00 PDT)
+\label{lem:affine-diagonal-cancellation-reduction}: [Proof completed] (Lean: affineDiagonalCancellationReduction) (2026-08-13 21:36:55 PDT)
+\label{lem:increase-data-bracket-domination}: [Proof completed] (Lean: increaseDataBracketDomination) (2026-08-13 23:25:27 PDT)
+\label{constant increase data bracket domination}: [Proof completed] (Lean: constantIncreaseDataBracketDomination) (2026-08-13 23:27:33 PDT)
+\label{lem:increase-data-Gaussian-expansion}: [Proof completed] (Lean: increaseDataGaussianExpansion) (2026-08-13 23:47:19 PDT)
+\label{constant increase data Gaussian expansion}: [Proof completed] (Lean: constantIncreaseDataGaussianExpansion) (2026-08-13 23:55:18 PDT)
+\label{lem:N-reduction}: [Proof completed] (Lean: nReduction) (2026-08-14 00:17:39 PDT)
+\label{constant N reduction}: [Proof completed] (Lean: constantNReduction) (2026-08-14 00:20:31 PDT)
+\label{P:increase-data-reduction}: [Proof completed] (Lean: increaseDataReduction) (2026-08-14 01:57:53 PDT)
+\label{constant increase data reduction}: [Proof completed] (Lean: constantIncreaseDataReduction) (2026-08-14 02:02:50 PDT)
 
 ### On-diagonal from off-diagonal estimates
 
@@ -356,24 +356,24 @@ Lean file: Reduction/OnDiagonalOffDiagonal.lean
 
 #### Theorems
 
-\label{P:diagonal-band-reduction}: [Statement completed] (Lean: diagonalBandReduction) (2026-08-12 08:32:42 EDT)
-\label{constant diagonal band reduction}: [Statement completed] (Lean: constantDiagonalBandReduction) (2026-08-12 08:32:42 EDT)
-\label{lem:L1-reduction}: [Statement completed] (Lean: lOneReduction) (2026-08-12 08:32:42 EDT)
-\label{P:vanishing-diagonal-reduction}: [Statement completed] (Lean: vanishingDiagonalReduction) (2026-08-12 08:32:42 EDT)
-\label{P:one-scale-estimate-window}: [Statement completed] (Lean: oneScaleEstimateWindow) (2026-08-12 08:32:42 EDT)
-\label{auto:constant-one-scale-window}: [Statement completed] (Lean: constantOneScaleWindow) (2026-08-12 08:32:42 EDT)
-\label{L:fourier-transform-window}: [Statement completed] (Lean: fourierTransformWindow) (2026-08-12 08:32:42 EDT)
-\label{lem:scaleest}: [Statement completed] (Lean: scaleEstimate) (2026-08-12 08:32:42 EDT)
-\label{P:induct-positive-terms-reduction-non-whitney}: [Statement completed] (Lean: inductPositiveTermsReductionNonWhitney) (2026-08-12 08:32:42 EDT)
-\label{constant non Whitney reduction}: [Statement completed] (Lean: constantNonWhitneyReduction) (2026-08-12 08:32:42 EDT)
-\label{P:induct-positive-terms-reduction-non-whitney-skip}: [Statement completed] (Lean: inductPositiveTermsReductionNonWhitneySkip) (2026-08-12 08:32:42 EDT)
-\label{constant non Whitney skip reduction}: [Statement completed] (Lean: constantNonWhitneySkipReduction) (2026-08-12 08:32:42 EDT)
-\label{P:induct-positive-terms-reduction-whitney-gap}: [Statement completed] (Lean: inductPositiveTermsReductionWhitneyGap) (2026-08-12 08:32:42 EDT)
-\label{constant Whitney gap reduction}: [Statement completed] (Lean: constantWhitneyGapReduction) (2026-08-12 08:32:42 EDT)
-\label{P:induct-positive-terms-reduction-whitney}: [Statement completed] (Lean: inductPositiveTermsReductionWhitney) (2026-08-12 08:32:42 EDT)
-\label{constant Whitney reduction}: [Statement completed] (Lean: constantWhitneyReduction) (2026-08-12 08:32:42 EDT)
-\label{P:induct-positive-terms-reduction-whitney-product}: [Statement completed] (Lean: inductPositiveTermsReductionWhitneyProduct) (2026-08-12 08:32:42 EDT)
-\label{constant Whitney product reduction}: [Statement completed] (Lean: constantWhitneyProductReduction) (2026-08-12 08:32:42 EDT)
+\label{P:diagonal-band-reduction}: [Proof completed] (Lean: diagonalBandReduction) (2026-08-14 02:57:01 PDT)
+\label{constant diagonal band reduction}: [Proof completed] (Lean: constantDiagonalBandReduction) (2026-08-14 03:05:39 PDT)
+\label{lem:L1-reduction}: [Proof completed] (Lean: lOneReduction) (2026-08-14 03:09:06 PDT)
+\label{P:vanishing-diagonal-reduction}: [Proof completed] (Lean: vanishingDiagonalReduction) (2026-08-14 03:27:33 PDT)
+\label{P:one-scale-estimate-window}: [Proof completed] (Lean: oneScaleEstimateWindow) (2026-08-14 03:38:44 PDT)
+\label{auto:constant-one-scale-window}: [Proof completed] (Lean: constantOneScaleWindow) (2026-08-14 03:41:09 PDT)
+\label{L:fourier-transform-window}: [Proof completed] (Lean: fourierTransformWindow) (2026-08-14 03:44:52 PDT)
+\label{lem:scaleest}: [Proof completed] (Lean: scaleEstimate) (2026-08-14 03:46:49 PDT)
+\label{P:induct-positive-terms-reduction-non-whitney}: [Proof completed] (Lean: inductPositiveTermsReductionNonWhitney) (2026-08-14 04:35:44 PDT)
+\label{constant non Whitney reduction}: [Proof completed] (Lean: constantNonWhitneyReduction) (2026-08-14 04:37:42 PDT)
+\label{P:induct-positive-terms-reduction-non-whitney-skip}: [Proof completed] (Lean: inductPositiveTermsReductionNonWhitneySkip) (2026-08-14 04:43:42 PDT)
+\label{constant non Whitney skip reduction}: [Proof completed] (Lean: constantNonWhitneySkipReduction) (2026-08-14 04:46:33 PDT)
+\label{P:induct-positive-terms-reduction-whitney-gap}: [Proof completed] (Lean: inductPositiveTermsReductionWhitneyGap) (2026-08-14 05:46:48 PDT)
+\label{constant Whitney gap reduction}: [Proof completed] (Lean: constantWhitneyGapReduction) (2026-08-14 05:49:39 PDT)
+\label{P:induct-positive-terms-reduction-whitney}: [Proof completed] (Lean: inductPositiveTermsReductionWhitney) (2026-08-14 05:53:18 PDT)
+\label{constant Whitney reduction}: [Proof completed] (Lean: constantWhitneyReduction) (2026-08-14 05:55:51 PDT)
+\label{P:induct-positive-terms-reduction-whitney-product}: [Proof completed] (Lean: inductPositiveTermsReductionWhitneyProduct) (2026-08-14 06:03:24 PDT)
+\label{constant Whitney product reduction}: [Proof completed] (Lean: constantWhitneyProductReduction) (2026-08-14 06:03:24 PDT)
 
 ### Final reduction: proof of main theorem
 

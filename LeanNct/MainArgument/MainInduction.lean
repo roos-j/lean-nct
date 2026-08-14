@@ -986,6 +986,20 @@ private theorem aux_kernelSequenceSeminorm_le_of_tendsto_eLpNorm
             (mul_nonneg hc (abs_nonneg _))
     _ ≤ A + eLpNorm (fun y => MP y - MM y) 1 volume := add_le_add hmain herror'
 
+/-- A kernel sequence inherits a uniform seminorm bound from finite approximants
+that converge on every finite index prefix in `L¹`. -/
+theorem aux_kernelSequenceSeminorm_le_of_prefix_tendsto_eLpNorm
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n)
+    (M : KernelSequence k) (P : ℕ → KernelSequence k) (A : ℝ≥0∞)
+    (hM : MemKernelSequence k M) (hP : ∀ N, MemKernelSequence k (P N))
+    (hbound : ∀ N, kernelSequenceSeminorm n k hk hkn (P N) ≤ A)
+    (hconv : ∀ J : {J : ℕ // 0 < J}, Tendsto (fun N => eLpNorm
+      (fun y => (∑ j ∈ Finset.range J.1, P N (j : ℤ) y) -
+        ∑ j ∈ Finset.range J.1, M (j : ℤ) y) 1 volume) atTop (nhds 0)) :
+    kernelSequenceSeminorm n k hk hkn M ≤ A :=
+  aux_kernelSequenceSeminorm_le_of_tendsto_eLpNorm
+    hk hkn M P A hM hP hbound hconv
+
 /-- This auxiliary monotonicity lemma is used to align the output constants of
 the diagonal-band and positive-term implications. -/
 theorem aux_vanishingDiagonal_mono {n k : ℕ} {C D : ℝ}
@@ -2260,6 +2274,46 @@ private theorem kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
   simpa only [T] using hfatou
 
 end aux_inductPositiveTerms
+
+/-- A terminal tensor-square extension inherits finite-prefix seminorm bounds
+from a nonnegative summable pointwise majorant. -/
+theorem aux_kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
+    {n k : ℕ} (hk : 1 ≤ k) (hkn : k + 1 ≤ n)
+    (M : ℤ → MKernel k) (G : ℕ → ℤ → MKernel k)
+    (phi : ℤ → ℝ → ℝ) (A : ℝ≥0∞)
+    (hM : ∀ j, MemW0 (M j))
+    (hM_nonneg : ∀ j x, 0 ≤ M j x)
+    (hG : ∀ N j, MemW0 (G N j))
+    (hG_nonneg : ∀ N j x, 0 ≤ G N j x)
+    (hG_sum : ∀ j x, Summable (fun N => G N j x))
+    (hM_le : ∀ j x, M j x ≤ ∑' N, G N j x)
+    (hphi : ∀ j, MemW0 (phi j))
+    (hpartial : ∀ N, kernelSequenceSeminorm n (k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (k + 1) (by omega) (Fin.last k)
+        (fun x => ∑ r ∈ Finset.range N, G r j x) (phi j)) ≤ A) :
+    kernelSequenceSeminorm n (k + 1) (by omega) (by omega)
+      (fun j => tensorSquareExtension (k + 1) (by omega) (Fin.last k) (M j) (phi j)) ≤ A :=
+  aux_inductPositiveTerms.kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
+    hk hkn M G phi A hM hM_nonneg hG hG_nonneg hG_sum hM_le hphi hpartial
+
+/-- A nonnegative scalar multiple of a Wiener-space function is again in the
+Wiener space. -/
+theorem aux_memW0_const_mul_nonneg {E : Type*}
+    [NormedAddCommGroup E] [ProperSpace E] [MeasureSpace E] [BorelSpace E]
+    {f : E → ℝ} (hf : MemW0 f) (c : ℝ) (hc : 0 ≤ c) :
+    MemW0 (fun x => c * f x) :=
+  aux_inductPositiveTerms.memW0ConstMulNonneg hf c hc
+
+/-- The seminorm of a finite nonnegative-scalar combination is bounded by the
+corresponding finite sum of scalar seminorm bounds. -/
+theorem aux_kernelSequenceSeminorm_fintype_sum_const_mul_le
+    {n r : ℕ} (hr : 1 ≤ r) (hrn : r ≤ n)
+    {β : Type*} [Fintype β] (S : β → KernelSequence r)
+    (hS : ∀ b, MemKernelSequence r (S b)) (c : ℝ) (hc : 0 ≤ c) :
+    kernelSequenceSeminorm n r hr hrn (fun j y => ∑ b, c * S b j y) ≤
+      ∑ b, ENNReal.ofReal c * kernelSequenceSeminorm n r hr hrn (S b) :=
+  aux_inductPositiveTerms.kernelSequenceSeminorm_fintype_sum_const_mul_le
+    hr hrn S hS c hc
 
 /-- Source label `\ref{induct positive terms imply increase data}`. -/
 theorem inductPositiveTerms_implies_increaseData
@@ -4836,6 +4890,70 @@ private theorem aux_doublyCauchySchwarzKernel_eq_lMultiplier_partial
 end
 
 end aux_increaseDataDiagonal
+
+/-- A one-coordinate seminorm descends through a fixed Cauchy--Schwarz bound. -/
+theorem aux_kernelSequenceSeminorm_one_le_of_cauchySchwarz {n : ℕ} (hn : 2 < n)
+    (L : KernelSequence 1) (T : KernelSequence 2)
+    {C U : ℝ} (hC : 0 ≤ C) (hU : 0 ≤ U)
+    (hT : kernelSequenceSeminorm n 2 (by omega) (by omega) T ≤ ENNReal.ofReal U)
+    (hpoint : ∀ (J : {J : ℕ // 0 < J}) (F : NormalizedFunctionTuple n),
+      |prismForm n 1 (by omega) (by omega)
+        (fun y => ∑ j ∈ Finset.range J.1, L (j : ℤ) y)
+        (fun r => F.1 r)| ≤
+      Real.sqrt |prismForm n 2 (by omega) (by omega)
+        (fun y => ∑ j ∈ Finset.range J.1, T (j : ℤ) y)
+        (fun r => F.1 r)| * Real.sqrt (C * (J.1 : ℝ))) :
+    kernelSequenceSeminorm n 1 (by omega) (by omega) L ≤
+      ENNReal.ofReal (Real.sqrt C * Real.sqrt U) := by
+  classical
+  unfold kernelSequenceSeminorm
+  refine iSup_le fun J => ?_
+  refine iSup_le fun F => ?_
+  let a : ℝ := min 1 (Real.rpow (J.1 : ℝ)
+    (-1 + (2 : ℝ) ^ ((1 : ℤ) - (n : ℤ) + 1)))
+  let a' : ℝ := min 1 (Real.rpow (J.1 : ℝ)
+    (-1 + (2 : ℝ) ^ ((2 : ℤ) - (n : ℤ) + 1)))
+  let P : ℝ := |prismForm n 2 (by omega) (by omega)
+    (fun y => ∑ j ∈ Finset.range J.1, T (j : ℤ) y)
+    (fun r => F.1 r)|
+  have hTterm : ENNReal.ofReal (a' * P) ≤
+      kernelSequenceSeminorm n 2 (by omega) (by omega) T := by
+    unfold kernelSequenceSeminorm
+    apply le_iSup_of_le J
+    apply le_iSup_of_le F
+    simpa [a', P]
+  have hP : a' * P ≤ U := by
+    apply (ENNReal.ofReal_le_ofReal_iff hU).mp
+    exact hTterm.trans hT
+  have hP0 : 0 ≤ P := abs_nonneg _
+  have hS0 : 0 ≤ C * (J.1 : ℝ) := mul_nonneg hC (Nat.cast_nonneg _)
+  have ha : 0 ≤ a := by
+    dsimp [a]
+    exact le_min zero_le_one (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+  have hnormal : a ^ 2 * (J.1 : ℝ) = a' := by
+    calc
+      a ^ 2 * (J.1 : ℝ) = min 1 (Real.rpow (J.1 : ℝ)
+          (-1 + (2 : ℝ) ^ ((1 : ℤ) - (n : ℤ) + 2))) := by
+        simpa [a] using aux_increaseDataDiagonal.aux_interior_normalizer_square
+          (n := n) (k := 1) J.2 (by omega)
+      _ = a' := by
+        dsimp [a']
+        congr 2
+        ring
+  have hreal : a *
+      |prismForm n 1 (by omega) (by omega)
+        (fun y => ∑ j ∈ Finset.range J.1, L (j : ℤ) y)
+        (fun r => F.1 r)| ≤ Real.sqrt C * Real.sqrt U := by
+    calc
+      a * |prismForm n 1 (by omega) (by omega)
+          (fun y => ∑ j ∈ Finset.range J.1, L (j : ℤ) y)
+          (fun r => F.1 r)| ≤
+          a * (Real.sqrt P * Real.sqrt (C * (J.1 : ℝ))) :=
+        mul_le_mul_of_nonneg_left (hpoint J F) ha
+      _ ≤ Real.sqrt C * Real.sqrt U :=
+        aux_increaseDataDiagonal.aux_normalized_cauchy_real
+          ha hP0 hS0 hC hU hnormal hP le_rfl
+  simpa [a] using ENNReal.ofReal_le_ofReal hreal
 
 /-- Proposition \ref{increase data implies diagonal band}. -/
 theorem increaseData_implies_diagonalBand {n k : ℕ} {C : ℝ}
