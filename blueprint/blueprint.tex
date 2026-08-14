@@ -8355,6 +8355,7 @@ In what follows we denote
 
 \begin{lemma}\label{lem:main_aux1}\uses{Extension of sequences,A to Lambda,P:induct-positive-terms-reduction-whitney-product}\usesdefs{A_def,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences}
 \lean{mainAuxOne}
+\leanok
 Suppose that $\psi:\R\to\R$ is a Schwartz function with
 \begin{equation}\label{main_aux1_supp}
 {\rm supp}(\widehat\psi)\subset\mathrm{Ann}_1(1,2^2),
@@ -8395,6 +8396,7 @@ for $m\in[3)$, which verifies \eqref{auto:Whitney-product-Fourier-derivative-ass
 
 \begin{lemma}[constant $C_{\ref{lem:main_aux1}}$ \auto]\label{constant main auxiliary one}\uses{constant Whitney product reduction,lem:main_aux1}\usesdefs{}
 \lean{constantMainAuxiliaryOne}
+\leanok
 \begin{equation}\label{constant main auxiliary one bound}
 C_{\ref{lem:main_aux1}}<2^{573}.
 \end{equation}
@@ -8405,6 +8407,7 @@ Use Lemma \ref{constant Whitney product reduction} in \eqref{auto:main-auxiliary
 
 \begin{lemma}[Long and short variation]\label{lem:shortlongftc_reduction}\uses{lem:shortlongjumps,lem:ftccs-R,lem:ftc_ATphi,lem:main_aux1}\usesdefs{A_def}
 \lean{shortLongFtcReduction}
+\leanok
 Let $J\ge 1$ and $\phi$ a Schwartz function.
 Assume that the function $T\phi(s) = (s \phi(s))'$ satisfies \eqref{main_aux1_supp} and \eqref{auto:main-auxiliary-one-Fourier-derivative-assumption}.
 Suppose that $A\in (0,\infty)$ is such that
@@ -8476,6 +8479,7 @@ The claim now follows from
 
 \begin{lemma}\label{lem:mainbump1_long1}\uses{lem:main_aux1}\usesdefs{A_def,def:cn-window,def:unipair}
 \lean{mainBumpOneLongOne}
+\leanok
 For every $J\ge1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
 \begin{equation}\label{mainbump1_long1}
 \sum_{j\in[J)}\|A_{2^{k_j}}(\phi_0)-A_{2^{k_j}}(\phi_1)\|_2^2
@@ -8498,6 +8502,7 @@ The Fourier transform of $\phi_0-\phi_1$ is supported in $\mathrm{Ann}_1(1,2)$. 
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1_long1}}$ \auto]\label{constant main bump one long one}\uses{constant main auxiliary one,lem:mainbump1_long1}\usesdefs{def:unipair}
 \lean{constantMainBumpOneLongOne}
+\leanok
 \begin{equation}\label{constant main bump one long one bound}
 C_{\ref{lem:mainbump1_long1}}<2^{605}.
 \end{equation}
@@ -8508,6 +8513,7 @@ Use $C_{\ref{def:unipair}}=2^{15}$ and Lemma \ref{constant main auxiliary one} i
 
 \begin{lemma}\label{lem:mainbump1_long2}\uses{Extension of sequences,A to Lambda,P:induct-positive-terms-reduction-non-whitney-skip,Operations on spaced sequences}\usesdefs{A_def,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,def:unipair}
 \lean{mainBumpOneLongTwo}
+\leanok
 For every $J\ge 1$ and every strictly increasing sequence of integers $(m_j)_{j\in[J+1)}$,
 \begin{equation}\label{mainbump1_long2}
 \sum_{j\in[J)} \|
@@ -8531,6 +8537,7 @@ Split this sum according to the parity of $j$. The even terms are an initial par
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1_long2}}$ \auto]\label{constant main bump one long two}\uses{P:induct-positive-terms-reduction-non-whitney-skip,constant non Whitney skip reduction,lem:mainbump1_long2}\usesdefs{}
 \lean{constantMainBumpOneLongTwo}
+\leanok
 \begin{equation}\label{constant main bump one long two bound}
 C_{\ref{lem:mainbump1_long2}}<\tfrac89 2^{543}<2^{543}.
 \end{equation}
@@ -8541,6 +8548,7 @@ The defining constant is twice the constant in Proposition \ref{P:induct-positiv
 
 \begin{lemma}\label{lem:mainbump1_long}\uses{lem:mainbump1_long2,lem:mainbump1_long1}\usesdefs{A_def,def:unipair}
 \lean{mainBumpOneLong}
+\leanok
 Let $J\ge 1$. Then
 \begin{equation}\label{mainbump1_long}
 \|A_{t}(\phi_0)\|^2_{V_{2,J}(t\in 2^\mathbb{Z}; L^2)}  \le C_{\ref{lem:mainbump1_long}} J^{\alpha(n)},
@@ -8561,6 +8569,7 @@ By Lemma \ref{lem:mainbump1_long2} and Lemma \ref{lem:mainbump1_long1} this is
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1_long}}$ \auto]\label{constant main bump one long}\uses{constant main bump one long one,constant main bump one long two,lem:mainbump1_long}\usesdefs{}
 \lean{constantMainBumpOneLong}
+\leanok
 \begin{equation}\label{constant main bump one long bound}
 C_{\ref{lem:mainbump1_long}}<\tfrac{11}{16}2^{606}<2^{606}.
 \end{equation}
@@ -8571,6 +8580,7 @@ Use Lemmas \ref{constant main bump one long one} and \ref{constant main bump one
 
 \begin{lemma}\label{lem:mainbump1}\uses{lem:shortlongftc_reduction,lem:mainbump1_long,lem:ft_deriv_mul}\usesdefs{A_def,def:cn-window,def:unipair}
 \lean{mainBumpOne}
+\leanok
 Let $J\ge1$. Then
 \begin{equation}\label{mainbump1}
 \|A_t(\phi_0)\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
@@ -8600,6 +8610,7 @@ By Lemma \ref{lem:ft_deriv_mul}, $\widehat{T\phi_0}$ is supported in $\mathrm{An
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1}}$ \auto]\label{constant main bump one}\uses{constant main auxiliary one,lem:mainbump1,constant main bump one long}\usesdefs{def:unipair}
 \lean{constantMainBumpOne}
+\leanok
 \begin{equation}\label{constant main bump one bound}
 C_{\ref{lem:mainbump1}}<\tfrac78 2^{610}<2^{610}.
 \end{equation}
@@ -8618,6 +8629,7 @@ The sum is smaller than $\frac78 2^{610}$.
 
 \begin{lemma}\label{lem:main_aux2}\uses{lem:shortlongftc_reduction,lem:main_aux1,lem:bootstrap}\usesdefs{A_def}
 \lean{mainAuxTwo}
+\leanok
 Let $\psi$ satisfy \eqref{main_aux1_supp} and \eqref{auto:main-auxiliary-one-Fourier-derivative-assumption}. Assume also that
 \begin{equation}\label{auto:main-auxiliary-two-Fourier-derivative-assumption}
 |\widehat{T\psi}^{(m)}(\xi)|\le1,
@@ -8659,6 +8671,7 @@ Lemma \ref{lem:main_aux1}, applied with $t=1$, gives \eqref{eq:main_aux2_long} b
 
 \begin{lemma}[constant $C_{\ref{lem:main_aux2}}$ \auto]\label{constant main auxiliary two}\uses{constant main auxiliary one,lem:main_aux2}\usesdefs{}
 \lean{constantMainAuxiliaryTwo}
+\leanok
 \begin{equation}\label{constant main auxiliary two bound}
 C_{\ref{lem:main_aux2}}<2^{578}.
 \end{equation}
@@ -8674,6 +8687,7 @@ C_{\ref{lem:main_aux2}}
 
 \begin{lemma}\label{lem:mainbump2}\uses{lem:rescaling,lem:main_aux2,lem:abs_deriv_ft_Tphi3_le,lem:ft_phi3_eq,lem:abs_deriv_ft_phi3_le,lem:ft_deriv_mul}\usesdefs{A_def,defn:window based bump functions}
 \lean{mainBumpTwo}
+\leanok
 For all $k\ge-2$,
 \begin{equation}\label{mainbump2}
 \|A_t(\varphi_{0,k})\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
@@ -8707,6 +8721,7 @@ The support of $\widehat{T\varphi_{3,k}}$ is contained in the same annulus by Le
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump2}}$ \auto]\label{constant main bump two}\uses{constant main auxiliary two,lem:abs_deriv_ft_Tphi3_le,constant T phi three derivative,lem:mainbump2}\usesdefs{def:unipair}
 \lean{constantMainBumpTwo}
+\leanok
 \begin{equation}\label{constant main bump two bound}
 C_{\ref{lem:mainbump2}}<\tfrac{27}{32}2^{658}<2^{658}.
 \end{equation}
@@ -8729,6 +8744,7 @@ C_{\ref{lem:mainbump2}}
 
 \begin{lemma}\label{lem:leftbump}\uses{lem:rescaling,lem:main_aux2,lem:theta_prim}\usesdefs{A_def,def:unipair,defn:window based bump functions}
 \lean{leftBump}
+\leanok
 For every $k\le-1$,
 \begin{equation}\label{leftbump}
 \|A_t(\varphi_{1,k})\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
@@ -8757,6 +8773,7 @@ bound the Fourier derivatives of both functions through order $2$ by $2^{14}C_{\
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump}}$ \auto]\label{constant left bump}\uses{constant main auxiliary two,lem:leftbump}\usesdefs{def:unipair}
 \lean{constantLeftBump}
+\leanok
 \begin{equation}\label{constant left bump bound}
 C_{\ref{lem:leftbump}}<\tfrac{33}{64}2^{636}<2^{636}.
 \end{equation}

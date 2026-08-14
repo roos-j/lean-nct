@@ -738,6 +738,19 @@ theorem aToLambda {n : ℕ} (hn : 1 ≤ n) (phi : SchwartzMap ℝ ℝ)
         exact transformedFunctions_eLpNorm f i p
       · simpa using aux_aToLambda_explicit phi f
 
+/-- The canonical, scale-independent successor-dimensional form of the
+`A`-to-`Λ₁` identity.  Unlike `aToLambda`, this fixes
+`transformedFunctions f` explicitly, which is needed when the kernel varies
+under an integral or a parameterized family. -/
+theorem aToLambda_transformed {d : ℕ} (phi : SchwartzMap ℝ ℝ)
+    (f : Fin (d + 1) → SchwartzMap (EuclideanSpace ℝ (Fin (d + 1))) ℝ) :
+    eLpNorm (twistedAverage phi (fun i x ↦ f i x)) 2 volume ^ 2 =
+      ENNReal.ofReal
+        (prismForm (d + 1) 1 (by omega) (by omega)
+          (fun y ↦ phi (y.1 0) * phi (y.2 0))
+          (fun i x ↦ transformedFunctions f i x)) := by
+  simpa using aux_aToLambda_explicit phi f
+
 /- The tensor-square prism form in the canonical `A`-to-`Λ₁` reduction is a
 square integral, hence nonnegative. -/
 private lemma aux_aToLambda_explicit_prism_nonneg {d : ℕ} (phi : SchwartzMap ℝ ℝ)

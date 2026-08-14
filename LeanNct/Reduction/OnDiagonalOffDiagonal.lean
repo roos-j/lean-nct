@@ -529,6 +529,11 @@ private theorem CincreaseDataReduction_nonneg : 0 ≤ C_increaseDataReduction :=
     aux_C_inductPositiveTermsTheorem_pos.le) CincreaseDataGaussianExpansion_nonneg)
     (by positivity)
 
+/-- The reduction increase-data constant is nonnegative.  This public form is
+used when reduction constants are assembled in the final argument. -/
+theorem aux_CincreaseDataReduction_nonneg : 0 ≤ C_increaseDataReduction :=
+  CincreaseDataReduction_nonneg
+
 private theorem liftPlaneKernel_memW0 (M : RealPlane → ℝ) (hM : MemW0 M) :
     MemW0 (aux_liftPlaneKernel M) := by
   letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector 1 × RealVector 1)) :=
@@ -3565,6 +3570,38 @@ structure WhitneyKernelData where
 noncomputable def aux_planeRescale (t : ℝ) (Psi : RealPlane → ℝ) : RealPlane → ℝ :=
   fun v => t⁻¹ ^ 2 * Psi (t⁻¹ * v.1, t⁻¹ * v.2)
 
+/-- In plane coordinates, the normalized rescaling of `integralFctKernel` is
+the two-dimensional rescaling used by the integral-kernel estimates. -/
+theorem planeRescale_integralFctKernel_eq
+    (s : ℝ) (psi : ℝ → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
+    aux_planeRescale s
+      (fun v : RealPlane => integralFctKernel psi (WithLp.toLp 2 ![v.1, v.2]))
+      (u 0, u 1) =
+      aux_integralFctKernelAtScale s psi u := by
+  unfold aux_planeRescale aux_integralFctKernelAtScale rescaled
+  simp only [WithLp.ofLp_smul, PiLp.smul_apply, smul_eq_mul]
+  rfl
+
+/-- The preceding coordinate identity remains available after replacing the
+physical kernel by any bundled Schwartz representative. -/
+theorem planeRescale_schwartzKernel_eq
+    (s : ℝ) (psi : ℝ → ℝ) (K : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
+    (hK : ∀ u : EuclideanSpace ℝ (Fin 2), K u = integralFctKernel psi u)
+    (u : EuclideanSpace ℝ (Fin 2)) :
+    aux_planeRescale s
+      (fun v : RealPlane => K (WithLp.toLp 2 ![v.1, v.2]))
+      (u 0, u 1) =
+      aux_integralFctKernelAtScale s psi u := by
+  rw [show aux_planeRescale s
+      (fun v : RealPlane => K (WithLp.toLp 2 ![v.1, v.2])) (u 0, u 1) =
+      aux_planeRescale s
+        (fun v : RealPlane => integralFctKernel psi (WithLp.toLp 2 ![v.1, v.2]))
+        (u 0, u 1) by
+          unfold aux_planeRescale
+          congr 2
+          exact hK _]
+  exact planeRescale_integralFctKernel_eq s psi u
+
 /-- The interleaved scale sequence used in the Whitney gap reduction. -/
 private noncomputable def aux_whitneyAlpha (a : ℤ → ℝ) (k : ℤ) : ℝ :=
   if k % 2 = 0 then (2 : ℝ) ^ (-5 : ℤ) * a (k / 2)
@@ -6123,6 +6160,74 @@ private noncomputable def aux_whitneyProduct_productData (psi : SchwartzMap ℝ 
   fourier_support := aux_whitneyProduct_product_fourier_support psi hsupport
   diagonal_derivative := aux_whitneyProduct_product_diagonal_derivative psi hderiv
   decay := aux_whitneyProduct_product_decay psi hsupport hderiv
+
+/-- Generic positive tensor-product package for the ordinary Whitney reduction.
+The caller supplies only the two problem-specific analytic fields. -/
+noncomputable def aux_tensorWhitneyData
+    (psi : SchwartzMap ℝ ℝ)
+    (hsupport : Function.support
+      (FourierTransform.fourier (fun x : ℝ => (psi x : ℂ))) ⊆
+        aux_annulusOne 1 ((2 : ℝ) ^ 3))
+    (c : ℝ) (hc : 0 < c) (hpsi : psi ≠ 0)
+    (hdiag : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
+      ‖iteratedDeriv m
+        (fun z : ℝ => aux_planeFourier (fun v => c * tensorSquare psi v)
+          (WithLp.toLp 2 ![z, -z])) xi‖ ≤ 1)
+    (hdecay : ∀ v : RealPlane,
+      |c * tensorSquare psi v| ≤
+        ∑ u : Fin 2,
+          scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
+            scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2)) :
+    WhitneyKernelData where
+  kernel := fun v => c * tensorSquare psi v
+  kernel_schwartz := c • aux_whitneyProduct_tensorSchwartz psi hsupport
+  kernel_schwartz_eq := by
+    intro u
+    rw [smul_apply, aux_whitneyProduct_tensorSchwartz_apply]
+    simp [smul_eq_mul]
+  kernel_memW0 := by
+    exact aux_memW0_const_mul_nonneg
+      (aux_memW0_tensorSquare psi (aux_schwartzMap_memW0_real psi)) c hc.le
+  kernel_nonzero := by
+    intro hzero
+    apply hpsi
+    ext x
+    have hx : c * (psi x * psi x) = 0 := by
+      simpa [tensorSquare] using congrFun hzero (x, x)
+    have hsq : psi x * psi x = 0 :=
+      (mul_eq_zero.mp hx).resolve_left hc.ne'
+    exact mul_self_eq_zero.mp hsq
+  symmetric := by
+    intro v
+    simp [tensorSquare, mul_comm]
+  positive := by
+    intro g hg
+    let p : ℝ := aux_whitneyProduct_productC
+    have hp : 0 < p := aux_whitneyProduct_productC_pos
+    have hbase : 0 ≤ ∫ v : RealPlane,
+        g v.1 * g v.2 * (p * tensorSquare psi v) := by
+      exact aux_whitneyProduct_product_positive psi g hg
+    have hfun : (fun v : RealPlane =>
+        g v.1 * g v.2 * (c * tensorSquare psi v)) =
+        fun v => (c / p) * (g v.1 * g v.2 * (p * tensorSquare psi v)) := by
+      funext v
+      field_simp [hp.ne']
+    rw [hfun, integral_const_mul]
+    exact mul_nonneg (div_nonneg hc.le hp.le) hbase
+  fourier_support := by
+    intro z hz
+    have hne := Function.mem_support.mp hz
+    rw [aux_planeFourier_const_mul, aux_planeFourier_tensorSquare] at hne
+    have h0 : FourierTransform.fourier (fun x : ℝ => (psi x : ℂ)) (z 0) ≠ 0 := by
+      intro hzero
+      simp [hzero] at hne
+    have h1 : FourierTransform.fourier (fun x : ℝ => (psi x : ℂ)) (z 1) ≠ 0 := by
+      intro hzero
+      simp [hzero] at hne
+    exact ⟨hsupport (Function.mem_support.mpr h0),
+      hsupport (Function.mem_support.mpr h1)⟩
+  diagonal_derivative := hdiag
+  decay := hdecay
 
 private theorem aux_whitneyProduct_product_sequence_eq (psi : SchwartzMap ℝ ℝ)
     (hsupport : Function.support
