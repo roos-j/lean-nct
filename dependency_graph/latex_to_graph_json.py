@@ -99,8 +99,8 @@ STATUS_CATALOG: list[dict[str, Any]] = [
     },
     {
         "id": "fully_proved",
-        "name": "Node and ancestors formalized",
-        "meaning": "The node and every dependency ancestor have been formalized.",
+        "name": "Proof complete",
+        "meaning": "The proof and all its dependencies are fully formalized.",
         "style": {"border": "#0B6B3A", "fill": "#1CAC78", "text": "#FFFFFF", "border_width": 2.2},
     },
     {
