@@ -5238,6 +5238,7 @@ Taking reciprocal $N$th powers proves the claim.
 
 \begin{lemma}\label{lem:thetat_offcenter}\uses{lem:widebump}\usesdefs{bracket bump}
 \lean{thetaTOffcenter}
+\leanok
 Let $k\le-1$. Then for every $v\in\R^2$,
 \begin{equation}\label{E:two-terms}
 2^{k/2}\int_1^2
@@ -5315,6 +5316,7 @@ This proves \eqref{E:two-terms}.
 
 \begin{lemma}[constant $C_{\ref{lem:thetat_offcenter}}$ \auto]\label{constant off center bump}\uses{lem:thetat_offcenter}\usesdefs{}
 \lean{constantOffCenterBump}
+\leanok
 \begin{equation}\label{constant off center bump bound}
 C_{\ref{lem:thetat_offcenter}}\le133.
 \end{equation}
@@ -5331,6 +5333,7 @@ For a function $\phi$ we define
    \begin{lemma}
          \label{lem:int_fct}\uses{}\usesdefs{}
 \lean{integralFct}
+\leanok
           Let $\psi:\R\to \R$ be a Schwartz function and assume that
           \begin{equation}
               \label{int_fct_assumption}
@@ -5376,6 +5379,7 @@ Then the bound \eqref{int_fct_supp}
 
 \begin{lemma}\label{lem:Phipos_v2}\uses{}\usesdefs{}
 \lean{phiPosV2}
+\leanok
 Let
 $\Psi:\mathbb{R}^2\to \mathbb{R}$ be such   that $\Psi(u_0,u_1)=\Psi(u_1,u_0)$ for all $(u_0,u_1)\in \R^2$ and such that
 for all bounded functions $g:\R\to\R$,
@@ -5458,8 +5462,7 @@ A universal pair is a $(C_{\ref{def:unipair}},N_{\ref{def:unipair}})$-pair.
 A function is a window if it is one of the two components of a universal pair.
 \end{definition}
 
-\begin{lemma}[Existence of a universal pair]\label{lem:cpair}\uses{standard bump properties}\usesdefs{standard bump,def:cn-window,def:cpair,def:unipair}
-\lean{existsUniversalPair}
+\begin{lemma}[Existence of a universal pair]\label{lem:cpair}\lean{existsUniversalPair}\leanok\uses{standard bump properties}\usesdefs{standard bump,def:cn-window,def:cpair,def:unipair}
 There exists a universal pair.
 \end{lemma}
 
@@ -5533,8 +5536,7 @@ Let
 where $\widetilde{\theta}=\mathbf{1}_{[0,\infty)}*\theta$ (a primitive of $\theta$).
 \end{definition}
 
-\begin{lemma}\label{lem:bumpbasic}\uses{}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
-\lean{bumpBasic}
+\begin{lemma}\label{lem:bumpbasic}\lean{bumpBasic}\leanok\uses{}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
 Let $\theta$ be as in \eqref{eqn:thetadef}.\\
 
 (i) We have
@@ -5556,6 +5558,7 @@ Since $2^{-N}$ converges   to $0$ as $N\to \infty$, the conclusion follows.
 
 \begin{lemma}\label{lem:chardecomp}\uses{}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
 \lean{charDecomp}
+\leanok
 With $\phi_0,\theta$ defined as in \eqref{eqn:thetadef}, the identity
  \begin{equation}\label{auto:indicator-smoothing-decomposition} \mathbf{1}_{[0,1]} = \mathbf{1}_{[0,1]}* \phi_0 +  \sum_{\ell=-\infty}^{-1} \mathbf{1}_{[0,1]} * \theta_{(2^\ell)}  \end{equation}
 holds in $L^2$.
@@ -5593,6 +5596,7 @@ which tends to zero.
 
 \begin{lemma}[Smoothing decomposition]\label{lem:smoothingdecomp}\uses{lem:chardecomp,lem:bumpbasic}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
 \lean{smoothingDecomp}
+\leanok
 The identity
 \begin{equation}\label{eq:seriesexpansion}
 \mathbf{1}_{[0,1]} = \phi_0 + \sum_{k=-2}^\infty \varphi_{0,k}  + \sum_{k=-\infty}^{-1} \varphi_{1,k}+ \sum_{k=-\infty}^{-1}\varphi_{2,k}.
@@ -5628,6 +5632,7 @@ The  second equality is justified, for example, by uniform convergence.
 
 \begin{lemma}\label{lem:theta_decay}\uses{lem:smoothdecay2,lem: min and bracket}\usesdefs{bracket bump,def:cn-window,def:unipair,defn:window based bump functions}
 \lean{thetaDecay}
+\leanok
 Let $1\le N\le3$. Then
 \begin{equation}\label{auto:theta-decay}
 |\theta(u)|\le C_{\ref{lem:theta_decay},N}\langle u\rangle^N,
@@ -5664,6 +5669,7 @@ If $N\in\{2,3\}$, Lemma \ref{lem:smoothdecay2}, applied with $m=N$, gives
 
 \begin{lemma}[constant $C_{\ref{lem:theta_decay},N}$ \auto]\label{constant theta decay}\uses{lem:theta_decay}\usesdefs{def:unipair}
 \lean{constantThetaDecay}
+\leanok
 For $1\le N\le3$,
 \begin{equation}\label{constant theta decay bound}
 C_{\ref{lem:theta_decay},N}\le2^{2N+17}.
@@ -5676,6 +5682,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in \eqref{auto:theta-decay-constant-de
 
 \begin{lemma}\label{lem:ft_phi3_eq}\uses{}\usesdefs{defn:window based bump functions}
 \lean{fourierPhiThreeEq}
+\leanok
 For $k\in\mathbb{Z}$ and $\xi\in\mathbb{R}$,
 \begin{equation}\label{auto:varphi-three-Fourier-transform} \widehat{\varphi_{3,k}}(\xi) = 2^k(\widehat{\mathbf{1}_{[0,1)}}-1)(2^{-k}\xi)\widehat{\phi_0}(2^{-k}\xi)\widehat{\theta}(\xi) \end{equation}
 \end{lemma}
@@ -5689,6 +5696,7 @@ By the convolution theorem,
 
 \begin{lemma}\label{lem:abs_deriv_ft_phi3_le}\uses{lem:ft_phi3_eq}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
 \lean{absDerivFourierPhiThreeLe}
+\leanok
 Let $m\in[4)$, $k\in\Z$, and $|\xi|\le1$. Then
 \begin{equation}\label{auto:varphi-three-Fourier-derivative-bound}
 |\widehat{\varphi_{3,k}}^{(m)}(\xi)|
@@ -5764,6 +5772,7 @@ These are the defining values.
 
 \begin{lemma}[constant $C_{\ref{lem:abs_deriv_ft_phi3_le},m}$ \auto]\label{constant phi three derivative}\uses{lem:abs_deriv_ft_phi3_le}\usesdefs{def:unipair}
 \lean{constantPhiThreeDerivative}
+\leanok
 For $m=0$,
 \begin{equation}\label{constant phi three derivative bound}
 C_{\ref{lem:abs_deriv_ft_phi3_le},0}=2^2.
@@ -5787,6 +5796,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in the four defining values.
 
 \begin{lemma}\label{lem:abs_deriv_ft_Tphi3_le}\uses{lem:ft_deriv_mul,lem:abs_deriv_ft_phi3_le}\usesdefs{def:unipair,defn:window based bump functions}
 \lean{absDerivFourierTPhiThreeLe}
+\leanok
 Let $m\in[3)$, $k\in\Z$, and $|\xi|\le1$. Then
 \begin{equation}\label{auto:T-varphi-three-Fourier-derivative-bound}
 |\widehat{T\varphi_{3,k}}^{(m)}(\xi)|
@@ -5823,6 +5833,7 @@ Substitution of the defining values from Lemma \ref{lem:abs_deriv_ft_phi3_le} gi
 
 \begin{lemma}[constant $C_{\ref{lem:abs_deriv_ft_Tphi3_le},m}$ \auto]\label{constant T phi three derivative}\uses{lem:abs_deriv_ft_Tphi3_le}\usesdefs{def:unipair}
 \lean{constantTPhiThreeDerivative}
+\leanok
 For $m=0$,
 \begin{equation}\label{constant T phi three derivative bound}
 C_{\ref{lem:abs_deriv_ft_Tphi3_le},0}<2^{20}.
@@ -5842,6 +5853,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in the three exact values from Lemma \
 
 \begin{lemma}\label{lem:theta_prim}\uses{lem:smoothdecay2}\usesdefs{bracket bump,def:cn-window,def:unipair,defn:window based bump functions}
 \lean{thetaPrimitive}
+\leanok
 Let $\widetilde\theta$ be the primitive of $\theta$ fixed above. Then
 \begin{equation}\label{thetaprim_supp}
 \operatorname{supp}(\widehat{\widetilde\theta})
@@ -5914,6 +5926,7 @@ for $2\le N<N_{\ref{def:unipair}}$. This proves \eqref{thetaprim_decay} and \eqr
 
 \begin{lemma}[constant $C_{\ref{lem:theta_prim},N}$ \auto]\label{constant theta primitive}\uses{lem:theta_prim}\usesdefs{def:unipair}
 \lean{constantThetaPrimitive}
+\leanok
 For $2\le N<N_{\ref{def:unipair}}$,
 \begin{equation}\label{constant theta primitive bound}
 C_{\ref{lem:theta_prim},N}\le2^{5N+21}.
@@ -5929,6 +5942,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in \eqref{auto:theta-primitive-constan
 
 \begin{lemma}\label{lem:phi4_supp}\uses{lem:theta_prim,lem:ft_deriv_mul}\usesdefs{defn:window based bump functions} We have
 \lean{phiFourSupport}
+\leanok
 (a) $\textup{supp}(\widehat{\varphi_{4,k}})
 \subset  [-1,-2^{-2}]\cup [2^{-2},1]$\\
 
@@ -5954,6 +5968,7 @@ Let $\mathbf{f}=(f_0,\dots,f_{n-1})$ be real-valued Schwartz functions satisfyin
 
 \begin{lemma}[Rescaling]\label{lem:rescaling}\uses{}\usesdefs{A_def}Let $\phi\in L^1(\mathbb{R})$.
 \lean{rescaling}
+\leanok
 For all $r,q,\lambda>0$,
 \begin{equation}\label{auto:variation-rescaling-invariance} \|A_t({\phi_{(\lambda)}})\|_{V_{r,J}(t\in (0,\infty); L^q)} =  \|A_t({\phi})\|_{V_{r,J}(t\in (0,\infty); L^q)}. \end{equation}
 \end{lemma}
@@ -5965,6 +5980,7 @@ By replacing $t_j \lambda\mapsto t_j$ in the supremum defining the variation sem
 
 \begin{lemma}\label{lem:norm_A_sum_le_sum}\uses{}\usesdefs{A_def,bracket bump}
 \lean{normASumLeSum}
+\leanok
 If $\phi=\sum_{j=1}^\infty \phi_j$ holds in $L^2$ (with $L^2$ functions $\phi, \phi_j$), then
 \begin{equation}\label{auto:twisted-average-series-triangle} \|A(\phi, \mathbf{f})\|_{L^2(\mathbb{R}^n)} \le \sum_{j=1}^\infty \|A({\phi_j}, \mathbf{f})\|_{L^2(\mathbb{R}^n)}. \end{equation}
 \end{lemma}
@@ -5996,6 +6012,7 @@ and $|f_i|\le C$ for $i\ge2$. After the change of variables $y=x_0+s$, the resul
 
 \begin{lemma}\label{lem:form_pos}\uses{M to K,prism BL inequality}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb,auto:prism-form-definition}
 \lean{formPos}
+\leanok
 (i) Let $\Psi\in W_0(\R^2)$ be real-valued and assume that
 \begin{equation}\label{eqn:hyp_form_pos}
 \int_{\R^2}g(u_0)g(u_1)\Psi(u)\,du\ge0
@@ -6045,6 +6062,7 @@ Part (i) gives the result.
 
 \begin{lemma} \label{lem:ftc_ATphi}\uses{}\usesdefs{A_def}
 \lean{ftcATphi}
+\leanok
 Let $x\in \R^n$, $\phi$ a Schwartz function,  $t\in [2^k, 2^{k+1}]$, $k\in \Z$. Let $a(t)=A_t(\phi)(x)$. Then
 \begin{equation}\label{auto:average-logarithmic-derivative-identity} \|ta'(t)\|_{L^2(t\in [2^k, 2^{k+1}],\tfrac{dt}{t})}^2 = \int_{1}^2 |A_{2^k t}(T\phi)(x)|^2\,\tfrac{dt}{t}. \end{equation}
 \end{lemma}
@@ -6065,6 +6083,7 @@ the claim follows.
 \begin{lemma}
 \label{lem:Phij_prop}\uses{lem:Phipos_v2}\usesdefs{def:cn-window,def:unipair}
 \lean{phiJProperties}
+\leanok
 Let $\Psi:\mathbb{R}^2\to\mathbb{R}$ be a non-zero Schwartz function such that for all $u=(u_0,u_1)\in\R^2$,
 \begin{equation}\label{auto:Phij-symmetry-assumption}
 \Psi(u_0,u_1)=\Psi(u_1,u_0).
@@ -6143,6 +6162,7 @@ The derivative estimate follows.
 
 \begin{lemma}[constant $C_{\ref{lem:Phij_prop}}$ \auto]\label{constant Phij proposition}\uses{lem:Phij_prop}\usesdefs{def:unipair}
 \lean{constantPhiJProposition}
+\leanok
 \begin{equation}\label{constant Phij proposition bound}
 C_{\ref{lem:Phij_prop}}=2^{27}.
 \end{equation}
@@ -6155,6 +6175,7 @@ This follows from \eqref{auto:Phij-constant-definition} and $C_{\ref{def:unipair
 \begin{lemma}[Bootstrapping]
 \label{lem:bootstrap}\uses{}\usesdefs{A_def}
 \lean{bootstrap}
+\leanok
 Let $\phi:\R\to \R$ be a Schwartz function.
 Then
     \begin{equation}\label{auto:dyadic-variation-bootstrap}\|A_{t}(\phi)\|^2_{V_{2,J}(t\in 2^{\Z}; L^2)} \le  4 \cdot \sup \sum_{\ell\in [J)} \|A_{2^{k_{\ell}}}(\phi)\|^2_2     \end{equation}

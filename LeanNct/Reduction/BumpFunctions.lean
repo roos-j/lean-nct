@@ -12,6 +12,7 @@ open MeasureTheory Set
 open scoped BigOperators FourierTransform Real RealInnerProductSpace
 
 open Codex.Preliminaries.Notation
+open Codex.Preliminaries.BumpsAndEstimates
 
 noncomputable section
 
@@ -268,6 +269,377 @@ theorem wideBump (k : ℤ) (hk : k ≤ 2) (t : ℝ)
 /-- The constant in Lemma \ref{lem:thetat_offcenter}. -/
 noncomputable def C_thetaTOffcenter : ℝ := 133
 
+private theorem thetaTOffcenter_bracket_pos (x : ℝ) : 0 < bracketBump x := by
+  rw [bracketBump]
+  positivity
+
+private theorem thetaTOffcenter_bracket_le_one (x : ℝ) : bracketBump x ≤ 1 := by
+  rw [bracketBump]
+  exact (inv_le_one₀ (by positivity)).2 (by linarith [abs_nonneg x])
+
+private theorem thetaTOffcenter_bracket_sq_le_three_halves (x : ℝ) :
+    bracketBump x ^ 2 ≤ Real.rpow (bracketBump x) (3 / 2 : ℝ) := by
+  rw [← Real.rpow_natCast]
+  exact Real.rpow_le_rpow_of_exponent_ge
+    (thetaTOffcenter_bracket_pos x) (thetaTOffcenter_bracket_le_one x) (by norm_num)
+
+private theorem thetaTOffcenter_sq_eq_scaled (x : ℝ) :
+    bracketBump x ^ 2 = scaledBracketBumpReal 2 1 x := by
+  unfold bracketBump scaledBracketBumpReal
+  norm_num only [inv_one, one_mul]
+  change (1 + |x|)⁻¹ ^ 2 = Real.rpow (1 + |x|) (-(2 : ℝ))
+  calc
+    (1 + |x|)⁻¹ ^ 2 = ((1 + |x|) ^ 2)⁻¹ := inv_pow _ _
+    _ = (Real.rpow (1 + |x|) (2 : ℝ))⁻¹ :=
+      congrArg Inv.inv (Real.rpow_natCast (1 + |x|) 2).symm
+    _ = Real.rpow (1 + |x|) (-(2 : ℝ)) :=
+      (Real.rpow_neg (by positivity) _).symm
+
+private theorem thetaTOffcenter_mass (R v : ℝ) (hR : 0 < R) :
+    ∫ t : ℝ in Set.Icc 1 2, bracketBump (v - t * R) ^ 2 ≤ 2 * R⁻¹ := by
+  let g : ℝ → ℝ := fun t ↦ bracketBump (v - t * R) ^ 2
+  let f : ℝ → ℝ := fun t ↦ R⁻¹ *
+    scaledBracketBumpReal 2 R⁻¹ (v / R - t)
+  have hf : Integrable f := by
+    have hbase := aux_integrable_scaledBracketBumpReal_translate 2 R⁻¹ (v / R)
+      (by norm_num : (1 : ℝ) < 2) (inv_pos.mpr hR)
+    exact hbase.const_mul R⁻¹
+  have hfg : f = g := by
+    funext t
+    dsimp [f, g]
+    rw [thetaTOffcenter_sq_eq_scaled]
+    unfold scaledBracketBumpReal
+    norm_num only [inv_one, one_mul]
+    have harg : (R⁻¹)⁻¹ * (v / R - t) = v - t * R := by
+      field_simp [hR.ne'] <;> ring
+    rw [harg]
+    field_simp [hR.ne'] <;> ring
+  have hg : Integrable g := by rw [← hfg]; exact hf
+  have hnonneg (t : ℝ) : 0 ≤ g t := sq_nonneg _
+  have hfull : ∫ t : ℝ, g t = 2 * R⁻¹ := by
+    rw [← hfg, integral_const_mul]
+    have hval := aux_integral_scaledBracketBumpReal_eq 2 R⁻¹ (v / R)
+      (by norm_num : (1 : ℝ) < 2) (inv_pos.mpr hR)
+    rw [hval]
+    ring
+  change ∫ t : ℝ in Set.Icc 1 2, g t ≤ _
+  rw [← hfull]
+  exact MeasureTheory.setIntegral_le_integral hg (ae_of_all _ hnonneg)
+
+private theorem thetaTOffcenter_integrable_shift (R v : ℝ) (hR : 0 < R) :
+    Integrable (fun t : ℝ ↦ bracketBump (v - t * R) ^ 2) := by
+  let f : ℝ → ℝ := fun t ↦ R⁻¹ *
+    scaledBracketBumpReal 2 R⁻¹ (v / R - t)
+  have hf : Integrable f := by
+    have hbase := aux_integrable_scaledBracketBumpReal_translate 2 R⁻¹ (v / R)
+      (by norm_num : (1 : ℝ) < 2) (inv_pos.mpr hR)
+    exact hbase.const_mul R⁻¹
+  have hfg : f = fun t : ℝ ↦ bracketBump (v - t * R) ^ 2 := by
+    funext t
+    dsimp [f]
+    rw [thetaTOffcenter_sq_eq_scaled]
+    unfold scaledBracketBumpReal
+    norm_num only [inv_one, one_mul]
+    have harg : (R⁻¹)⁻¹ * (v / R - t) = v - t * R := by
+      field_simp [hR.ne'] <;> ring
+    rw [harg]
+    field_simp [hR.ne'] <;> ring
+  rw [← hfg]
+  exact hf
+
+private theorem thetaTOffcenter_scale (R c v : ℝ) (hR : 0 < R) (hc : 0 < c)
+    (h : 1 + |v| ≤ c * R) :
+    Real.rpow R (-(3 / 2 : ℝ)) ≤
+      Real.rpow c (3 / 2 : ℝ) * Real.rpow (bracketBump v) (3 / 2 : ℝ) := by
+  have hbase : R⁻¹ ≤ c * bracketBump v := by
+    change R⁻¹ ≤ c / (1 + |v|)
+    rw [le_div_iff₀ (by positivity)]
+    calc
+      R⁻¹ * (1 + |v|) ≤ R⁻¹ * (c * R) :=
+        mul_le_mul_of_nonneg_left h (inv_nonneg.mpr hR.le)
+      _ = c := by field_simp [hR.ne']
+  calc
+    Real.rpow R (-(3 / 2 : ℝ)) = Real.rpow R⁻¹ (3 / 2 : ℝ) :=
+      Real.rpow_neg_eq_inv_rpow R _
+    _ ≤ Real.rpow (c * bracketBump v) (3 / 2 : ℝ) :=
+      Real.rpow_le_rpow (inv_nonneg.mpr hR.le) hbase (by norm_num)
+    _ = Real.rpow c (3 / 2 : ℝ) * Real.rpow (bracketBump v) (3 / 2 : ℝ) :=
+      Real.mul_rpow hc.le (thetaTOffcenter_bracket_pos v).le
+
+private theorem thetaTOffcenter_large (R v t : ℝ) (hR : 0 < R) (hv : 3 * R ≤ |v|)
+    (ht : t ∈ Set.Icc 1 2) :
+    bracketBump (v - t * R) ≤ 3 * bracketBump v := by
+  have ht0 : 0 ≤ t := by linarith [ht.1]
+  have htR : |t * R| ≤ 2 * R := by
+    rw [abs_of_nonneg (mul_nonneg ht0 hR.le)]
+    gcongr
+    exact ht.2
+  have habs : |v| ≤ |v - t * R| + |t * R| := by
+    calc
+      |v| = |(v - t * R) + t * R| := by congr 1 <;> ring
+      _ ≤ |v - t * R| + |t * R| := abs_add_le _ _
+  have hshift : |v| ≤ 3 * |v - t * R| := by
+    nlinarith
+  have htri : 1 + |v| ≤ 3 * (1 + |v - t * R|) := by
+    nlinarith [abs_nonneg (v - t * R)]
+  rw [bracketBump, bracketBump]
+  calc
+    (1 + |v - t * R|)⁻¹ = 1 / (1 + |v - t * R|) := by rw [one_div]
+    _ ≤ 3 / (1 + |v|) :=
+      (div_le_div_iff₀ (by positivity) (by positivity)).2 (by simpa using htri)
+    _ = 3 * (1 + |v|)⁻¹ := by rw [div_eq_mul_inv]
+
+private theorem thetaTOffcenter_lead (k : ℤ) :
+    Real.rpow 2 ((k : ℝ) / 2) =
+      Real.rpow ((2 : ℝ) ^ (-k)) (-(1 / 2 : ℝ)) := by
+  calc
+    Real.rpow 2 ((k : ℝ) / 2) =
+        Real.rpow 2 ((((-k : ℤ) : ℝ) * (-(1 / 2 : ℝ)))) := by
+      congr 1
+      push_cast
+      ring
+    _ = Real.rpow ((2 : ℝ) ^ (-k)) (-(1 / 2 : ℝ)) := by
+      simpa using (Real.rpow_intCast_mul (x := (2 : ℝ)) (by norm_num : (0 : ℝ) ≤ 2)
+        (-k) (-(1 / 2 : ℝ)))
+
+private theorem thetaTOffcenter_combine (R : ℝ) (hR : 0 < R) :
+    Real.rpow R (-(1 / 2 : ℝ)) * R⁻¹ = Real.rpow R (-(3 / 2 : ℝ)) := by
+  calc
+    Real.rpow R (-(1 / 2 : ℝ)) * R⁻¹ =
+        Real.rpow R (-(1 / 2 : ℝ)) * Real.rpow R (-1 : ℝ) := by
+          rw [show R⁻¹ = Real.rpow R (-1 : ℝ) from (Real.rpow_neg_one R).symm]
+    _ = Real.rpow R (-(1 / 2 : ℝ) + (-1 : ℝ)) :=
+      (Real.rpow_add hR _ _).symm
+    _ = Real.rpow R (-(3 / 2 : ℝ)) := by congr 1 <;> ring
+
+private theorem thetaTOffcenter_rpow_three : Real.rpow 3 (3 / 2 : ℝ) ≤ 6 := by
+  have hsqrt : Real.sqrt 3 ≤ 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 3), Real.sqrt_nonneg (3 : ℝ)]
+  calc
+    Real.rpow 3 (3 / 2 : ℝ) = Real.rpow 3 (1 / 2 : ℝ) * 3 := by
+      convert Real.rpow_add (by norm_num : (0 : ℝ) < 3) (1 / 2 : ℝ) 1 using 1 <;> norm_num
+    _ = Real.sqrt 3 * 3 := congrArg (fun z : ℝ ↦ z * 3) (Real.sqrt_eq_rpow 3).symm
+    _ ≤ 2 * 3 := by gcongr
+    _ = 6 := by norm_num
+
+private theorem thetaTOffcenter_rpow_seven_halves : Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) ≤ 7 := by
+  have hsqrt : Real.sqrt (7 / 2 : ℝ) ≤ 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 7 / 2),
+      Real.sqrt_nonneg (7 / 2 : ℝ)]
+  calc
+    Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) =
+        Real.rpow (7 / 2 : ℝ) (1 / 2 : ℝ) * (7 / 2 : ℝ) := by
+      convert Real.rpow_add (by norm_num : (0 : ℝ) < 7 / 2) (1 / 2 : ℝ) 1 using 1 <;> norm_num
+    _ = Real.sqrt (7 / 2 : ℝ) * (7 / 2 : ℝ) :=
+      congrArg (fun z : ℝ ↦ z * (7 / 2 : ℝ)) (Real.sqrt_eq_rpow (7 / 2 : ℝ)).symm
+    _ ≤ 2 * (7 / 2 : ℝ) := by gcongr
+    _ = 7 := by norm_num
+
+private theorem thetaTOffcenter_rpow_thirteen_halves : Real.rpow (13 / 2 : ℝ) (3 / 2 : ℝ) ≤ 133 / 8 := by
+  have hsqrt : Real.sqrt (13 / 2 : ℝ) ≤ 133 / 52 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 13 / 2),
+      Real.sqrt_nonneg (13 / 2 : ℝ)]
+  calc
+    Real.rpow (13 / 2 : ℝ) (3 / 2 : ℝ) =
+        Real.rpow (13 / 2 : ℝ) (1 / 2 : ℝ) * (13 / 2 : ℝ) := by
+      convert Real.rpow_add (by norm_num : (0 : ℝ) < 13 / 2) (1 / 2 : ℝ) 1 using 1 <;> norm_num
+    _ = Real.sqrt (13 / 2 : ℝ) * (13 / 2 : ℝ) :=
+      congrArg (fun z : ℝ ↦ z * (13 / 2 : ℝ)) (Real.sqrt_eq_rpow (13 / 2 : ℝ)).symm
+    _ ≤ (133 / 52 : ℝ) * (13 / 2 : ℝ) := by gcongr
+    _ = 133 / 8 := by norm_num
+
+private theorem thetaTOffcenter_scaled_neg (x : ℝ) :
+    scaledBracketBumpReal 2 1 (-x) = scaledBracketBumpReal 2 1 x := by
+  unfold scaledBracketBumpReal
+  norm_num only [inv_one, one_mul]
+  rw [abs_neg]
+
+private theorem thetaTOffcenter_two_point (a b : ℝ) :
+    bracketBump a ^ 2 * bracketBump b ^ 2 ≤
+      2 * bracketBump (a - b) ^ 2 * (bracketBump a ^ 2 + bracketBump b ^ 2) := by
+  rw [thetaTOffcenter_sq_eq_scaled, thetaTOffcenter_sq_eq_scaled, thetaTOffcenter_sq_eq_scaled]
+  rw [← thetaTOffcenter_scaled_neg b]
+  calc
+    scaledBracketBumpReal 2 1 a * scaledBracketBumpReal 2 1 (-b) ≤
+        Real.rpow 2 ((2 : ℝ) - 1) * scaledBracketBumpReal 2 1 (a - b) *
+          (scaledBracketBumpReal 2 1 a + scaledBracketBumpReal 2 1 (-b)) :=
+      aux_twoBump_pointwise_sameExponent 2 1 1 a (-b)
+        (by norm_num : (1 : ℝ) < 2) (by norm_num : (0 : ℝ) < 1)
+        (by norm_num : (0 : ℝ) < 1) le_rfl
+    _ = 2 * scaledBracketBumpReal 2 1 (a - b) *
+          (scaledBracketBumpReal 2 1 a + scaledBracketBumpReal 2 1 (-b)) := by
+      norm_num [Real.rpow_one]
+
+private theorem thetaTOffcenter_one_small (R v w : ℝ) (hR : 0 < R) (hRtwo : 2 ≤ R)
+    (hv : ¬ 3 * R ≤ |v|) (hw : 3 * R ≤ |w|) :
+    Real.rpow R (-(1 / 2 : ℝ)) *
+        ∫ t : ℝ in Set.Icc 1 2,
+          bracketBump (v - t * R) ^ 2 * bracketBump (w - t * R) ^ 2 ≤
+      126 * (Real.rpow (bracketBump v) (3 / 2 : ℝ) *
+        Real.rpow (bracketBump w) (3 / 2 : ℝ)) := by
+  have hvsmall : |v| < 3 * R := lt_of_not_ge hv
+  have hscale : Real.rpow R (-(3 / 2 : ℝ)) ≤
+      Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) *
+        Real.rpow (bracketBump v) (3 / 2 : ℝ) := by
+    apply thetaTOffcenter_scale R (7 / 2 : ℝ) v hR (by norm_num)
+    nlinarith
+  have hpoint (t : ℝ) (ht : t ∈ Set.Icc 1 2) :
+      bracketBump (v - t * R) ^ 2 * bracketBump (w - t * R) ^ 2 ≤
+        (9 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) *
+          bracketBump (v - t * R) ^ 2 := by
+    have hlarge := thetaTOffcenter_large R w t hR hw ht
+    have hp : bracketBump (w - t * R) ^ 2 ≤
+        9 * Real.rpow (bracketBump w) (3 / 2 : ℝ) := by
+      calc
+        bracketBump (w - t * R) ^ 2 ≤ (3 * bracketBump w) ^ 2 :=
+          pow_le_pow_left₀ (thetaTOffcenter_bracket_pos _).le hlarge 2
+        _ = 9 * bracketBump w ^ 2 := by ring
+        _ ≤ 9 * Real.rpow (bracketBump w) (3 / 2 : ℝ) := by
+          gcongr
+          exact thetaTOffcenter_bracket_sq_le_three_halves w
+    calc
+      bracketBump (v - t * R) ^ 2 * bracketBump (w - t * R) ^ 2 ≤
+          bracketBump (v - t * R) ^ 2 *
+            (9 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) := by
+        gcongr
+      _ = (9 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) *
+            bracketBump (v - t * R) ^ 2 := by ring
+  have hint : ∫ t : ℝ in Set.Icc 1 2,
+      bracketBump (v - t * R) ^ 2 * bracketBump (w - t * R) ^ 2 ≤
+      (9 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) * (2 * R⁻¹) := by
+    calc
+      ∫ t : ℝ in Set.Icc 1 2,
+          bracketBump (v - t * R) ^ 2 * bracketBump (w - t * R) ^ 2 ≤
+          ∫ t : ℝ in Set.Icc 1 2,
+            (9 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) *
+              bracketBump (v - t * R) ^ 2 := by
+        apply MeasureTheory.setIntegral_mono_of_nonneg
+        · exact fun _ _ ↦ mul_nonneg (sq_nonneg _) (sq_nonneg _)
+        · exact fun t ht ↦ hpoint t ht
+        · exact (thetaTOffcenter_integrable_shift R v hR).const_mul _ |>.integrableOn
+      _ = (9 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) *
+          ∫ t : ℝ in Set.Icc 1 2, bracketBump (v - t * R) ^ 2 := by
+        rw [integral_const_mul]
+      _ ≤ (9 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) * (2 * R⁻¹) := by
+        exact mul_le_mul_of_nonneg_left (thetaTOffcenter_mass R v hR)
+          (mul_nonneg (by norm_num) (Real.rpow_nonneg (thetaTOffcenter_bracket_pos w).le _))
+  calc
+    Real.rpow R (-(1 / 2 : ℝ)) *
+        ∫ t : ℝ in Set.Icc 1 2,
+          bracketBump (v - t * R) ^ 2 * bracketBump (w - t * R) ^ 2 ≤
+        Real.rpow R (-(1 / 2 : ℝ)) *
+          ((9 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) * (2 * R⁻¹)) := by
+      exact mul_le_mul_of_nonneg_left hint (Real.rpow_nonneg hR.le _)
+    _ = (18 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) *
+        (Real.rpow R (-(1 / 2 : ℝ)) * R⁻¹) := by ring
+    _ = (18 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) *
+        Real.rpow R (-(3 / 2 : ℝ)) := by rw [thetaTOffcenter_combine R hR]
+    _ ≤ (18 * Real.rpow (bracketBump w) (3 / 2 : ℝ)) *
+        (Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump v) (3 / 2 : ℝ)) := by
+      exact mul_le_mul_of_nonneg_left hscale
+        (mul_nonneg (by norm_num) (Real.rpow_nonneg (thetaTOffcenter_bracket_pos w).le _))
+    _ = (18 * Real.rpow (7 / 2 : ℝ) (3 / 2 : ℝ)) *
+        (Real.rpow (bracketBump v) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump w) (3 / 2 : ℝ)) := by ring
+    _ ≤ 126 * (Real.rpow (bracketBump v) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump w) (3 / 2 : ℝ)) := by
+      apply mul_le_mul_of_nonneg_right
+      · nlinarith [thetaTOffcenter_rpow_seven_halves]
+      · exact mul_nonneg (Real.rpow_nonneg (thetaTOffcenter_bracket_pos v).le _)
+          (Real.rpow_nonneg (thetaTOffcenter_bracket_pos w).le _)
+
+private theorem thetaTOffcenter_two_small (R v₀ v₁ : ℝ) (hR : 0 < R) (hRtwo : 2 ≤ R)
+    (h₀ : ¬ 3 * R ≤ |v₀|) (h₁ : ¬ 3 * R ≤ |v₁|) :
+    Real.rpow R (-(1 / 2 : ℝ)) *
+        ∫ t : ℝ in Set.Icc 1 2,
+          bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+      133 * (Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+        Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := by
+  have h₀small : |v₀| < 3 * R := lt_of_not_ge h₀
+  have h₁small : |v₁| < 3 * R := lt_of_not_ge h₁
+  have hsum : 1 + |v₀ + v₁| ≤ (13 / 2 : ℝ) * R := by
+    nlinarith [abs_add_le v₀ v₁]
+  have hscale : Real.rpow R (-(3 / 2 : ℝ)) ≤
+      Real.rpow (13 / 2 : ℝ) (3 / 2 : ℝ) *
+        Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) :=
+    thetaTOffcenter_scale R (13 / 2 : ℝ) (v₀ + v₁) hR (by norm_num) hsum
+  have hpoint (t : ℝ) :
+      bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+        2 * bracketBump (v₀ - v₁) ^ 2 *
+          (bracketBump (v₀ - t * R) ^ 2 + bracketBump (v₁ - t * R) ^ 2) := by
+    have h := thetaTOffcenter_two_point (v₀ - t * R) (v₁ - t * R)
+    convert h using 1 <;> ring
+  have hI₀ : Integrable (fun t : ℝ ↦ bracketBump (v₀ - t * R) ^ 2) :=
+    thetaTOffcenter_integrable_shift R v₀ hR
+  have hI₁ : Integrable (fun t : ℝ ↦ bracketBump (v₁ - t * R) ^ 2) :=
+    thetaTOffcenter_integrable_shift R v₁ hR
+  have hint : ∫ t : ℝ in Set.Icc 1 2,
+      bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+      8 * bracketBump (v₀ - v₁) ^ 2 * R⁻¹ := by
+    calc
+      ∫ t : ℝ in Set.Icc 1 2,
+          bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+          ∫ t : ℝ in Set.Icc 1 2,
+            2 * bracketBump (v₀ - v₁) ^ 2 *
+              (bracketBump (v₀ - t * R) ^ 2 + bracketBump (v₁ - t * R) ^ 2) := by
+        apply MeasureTheory.setIntegral_mono_of_nonneg
+        · exact fun _ _ ↦ mul_nonneg (sq_nonneg _) (sq_nonneg _)
+        · exact fun t _ ↦ hpoint t
+        · exact (((hI₀.add hI₁).const_mul _).integrableOn)
+      _ = (2 * bracketBump (v₀ - v₁) ^ 2) *
+          ((∫ t : ℝ in Set.Icc 1 2, bracketBump (v₀ - t * R) ^ 2) +
+            (∫ t : ℝ in Set.Icc 1 2, bracketBump (v₁ - t * R) ^ 2)) := by
+        rw [integral_const_mul, integral_add hI₀.integrableOn hI₁.integrableOn]
+      _ ≤ (2 * bracketBump (v₀ - v₁) ^ 2) * (2 * R⁻¹ + 2 * R⁻¹) := by
+        apply mul_le_mul_of_nonneg_left
+        · exact add_le_add (thetaTOffcenter_mass R v₀ hR) (thetaTOffcenter_mass R v₁ hR)
+        · exact mul_nonneg (by norm_num) (sq_nonneg _)
+      _ = 8 * bracketBump (v₀ - v₁) ^ 2 * R⁻¹ := by ring
+  calc
+    Real.rpow R (-(1 / 2 : ℝ)) *
+        ∫ t : ℝ in Set.Icc 1 2,
+          bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+        Real.rpow R (-(1 / 2 : ℝ)) *
+          (8 * bracketBump (v₀ - v₁) ^ 2 * R⁻¹) := by
+      exact mul_le_mul_of_nonneg_left hint (Real.rpow_nonneg hR.le _)
+    _ = (8 * bracketBump (v₀ - v₁) ^ 2) *
+        (Real.rpow R (-(1 / 2 : ℝ)) * R⁻¹) := by ring
+    _ = (8 * bracketBump (v₀ - v₁) ^ 2) *
+        Real.rpow R (-(3 / 2 : ℝ)) := by rw [thetaTOffcenter_combine R hR]
+    _ ≤ (8 * bracketBump (v₀ - v₁) ^ 2) *
+        (Real.rpow (13 / 2 : ℝ) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ)) := by
+      exact mul_le_mul_of_nonneg_left hscale (mul_nonneg (by norm_num) (sq_nonneg _))
+    _ ≤ (8 * Real.rpow (13 / 2 : ℝ) (3 / 2 : ℝ)) *
+        (Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := by
+      have hsq := thetaTOffcenter_bracket_sq_le_three_halves (v₀ - v₁)
+      calc
+        8 * bracketBump (v₀ - v₁) ^ 2 *
+            (Real.rpow (13 / 2 : ℝ) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ)) =
+            (8 * Real.rpow (13 / 2 : ℝ) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ)) *
+                bracketBump (v₀ - v₁) ^ 2 := by ring
+        _ ≤ (8 * Real.rpow (13 / 2 : ℝ) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ)) *
+                Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ) := by
+          apply mul_le_mul_of_nonneg_left hsq
+          exact mul_nonneg
+            (mul_nonneg (by norm_num) (Real.rpow_nonneg (by norm_num) _))
+            (Real.rpow_nonneg (thetaTOffcenter_bracket_pos (v₀ + v₁)).le _)
+        _ = 8 * Real.rpow (13 / 2 : ℝ) (3 / 2 : ℝ) *
+            (Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := by ring
+    _ ≤ 133 * (Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+          Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := by
+      apply mul_le_mul_of_nonneg_right
+      · nlinarith [thetaTOffcenter_rpow_thirteen_halves]
+      · exact mul_nonneg (Real.rpow_nonneg (thetaTOffcenter_bracket_pos (v₀ + v₁)).le _)
+          (Real.rpow_nonneg (thetaTOffcenter_bracket_pos (v₀ - v₁)).le _)
+
+
 /--
 \begin{lemma}\label{lem:thetat_offcenter}
 Let $k\leq-1$.  Then for every $(v_0,v_1)\in\mathbb R^2$,
@@ -291,7 +663,161 @@ theorem thetaTOffcenter (k : ℤ) (hk : k ≤ -1) (v₀ v₁ : ℝ) :
             Real.rpow (bracketBump v₁) (3 / 2 : ℝ) +
           Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
             Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := by
-  sorry
+  rw [C_thetaTOffcenter]
+  let R : ℝ := (2 : ℝ) ^ (-k)
+  have hR : 0 < R := by
+    dsimp [R]
+    exact zpow_pos (by norm_num) _
+  have hRtwo : 2 ≤ R := by
+    dsimp [R]
+    calc
+      2 = (2 : ℝ) ^ (1 : ℤ) := by norm_num
+      _ ≤ (2 : ℝ) ^ (-k) := by
+        apply zpow_le_zpow_right₀ (by norm_num)
+        omega
+  have hlead : Real.rpow 2 ((k : ℝ) / 2) =
+      Real.rpow R (-(1 / 2 : ℝ)) := by
+    simpa only [R] using thetaTOffcenter_lead k
+  have hA : 0 ≤ Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+      Real.rpow (bracketBump v₁) (3 / 2 : ℝ) :=
+    mul_nonneg (Real.rpow_nonneg (thetaTOffcenter_bracket_pos v₀).le _)
+      (Real.rpow_nonneg (thetaTOffcenter_bracket_pos v₁).le _)
+  have hC : 0 ≤ Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+      Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ) :=
+    mul_nonneg (Real.rpow_nonneg (thetaTOffcenter_bracket_pos (v₀ + v₁)).le _)
+      (Real.rpow_nonneg (thetaTOffcenter_bracket_pos (v₀ - v₁)).le _)
+  change Real.rpow 2 ((k : ℝ) / 2) *
+      ∫ t : ℝ in Set.Icc 1 2,
+        bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤ _
+  rw [hlead]
+  by_cases h₀ : 3 * R ≤ |v₀|
+  · by_cases h₁ : 3 * R ≤ |v₁|
+    · have hpoint (t : ℝ) (ht : t ∈ Set.Icc 1 2) :
+          bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+            54 * (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump v₁) (3 / 2 : ℝ)) := by
+        have hlarge₀ := thetaTOffcenter_large R v₀ t hR h₀ ht
+        have hlarge₁ := thetaTOffcenter_large R v₁ t hR h₁ ht
+        have hp₀ : Real.rpow (bracketBump (v₀ - t * R)) (3 / 2 : ℝ) ≤
+            Real.rpow (3 * bracketBump v₀) (3 / 2 : ℝ) :=
+          Real.rpow_le_rpow (thetaTOffcenter_bracket_pos _).le hlarge₀ (by norm_num)
+        have hp₁ : bracketBump (v₁ - t * R) ^ 2 ≤
+            9 * Real.rpow (bracketBump v₁) (3 / 2 : ℝ) := by
+          calc
+            bracketBump (v₁ - t * R) ^ 2 ≤ (3 * bracketBump v₁) ^ 2 := by
+              exact pow_le_pow_left₀ (thetaTOffcenter_bracket_pos _).le hlarge₁ 2
+            _ = 9 * bracketBump v₁ ^ 2 := by ring
+            _ ≤ 9 * Real.rpow (bracketBump v₁) (3 / 2 : ℝ) := by
+              gcongr
+              exact thetaTOffcenter_bracket_sq_le_three_halves v₁
+        calc
+          bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+              Real.rpow (bracketBump (v₀ - t * R)) (3 / 2 : ℝ) *
+                bracketBump (v₁ - t * R) ^ 2 := by
+            gcongr
+            exact thetaTOffcenter_bracket_sq_le_three_halves _
+          _ ≤ Real.rpow (3 * bracketBump v₀) (3 / 2 : ℝ) *
+                (9 * Real.rpow (bracketBump v₁) (3 / 2 : ℝ)) := by
+            exact mul_le_mul hp₀ hp₁ (sq_nonneg _) (Real.rpow_nonneg
+              (mul_nonneg (by norm_num) (thetaTOffcenter_bracket_pos v₀).le) _)
+          _ = (9 * Real.rpow 3 (3 / 2 : ℝ)) *
+              (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v₁) (3 / 2 : ℝ)) := by
+            have hmul : Real.rpow (3 * bracketBump v₀) (3 / 2 : ℝ) =
+                Real.rpow 3 (3 / 2 : ℝ) *
+                  Real.rpow (bracketBump v₀) (3 / 2 : ℝ) :=
+              Real.mul_rpow (by norm_num) (thetaTOffcenter_bracket_pos v₀).le
+            rw [hmul]
+            ring
+          _ ≤ 54 * (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v₁) (3 / 2 : ℝ)) := by
+            gcongr
+            nlinarith [thetaTOffcenter_rpow_three]
+      have hint : ∫ t : ℝ in Set.Icc 1 2,
+          bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+          54 * (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+            Real.rpow (bracketBump v₁) (3 / 2 : ℝ)) := by
+        calc
+          ∫ t : ℝ in Set.Icc 1 2,
+              bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+              ∫ _t : ℝ in Set.Icc 1 2,
+                54 * (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                  Real.rpow (bracketBump v₁) (3 / 2 : ℝ)) := by
+            apply MeasureTheory.setIntegral_mono_of_nonneg
+            · exact fun _ _ ↦ mul_nonneg (sq_nonneg _) (sq_nonneg _)
+            · exact fun t ht ↦ hpoint t ht
+            · exact integrableOn_const (measure_Icc_lt_top.ne)
+          _ = 54 * (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v₁) (3 / 2 : ℝ)) := by
+            norm_num [MeasureTheory.setIntegral_const, Real.volume_real_Icc_of_le]
+      have hhalf : Real.rpow R (-(1 / 2 : ℝ)) ≤ 1 :=
+        Real.rpow_le_one_of_one_le_of_nonpos (by linarith) (by norm_num)
+      calc
+        Real.rpow R (-(1 / 2 : ℝ)) *
+            ∫ t : ℝ in Set.Icc 1 2,
+              bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+            Real.rpow R (-(1 / 2 : ℝ)) *
+              (54 * (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v₁) (3 / 2 : ℝ))) := by
+              exact mul_le_mul_of_nonneg_left hint (Real.rpow_nonneg hR.le _)
+        _ ≤ 1 * (54 * (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v₁) (3 / 2 : ℝ))) := by
+              gcongr
+        _ ≤ 133 *
+            (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v₁) (3 / 2 : ℝ) +
+              Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := by
+          nlinarith
+    · have hsmall := thetaTOffcenter_one_small R v₁ v₀ hR hRtwo h₁ h₀
+      calc
+        Real.rpow R (-(1 / 2 : ℝ)) *
+            ∫ t : ℝ in Set.Icc 1 2,
+              bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 =
+            Real.rpow R (-(1 / 2 : ℝ)) *
+              ∫ t : ℝ in Set.Icc 1 2,
+                bracketBump (v₁ - t * R) ^ 2 * bracketBump (v₀ - t * R) ^ 2 := by
+              congr 1
+              apply integral_congr_ae
+              filter_upwards [] with t
+              ring
+        _ ≤ 126 * (Real.rpow (bracketBump v₁) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump v₀) (3 / 2 : ℝ)) := hsmall
+        _ ≤ 133 *
+            (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v₁) (3 / 2 : ℝ) +
+              Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := by
+          nlinarith
+  · by_cases h₁ : 3 * R ≤ |v₁|
+    · have hsmall := thetaTOffcenter_one_small R v₀ v₁ hR hRtwo h₀ h₁
+      calc
+        Real.rpow R (-(1 / 2 : ℝ)) *
+            ∫ t : ℝ in Set.Icc 1 2,
+              bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+            126 * (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump v₁) (3 / 2 : ℝ)) := hsmall
+        _ ≤ 133 *
+            (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v₁) (3 / 2 : ℝ) +
+              Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := by
+          nlinarith
+    · have hsmall := thetaTOffcenter_two_small R v₀ v₁ hR hRtwo h₀ h₁
+      calc
+        Real.rpow R (-(1 / 2 : ℝ)) *
+            ∫ t : ℝ in Set.Icc 1 2,
+              bracketBump (v₀ - t * R) ^ 2 * bracketBump (v₁ - t * R) ^ 2 ≤
+            133 * (Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+              Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := hsmall
+        _ ≤ 133 *
+            (Real.rpow (bracketBump v₀) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump v₁) (3 / 2 : ℝ) +
+              Real.rpow (bracketBump (v₀ + v₁)) (3 / 2 : ℝ) *
+                Real.rpow (bracketBump (v₀ - v₁)) (3 / 2 : ℝ)) := by
+          nlinarith
+
+
 
 /--
 \begin{lemma}[constant $C_{\ref{lem:thetat_offcenter}}$ \auto]
@@ -302,7 +828,7 @@ theorem thetaTOffcenter (k : ℤ) (hk : k ≤ -1) (v₀ v₁ : ℝ) :
 \end{lemma}
 -/
 theorem constantOffCenterBump : C_thetaTOffcenter ≤ 133 := by
-  sorry
+  norm_num [C_thetaTOffcenter]
 
 /-- The one-dimensional $L^1$-normalized dilation used in Lemma \ref{lem:int_fct}. -/
 noncomputable def aux_realRescaled (t : ℝ) (psi : ℝ → ℝ) : ℝ → ℝ :=
@@ -338,10 +864,563 @@ noncomputable def aux_swapTwo (u : EuclideanSpace ℝ (Fin 2)) :
     EuclideanSpace ℝ (Fin 2) :=
   WithLp.toLp 2 ![u 1, u 0]
 
-/-- A bounded real function, in the sense needed by the positivity statements in
-Lemmas \ref{lem:int_fct} and \ref{lem:Phipos_v2}. -/
+/-- A bounded measurable real function, in the sense needed by the Lebesgue-integral
+positivity statements in Lemmas \ref{lem:int_fct} and \ref{lem:Phipos_v2}. -/
 def aux_bounded (f : ℝ → ℝ) : Prop :=
-  Bornology.IsBounded (Set.range f)
+  Measurable f ∧ Bornology.IsBounded (Set.range f)
+
+/-- Auxiliary scaling identity for the Fourier-support part of
+`integralFct` (Lemma \ref{lem:int_fct}). -/
+private theorem aux_realRescaled_fourier (t : ℝ) (ht : 0 < t) (f : ℝ → ℝ) (xi : ℝ) :
+    FourierTransform.fourier (fun x : ℝ => (aux_realRescaled t f x : ℂ)) xi =
+      FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) (t * xi) := by
+  rw [Real.fourier_real_eq_integral_exp_smul,
+    Real.fourier_real_eq_integral_exp_smul]
+  let g : ℝ → ℂ := fun q => (f q : ℂ) *
+    Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * (q : ℂ) * ((t * xi : ℝ) : ℂ)))
+  calc
+    (∫ x : ℝ, Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I) •
+        (aux_realRescaled t f x : ℂ)) = ∫ x : ℝ, (t⁻¹ : ℂ) * g (t⁻¹ * x) := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      dsimp [g, aux_realRescaled]
+      have hphase : Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I) =
+          Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * ((t⁻¹ * x : ℝ) : ℂ) *
+            ((t * xi : ℝ) : ℂ))) := by
+        congr 1
+        push_cast
+        field_simp [ne_of_gt ht]
+      rw [hphase]
+      push_cast
+      ring
+    _ = (t⁻¹ : ℂ) * ∫ x : ℝ, g (t⁻¹ * x) := by rw [integral_const_mul]
+    _ = (t⁻¹ : ℂ) * (|t| • ∫ y : ℝ, g y) := by
+      rw [Measure.integral_comp_inv_mul_left]
+    _ = ∫ y : ℝ, g y := by
+      rw [abs_of_pos ht]
+      field_simp [ne_of_gt ht]
+      rw [Complex.real_smul]
+    _ = ∫ x : ℝ, Complex.exp (↑(-2 * Real.pi * x * (t * xi)) * Complex.I) •
+        (f x : ℂ) := by
+      apply integral_congr_ae
+      filter_upwards [] with x
+      dsimp [g]
+      push_cast
+      ring
+
+/-- The product Fourier factorization used in the support calculation of
+`integralFct` (Lemma \ref{lem:int_fct}). -/
+private theorem aux_fourier_tensor_two (f g : ℝ → ℝ) (xi : EuclideanSpace ℝ (Fin 2)) :
+    FourierTransform.fourier (fun u : EuclideanSpace ℝ (Fin 2) =>
+      (f (u 0) * g (u 1) : ℂ)) xi =
+    FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) (xi 0) *
+      FourierTransform.fourier (fun x : ℝ => (g x : ℂ)) (xi 1) := by
+  rw [Real.fourier_eq', Real.fourier_eq', Real.fourier_eq']
+  rw [← (PiLp.volume_preserving_toLp (Fin 2)).integral_comp
+    (MeasurableEquiv.toLp 2 _).measurableEmbedding]
+  let F : Fin 2 → ℝ → ℂ := fun i x =>
+    if i = 0 then
+      Complex.exp (↑(-2 * Real.pi * x * xi 0) * Complex.I) * (f x : ℂ)
+    else Complex.exp (↑(-2 * Real.pi * x * xi 1) * Complex.I) * (g x : ℂ)
+  have h10 : (1 : Fin 2) ≠ 0 := by decide
+  calc
+    (∫ x : Fin 2 → ℝ,
+      Complex.exp (↑(-2 * Real.pi * ⟪WithLp.toLp 2 x, xi⟫) * Complex.I) •
+        ((f ((WithLp.toLp 2 x) 0) : ℂ) * (g ((WithLp.toLp 2 x) 1) : ℂ))) =
+      ∫ x : Fin 2 → ℝ, ∏ i, F i (x i) := by
+        apply integral_congr_ae
+        filter_upwards [] with x
+        dsimp [F]
+        rw [Fin.prod_univ_two]
+        simp [PiLp.inner_apply, Fin.sum_univ_two, h10]
+        have hphase :
+            Complex.exp (-(2 * (Real.pi : ℂ) *
+              ((xi 0 : ℂ) * (x 0 : ℂ) + (xi 1 : ℂ) * (x 1 : ℂ)) * Complex.I)) =
+              Complex.exp (-(2 * (Real.pi : ℂ) * (x 0 : ℂ) * (xi 0 : ℂ) * Complex.I)) *
+                Complex.exp (-(2 * (Real.pi : ℂ) * (x 1 : ℂ) * (xi 1 : ℂ) * Complex.I)) := by
+          rw [← Complex.exp_add]
+          congr 1
+          ring
+        rw [hphase]
+        ring
+    _ = (∫ x, F 0 x) * ∫ x, F 1 x := by
+      rw [MeasureTheory.integral_fin_nat_prod_volume_eq_prod]
+      simp only [Fin.prod_univ_two]
+    _ = _ := by
+      dsimp [F]
+      simp
+      apply congrArg₂ (· * ·)
+      · apply integral_congr_ae
+        filter_upwards [] with x
+        push_cast
+        ring
+      · apply integral_congr_ae
+        filter_upwards [] with x
+        push_cast
+        ring
+
+/-- Integrability of the three-variable Fubini integrand in the positivity part of
+`integralFct` (Lemma \ref{lem:int_fct}). -/
+private theorem aux_integralFct_triple_integrable
+    (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s)
+    (f : ℝ → ℝ) (hf : Measurable f) (C : ℝ) (hC : ∀ x, |f x| ≤ C) :
+    Integrable (fun q : ℝ × (ℝ × ℝ) =>
+      (f q.2.1 * aux_realRescaled (s * q.1) (fun x => psi x) q.2.1) *
+        (f q.2.2 * aux_realRescaled (s * q.1) (fun x => psi x) q.2.2) * q.1⁻¹)
+      ((volume.restrict (Set.Icc 1 2)).prod volume) := by
+  let μ : Measure ℝ := volume.restrict (Set.Icc 1 2)
+  letI : IsFiniteMeasure μ := by
+    dsimp [μ]
+    infer_instance
+  let A : ℝ × ℝ → ℝ := fun tx =>
+    f tx.2 * aux_realRescaled (s * tx.1) (fun x => psi x) tx.2
+  let H : ℝ × (ℝ × ℝ) → ℝ := fun q => A (q.1, q.2.1) * A (q.1, q.2.2) * q.1⁻¹
+  have hAmeas : Measurable A := by
+    dsimp [A, aux_realRescaled]
+    fun_prop
+  have hHmeas : Measurable H := by
+    dsimp [H, A, aux_realRescaled]
+    fun_prop
+  have hscaleNorm (a : ℝ) (ha : 0 < a) :
+      ∫ x : ℝ, ‖aux_realRescaled a (fun x => psi x) x‖ = ∫ x : ℝ, ‖psi x‖ := by
+    rw [show (fun x : ℝ => ‖aux_realRescaled a (fun x => psi x) x‖) =
+        fun x => |a⁻¹| * ‖psi (a⁻¹ * x)‖ by
+          funext x
+          simp [aux_realRescaled, norm_mul]]
+    rw [integral_const_mul]
+    rw [Measure.integral_comp_inv_mul_left (fun x : ℝ => ‖psi x‖) a]
+    rw [smul_eq_mul]
+    have hne : a ≠ 0 := ne_of_gt ha
+    rw [abs_inv, abs_of_pos ha]
+    field_simp
+  have hAt (t : ℝ) (ht : 0 < t) : Integrable (fun x : ℝ => A (t, x)) := by
+    have hst : 0 < s * t := mul_pos hs ht
+    have hraw : Integrable (aux_realRescaled (s * t) (fun x => psi x)) := by
+      unfold aux_realRescaled
+      convert (psi.integrable.comp_mul_left' (inv_ne_zero hst.ne')).const_mul (s * t)⁻¹ using 1
+    dsimp [A]
+    refine hraw.bdd_mul hf.aestronglyMeasurable (c := C) ?_
+    filter_upwards [] with x
+    simpa [Real.norm_eq_abs] using hC x
+  have hLbound (t : ℝ) (ht : 0 < t) :
+      ∫ x : ℝ, ‖A (t, x)‖ ≤ C * ∫ x : ℝ, ‖psi x‖ := by
+    have hst : 0 < s * t := mul_pos hs ht
+    have hraw : Integrable (aux_realRescaled (s * t) (fun x => psi x)) := by
+      unfold aux_realRescaled
+      convert (psi.integrable.comp_mul_left' (inv_ne_zero hst.ne')).const_mul (s * t)⁻¹ using 1
+    have hAt' := hAt t ht
+    calc
+      ∫ x : ℝ, ‖A (t, x)‖ ≤ ∫ x : ℝ, C * ‖aux_realRescaled (s * t) (fun x => psi x) x‖ := by
+        apply integral_mono hAt'.norm (hraw.norm.const_mul C)
+        intro x
+        change ‖f x * aux_realRescaled (s * t) (fun x => psi x) x‖ ≤ _
+        rw [norm_mul]
+        exact mul_le_mul_of_nonneg_right (by simpa [Real.norm_eq_abs] using hC x)
+          (norm_nonneg _)
+      _ = C * ∫ x : ℝ, ‖aux_realRescaled (s * t) (fun x => psi x) x‖ := by
+        rw [integral_const_mul]
+      _ = C * ∫ x : ℝ, ‖psi x‖ := by rw [hscaleNorm _ hst]
+  have hfixed : ∀ᵐ t : ℝ ∂μ, Integrable (fun xy : ℝ × ℝ => H (t, xy)) := by
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+    have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+    have hprod : Integrable (fun xy : ℝ × ℝ => A (t, xy.1) * A (t, xy.2)) :=
+      (hAt t htpos).mul_prod (hAt t htpos)
+    dsimp [H]
+    simpa [mul_assoc] using hprod.mul_const t⁻¹
+  have houterMeas : AEStronglyMeasurable
+      (fun t : ℝ => ∫ xy : ℝ × ℝ, ‖H (t, xy)‖) μ := by
+    exact hHmeas.norm.aestronglyMeasurable.integral_prod_right'
+  have hCnonneg : 0 ≤ C := by
+    have := hC 0
+    linarith [abs_nonneg (f 0)]
+  have hDnonneg : 0 ≤ C * ∫ x : ℝ, ‖psi x‖ :=
+    mul_nonneg hCnonneg (integral_nonneg fun _ => norm_nonneg _)
+  have houterBound : ∀ᵐ t : ℝ ∂μ,
+      ‖∫ xy : ℝ × ℝ, ‖H (t, xy)‖‖ ≤ (C * ∫ x : ℝ, ‖psi x‖) ^ 2 := by
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+    have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+    have htinvle : t⁻¹ ≤ 1 := (inv_le_one₀ htpos).2 ht.1
+    have hAt' := hAt t htpos
+    have hprodNorm : Integrable (fun xy : ℝ × ℝ => ‖A (t, xy.1)‖ * ‖A (t, xy.2)‖) :=
+      hAt'.norm.mul_prod hAt'.norm
+    have hHnorm : Integrable (fun xy : ℝ × ℝ => ‖H (t, xy)‖) := by
+      dsimp [H]
+      have := hprodNorm.mul_const t⁻¹
+      convert this using 1 <;> simp [norm_mul, abs_of_pos htpos, mul_assoc]
+    have hcalc : ∫ xy : ℝ × ℝ, ‖H (t, xy)‖ =
+        (∫ x : ℝ, ‖A (t, x)‖) * (∫ x : ℝ, ‖A (t, x)‖) * t⁻¹ := by
+      rw [show (fun xy : ℝ × ℝ => ‖H (t, xy)‖) =
+          fun xy => (‖A (t, xy.1)‖ * ‖A (t, xy.2)‖) * t⁻¹ by
+            funext xy
+            simp [H, norm_mul, abs_of_pos htpos, mul_assoc]]
+      rw [integral_mul_const]
+      rw [show (∫ xy : ℝ × ℝ, ‖A (t, xy.1)‖ * ‖A (t, xy.2)‖) =
+          (∫ x : ℝ, ‖A (t, x)‖) * ∫ x : ℝ, ‖A (t, x)‖ by
+            simpa only [Measure.volume_eq_prod] using
+              integral_prod_mul (fun x : ℝ => ‖A (t, x)‖) (fun x : ℝ => ‖A (t, x)‖)]
+    have hLnonneg : 0 ≤ ∫ x : ℝ, ‖A (t, x)‖ := integral_nonneg fun _ => norm_nonneg _
+    have hLle : ∫ x : ℝ, ‖A (t, x)‖ ≤ C * ∫ x : ℝ, ‖psi x‖ := hLbound t htpos
+    rw [Real.norm_eq_abs, abs_of_nonneg (integral_nonneg fun _ => norm_nonneg _)]
+    rw [hcalc]
+    nlinarith
+  have houter : Integrable (fun t : ℝ => ∫ xy : ℝ × ℝ, ‖H (t, xy)‖) μ :=
+    Integrable.of_bound houterMeas ((C * ∫ x : ℝ, ‖psi x‖) ^ 2) houterBound
+  have hH : Integrable H (μ.prod volume) :=
+    (integrable_prod_iff hHmeas.aestronglyMeasurable).2 ⟨hfixed, houter⟩
+  simpa [μ, H, A] using hH
+
+/-- Rewriting the scaled kernel as the corresponding integral of one-dimensional
+dilations, used in the positivity and Fourier-support parts of `integralFct`. -/
+private theorem aux_integralFctKernelAtScale_eq
+    (s : ℝ) (hs : s ≠ 0) (psi : ℝ → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
+    aux_integralFctKernelAtScale s psi u =
+      ∫ t : ℝ in Set.Icc 1 2,
+        aux_realRescaled (s * t) psi (u 0) *
+          aux_realRescaled (s * t) psi (u 1) * t⁻¹ := by
+  unfold aux_integralFctKernelAtScale rescaled integralFctKernel
+  rw [← MeasureTheory.integral_const_mul]
+  apply integral_congr_ae
+  filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+  have ht0 : t ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one ht.1)
+  simp only [aux_realRescaled]
+  simp only [WithLp.ofLp_smul, PiLp.smul_apply, smul_eq_mul]
+  field_simp [hs, ht0]
+
+/-- The product-square form of the Fubini integral in the positivity part of
+`integralFct` (Lemma \ref{lem:int_fct}) is nonnegative. -/
+private theorem aux_integralFct_triple_nonnegative (A : ℝ × ℝ → ℝ)
+    (hH : Integrable (fun q : ℝ × (ℝ × ℝ) =>
+      A (q.1, q.2.1) * A (q.1, q.2.2) * q.1⁻¹)
+      ((volume.restrict (Set.Icc 1 2)).prod volume)) :
+    0 ≤ ∫ q : ℝ × (ℝ × ℝ),
+      A (q.1, q.2.1) * A (q.1, q.2.2) * q.1⁻¹
+        ∂((volume.restrict (Set.Icc 1 2)).prod volume) := by
+  let μ : Measure ℝ := volume.restrict (Set.Icc 1 2)
+  calc
+    (∫ q : ℝ × (ℝ × ℝ), A (q.1, q.2.1) * A (q.1, q.2.2) * q.1⁻¹ ∂(μ.prod volume)) =
+        ∫ t : ℝ, ∫ xy : ℝ × ℝ, A (t, xy.1) * A (t, xy.2) * t⁻¹ ∂volume ∂μ := by
+          simpa only [Measure.volume_eq_prod] using
+            (integral_prod (fun q : ℝ × (ℝ × ℝ) =>
+              A (q.1, q.2.1) * A (q.1, q.2.2) * q.1⁻¹) hH)
+    _ = ∫ t : ℝ, (∫ x : ℝ, A (t, x)) ^ 2 * t⁻¹ ∂μ := by
+      apply integral_congr_ae
+      filter_upwards [] with t
+      rw [integral_mul_const]
+      rw [show (∫ xy : ℝ × ℝ, A (t, xy.1) * A (t, xy.2)) =
+          (∫ x : ℝ, A (t, x)) * ∫ x : ℝ, A (t, x) by
+        simpa only [Measure.volume_eq_prod] using
+          integral_prod_mul (fun x : ℝ => A (t, x)) (fun x : ℝ => A (t, x))]
+      ring
+    _ ≥ 0 := by
+      apply integral_nonneg_of_ae
+      filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+      exact mul_nonneg (sq_nonneg _) (inv_nonneg.mpr (by linarith [ht.1]))
+
+/-- Fubini interchange for the compact scale integral in the Fourier-support
+calculation of `integralFct` (Lemma \ref{lem:int_fct}). -/
+private theorem aux_fourier_setIntegral_swap
+    {V} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V]
+    (k : ℝ → V → ℂ) (a b : ℝ) (xi : V)
+    (h : Integrable (fun q : ℝ × V =>
+      Complex.exp (↑(-2 * Real.pi * ⟪q.2, xi⟫) * Complex.I) • k q.1 q.2)
+      ((volume.restrict (Set.Icc a b)).prod volume)) :
+    FourierTransform.fourier (fun u : V => ∫ t in Set.Icc a b, k t u) xi =
+      ∫ t in Set.Icc a b, FourierTransform.fourier (k t) xi := by
+  simp_rw [Real.fourier_eq']
+  simp_rw [← integral_smul]
+  rw [← integral_integral_swap h]
+
+/-- A version of `aux_fourier_setIntegral_swap` which obtains the harmless
+Fourier phase integrability from the raw integrability hypothesis. -/
+private theorem aux_fourier_setIntegral_swap_of_integrable
+    {V} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V]
+    (k : ℝ → V → ℂ) (a b : ℝ) (xi : V)
+    (h : Integrable (fun q : ℝ × V => k q.1 q.2)
+      ((volume.restrict (Set.Icc a b)).prod volume)) :
+    FourierTransform.fourier (fun u : V => ∫ t in Set.Icc a b, k t u) xi =
+      ∫ t in Set.Icc a b, FourierTransform.fourier (k t) xi := by
+  let e : ℝ × V → ℂ := fun q =>
+    Complex.exp (↑(-2 * Real.pi * ⟪q.2, xi⟫) * Complex.I)
+  have he : Continuous e := by
+    dsimp [e]
+    fun_prop
+  have he_bound : ∀ q : ℝ × V, ‖e q‖ ≤ (1 : ℝ) := by
+    intro q
+    rw [show e q = Complex.exp (((-2 * Real.pi * ⟪q.2, xi⟫ : ℝ) : ℂ) * Complex.I) by rfl,
+      Complex.norm_exp]
+    norm_num
+  have hp : Integrable (fun q : ℝ × V => e q * k q.1 q.2) _ :=
+    h.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)
+  apply aux_fourier_setIntegral_swap k a b xi
+  simpa [e, smul_eq_mul] using hp
+
+/-- The unit Fourier band, after a scale in `[1,2]`, lies in the band used by
+`integralFct` (Lemma \ref{lem:int_fct}). -/
+private theorem aux_integralFct_scale_band_mem (s t x : ℝ) (hs : 0 < s)
+    (ht : t ∈ Set.Icc 1 2)
+    (h : s * t * x ∈ Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1) :
+    x ∈ Set.Icc (-s⁻¹) (-(1 / 8 : ℝ) * s⁻¹) ∪
+      Set.Icc ((1 / 8 : ℝ) * s⁻¹) s⁻¹ := by
+  have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
+  have hp : 0 < s * t := mul_pos hs htpos
+  rcases h with hneg | hpos
+  · left
+    constructor
+    · apply le_of_mul_le_mul_left _ hp
+      calc
+        (s * t) * (-s⁻¹) = -t := by field_simp [hs.ne'] <;> ring
+        _ ≤ -1 := by linarith [ht.1]
+        _ ≤ s * t * x := hneg.1
+    · apply le_of_mul_le_mul_left _ hp
+      calc
+        s * t * x ≤ -(1 / 4 : ℝ) := hneg.2
+        _ ≤ (s * t) * (-(1 / 8 : ℝ) * s⁻¹) := by
+          have heq : (s * t) * (-(1 / 8 : ℝ) * s⁻¹) = -t / 8 := by
+            field_simp [hs.ne'] <;> ring
+          rw [heq]
+          linarith [ht.2]
+  · right
+    constructor
+    · apply le_of_mul_le_mul_left _ hp
+      calc
+        (s * t) * ((1 / 8 : ℝ) * s⁻¹) = t / 8 := by
+          field_simp [hs.ne'] <;> ring
+        _ ≤ 1 / 4 := by linarith [ht.2]
+        _ ≤ s * t * x := hpos.1
+    · apply le_of_mul_le_mul_left _ hp
+      calc
+        s * t * x ≤ 1 := hpos.2
+        _ ≤ t := by linarith [ht.1]
+        _ = (s * t) * s⁻¹ := by field_simp [hs.ne'] <;> ring
+
+/-- A coordinate outside the scaled band forces the corresponding Fourier factor
+to vanish in the support proof of `integralFct` (Lemma \ref{lem:int_fct}). -/
+private theorem aux_integralFct_fourier_zero_outside_band
+    (psi : SchwartzMap ℝ ℝ)
+    (hpsi : Function.support (FourierTransform.fourier (fun x : ℝ ↦ (psi x : ℂ))) ⊆
+      Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1)
+    (ell : ℤ) (t : ℝ) (ht : t ∈ Set.Icc 1 2) (x : ℝ)
+    (hx : x ∉ aux_integralFctBand ell) :
+    FourierTransform.fourier (fun y : ℝ => (psi y : ℂ))
+      (((2 : ℝ) ^ ell) * t * x) = 0 := by
+  by_contra hne
+  apply hx
+  have hmem := hpsi (Function.mem_support.mpr hne)
+  have hs : 0 < (2 : ℝ) ^ ell := zpow_pos (by norm_num) _
+  have hband := aux_integralFct_scale_band_mem ((2 : ℝ) ^ ell) t x hs ht hmem
+  unfold aux_integralFctBand
+  have hpow0 : (2 : ℝ) ^ (-ell) = ((2 : ℝ) ^ ell)⁻¹ := by rw [zpow_neg]
+  have hpow3 : (2 : ℝ) ^ (-3 - ell) = (1 / 8 : ℝ) * ((2 : ℝ) ^ ell)⁻¹ := by
+    rw [show (-3 - ell : ℤ) = (-3 : ℤ) + (-ell) by omega,
+      zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0), zpow_neg]
+    norm_num
+  rw [hpow0, hpow3]
+  convert hband using 1 <;> ring
+
+/-- The one-dimensional band in `integralFct` lies in its stated annulus. -/
+private theorem aux_band_subset_annulus (r : ℝ) (hr : 0 ≤ r) :
+    Set.Icc (-r) (-(r / 8)) ∪ Set.Icc (r / 8) r ⊆
+      {x : ℝ | r / 8 ≤ |x| ∧ |x| ≤ 8 * r} := by
+  intro x hx
+  rcases hx with hx | hx
+  · have hxnonpos : x ≤ 0 := by linarith [hx.2]
+    change r / 8 ≤ |x| ∧ |x| ≤ 8 * r
+    rw [abs_of_nonpos hxnonpos]
+    constructor <;> linarith [hx.1, hx.2]
+  · have hxnonneg : 0 ≤ x := by linarith [hx.1]
+    change r / 8 ≤ |x| ∧ |x| ≤ 8 * r
+    rw [abs_of_nonneg hxnonneg]
+    constructor
+    · exact hx.1
+    · nlinarith [hx.2, hr]
+
+/-- The scale-integrated tensor kernel has nonnegative quadratic forms.  This is
+the positivity assertion used by `integralFct` (Lemma \ref{lem:int_fct}). -/
+private theorem aux_integralFctKernelAtScale_nonnegative
+    (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s)
+    (f : ℝ → ℝ) (hf : aux_bounded f) :
+    0 ≤ ∫ u : EuclideanSpace ℝ (Fin 2),
+      f (u 0) * f (u 1) * aux_integralFctKernelAtScale s (fun x => psi x) u := by
+  rcases hf with ⟨hfmeas, hfbounded⟩
+  rcases hfbounded.exists_norm_le with ⟨C, hC⟩
+  have hC' : ∀ x : ℝ, |f x| ≤ C := by
+    intro x
+    simpa [Real.norm_eq_abs] using hC (f x) ⟨x, rfl⟩
+  let μ : Measure ℝ := volume.restrict (Set.Icc 1 2)
+  let A : ℝ × ℝ → ℝ := fun tx =>
+    f tx.2 * aux_realRescaled (s * tx.1) (fun x => psi x) tx.2
+  let H : ℝ × (ℝ × ℝ) → ℝ := fun q =>
+    A (q.1, q.2.1) * A (q.1, q.2.2) * q.1⁻¹
+  have hH : Integrable H (μ.prod volume) := by
+    simpa [μ, H, A] using aux_integralFct_triple_integrable psi s hs f hfmeas C hC'
+  have hHnonneg : 0 ≤ ∫ q : ℝ × (ℝ × ℝ), H q ∂(μ.prod volume) := by
+    simpa [μ, H] using aux_integralFct_triple_nonnegative A (by simpa [μ, H] using hH)
+  let e : EuclideanSpace ℝ (Fin 2) ≃ᵐ (ℝ × ℝ) :=
+    (MeasurableEquiv.toLp 2 (Fin 2 → ℝ)).symm.trans MeasurableEquiv.finTwoArrow
+  have he : MeasurePreserving e volume volume :=
+    (PiLp.volume_preserving_toLp (Fin 2)).symm.trans
+      (MeasureTheory.volume_preserving_finTwoArrow ℝ)
+  have heprod : MeasurePreserving (Prod.map id e) (μ.prod volume) (μ.prod volume) :=
+    (MeasurePreserving.id μ).prod he
+  let HE : ℝ × EuclideanSpace ℝ (Fin 2) → ℝ := fun q =>
+    A (q.1, q.2 0) * A (q.1, q.2 1) * q.1⁻¹
+  have hHE_eq : HE = H ∘ Prod.map id e := by
+    funext q
+    dsimp [HE, H, e]
+    simp [MeasurableEquiv.finTwoArrow_apply]
+  have hHE : Integrable HE (μ.prod volume) := by
+    rw [hHE_eq]
+    exact (heprod.integrable_comp hH.aestronglyMeasurable).2 hH
+  have hinner (t : ℝ) :
+      (∫ u : EuclideanSpace ℝ (Fin 2), HE (t, u)) =
+        ∫ xy : ℝ × ℝ, H (t, xy) := by
+    change (∫ u : EuclideanSpace ℝ (Fin 2), H (t, e u)) =
+      ∫ xy : ℝ × ℝ, H (t, xy)
+    exact he.integral_comp e.measurableEmbedding (fun xy : ℝ × ℝ => H (t, xy))
+  have hform :
+      (∫ u : EuclideanSpace ℝ (Fin 2),
+        f (u 0) * f (u 1) * aux_integralFctKernelAtScale s (fun x => psi x) u) =
+        ∫ u : EuclideanSpace ℝ (Fin 2), ∫ t : ℝ, HE (t, u) ∂μ := by
+    apply integral_congr_ae
+    filter_upwards [] with u
+    rw [show aux_integralFctKernelAtScale s (fun x => psi x) u =
+        ∫ t : ℝ in Set.Icc 1 2,
+          aux_realRescaled (s * t) (fun x => psi x) (u 0) *
+            aux_realRescaled (s * t) (fun x => psi x) (u 1) * t⁻¹ by
+          exact aux_integralFctKernelAtScale_eq s hs.ne' _ u]
+    rw [← integral_const_mul]
+    apply integral_congr_ae
+    filter_upwards [] with t
+    dsimp [HE, A]
+    ring
+  rw [hform, ← integral_integral_swap hHE]
+  calc
+    0 ≤ ∫ q : ℝ × (ℝ × ℝ), H q ∂(μ.prod volume) := hHnonneg
+    _ = ∫ t : ℝ, ∫ xy : ℝ × ℝ, H (t, xy) ∂volume ∂μ :=
+      integral_prod _ hH
+    _ = ∫ t : ℝ, ∫ u : EuclideanSpace ℝ (Fin 2), HE (t, u) ∂volume ∂μ := by
+      apply integral_congr_ae
+      filter_upwards [] with t
+      exact (hinner t).symm
+
+/-- Integrability of the complex scale-integrated tensor used to exchange the
+Fourier and scale integrals in `integralFct` (Lemma \ref{lem:int_fct}). -/
+private theorem aux_integralFctKernelAtScale_triple_integrable
+    (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s) :
+    Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) =>
+      (aux_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
+        aux_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹ : ℂ))
+      ((volume.restrict (Set.Icc 1 2)).prod volume) := by
+  let μ : Measure ℝ := volume.restrict (Set.Icc 1 2)
+  let H : ℝ × (ℝ × ℝ) → ℝ := fun q =>
+    aux_realRescaled (s * q.1) (fun x => psi x) q.2.1 *
+      aux_realRescaled (s * q.1) (fun x => psi x) q.2.2 * q.1⁻¹
+  have hH : Integrable H (μ.prod volume) := by
+    simpa [μ, H] using
+      aux_integralFct_triple_integrable psi s hs (fun _ : ℝ => 1) (by fun_prop) 1
+        (by intro x; norm_num)
+  let e : EuclideanSpace ℝ (Fin 2) ≃ᵐ (ℝ × ℝ) :=
+    (MeasurableEquiv.toLp 2 (Fin 2 → ℝ)).symm.trans MeasurableEquiv.finTwoArrow
+  have he : MeasurePreserving e volume volume :=
+    (PiLp.volume_preserving_toLp (Fin 2)).symm.trans
+      (MeasureTheory.volume_preserving_finTwoArrow ℝ)
+  have heprod : MeasurePreserving (Prod.map id e) (μ.prod volume) (μ.prod volume) :=
+    (MeasurePreserving.id μ).prod he
+  let HE : ℝ × EuclideanSpace ℝ (Fin 2) → ℝ := fun q =>
+    aux_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
+      aux_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹
+  have hHE_eq : HE = H ∘ Prod.map id e := by
+    funext q
+    dsimp [HE, H, e]
+    simp [MeasurableEquiv.finTwoArrow_apply]
+  have hHE : Integrable HE (μ.prod volume) := by
+    rw [hHE_eq]
+    exact (heprod.integrable_comp hH.aestronglyMeasurable).2 hH
+  have hHEC : Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) => (HE q : ℂ))
+      (μ.prod volume) := hHE.ofReal
+  simpa [μ, HE] using hHEC
+
+/-- Multiplication by a scalar commutes with the Fourier integral.  This
+form is used for the `dt/t` factor in `integralFct`. -/
+private theorem aux_fourier_mul_const
+    {V} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V]
+    (f : V → ℂ) (c : ℂ) (xi : V) :
+    FourierTransform.fourier (fun u => f u * c) xi =
+      FourierTransform.fourier f xi * c := by
+  simp_rw [Real.fourier_eq']
+  rw [← integral_mul_const]
+  apply integral_congr_ae
+  filter_upwards [] with u
+  simp [smul_eq_mul, mul_assoc]
+
+/-- The Fourier-support inclusion in the first part of the conclusion of
+`integralFct` (Lemma \ref{lem:int_fct}). -/
+private theorem aux_integralFct_fourier_support
+    (psi : SchwartzMap ℝ ℝ)
+    (hpsi : Function.support (FourierTransform.fourier (fun x : ℝ ↦ (psi x : ℂ))) ⊆
+      Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1)
+    (ell : ℤ) :
+    Function.support (FourierTransform.fourier
+      (fun u : EuclideanSpace ℝ (Fin 2) ↦
+        (aux_integralFctKernelAtScale ((2 : ℝ) ^ ell) (fun x ↦ psi x) u : ℂ))) ⊆
+      aux_productSet (aux_integralFctBand ell) := by
+  intro xi hxi
+  by_contra hx
+  apply Function.mem_support.mp hxi
+  let s : ℝ := (2 : ℝ) ^ ell
+  have hs : 0 < s := zpow_pos (by norm_num) _
+  let k : ℝ → EuclideanSpace ℝ (Fin 2) → ℂ := fun t u =>
+    (aux_realRescaled (s * t) (fun x => psi x) (u 0) *
+      aux_realRescaled (s * t) (fun x => psi x) (u 1) * t⁻¹ : ℂ)
+  have hk : Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) => k q.1 q.2)
+      ((volume.restrict (Set.Icc 1 2)).prod volume) := by
+    simpa [s, k] using aux_integralFctKernelAtScale_triple_integrable psi s hs
+  have hkernel :
+      (fun u : EuclideanSpace ℝ (Fin 2) =>
+        (aux_integralFctKernelAtScale s (fun x => psi x) u : ℂ)) =
+        fun u => ∫ t : ℝ in Set.Icc 1 2, k t u := by
+    funext u
+    rw [aux_integralFctKernelAtScale_eq s hs.ne' _ u]
+    simpa [k] using
+      (integral_ofReal (𝕜 := ℂ) (μ := volume.restrict (Set.Icc (1 : ℝ) 2))
+        (f := fun t : ℝ =>
+          aux_realRescaled (s * t) (fun x => psi x) (u 0) *
+            aux_realRescaled (s * t) (fun x => psi x) (u 1) * t⁻¹)).symm
+  rw [show ((2 : ℝ) ^ ell) = s by rfl, hkernel]
+  rw [aux_fourier_setIntegral_swap_of_integrable k 1 2 xi hk]
+  apply integral_eq_zero_of_ae
+  filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+  simp only [aux_productSet, Set.mem_setOf_eq] at hx
+  rcases not_and_or.mp hx with hx0 | hx1
+  · have hst : 0 < s * t := mul_pos hs (lt_of_lt_of_le zero_lt_one ht.1)
+    have hk_t : k t = fun u =>
+        (aux_realRescaled (s * t) (fun x => psi x) (u 0) : ℂ) *
+          (aux_realRescaled (s * t) (fun x => psi x) (u 1) : ℂ) * (t⁻¹ : ℂ) := by
+      funext u
+      dsimp [k]
+      push_cast
+      ring
+    rw [hk_t, aux_fourier_mul_const,
+      aux_fourier_tensor_two, aux_realRescaled_fourier (s * t) hst,
+      aux_realRescaled_fourier (s * t) hst]
+    rw [aux_integralFct_fourier_zero_outside_band psi hpsi ell t ht (xi 0) hx0]
+    simp
+  · have hst : 0 < s * t := mul_pos hs (lt_of_lt_of_le zero_lt_one ht.1)
+    have hk_t : k t = fun u =>
+        (aux_realRescaled (s * t) (fun x => psi x) (u 0) : ℂ) *
+          (aux_realRescaled (s * t) (fun x => psi x) (u 1) : ℂ) * (t⁻¹ : ℂ) := by
+      funext u
+      dsimp [k]
+      push_cast
+      ring
+    rw [hk_t, aux_fourier_mul_const,
+      aux_fourier_tensor_two, aux_realRescaled_fourier (s * t) hst,
+      aux_realRescaled_fourier (s * t) hst]
+    rw [aux_integralFct_fourier_zero_outside_band psi hpsi ell t ht (xi 1) hx1]
+    simp
 
 /--
 \begin{lemma}\label{lem:int_fct}
@@ -376,7 +1455,39 @@ theorem integralFct (psi : SchwartzMap ℝ ℝ)
         aux_productSet (aux_integralFctBand ell) ∧
       aux_productSet (aux_integralFctBand ell) ⊆
         aux_productSet (aux_annulusOne ((2 : ℝ) ^ (-ell)) ((2 : ℝ) ^ 3))) := by
-  sorry
+  have hs : 0 < (2 : ℝ) ^ ell := zpow_pos (by norm_num) _
+  refine ⟨?_, ?_, ?_⟩
+  · intro u
+    unfold aux_integralFctKernelAtScale rescaled integralFctKernel aux_swapTwo
+    congr 1
+    apply integral_congr_ae
+    filter_upwards [] with t
+    simp
+    exact Or.inl (mul_comm _ _)
+  · intro f hf
+    exact aux_integralFctKernelAtScale_nonnegative psi ((2 : ℝ) ^ ell) hs f hf
+  · refine ⟨aux_integralFct_fourier_support psi hpsi ell, ?_⟩
+    intro xi hxi
+    rcases hxi with ⟨hx0, hx1⟩
+    let r : ℝ := (2 : ℝ) ^ (-ell)
+    have hr : 0 ≤ r := (zpow_pos (by norm_num) _).le
+    have hpow3 : (2 : ℝ) ^ (-3 - ell) = r / 8 := by
+      dsimp [r]
+      rw [show (-3 - ell : ℤ) = (-3 : ℤ) + (-ell) by omega,
+        zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0), zpow_neg]
+      norm_num
+      ring
+    have hR : ((2 : ℝ) ^ 3) = 8 := by norm_num
+    have hband : aux_integralFctBand ell ⊆ aux_annulusOne ((2 : ℝ) ^ (-ell)) ((2 : ℝ) ^ 3) := by
+      rw [show aux_integralFctBand ell = Set.Icc (-r) (-(r / 8)) ∪ Set.Icc (r / 8) r by
+            dsimp [aux_integralFctBand, r]
+            rw [hpow3],
+          show aux_annulusOne ((2 : ℝ) ^ (-ell)) ((2 : ℝ) ^ 3) =
+            {x : ℝ | r / 8 ≤ |x| ∧ |x| ≤ 8 * r} by
+            dsimp [aux_annulusOne, r]
+            rw [hR]]
+      exact aux_band_subset_annulus r hr
+    exact ⟨hband hx0, hband hx1⟩
 
 /--
 \begin{lemma}\label{lem:Phipos_v2}
@@ -398,7 +1509,194 @@ theorem phiPosV2 (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
     (xi : ℝ) :
     0 ≤ (FourierTransform.fourier (fun u : EuclideanSpace ℝ (Fin 2) ↦ (Psi u : ℂ))
       (WithLp.toLp 2 ![xi, -xi])).re := by
-  sorry
+  have hinter (u : EuclideanSpace ℝ (Fin 2)) :
+      inner ℝ u (WithLp.toLp 2 ![xi, -xi]) = xi * (u 0 - u 1) := by
+    change inner ℝ (WithLp.toLp 2 u.ofLp) (WithLp.toLp 2 ![xi, -xi]) = _
+    rw [EuclideanSpace.inner_toLp_toLp]
+    simp [dotProduct, Fin.sum_univ_two]
+    ring
+  let c : ℝ → ℝ := fun x => Real.cos (2 * Real.pi * xi * x)
+  let s : ℝ → ℝ := fun x => Real.sin (2 * Real.pi * xi * x)
+  have hcbounded : aux_bounded c := by
+    constructor
+    · dsimp [c]
+      fun_prop
+    · apply (Metric.isBounded_Icc (-1) 1).subset
+      rintro _ ⟨x, rfl⟩
+      exact abs_le.mp (Real.abs_cos_le_one _)
+  have hsbounded : aux_bounded s := by
+    constructor
+    · dsimp [s]
+      fun_prop
+    · apply (Metric.isBounded_Icc (-1) 1).subset
+      rintro _ ⟨x, rfl⟩
+      exact abs_le.mp (Real.abs_sin_le_one _)
+  have hcpos := hpos c hcbounded
+  have hspos := hpos s hsbounded
+  by_cases hPsi : Integrable Psi
+  · have hPsiC : Integrable (fun u : EuclideanSpace ℝ (Fin 2) => (Psi u : ℂ)) := hPsi.ofReal
+    have hphase : Integrable (fun u : EuclideanSpace ℝ (Fin 2) =>
+        𝐞 (-inner ℝ u (WithLp.toLp 2 ![xi, -xi])) • (Psi u : ℂ)) := by
+      rw [Real.fourierIntegral_convergent_iff]
+      exact hPsiC
+    have hcint : Integrable (fun u : EuclideanSpace ℝ (Fin 2) => c (u 0) * c (u 1) * Psi u) := by
+      apply hPsi.bdd_mul
+      · fun_prop
+      · filter_upwards [] with u
+        change |c (u 0) * c (u 1)| ≤ 1
+        rw [abs_mul]
+        simpa [c] using mul_le_one₀ (Real.abs_cos_le_one _) (abs_nonneg _)
+          (Real.abs_cos_le_one _)
+    have hsint : Integrable (fun u : EuclideanSpace ℝ (Fin 2) => s (u 0) * s (u 1) * Psi u) := by
+      apply hPsi.bdd_mul
+      · fun_prop
+      · filter_upwards [] with u
+        change |s (u 0) * s (u 1)| ≤ 1
+        rw [abs_mul]
+        simpa [s] using mul_le_one₀ (Real.abs_sin_le_one _) (abs_nonneg _)
+          (Real.abs_sin_le_one _)
+    rw [Real.fourier_eq]
+    change 0 ≤ RCLike.re (∫ u : EuclideanSpace ℝ (Fin 2),
+      𝐞 (-inner ℝ u (WithLp.toLp 2 ![xi, -xi])) • (Psi u : ℂ))
+    rw [← integral_re hphase]
+    calc
+      0 ≤ (∫ u : EuclideanSpace ℝ (Fin 2), c (u 0) * c (u 1) * Psi u) +
+          ∫ u : EuclideanSpace ℝ (Fin 2), s (u 0) * s (u 1) * Psi u :=
+        add_nonneg hcpos hspos
+      _ = ∫ u : EuclideanSpace ℝ (Fin 2),
+          c (u 0) * c (u 1) * Psi u + s (u 0) * s (u 1) * Psi u := by
+        rw [integral_add hcint hsint]
+      _ = ∫ u : EuclideanSpace ℝ (Fin 2),
+          RCLike.re (𝐞 (-inner ℝ u (WithLp.toLp 2 ![xi, -xi])) • (Psi u : ℂ)) := by
+        apply integral_congr_ae
+        filter_upwards [] with u
+        have hcos : Real.cos (2 * Real.pi * (-inner ℝ u (WithLp.toLp 2 ![xi, -xi]))) =
+            c (u 0) * c (u 1) + s (u 0) * s (u 1) := by
+          rw [hinter]
+          change Real.cos (2 * Real.pi * (-(xi * (u 0 - u 1)))) = _
+          rw [show 2 * Real.pi * (-(xi * (u 0 - u 1))) =
+              -(2 * Real.pi * xi * u 0 - 2 * Real.pi * xi * u 1) by ring,
+            Real.cos_neg, Real.cos_sub]
+        rw [Circle.smul_def, Real.fourierChar_apply]
+        simp only [smul_eq_mul, RCLike.mul_re]
+        change c (u 0) * c (u 1) * Psi u + s (u 0) * s (u 1) * Psi u =
+          (Complex.exp ((↑(2 * Real.pi * (-inner ℝ u (WithLp.toLp 2 ![xi, -xi]))) : ℂ) *
+            Complex.I)).re * Psi u -
+          (Complex.exp ((↑(2 * Real.pi * (-inner ℝ u (WithLp.toLp 2 ![xi, -xi]))) : ℂ) *
+            Complex.I)).im * 0
+        rw [Complex.exp_ofReal_mul_I_re, mul_zero, sub_zero, hcos]
+        ring
+  · have hPsiC : ¬ Integrable (fun u : EuclideanSpace ℝ (Fin 2) => (Psi u : ℂ)) := by
+      intro h
+      apply hPsi
+      simpa using h.re
+    have hphase : ¬ Integrable (fun u : EuclideanSpace ℝ (Fin 2) =>
+        𝐞 (-inner ℝ u (WithLp.toLp 2 ![xi, -xi])) • (Psi u : ℂ)) := by
+      rw [Real.fourierIntegral_convergent_iff]
+      exact hPsiC
+    rw [Real.fourier_eq, integral_undef hphase]
+    norm_num
+
+/-- The coordinate swap as a linear isometry, for Fourier-symmetry arguments. -/
+private noncomputable def aux_swapTwoLinearIsometry :
+    EuclideanSpace ℝ (Fin 2) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 2) :=
+  LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.swap 0 1)
+
+private theorem aux_swapTwoLinearIsometry_apply (u : EuclideanSpace ℝ (Fin 2)) :
+    aux_swapTwoLinearIsometry u = aux_swapTwo u := by
+  ext i
+  fin_cases i <;> simp [aux_swapTwoLinearIsometry, aux_swapTwo, Equiv.piCongrLeft']
+
+/-- The Fourier transform of a real-valued function has conjugate symmetry. -/
+private theorem aux_fourier_conj_of_real (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
+    (w : EuclideanSpace ℝ (Fin 2)) :
+    FourierTransform.fourier (fun u => (Psi u : ℂ)) (-w) =
+      (starRingEnd ℂ) (FourierTransform.fourier (fun u => (Psi u : ℂ)) w) := by
+  rw [Real.fourier_eq, Real.fourier_eq, ← integral_conj]
+  change (∫ v : EuclideanSpace ℝ (Fin 2),
+      𝐞 (-inner ℝ v (-w)) • (Psi v : ℂ)) =
+    ∫ v : EuclideanSpace ℝ (Fin 2),
+      star (𝐞 (-inner ℝ v w) • (Psi v : ℂ))
+  apply integral_congr_ae
+  filter_upwards [] with u
+  rw [Circle.smul_def, Circle.smul_def, Real.fourierChar_apply,
+    Real.fourierChar_apply]
+  change Complex.exp (↑(2 * Real.pi * (-inner ℝ u (-w))) * Complex.I) * (Psi u : ℂ) =
+    (starRingEnd ℂ) (Complex.exp (↑(2 * Real.pi * (-inner ℝ u w)) * Complex.I) * (Psi u : ℂ))
+  rw [map_mul]
+  congr 1
+  · rw [← Complex.exp_conj]
+    rw [inner_neg_right]
+    simp only [map_neg, map_mul, Complex.conj_I, Complex.ofReal_neg,
+      Complex.conj_ofReal]
+    congr 1
+    push_cast
+    ring
+  · simp
+
+private theorem aux_fourier_diagonal_even_of_swap (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
+    (hsym : ∀ u, Psi u = Psi (aux_swapTwoLinearIsometry u)) (xi : ℝ) :
+    FourierTransform.fourier (fun u => (Psi u : ℂ)) (WithLp.toLp 2 ![-xi, xi]) =
+      FourierTransform.fourier (fun u => (Psi u : ℂ)) (WithLp.toLp 2 ![xi, -xi]) := by
+  calc
+    FourierTransform.fourier (fun u => (Psi u : ℂ)) (WithLp.toLp 2 ![-xi, xi]) =
+        FourierTransform.fourier (fun u => (Psi u : ℂ))
+          (aux_swapTwoLinearIsometry (WithLp.toLp 2 ![xi, -xi])) := by
+            rw [show aux_swapTwoLinearIsometry (WithLp.toLp 2 ![xi, -xi]) =
+                WithLp.toLp 2 ![-xi, xi] by
+              ext i
+              fin_cases i <;>
+                simp [aux_swapTwoLinearIsometry, Equiv.piCongrLeft']]
+    _ = FourierTransform.fourier ((fun u => (Psi u : ℂ)) ∘ aux_swapTwoLinearIsometry)
+          (WithLp.toLp 2 ![xi, -xi]) := by
+            exact (Real.fourier_comp_linearIsometry aux_swapTwoLinearIsometry _ _).symm
+    _ = FourierTransform.fourier (fun u => (Psi u : ℂ))
+          (WithLp.toLp 2 ![xi, -xi]) := by
+            apply Real.fourier_congr_ae
+            filter_upwards [] with u
+            change (Psi (aux_swapTwoLinearIsometry u) : ℂ) = (Psi u : ℂ)
+            rw [← hsym u]
+
+/-- For a real coordinate-symmetric two-dimensional function, its Fourier transform on the
+anti-diagonal is real and even. -/
+theorem fourierDiagonalRealEven (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
+    (hsym : ∀ u : EuclideanSpace ℝ (Fin 2), Psi u = Psi (aux_swapTwo u)) :
+    (∀ xi : ℝ, ∃ r : ℝ,
+      FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![xi, -xi]) = r) ∧
+    ∀ xi : ℝ,
+      FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![-xi, xi]) =
+      FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![xi, -xi]) := by
+  have hsym' : ∀ u, Psi u = Psi (aux_swapTwoLinearIsometry u) := by
+    intro u
+    rw [hsym u, aux_swapTwoLinearIsometry_apply]
+  constructor
+  · intro xi
+    let p : ℂ := FourierTransform.fourier (fun u => (Psi u : ℂ))
+      (WithLp.toLp 2 ![xi, -xi])
+    have hneg : -(WithLp.toLp 2 ![xi, -xi] : EuclideanSpace ℝ (Fin 2)) =
+        WithLp.toLp 2 ![-xi, xi] := by
+      ext i
+      fin_cases i <;> simp
+    have hconj : FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![-xi, xi]) = starRingEnd ℂ p := by
+      rw [← hneg]
+      simpa [p] using aux_fourier_conj_of_real Psi (WithLp.toLp 2 ![xi, -xi])
+    have heven : FourierTransform.fourier (fun u => (Psi u : ℂ))
+        (WithLp.toLp 2 ![-xi, xi]) = p := by
+      simpa [p] using aux_fourier_diagonal_even_of_swap Psi hsym' xi
+    have hstar : p = starRingEnd ℂ p := heven.symm.trans hconj
+    refine ⟨p.re, ?_⟩
+    change p = (p.re : ℂ)
+    apply Complex.ext
+    · simp
+    · have him : p.im = -p.im := by
+        simpa using congrArg Complex.im hstar
+      simp only [Complex.ofReal_im]
+      linarith
+  · exact aux_fourier_diagonal_even_of_swap Psi hsym'
 
 end
 

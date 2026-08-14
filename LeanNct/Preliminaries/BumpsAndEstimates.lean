@@ -838,6 +838,167 @@ theorem aux_intervalDifferenceQuotient_lipschitz (f : ℝ → ℝ) (L r x y : �
       div_le_div_of_nonneg_right (add_le_add hp hm) hden.le
     _ = (L / r) * |x - y| := by field_simp; ring
 
+/-- For the sharp derivative bounds used by `existsUniversalPair`, a bounded primitive is
+Lipschitz with the same bound. -/
+private theorem aux_standardBump_primitive_lipschitz
+    (f : ℝ → ℝ) (hf : Integrable f) (h0 : ∀ x, 0 ≤ f x) (h1 : ∀ x, f x ≤ 1) :
+    ∀ x y : ℝ, |(∫ t : ℝ in 0..x, f t) - (∫ t : ℝ in 0..y, f t)| ≤ |x - y| := by
+  intro x y
+  rcases le_total x y with hxy | hyx
+  · have hright : |x - y| = y - x := by
+      rw [abs_of_nonpos (sub_nonpos.mpr hxy)]
+      ring
+    have hadd := intervalIntegral.integral_add_adjacent_intervals
+      (show IntervalIntegrable f volume 0 x from hf.intervalIntegrable)
+      (show IntervalIntegrable f volume x y from hf.intervalIntegrable)
+    have hident :
+        (∫ t : ℝ in 0..y, f t) - (∫ t : ℝ in 0..x, f t) =
+          ∫ t : ℝ in x..y, f t := by
+      linarith
+    rw [abs_sub_comm, hident,
+      abs_of_nonneg (intervalIntegral.integral_nonneg hxy fun z _ => h0 z), hright]
+    calc
+      ∫ t : ℝ in x..y, f t ≤ ∫ t : ℝ in x..y, (1 : ℝ) := by
+        apply intervalIntegral.integral_mono hxy
+        · exact hf.intervalIntegrable
+        · exact intervalIntegrable_const
+        · intro z
+          exact h1 z
+      _ = y - x := by simp
+      _ = y - x := by ring
+  · have hright : |x - y| = x - y := by
+      rw [abs_of_nonneg (sub_nonneg.mpr hyx)]
+    have hadd := intervalIntegral.integral_add_adjacent_intervals
+      (show IntervalIntegrable f volume 0 y from hf.intervalIntegrable)
+      (show IntervalIntegrable f volume y x from hf.intervalIntegrable)
+    have hident :
+        (∫ t : ℝ in 0..x, f t) - (∫ t : ℝ in 0..y, f t) =
+          ∫ t : ℝ in y..x, f t := by
+      linarith
+    rw [hident,
+      abs_of_nonneg (intervalIntegral.integral_nonneg hyx fun z _ => h0 z), hright]
+    calc
+      ∫ t : ℝ in y..x, f t ≤ ∫ t : ℝ in y..x, (1 : ℝ) := by
+        apply intervalIntegral.integral_mono hyx
+        · exact hf.intervalIntegrable
+        · exact intervalIntegrable_const
+        · intro z
+          exact h1 z
+      _ = x - y := by simp
+      _ = x - y := by ring
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, this is the
+primitive representation of the first finite density. -/
+private theorem aux_standardBumpFiniteDensity_one_eq_primitive (x : ℝ) :
+    aux_standardBumpFiniteDensity 1 x = (2 * aux_standardBumpRadius 0)⁻¹ *
+      ((∫ t : ℝ in 0..x + aux_standardBumpRadius 0, aux_standardBumpBaseDensity t) -
+        ∫ t : ℝ in 0..x - aux_standardBumpRadius 0, aux_standardBumpBaseDensity t) := by
+  rw [show aux_standardBumpFiniteDensity 1 =
+      aux_standardBumpBaseDensity ⋆[ContinuousLinearMap.mul ℝ ℝ, volume]
+        aux_standardBumpIntervalDensity (aux_standardBumpRadius 0) by rfl]
+  rw [MeasureTheory.convolution_mul_swap]
+  have hpoint : (fun t : ℝ => aux_standardBumpBaseDensity (x - t) *
+      aux_standardBumpIntervalDensity (aux_standardBumpRadius 0) t) =
+      fun t : ℝ => (2 * aux_standardBumpRadius 0)⁻¹ *
+        Set.indicator (Set.Icc (-(aux_standardBumpRadius 0)) (aux_standardBumpRadius 0))
+          (fun t => aux_standardBumpBaseDensity (x - t)) t := by
+    funext t
+    by_cases ht : t ∈ Set.Icc (-(aux_standardBumpRadius 0)) (aux_standardBumpRadius 0)
+    · simp [aux_standardBumpIntervalDensity, ht]
+      ring
+    · simp [aux_standardBumpIntervalDensity, ht]
+  rw [hpoint, MeasureTheory.integral_const_mul,
+    MeasureTheory.integral_indicator measurableSet_Icc]
+  congr 1
+  calc
+    ∫ t : ℝ in Set.Icc (-(aux_standardBumpRadius 0)) (aux_standardBumpRadius 0),
+        aux_standardBumpBaseDensity (x - t) =
+        ∫ t : ℝ in Set.Ioc (-(aux_standardBumpRadius 0)) (aux_standardBumpRadius 0),
+          aux_standardBumpBaseDensity (x - t) := integral_Icc_eq_integral_Ioc
+    _ = ∫ t : ℝ in -(aux_standardBumpRadius 0)..aux_standardBumpRadius 0,
+        aux_standardBumpBaseDensity (x - t) := by
+      rw [intervalIntegral.integral_of_le (by linarith [aux_standardBumpRadius_pos 0])]
+    _ = ∫ t : ℝ in x - aux_standardBumpRadius 0..x + aux_standardBumpRadius 0,
+        aux_standardBumpBaseDensity t := by
+      simpa only [sub_neg_eq_add] using
+        intervalIntegral.integral_comp_sub_left (a := -(aux_standardBumpRadius 0))
+          (b := aux_standardBumpRadius 0) aux_standardBumpBaseDensity x
+    _ = (∫ t : ℝ in 0..x + aux_standardBumpRadius 0, aux_standardBumpBaseDensity t) -
+        ∫ t : ℝ in 0..x - aux_standardBumpRadius 0, aux_standardBumpBaseDensity t := by
+      have hadd := intervalIntegral.integral_add_adjacent_intervals
+        (show IntervalIntegrable aux_standardBumpBaseDensity volume
+          0 (x - aux_standardBumpRadius 0) from
+            aux_standardBumpBaseDensity_integrable.intervalIntegrable)
+        (show IntervalIntegrable aux_standardBumpBaseDensity volume
+          (x - aux_standardBumpRadius 0) (x + aux_standardBumpRadius 0) from
+            aux_standardBumpBaseDensity_integrable.intervalIntegrable)
+      linarith
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the first
+finite density has global Lipschitz constant eight. -/
+private theorem aux_standardBumpFiniteDensity_one_lipschitz (x y : ℝ) :
+    |aux_standardBumpFiniteDensity 1 x - aux_standardBumpFiniteDensity 1 y| ≤
+      (8 : ℝ) * |x - y| := by
+  have hp := aux_standardBump_primitive_lipschitz aux_standardBumpBaseDensity
+    aux_standardBumpBaseDensity_integrable aux_standardBumpBaseDensity_nonneg
+    aux_standardBumpBaseDensity_le_one
+  rw [aux_standardBumpFiniteDensity_one_eq_primitive,
+    aux_standardBumpFiniteDensity_one_eq_primitive]
+  have hplus :
+      |(∫ t : ℝ in 0..x + aux_standardBumpRadius 0, aux_standardBumpBaseDensity t) -
+        ∫ t : ℝ in 0..y + aux_standardBumpRadius 0, aux_standardBumpBaseDensity t| ≤
+        |x - y| := by
+    convert hp (x + aux_standardBumpRadius 0) (y + aux_standardBumpRadius 0) using 1 <;> ring
+  have hminus :
+      |(∫ t : ℝ in 0..x - aux_standardBumpRadius 0, aux_standardBumpBaseDensity t) -
+        ∫ t : ℝ in 0..y - aux_standardBumpRadius 0, aux_standardBumpBaseDensity t| ≤
+        |x - y| := by
+    convert hp (x - aux_standardBumpRadius 0) (y - aux_standardBumpRadius 0) using 1 <;> ring
+  have hrad : aux_standardBumpRadius 0 = 1 / 8 := by
+    norm_num [aux_standardBumpRadius]
+  rw [hrad] at hplus hminus ⊢
+  have habs : |((∫ t : ℝ in 0..x + 1 / 8, aux_standardBumpBaseDensity t) -
+      ∫ t : ℝ in 0..x - 1 / 8, aux_standardBumpBaseDensity t) -
+      ((∫ t : ℝ in 0..y + 1 / 8, aux_standardBumpBaseDensity t) -
+        ∫ t : ℝ in 0..y - 1 / 8, aux_standardBumpBaseDensity t)| ≤
+        |x - y| + |x - y| := by
+    rw [show ((∫ t : ℝ in 0..x + 1 / 8, aux_standardBumpBaseDensity t) -
+      ∫ t : ℝ in 0..x - 1 / 8, aux_standardBumpBaseDensity t) -
+      ((∫ t : ℝ in 0..y + 1 / 8, aux_standardBumpBaseDensity t) -
+        ∫ t : ℝ in 0..y - 1 / 8, aux_standardBumpBaseDensity t) =
+      ((∫ t : ℝ in 0..x + 1 / 8, aux_standardBumpBaseDensity t) -
+        ∫ t : ℝ in 0..y + 1 / 8, aux_standardBumpBaseDensity t) -
+      ((∫ t : ℝ in 0..x - 1 / 8, aux_standardBumpBaseDensity t) -
+        ∫ t : ℝ in 0..y - 1 / 8, aux_standardBumpBaseDensity t) by ring]
+    let A : ℝ := (∫ t : ℝ in 0..x + 1 / 8, aux_standardBumpBaseDensity t) -
+      ∫ t : ℝ in 0..y + 1 / 8, aux_standardBumpBaseDensity t
+    let B : ℝ := (∫ t : ℝ in 0..x - 1 / 8, aux_standardBumpBaseDensity t) -
+      ∫ t : ℝ in 0..y - 1 / 8, aux_standardBumpBaseDensity t
+    change |A - B| ≤ |x - y| + |x - y|
+    calc
+      |A - B| ≤ |A - 0| + |0 - B| := abs_sub_le A 0 B
+      _ = |A| + |B| := by simp
+      _ ≤ |x - y| + |x - y| := by
+        apply add_le_add
+        · simpa [A] using hplus
+        · simpa [B] using hminus
+  calc
+    |(2 * (1 / 8 : ℝ))⁻¹ *
+        ((∫ t : ℝ in 0..x + 1 / 8, aux_standardBumpBaseDensity t) -
+          ∫ t : ℝ in 0..x - 1 / 8, aux_standardBumpBaseDensity t) -
+      (2 * (1 / 8 : ℝ))⁻¹ *
+        ((∫ t : ℝ in 0..y + 1 / 8, aux_standardBumpBaseDensity t) -
+          ∫ t : ℝ in 0..y - 1 / 8, aux_standardBumpBaseDensity t)| =
+        (2 * (1 / 8 : ℝ))⁻¹ *
+          |((∫ t : ℝ in 0..x + 1 / 8, aux_standardBumpBaseDensity t) -
+            ∫ t : ℝ in 0..x - 1 / 8, aux_standardBumpBaseDensity t) -
+          ((∫ t : ℝ in 0..y + 1 / 8, aux_standardBumpBaseDensity t) -
+            ∫ t : ℝ in 0..y - 1 / 8, aux_standardBumpBaseDensity t)| := by
+          rw [← mul_sub, abs_mul, abs_of_nonneg]
+          norm_num
+    _ ≤ (2 * (1 / 8 : ℝ))⁻¹ * (|x - y| + |x - y|) := by gcongr
+    _ = (8 : ℝ) * |x - y| := by ring
+
 /-- For \ref{standard bump properties}, convolution preserves nonnegativity of real densities. -/
 theorem aux_standardBumpConvolution_nonneg (f g : ℝ → ℝ)
     (hf : ∀ x, 0 ≤ f x) (hg : ∀ x, 0 ≤ g x) (x : ℝ) :
@@ -1827,6 +1988,353 @@ theorem aux_continuous_standardBumpFiniteDensity_succ (n : ℕ) :
         exact aux_standardBumpFiniteDensity_le_one (n + 1) x
       · exact ih
       · exact aux_standardBumpIntervalDensity_integrable _
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, this
+identifies the first derivative after a later interval convolution. -/
+private theorem aux_standardBumpFiniteDensity_succ_hasDerivAt (n : ℕ) (x : ℝ) :
+    HasDerivAt (aux_standardBumpFiniteDensity (n + 2))
+      ((aux_standardBumpFiniteDensity (n + 1) (x + aux_standardBumpRadius (n + 1)) -
+        aux_standardBumpFiniteDensity (n + 1) (x - aux_standardBumpRadius (n + 1))) /
+        (2 * aux_standardBumpRadius (n + 1))) x := by
+  change HasDerivAt
+    (fun y : ℝ => (aux_standardBumpFiniteDensity (n + 1) ⋆[
+      ContinuousLinearMap.mul ℝ ℝ, volume]
+      aux_standardBumpIntervalDensity (aux_standardBumpRadius (n + 1))) y)
+    ((aux_standardBumpFiniteDensity (n + 1) (x + aux_standardBumpRadius (n + 1)) -
+      aux_standardBumpFiniteDensity (n + 1) (x - aux_standardBumpRadius (n + 1))) /
+      (2 * aux_standardBumpRadius (n + 1))) x
+  exact aux_intervalDensity_convolution_hasDerivAt
+    (aux_standardBumpFiniteDensity (n + 1))
+    (aux_continuous_standardBumpFiniteDensity_succ n)
+    (aux_standardBumpRadius (n + 1)) x (aux_standardBumpRadius_pos _)
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, this
+differentiates a symmetric difference quotient. -/
+private theorem aux_standardBump_differenceQuotient_hasDerivAt
+    (f f' : ℝ → ℝ) (rho x : ℝ) (hderiv : ∀ z, HasDerivAt f (f' z) z) :
+    HasDerivAt
+      (fun y : ℝ => (f (y + rho) - f (y - rho)) / (2 * rho))
+      ((f' (x + rho) - f' (x - rho)) / (2 * rho)) x := by
+  have hplus : HasDerivAt (fun y : ℝ => f (y + rho)) (f' (x + rho)) x := by
+    simpa [Function.comp_def] using
+      (hderiv (x + rho)).comp x ((hasDerivAt_id x).add_const rho)
+  have hminus : HasDerivAt (fun y : ℝ => f (y - rho)) (f' (x - rho)) x := by
+    simpa [Function.comp_def] using
+      (hderiv (x - rho)).comp x ((hasDerivAt_id x).sub_const rho)
+  exact (hplus.sub hminus).div_const (2 * rho)
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the second
+finite density has the indicated derivative formula. -/
+private theorem aux_standardBumpFiniteDensity_two_deriv_eq (x : ℝ) :
+    deriv (aux_standardBumpFiniteDensity 2) x =
+      (aux_standardBumpFiniteDensity 1 (x + aux_standardBumpRadius 1) -
+        aux_standardBumpFiniteDensity 1 (x - aux_standardBumpRadius 1)) /
+        (2 * aux_standardBumpRadius 1) :=
+  (aux_standardBumpFiniteDensity_succ_hasDerivAt 0 x).deriv
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, bound the
+first derivative of the second finite density. -/
+private theorem aux_standardBumpFiniteDensity_two_deriv_bound (x : ℝ) :
+    |deriv (aux_standardBumpFiniteDensity 2) x| ≤ 8 := by
+  rw [aux_standardBumpFiniteDensity_two_deriv_eq]
+  exact aux_intervalDifferenceQuotient_le_of_lipschitz
+    (aux_standardBumpFiniteDensity 1) 8 (aux_standardBumpRadius 1) x
+    (aux_standardBumpRadius_pos _) aux_standardBumpFiniteDensity_one_lipschitz
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the first
+derivative of the second density is 128-Lipschitz. -/
+private theorem aux_standardBumpFiniteDensity_two_deriv_lipschitz (x y : ℝ) :
+    |deriv (aux_standardBumpFiniteDensity 2) x -
+      deriv (aux_standardBumpFiniteDensity 2) y| ≤ 128 * |x - y| := by
+  rw [aux_standardBumpFiniteDensity_two_deriv_eq,
+    aux_standardBumpFiniteDensity_two_deriv_eq]
+  have h := aux_intervalDifferenceQuotient_lipschitz
+    (aux_standardBumpFiniteDensity 1) 8 (aux_standardBumpRadius 1) x y
+    (aux_standardBumpRadius_pos _) aux_standardBumpFiniteDensity_one_lipschitz
+  norm_num [aux_standardBumpRadius] at h ⊢
+  exact h
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the second
+finite density is eight-Lipschitz. -/
+private theorem aux_standardBumpFiniteDensity_two_lipschitz (x y : ℝ) :
+    |aux_standardBumpFiniteDensity 2 x - aux_standardBumpFiniteDensity 2 y| ≤
+      8 * |x - y| := by
+  have hNN : LipschitzWith (8 : NNReal) (aux_standardBumpFiniteDensity 2) := by
+    apply lipschitzWith_of_nnnorm_deriv_le
+    · intro z
+      exact (aux_standardBumpFiniteDensity_succ_hasDerivAt 0 z).differentiableAt
+    · intro z
+      rw [← NNReal.coe_le_coe]
+      change |deriv (aux_standardBumpFiniteDensity 2) z| ≤ (8 : ℝ)
+      exact aux_standardBumpFiniteDensity_two_deriv_bound z
+  have h := lipschitzWith_iff_norm_sub_le.mp hNN x y
+  simpa only [Real.norm_eq_abs, NNReal.coe_ofNat] using h
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the third
+finite density has the indicated derivative formula. -/
+private theorem aux_standardBumpFiniteDensity_three_deriv_eq (x : ℝ) :
+    deriv (aux_standardBumpFiniteDensity 3) x =
+      (aux_standardBumpFiniteDensity 2 (x + aux_standardBumpRadius 2) -
+        aux_standardBumpFiniteDensity 2 (x - aux_standardBumpRadius 2)) /
+        (2 * aux_standardBumpRadius 2) :=
+  (aux_standardBumpFiniteDensity_succ_hasDerivAt 1 x).deriv
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, bound the
+first derivative of the third finite density. -/
+private theorem aux_standardBumpFiniteDensity_three_deriv_bound (x : ℝ) :
+    |deriv (aux_standardBumpFiniteDensity 3) x| ≤ 8 := by
+  rw [aux_standardBumpFiniteDensity_three_deriv_eq]
+  exact aux_intervalDifferenceQuotient_le_of_lipschitz
+    (aux_standardBumpFiniteDensity 2) 8 (aux_standardBumpRadius 2) x
+    (aux_standardBumpRadius_pos _) aux_standardBumpFiniteDensity_two_lipschitz
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, this gives
+the second derivative of the third finite density. -/
+private theorem aux_standardBumpFiniteDensity_three_second_hasDerivAt (x : ℝ) :
+    HasDerivAt (deriv (aux_standardBumpFiniteDensity 3))
+      ((deriv (aux_standardBumpFiniteDensity 2) (x + aux_standardBumpRadius 2) -
+        deriv (aux_standardBumpFiniteDensity 2) (x - aux_standardBumpRadius 2)) /
+        (2 * aux_standardBumpRadius 2)) x := by
+  have heq : deriv (aux_standardBumpFiniteDensity 3) = fun y : ℝ =>
+      (aux_standardBumpFiniteDensity 2 (y + aux_standardBumpRadius 2) -
+        aux_standardBumpFiniteDensity 2 (y - aux_standardBumpRadius 2)) /
+        (2 * aux_standardBumpRadius 2) := by
+    funext y
+    exact aux_standardBumpFiniteDensity_three_deriv_eq y
+  rw [heq]
+  exact aux_standardBump_differenceQuotient_hasDerivAt
+    (aux_standardBumpFiniteDensity 2) (deriv (aux_standardBumpFiniteDensity 2))
+    (aux_standardBumpRadius 2) x (fun z => by
+      rw [aux_standardBumpFiniteDensity_two_deriv_eq]
+      exact aux_standardBumpFiniteDensity_succ_hasDerivAt 0 z)
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, identify the
+second derivative of the third finite density. -/
+private theorem aux_standardBumpFiniteDensity_three_second_deriv_eq (x : ℝ) :
+    deriv (deriv (aux_standardBumpFiniteDensity 3)) x =
+      (deriv (aux_standardBumpFiniteDensity 2) (x + aux_standardBumpRadius 2) -
+        deriv (aux_standardBumpFiniteDensity 2) (x - aux_standardBumpRadius 2)) /
+        (2 * aux_standardBumpRadius 2) :=
+  (aux_standardBumpFiniteDensity_three_second_hasDerivAt x).deriv
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the second
+derivative of the third density is bounded by 128. -/
+private theorem aux_standardBumpFiniteDensity_three_second_deriv_bound (x : ℝ) :
+    |deriv (deriv (aux_standardBumpFiniteDensity 3)) x| ≤ 128 := by
+  rw [aux_standardBumpFiniteDensity_three_second_deriv_eq]
+  exact aux_intervalDifferenceQuotient_le_of_lipschitz
+    (deriv (aux_standardBumpFiniteDensity 2)) 128 (aux_standardBumpRadius 2) x
+    (aux_standardBumpRadius_pos _) aux_standardBumpFiniteDensity_two_deriv_lipschitz
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the first
+derivative of the third density is 128-Lipschitz. -/
+private theorem aux_standardBumpFiniteDensity_three_deriv_lipschitz_sharp (x y : ℝ) :
+    |deriv (aux_standardBumpFiniteDensity 3) x -
+      deriv (aux_standardBumpFiniteDensity 3) y| ≤ 128 * |x - y| := by
+  have hNN : LipschitzWith (128 : NNReal) (deriv (aux_standardBumpFiniteDensity 3)) := by
+    apply lipschitzWith_of_nnnorm_deriv_le
+    · intro z
+      exact (aux_standardBumpFiniteDensity_three_second_hasDerivAt z).differentiableAt
+    · intro z
+      rw [← NNReal.coe_le_coe]
+      change |deriv (deriv (aux_standardBumpFiniteDensity 3)) z| ≤ (128 : ℝ)
+      exact aux_standardBumpFiniteDensity_three_second_deriv_bound z
+  have h := lipschitzWith_iff_norm_sub_le.mp hNN x y
+  simpa only [Real.norm_eq_abs, NNReal.coe_ofNat] using h
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the second
+derivative of the third density is 4096-Lipschitz. -/
+private theorem aux_standardBumpFiniteDensity_three_second_lipschitz (x y : ℝ) :
+    |deriv (deriv (aux_standardBumpFiniteDensity 3)) x -
+      deriv (deriv (aux_standardBumpFiniteDensity 3)) y| ≤ 4096 * |x - y| := by
+  rw [aux_standardBumpFiniteDensity_three_second_deriv_eq,
+    aux_standardBumpFiniteDensity_three_second_deriv_eq]
+  have h := aux_intervalDifferenceQuotient_lipschitz
+    (deriv (aux_standardBumpFiniteDensity 2)) 128 (aux_standardBumpRadius 2) x y
+    (aux_standardBumpRadius_pos _) aux_standardBumpFiniteDensity_two_deriv_lipschitz
+  norm_num [aux_standardBumpRadius] at h ⊢
+  exact h
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the third
+finite density is eight-Lipschitz. -/
+private theorem aux_standardBumpFiniteDensity_three_lipschitz (x y : ℝ) :
+    |aux_standardBumpFiniteDensity 3 x - aux_standardBumpFiniteDensity 3 y| ≤
+      8 * |x - y| := by
+  have hNN : LipschitzWith (8 : NNReal) (aux_standardBumpFiniteDensity 3) := by
+    apply lipschitzWith_of_nnnorm_deriv_le
+    · intro z
+      exact (aux_standardBumpFiniteDensity_succ_hasDerivAt 1 z).differentiableAt
+    · intro z
+      rw [← NNReal.coe_le_coe]
+      change |deriv (aux_standardBumpFiniteDensity 3) z| ≤ (8 : ℝ)
+      exact aux_standardBumpFiniteDensity_three_deriv_bound z
+  have h := lipschitzWith_iff_norm_sub_le.mp hNN x y
+  simpa only [Real.norm_eq_abs, NNReal.coe_ofNat] using h
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the first
+derivative of the third density is 256-Lipschitz. -/
+private theorem aux_standardBumpFiniteDensity_three_deriv_lipschitz (x y : ℝ) :
+    |deriv (aux_standardBumpFiniteDensity 3) x -
+      deriv (aux_standardBumpFiniteDensity 3) y| ≤ 256 * |x - y| := by
+  rw [aux_standardBumpFiniteDensity_three_deriv_eq,
+    aux_standardBumpFiniteDensity_three_deriv_eq]
+  have h := aux_intervalDifferenceQuotient_lipschitz
+    (aux_standardBumpFiniteDensity 2) 8 (aux_standardBumpRadius 2) x y
+    (aux_standardBumpRadius_pos _) aux_standardBumpFiniteDensity_two_lipschitz
+  norm_num [aux_standardBumpRadius] at h ⊢
+  exact h
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, the fourth
+finite density has the indicated derivative formula. -/
+private theorem aux_standardBumpFiniteDensity_four_deriv_eq (x : ℝ) :
+    deriv (aux_standardBumpFiniteDensity 4) x =
+      (aux_standardBumpFiniteDensity 3 (x + aux_standardBumpRadius 3) -
+        aux_standardBumpFiniteDensity 3 (x - aux_standardBumpRadius 3)) /
+        (2 * aux_standardBumpRadius 3) :=
+  (aux_standardBumpFiniteDensity_succ_hasDerivAt 2 x).deriv
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, bound the
+first derivative of the fourth finite density. -/
+private theorem aux_standardBumpFiniteDensity_four_deriv_bound (x : ℝ) :
+    |deriv (aux_standardBumpFiniteDensity 4) x| ≤ 8 := by
+  rw [aux_standardBumpFiniteDensity_four_deriv_eq]
+  exact aux_intervalDifferenceQuotient_le_of_lipschitz
+    (aux_standardBumpFiniteDensity 3) 8 (aux_standardBumpRadius 3) x
+    (aux_standardBumpRadius_pos _) aux_standardBumpFiniteDensity_three_lipschitz
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, this gives
+the second derivative of the fourth finite density. -/
+private theorem aux_standardBumpFiniteDensity_four_second_hasDerivAt (x : ℝ) :
+    HasDerivAt (deriv (aux_standardBumpFiniteDensity 4))
+      ((deriv (aux_standardBumpFiniteDensity 3) (x + aux_standardBumpRadius 3) -
+        deriv (aux_standardBumpFiniteDensity 3) (x - aux_standardBumpRadius 3)) /
+        (2 * aux_standardBumpRadius 3)) x := by
+  have heq : deriv (aux_standardBumpFiniteDensity 4) = fun y : ℝ =>
+      (aux_standardBumpFiniteDensity 3 (y + aux_standardBumpRadius 3) -
+        aux_standardBumpFiniteDensity 3 (y - aux_standardBumpRadius 3)) /
+        (2 * aux_standardBumpRadius 3) := by
+    funext y
+    exact aux_standardBumpFiniteDensity_four_deriv_eq y
+  rw [heq]
+  exact aux_standardBump_differenceQuotient_hasDerivAt
+    (aux_standardBumpFiniteDensity 3) (deriv (aux_standardBumpFiniteDensity 3))
+    (aux_standardBumpRadius 3) x (fun z => by
+      rw [aux_standardBumpFiniteDensity_three_deriv_eq]
+      exact aux_standardBumpFiniteDensity_succ_hasDerivAt 1 z)
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, identify the
+second derivative of the fourth finite density. -/
+private theorem aux_standardBumpFiniteDensity_four_second_deriv_eq (x : ℝ) :
+    deriv (deriv (aux_standardBumpFiniteDensity 4)) x =
+      (deriv (aux_standardBumpFiniteDensity 3) (x + aux_standardBumpRadius 3) -
+        deriv (aux_standardBumpFiniteDensity 3) (x - aux_standardBumpRadius 3)) /
+        (2 * aux_standardBumpRadius 3) :=
+  (aux_standardBumpFiniteDensity_four_second_hasDerivAt x).deriv
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, bound the
+second derivative of the fourth finite density. -/
+private theorem aux_standardBumpFiniteDensity_four_second_deriv_bound (x : ℝ) :
+    |deriv (deriv (aux_standardBumpFiniteDensity 4)) x| ≤ 128 := by
+  rw [aux_standardBumpFiniteDensity_four_second_deriv_eq]
+  exact aux_intervalDifferenceQuotient_le_of_lipschitz
+    (deriv (aux_standardBumpFiniteDensity 3)) 128 (aux_standardBumpRadius 3) x
+    (aux_standardBumpRadius_pos _) aux_standardBumpFiniteDensity_three_deriv_lipschitz_sharp
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, this gives
+the third derivative of the fourth finite density. -/
+private theorem aux_standardBumpFiniteDensity_four_third_hasDerivAt (x : ℝ) :
+    HasDerivAt (deriv (deriv (aux_standardBumpFiniteDensity 4)))
+      ((deriv (deriv (aux_standardBumpFiniteDensity 3)) (x + aux_standardBumpRadius 3) -
+        deriv (deriv (aux_standardBumpFiniteDensity 3)) (x - aux_standardBumpRadius 3)) /
+        (2 * aux_standardBumpRadius 3)) x := by
+  have heq : deriv (deriv (aux_standardBumpFiniteDensity 4)) = fun y : ℝ =>
+      (deriv (aux_standardBumpFiniteDensity 3) (y + aux_standardBumpRadius 3) -
+        deriv (aux_standardBumpFiniteDensity 3) (y - aux_standardBumpRadius 3)) /
+        (2 * aux_standardBumpRadius 3) := by
+    funext y
+    exact aux_standardBumpFiniteDensity_four_second_deriv_eq y
+  rw [heq]
+  exact aux_standardBump_differenceQuotient_hasDerivAt
+    (deriv (aux_standardBumpFiniteDensity 3))
+    (deriv (deriv (aux_standardBumpFiniteDensity 3)))
+    (aux_standardBumpRadius 3) x (fun z => by
+      rw [aux_standardBumpFiniteDensity_three_second_deriv_eq]
+      exact aux_standardBumpFiniteDensity_three_second_hasDerivAt z)
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, identify the
+third derivative of the fourth finite density. -/
+private theorem aux_standardBumpFiniteDensity_four_third_deriv_eq (x : ℝ) :
+    deriv (deriv (deriv (aux_standardBumpFiniteDensity 4))) x =
+      (deriv (deriv (aux_standardBumpFiniteDensity 3)) (x + aux_standardBumpRadius 3) -
+        deriv (deriv (aux_standardBumpFiniteDensity 3)) (x - aux_standardBumpRadius 3)) /
+        (2 * aux_standardBumpRadius 3) :=
+  (aux_standardBumpFiniteDensity_four_third_hasDerivAt x).deriv
+
+/-- For the sharp finite-density derivative bounds used by `existsUniversalPair`, bound the
+third derivative of the fourth finite density. -/
+private theorem aux_standardBumpFiniteDensity_four_third_deriv_bound (x : ℝ) :
+    |deriv (deriv (deriv (aux_standardBumpFiniteDensity 4))) x| ≤ 4096 := by
+  rw [aux_standardBumpFiniteDensity_four_third_deriv_eq]
+  exact aux_intervalDifferenceQuotient_le_of_lipschitz
+    (deriv (deriv (aux_standardBumpFiniteDensity 3))) 4096 (aux_standardBumpRadius 3) x
+    (aux_standardBumpRadius_pos _) aux_standardBumpFiniteDensity_three_second_lipschitz
+
+/-- For `existsUniversalPair`, the fourth finite density has the sharp first three derivative
+bounds required for the universal-pair profile. -/
+theorem aux_standardBumpFiniteDensity_four_sharp_iteratedDeriv (x : ℝ) :
+    ‖iteratedDeriv 1 (aux_standardBumpFiniteDensity 4) x‖ ≤ 8 ∧
+      ‖iteratedDeriv 2 (aux_standardBumpFiniteDensity 4) x‖ ≤ 128 ∧
+        ‖iteratedDeriv 3 (aux_standardBumpFiniteDensity 4) x‖ ≤ 4096 := by
+  refine ⟨?_, ?_, ?_⟩
+  · simpa only [iteratedDeriv_succ, iteratedDeriv_zero, Real.norm_eq_abs] using
+      aux_standardBumpFiniteDensity_four_deriv_bound x
+  · simpa only [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ,
+      iteratedDeriv_zero, Real.norm_eq_abs] using
+      aux_standardBumpFiniteDensity_four_second_deriv_bound x
+  · simpa only [show (3 : ℕ) = 2 + 1 by norm_num, iteratedDeriv_succ,
+      iteratedDeriv_zero, Real.norm_eq_abs] using
+      aux_standardBumpFiniteDensity_four_third_deriv_bound x
+
+/-- For `existsUniversalPair`, a symmetric interval convolution adds one order of smoothness. -/
+private theorem aux_standardBump_contDiff_intervalConvolution_succ
+    (n : ℕ) (f : ℝ → ℝ) (r : ℝ) (hr : 0 < r) (hf : ContDiff ℝ n f) :
+    ContDiff ℝ (n + 1) (f ⋆[ContinuousLinearMap.mul ℝ ℝ, volume]
+      aux_standardBumpIntervalDensity r) := by
+  rw [contDiff_succ_iff_deriv]
+  refine ⟨?_, ?_, ?_⟩
+  · intro x
+    exact (aux_intervalDensity_convolution_hasDerivAt f hf.continuous r x hr).differentiableAt
+  · simp
+  · have hderiv : deriv (f ⋆[ContinuousLinearMap.mul ℝ ℝ, volume]
+        aux_standardBumpIntervalDensity r) = fun x : ℝ =>
+        (f (x + r) - f (x - r)) / (2 * r) := by
+      funext x
+      exact (aux_intervalDensity_convolution_hasDerivAt f hf.continuous r x hr).deriv
+    rw [hderiv]
+    fun_prop
+
+/-- For `existsUniversalPair`, the fourth finite density is three times continuously
+differentiable. -/
+theorem aux_standardBumpFiniteDensity_four_contDiff :
+    ContDiff ℝ 3 (aux_standardBumpFiniteDensity 4) := by
+  have hD2 : ContDiff ℝ 1 (aux_standardBumpFiniteDensity 2) := by
+    change ContDiff ℝ 1 (aux_standardBumpFiniteDensity 1 ⋆[
+      ContinuousLinearMap.mul ℝ ℝ, volume]
+      aux_standardBumpIntervalDensity (aux_standardBumpRadius 1))
+    apply aux_standardBump_contDiff_intervalConvolution_succ 0 _ _
+      (aux_standardBumpRadius_pos 1)
+    exact contDiff_zero.mpr (aux_continuous_standardBumpFiniteDensity_succ 0)
+  have hD3 : ContDiff ℝ 2 (aux_standardBumpFiniteDensity 3) := by
+    change ContDiff ℝ 2 (aux_standardBumpFiniteDensity 2 ⋆[
+      ContinuousLinearMap.mul ℝ ℝ, volume]
+      aux_standardBumpIntervalDensity (aux_standardBumpRadius 2))
+    apply aux_standardBump_contDiff_intervalConvolution_succ 1 _ _
+      (aux_standardBumpRadius_pos 2) hD2
+  change ContDiff ℝ 3 (aux_standardBumpFiniteDensity 3 ⋆[
+    ContinuousLinearMap.mul ℝ ℝ, volume]
+    aux_standardBumpIntervalDensity (aux_standardBumpRadius 3))
+  exact aux_standardBump_contDiff_intervalConvolution_succ 2 _ _
+    (aux_standardBumpRadius_pos 3) hD3
 
 /-- For \ref{standard bump properties} and the public theorem
 `standardBumpProperties_fourierShape`, this records the symmetry of the initial interval
