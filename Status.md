@@ -16,7 +16,7 @@ Lean file: Introduction.lean
 
 #### Theorems
 
-\label{thm:nct main real}: [Statement completed] (Lean: mainTwistedTheorem) (2026-08-09 10:00:00 EDT)
+\label{thm:nct main real}: [Proof completed] (Lean: mainTwistedTheorem) (2026-08-14 15:02:30 PDT)
 
 ## Preliminaries
 

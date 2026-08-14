@@ -10885,6 +10885,1447 @@ noncomputable def C_mainTwistedTheorem (n : ℕ) : ℝ :=
     (C_mainBumpOne n + (2 : ℝ) ^ 6 * C_mainBumpTwo n + C_leftBump n +
       (2 : ℝ) ^ 6 * C_leftBumpOne n)
 
+private theorem aux_constantMainTwistedTheoremReduction_sharp {n : ℕ} (hn : 2 ≤ n) :
+    C_mainTwistedTheorem n < (7 / 8 : ℝ) * (2 : ℝ) ^ 666 := by
+  have h1 := constantMainBumpOne hn
+  have h2 := constantMainBumpTwo hn
+  have h3 := constantLeftBump hn
+  have h4 := constantLeftBumpOne hn
+  have h2' : (2 : ℝ) ^ 6 * C_mainBumpTwo n <
+      (2 : ℝ) ^ 6 * ((27 / 32 : ℝ) * (2 : ℝ) ^ 658) :=
+    mul_lt_mul_of_pos_left h2 (by positivity)
+  have h4' : (2 : ℝ) ^ 6 * C_leftBumpOne n <
+      (2 : ℝ) ^ 6 * ((23 / 32 : ℝ) * (2 : ℝ) ^ 636) :=
+    mul_lt_mul_of_pos_left h4 (by positivity)
+  have hinter :
+      C_mainBumpOne n + (2 : ℝ) ^ 6 * C_mainBumpTwo n + C_leftBump n +
+          (2 : ℝ) ^ 6 * C_leftBumpOne n <
+        (7 / 8 : ℝ) * (2 : ℝ) ^ 610 +
+          (2 : ℝ) ^ 6 * ((27 / 32 : ℝ) * (2 : ℝ) ^ 658) +
+          (33 / 64 : ℝ) * (2 : ℝ) ^ 636 +
+          (2 : ℝ) ^ 6 * ((23 / 32 : ℝ) * (2 : ℝ) ^ 636) := by
+    exact add_lt_add (add_lt_add (add_lt_add h1 h2') h3) h4'
+  unfold C_mainTwistedTheorem
+  calc
+    (2 : ℝ) ^ 2 *
+        (C_mainBumpOne n + (2 : ℝ) ^ 6 * C_mainBumpTwo n + C_leftBump n +
+          (2 : ℝ) ^ 6 * C_leftBumpOne n) <
+        (2 : ℝ) ^ 2 *
+          ((7 / 8 : ℝ) * (2 : ℝ) ^ 610 +
+            (2 : ℝ) ^ 6 * ((27 / 32 : ℝ) * (2 : ℝ) ^ 658) +
+            (33 / 64 : ℝ) * (2 : ℝ) ^ 636 +
+            (2 : ℝ) ^ 6 * ((23 / 32 : ℝ) * (2 : ℝ) ^ 636)) :=
+      mul_lt_mul_of_pos_left hinter (by positivity)
+    _ < (7 / 8 : ℝ) * (2 : ℝ) ^ 666 := by
+      set_option exponentiation.threshold 1000 in
+        norm_num
+
+theorem constantMainTwistedTheoremReduction {n : ℕ} (hn : 2 ≤ n) :
+    C_mainTwistedTheorem n < (2 : ℝ) ^ 666 := by
+  calc
+    C_mainTwistedTheorem n < (7 / 8 : ℝ) * (2 : ℝ) ^ 666 :=
+      aux_constantMainTwistedTheoremReduction_sharp hn
+    _ < (2 : ℝ) ^ 666 := by
+      apply mul_lt_of_lt_one_left
+      · positivity
+      · norm_num
+
+/-! ### Terminal smoothing and aggregation helpers -/
+
+open Filter Finset Topology
+
+private noncomputable def aux_mainTwisted_delta
+    (b : windowBasedBumpFunctions) (N : ℕ) : ℝ → ℝ :=
+  fun x => b.smoothingPartialSum (N + 1) x - b.smoothingPartialSum N x
+
+private theorem aux_mainTwisted_delta_sum (b : windowBasedBumpFunctions) (N : ℕ) :
+    ∑ q ∈ Finset.range N, aux_mainTwisted_delta b q =
+      b.smoothingPartialSum N - b.smoothingPartialSum 0 := by
+  funext x
+  simp only [Finset.sum_apply, aux_mainTwisted_delta]
+  exact Finset.sum_range_sub (fun N => b.smoothingPartialSum N x) N
+
+private theorem aux_mainTwisted_delta_expand (b : windowBasedBumpFunctions) (N : ℕ) :
+    aux_mainTwisted_delta b N =
+      fun x => windowBasedBumpFunctions.phiZero b ((N + 1 : ℕ) : ℤ) x +
+        (windowBasedBumpFunctions.phiOne b (-((N + 1 : ℕ) : ℤ)) x +
+          windowBasedBumpFunctions.phiTwo b (-((N + 1 : ℕ) : ℤ)) x) := by
+  funext x
+  simp only [aux_mainTwisted_delta, windowBasedBumpFunctions.smoothingPartialSum,
+    aux_integerIntervalSum]
+  rw [show ((N + 1 : ℕ) : ℤ) = (N : ℤ) + 1 by omega]
+  have hzeroSet :
+      insert ((N : ℤ) + 1) (Finset.Icc (-2 : ℤ) (N : ℤ)) =
+        Finset.Icc (-2 : ℤ) ((N : ℤ) + 1) := by
+    ext j
+    simp only [Finset.mem_insert, Finset.mem_Icc]
+    omega
+  have hnotzero : ((N : ℤ) + 1) ∉ Finset.Icc (-2 : ℤ) (N : ℤ) := by
+    simp only [Finset.mem_Icc]
+    omega
+  rw [← hzeroSet, Finset.sum_insert hnotzero]
+  have honeSet :
+      insert (-((N : ℤ) + 1)) (Finset.Icc (-(N : ℤ)) (-1)) =
+        Finset.Icc (-((N : ℤ) + 1) : ℤ) (-1) := by
+    ext j
+    simp only [Finset.mem_insert, Finset.mem_Icc]
+    omega
+  have hnotone : -((N : ℤ) + 1) ∉ Finset.Icc (-(N : ℤ)) (-1) := by
+    simp only [Finset.mem_Icc]
+    omega
+  rw [← honeSet, Finset.sum_insert hnotone]
+  simp
+  ring
+
+private theorem aux_mainTwisted_delta_converges (b : windowBasedBumpFunctions) :
+    Tendsto (fun N => eLpNorm
+      ((aux_indicator (Set.Icc 0 1) - b.smoothingPartialSum 0) -
+        ∑ q ∈ Finset.range N, aux_mainTwisted_delta b q) 2 volume)
+      atTop (nhds 0) := by
+  have h := smoothingDecomp b
+  have heq (N : ℕ) :
+      ((aux_indicator (Set.Icc 0 1) - b.smoothingPartialSum 0) -
+        ∑ q ∈ Finset.range N, aux_mainTwisted_delta b q) =
+        aux_indicator (Set.Icc 0 1) - b.smoothingPartialSum N := by
+    rw [aux_mainTwisted_delta_sum]
+    funext x
+    simp
+  have h' : Tendsto (fun N => eLpNorm
+      (aux_indicator (Set.Icc 0 1) - b.smoothingPartialSum N) 2 volume)
+      atTop (nhds 0) := by
+    unfold aux_convergesInL2 at h
+    convert h using 1
+    funext N
+    rw [show (aux_indicator (Set.Icc 0 1) - b.smoothingPartialSum N) =
+        -(fun x => b.smoothingPartialSum N x - aux_indicator (Set.Icc 0 1) x) by
+          funext x
+          simp]
+    exact eLpNorm_neg _ _ _
+  simpa only [heq] using h'
+
+private theorem aux_mainTwisted_oneRescaled_memLp {g : ℝ → ℝ} (hg : MemLp g 2 volume)
+    {t : ℝ} (ht : 0 < t) :
+    MemLp (aux_oneRescaled t g) 2 volume := by
+  let m : ℝ → ℝ := fun x => t⁻¹ * x
+  have hm : AEMeasurable m volume := by
+    dsimp [m]
+    fun_prop
+  have hmap : Measure.map m volume = ENNReal.ofReal t • volume := by
+    rw [show m = fun x : ℝ => t⁻¹ * x by rfl,
+      Real.map_volume_mul_left (inv_ne_zero ht.ne')]
+    simp [abs_of_pos ht]
+  have hgscaled : MemLp g 2 (ENNReal.ofReal t • volume) :=
+    hg.smul_measure (by simp)
+  have hgmap : MemLp g 2 (Measure.map m volume) := by
+    rw [hmap]
+    exact hgscaled
+  have hmeas : AEStronglyMeasurable (g ∘ m) volume := by
+    apply AEStronglyMeasurable.comp_aemeasurable
+      hgmap.aestronglyMeasurable
+    exact hm
+  have hnorm : eLpNorm (g ∘ m) 2 volume < ∞ := by
+    rw [← eLpNorm_map_measure hgmap.aestronglyMeasurable hm, hmap]
+    exact hgscaled.2
+  have hcomp : MemLp (g ∘ m) 2 volume := ⟨hmeas, hnorm⟩
+  have heq : aux_oneRescaled t g = (t⁻¹) • (g ∘ m) := by
+    funext x
+    simp [aux_oneRescaled, m, Pi.smul_apply]
+  rw [heq]
+  exact hcomp.const_smul _
+
+private theorem aux_mainTwisted_oneRescaled_eLpNorm_eq {g : ℝ → ℝ} (hg : MemLp g 2 volume)
+    {t : ℝ} (ht : 0 < t) :
+    eLpNorm (aux_oneRescaled t g) 2 volume =
+      ‖t⁻¹‖ₑ * ((ENNReal.ofReal t) ^ (1 / (2 : ℝ≥0∞)).toReal) *
+        eLpNorm g 2 volume := by
+  let m : ℝ → ℝ := fun x => t⁻¹ * x
+  have hm : AEMeasurable m volume := by
+    dsimp [m]
+    fun_prop
+  have hmap : Measure.map m volume = ENNReal.ofReal t • volume := by
+    rw [show m = fun x : ℝ => t⁻¹ * x by rfl,
+      Real.map_volume_mul_left (inv_ne_zero ht.ne')]
+    simp [abs_of_pos ht]
+  have hgscaled : MemLp g 2 (ENNReal.ofReal t • volume) :=
+    hg.smul_measure (by simp)
+  have hgmap : MemLp g 2 (Measure.map m volume) := by
+    rw [hmap]
+    exact hgscaled
+  have heq : aux_oneRescaled t g = (t⁻¹) • (g ∘ m) := by
+    funext x
+    simp [aux_oneRescaled, m, Pi.smul_apply]
+  rw [heq, eLpNorm_const_smul, ← eLpNorm_map_measure hgmap.aestronglyMeasurable hm,
+    hmap, eLpNorm_smul_measure_of_ne_zero]
+  · rw [smul_eq_mul]
+    rw [mul_assoc]
+  · exact ENNReal.ofReal_ne_zero_iff.mpr ht
+
+private theorem aux_mainTwisted_memLp_of_const_oneRescaled
+    {psi chi : ℝ → ℝ} {a lambda : ℝ}
+    (hpsi : MemLp psi 2 volume) (ha : a ≠ 0) (hlambda : 0 < lambda)
+    (heq : psi = fun x ↦ a * aux_oneRescaled lambda chi x) :
+    MemLp chi 2 volume := by
+  have hscaled : MemLp (aux_oneRescaled lambda⁻¹ psi) 2 volume :=
+    aux_mainTwisted_oneRescaled_memLp hpsi (inv_pos.mpr hlambda)
+  have hfun : chi = a⁻¹ • aux_oneRescaled lambda⁻¹ psi := by
+    funext x
+    rw [heq]
+    simp only [Pi.smul_apply, smul_eq_mul, aux_oneRescaled]
+    field_simp [ha, hlambda.ne']
+  rw [hfun]
+  exact hscaled.const_smul _
+
+private theorem aux_mainTwisted_phiZero_memLp_of_phiThree_eq
+    (b : windowBasedBumpFunctions) (k : ℤ)
+    (heq : windowBasedBumpFunctions.phiThree b k =
+      fun x ↦ (2 : ℝ) ^ k * aux_oneRescaled ((2 : ℝ) ^ (-k))
+        (windowBasedBumpFunctions.phiZero b k) x) :
+    MemLp (windowBasedBumpFunctions.phiZero b k) 2 volume := by
+  have hthree : MemLp (windowBasedBumpFunctions.phiThree b k) 2 volume := by
+    let p := phiThreeSchwartz b k
+    have hp : MemLp (fun x ↦ p x) 2 volume := p.memLp 2
+    convert hp using 1
+    funext x
+    exact (phiThreeSchwartz_apply b k x).symm
+  exact aux_mainTwisted_memLp_of_const_oneRescaled hthree (by positivity) (by positivity) heq
+
+private theorem aux_mainTwisted_phiOne_memLp_of_thetaTilde_eq
+    (b : windowBasedBumpFunctions) (k : ℤ)
+    (heq : windowBasedBumpFunctions.phiOne b k =
+      fun x ↦ (2 : ℝ) ^ k * aux_oneRescaled ((2 : ℝ) ^ k)
+        (windowBasedBumpFunctions.thetaTilde b) x) :
+    MemLp (windowBasedBumpFunctions.phiOne b k) 2 volume := by
+  have htheta : MemLp (windowBasedBumpFunctions.thetaTilde b) 2 volume := by
+    let p := thetaTildeSchwartz b
+    have hp : MemLp (fun x ↦ p x) 2 volume := p.memLp 2
+    convert hp using 1
+    funext x
+    exact (thetaTildeSchwartz_apply b x).symm
+  rw [heq]
+  have h := (aux_mainTwisted_oneRescaled_memLp htheta
+    (by positivity : 0 < (2 : ℝ) ^ k)).const_smul ((2 : ℝ) ^ k)
+  convert h using 1
+  funext x
+  simp only [Pi.smul_apply, smul_eq_mul]
+
+private theorem aux_mainTwisted_phiTwo_memLp_of_phiFour_eq
+    (b : windowBasedBumpFunctions) (k : ℤ)
+    (heq : windowBasedBumpFunctions.phiTwo b k =
+      -aux_oneRescaled ((2 : ℝ) ^ k) (windowBasedBumpFunctions.phiFour b k)) :
+    MemLp (windowBasedBumpFunctions.phiTwo b k) 2 volume := by
+  have hfour : MemLp (windowBasedBumpFunctions.phiFour b k) 2 volume := by
+    let p := phiFourSchwartz b k
+    have hp : MemLp (fun x ↦ p x) 2 volume := p.memLp 2
+    convert hp using 1
+    funext x
+    exact (phiFourSchwartz_apply b k x).symm
+  rw [heq]
+  exact (aux_mainTwisted_oneRescaled_memLp hfour (by positivity : 0 < (2 : ℝ) ^ k)).neg
+
+private theorem aux_mainTwisted_scaleDiff_tendsto_zero_L2
+    {g : ℕ → ℝ → ℝ} (hmem : ∀ N, MemLp (g N) 2 volume)
+    (hconv : Tendsto (fun N ↦ eLpNorm (g N) 2 volume) atTop (nhds 0))
+    {s r : ℝ} (hs : 0 < s) (hr : 0 < r) :
+    Tendsto (fun N ↦ eLpNorm
+      (aux_oneRescaled s (g N) - aux_oneRescaled r (g N)) 2 volume)
+      atTop (nhds 0) := by
+  let cs : ℝ≥0∞ := ‖s⁻¹‖ₑ * ((ENNReal.ofReal s) ^ (1 / (2 : ℝ≥0∞)).toReal)
+  let cr : ℝ≥0∞ := ‖r⁻¹‖ₑ * ((ENNReal.ofReal r) ^ (1 / (2 : ℝ≥0∞)).toReal)
+  have hnorms (N : ℕ) :
+      eLpNorm (aux_oneRescaled s (g N)) 2 volume = cs * eLpNorm (g N) 2 volume := by
+    simpa only [cs] using aux_mainTwisted_oneRescaled_eLpNorm_eq (hmem N) hs
+  have hnormr (N : ℕ) :
+      eLpNorm (aux_oneRescaled r (g N)) 2 volume = cr * eLpNorm (g N) 2 volume := by
+    simpa only [cr] using aux_mainTwisted_oneRescaled_eLpNorm_eq (hmem N) hr
+  have hcs : cs ≠ ∞ := by
+    exact ENNReal.mul_ne_top ENNReal.coe_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg (by positivity) ENNReal.ofReal_ne_top)
+  have hcr : cr ≠ ∞ := by
+    exact ENNReal.mul_ne_top ENNReal.coe_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg (by positivity) ENNReal.ofReal_ne_top)
+  have hss : Tendsto (fun N ↦ eLpNorm (aux_oneRescaled s (g N)) 2 volume)
+      atTop (nhds 0) := by
+    have hmul := ENNReal.Tendsto.const_mul hconv (Or.inr hcs)
+    simpa only [hnorms, mul_zero] using hmul
+  have hrr : Tendsto (fun N ↦ eLpNorm (aux_oneRescaled r (g N)) 2 volume)
+      atTop (nhds 0) := by
+    have hmul := ENNReal.Tendsto.const_mul hconv (Or.inr hcr)
+    simpa only [hnormr, mul_zero] using hmul
+  have hsum : Tendsto (fun N ↦ eLpNorm (aux_oneRescaled s (g N)) 2 volume +
+      eLpNorm (aux_oneRescaled r (g N)) 2 volume) atTop (nhds 0) := by
+    simpa using hss.add hrr
+  apply tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
+  · intro N
+    exact bot_le
+  · intro N
+    exact eLpNorm_sub_le
+      (aux_mainTwisted_oneRescaled_memLp (hmem N) hs).aestronglyMeasurable
+      (aux_mainTwisted_oneRescaled_memLp (hmem N) hr).aestronglyMeasurable (by norm_num)
+
+private theorem aux_mainTwisted_jump_norm_le_tsum {n : ℕ} (hn : 2 ≤ n)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (phi : ℝ → ℝ) (phiJ : ℕ → ℝ → ℝ)
+    (hphi : MemLp phi 2 volume) (hphiJ : ∀ q, MemLp (phiJ q) 2 volume)
+    (hconv : Tendsto (fun N ↦ eLpNorm
+      (phi - ∑ q ∈ Finset.range N, phiJ q) 2 volume) atTop (nhds 0))
+    {s r : ℝ} (hs : 0 < s) (hr : 0 < r) :
+    eLpNorm
+      (fun x ↦ twistedAverageAtScale s phi (fun i y ↦ f i y) x -
+        twistedAverageAtScale r phi (fun i y ↦ f i y) x)
+      2 volume ≤
+      ∑' q, eLpNorm
+        (fun x ↦ twistedAverageAtScale s (phiJ q) (fun i y ↦ f i y) x -
+          twistedAverageAtScale r (phiJ q) (fun i y ↦ f i y) x)
+        2 volume := by
+  let g : ℕ → ℝ → ℝ := fun N ↦ phi - ∑ q ∈ Finset.range N, phiJ q
+  have hgmem (N : ℕ) : MemLp (g N) 2 volume := by
+    dsimp [g]
+    convert hphi.sub (memLp_finset_sum (Finset.range N) (fun q _ ↦ hphiJ q)) using 1
+    ext x
+    simp only [Pi.sub_apply, Finset.sum_apply]
+  have hgconv : Tendsto (fun N ↦ eLpNorm (g N) 2 volume) atTop (nhds 0) := by
+    simpa only [g] using hconv
+  let delta : (ℝ → ℝ) → ℝ → ℝ := fun u ↦
+    aux_oneRescaled s u - aux_oneRescaled r u
+  have hdmem : MemLp (delta phi) 2 volume := by
+    exact (aux_mainTwisted_oneRescaled_memLp hphi hs).sub
+      (aux_mainTwisted_oneRescaled_memLp hphi hr)
+  have hdmemJ (q : ℕ) : MemLp (delta (phiJ q)) 2 volume := by
+    exact (aux_mainTwisted_oneRescaled_memLp (hphiJ q) hs).sub
+      (aux_mainTwisted_oneRescaled_memLp (hphiJ q) hr)
+  have hdelta (N : ℕ) :
+      delta phi - ∑ q ∈ Finset.range N, delta (phiJ q) =
+        aux_oneRescaled s (g N) - aux_oneRescaled r (g N) := by
+    funext x
+    simp only [delta, g, Pi.sub_apply, Finset.sum_apply, aux_oneRescaled]
+    rw [Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.mul_sum]
+    ring
+  have hdconv : Tendsto (fun N ↦ eLpNorm
+      (delta phi - ∑ q ∈ Finset.range N, delta (phiJ q)) 2 volume)
+      atTop (nhds 0) := by
+    rw [show (fun N ↦ eLpNorm
+      (delta phi - ∑ q ∈ Finset.range N, delta (phiJ q)) 2 volume) =
+      fun N ↦ eLpNorm (aux_oneRescaled s (g N) - aux_oneRescaled r (g N)) 2 volume by
+        funext N
+        rw [hdelta]]
+    exact aux_mainTwisted_scaleDiff_tendsto_zero_L2 hgmem hgconv hs hr
+  have hsum := normASumLeSum hn (delta phi) (fun q ↦ delta (phiJ q)) f
+    hdmem hdmemJ hdconv
+  change eLpNorm
+      (twistedAverage (aux_oneRescaled s phi) (fun i y ↦ f i y) -
+        twistedAverage (aux_oneRescaled r phi) (fun i y ↦ f i y))
+      2 volume ≤ _
+  rw [← aux_twistedAverage_sub_of_memLp hn f
+    (aux_oneRescaled s phi) (aux_oneRescaled r phi)
+    (aux_mainTwisted_oneRescaled_memLp hphi hs) (aux_mainTwisted_oneRescaled_memLp hphi hr)]
+  calc
+    eLpNorm (twistedAverage (delta phi) (fun i y ↦ f i y)) 2 volume ≤
+        ∑' q, eLpNorm (twistedAverage (delta (phiJ q))
+          (fun i y ↦ f i y)) 2 volume := hsum
+    _ = ∑' q, eLpNorm
+        (fun x ↦ twistedAverageAtScale s (phiJ q) (fun i y ↦ f i y) x -
+          twistedAverageAtScale r (phiJ q) (fun i y ↦ f i y) x)
+        2 volume := by
+      apply tsum_congr
+      intro q
+      change eLpNorm
+          (twistedAverage (aux_oneRescaled s (phiJ q) - aux_oneRescaled r (phiJ q))
+            (fun i y ↦ f i y)) 2 volume =
+          eLpNorm
+            (twistedAverage (aux_oneRescaled s (phiJ q)) (fun i y ↦ f i y) -
+              twistedAverage (aux_oneRescaled r (phiJ q)) (fun i y ↦ f i y))
+            2 volume
+      rw [aux_twistedAverage_sub_of_memLp hn f
+        (aux_oneRescaled s (phiJ q)) (aux_oneRescaled r (phiJ q))
+        (aux_mainTwisted_oneRescaled_memLp (hphiJ q) hs)
+        (aux_mainTwisted_oneRescaled_memLp (hphiJ q) hr)]
+
+private theorem aux_mainTwisted_jump_norm_add_le {n J : ℕ} (hn : 2 ≤ n)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (t : aux_scaleChain J) (j : Fin J) (u v : ℝ → ℝ)
+    (hu : MemLp u 2 volume) (hv : MemLp v 2 volume) :
+    eLpNorm
+      (fun x ↦ twistedAverageAtScale (t.1 j.succ) (u + v) (fun i y ↦ f i y) x -
+        twistedAverageAtScale (t.1 j.castSucc) (u + v) (fun i y ↦ f i y) x)
+      2 volume ≤
+      eLpNorm
+        (fun x ↦ twistedAverageAtScale (t.1 j.succ) u (fun i y ↦ f i y) x -
+          twistedAverageAtScale (t.1 j.castSucc) u (fun i y ↦ f i y) x)
+        2 volume +
+      eLpNorm
+        (fun x ↦ twistedAverageAtScale (t.1 j.succ) v (fun i y ↦ f i y) x -
+          twistedAverageAtScale (t.1 j.castSucc) v (fun i y ↦ f i y) x)
+        2 volume := by
+  let s : ℝ := t.1 j.succ
+  let r : ℝ := t.1 j.castSucc
+  have hs : 0 < s := t.2.2 _
+  have hr : 0 < r := t.2.2 _
+  have hus : MemLp (aux_oneRescaled s u) 2 volume :=
+    aux_mainTwisted_oneRescaled_memLp hu hs
+  have hvs : MemLp (aux_oneRescaled s v) 2 volume :=
+    aux_mainTwisted_oneRescaled_memLp hv hs
+  have hur : MemLp (aux_oneRescaled r u) 2 volume :=
+    aux_mainTwisted_oneRescaled_memLp hu hr
+  have hvr : MemLp (aux_oneRescaled r v) 2 volume :=
+    aux_mainTwisted_oneRescaled_memLp hv hr
+  have hscale_add (a : ℝ) :
+      aux_oneRescaled a (u + v) = aux_oneRescaled a u + aux_oneRescaled a v := by
+    funext x
+    simp only [aux_oneRescaled, Pi.add_apply]
+    ring
+  have hsumS : twistedAverage (aux_oneRescaled s (u + v)) (fun i y ↦ f i y) =
+      twistedAverage (aux_oneRescaled s u) (fun i y ↦ f i y) +
+        twistedAverage (aux_oneRescaled s v) (fun i y ↦ f i y) := by
+    rw [hscale_add]
+    exact aux_twistedAverage_add_of_memLp hn f
+      (aux_oneRescaled s u) (aux_oneRescaled s v) hus hvs
+  have hsumR : twistedAverage (aux_oneRescaled r (u + v)) (fun i y ↦ f i y) =
+      twistedAverage (aux_oneRescaled r u) (fun i y ↦ f i y) +
+        twistedAverage (aux_oneRescaled r v) (fun i y ↦ f i y) := by
+    rw [hscale_add]
+    exact aux_twistedAverage_add_of_memLp hn f
+      (aux_oneRescaled r u) (aux_oneRescaled r v) hur hvr
+  change eLpNorm
+      (twistedAverage (aux_oneRescaled s (u + v)) (fun i y ↦ f i y) -
+        twistedAverage (aux_oneRescaled r (u + v)) (fun i y ↦ f i y))
+      2 volume ≤
+      eLpNorm
+        (twistedAverage (aux_oneRescaled s u) (fun i y ↦ f i y) -
+          twistedAverage (aux_oneRescaled r u) (fun i y ↦ f i y))
+        2 volume +
+      eLpNorm
+        (twistedAverage (aux_oneRescaled s v) (fun i y ↦ f i y) -
+          twistedAverage (aux_oneRescaled r v) (fun i y ↦ f i y))
+        2 volume
+  rw [hsumS, hsumR]
+  have hmeasU : AEStronglyMeasurable
+      (twistedAverage (aux_oneRescaled s u) (fun i y ↦ f i y) -
+        twistedAverage (aux_oneRescaled r u) (fun i y ↦ f i y)) volume :=
+    ((aux_twistedAverage_memLp hn f (aux_oneRescaled s u) hus).sub
+      (aux_twistedAverage_memLp hn f (aux_oneRescaled r u) hur)).aestronglyMeasurable
+  have hmeasV : AEStronglyMeasurable
+      (twistedAverage (aux_oneRescaled s v) (fun i y ↦ f i y) -
+        twistedAverage (aux_oneRescaled r v) (fun i y ↦ f i y)) volume :=
+    ((aux_twistedAverage_memLp hn f (aux_oneRescaled s v) hvs).sub
+      (aux_twistedAverage_memLp hn f (aux_oneRescaled r v) hvr)).aestronglyMeasurable
+  calc
+    eLpNorm
+        ((twistedAverage (aux_oneRescaled s u) (fun i y ↦ f i y) +
+            twistedAverage (aux_oneRescaled s v) (fun i y ↦ f i y)) -
+          (twistedAverage (aux_oneRescaled r u) (fun i y ↦ f i y) +
+            twistedAverage (aux_oneRescaled r v) (fun i y ↦ f i y)))
+        2 volume =
+        eLpNorm
+          ((twistedAverage (aux_oneRescaled s u) (fun i y ↦ f i y) -
+              twistedAverage (aux_oneRescaled r u) (fun i y ↦ f i y)) +
+            (twistedAverage (aux_oneRescaled s v) (fun i y ↦ f i y) -
+              twistedAverage (aux_oneRescaled r v) (fun i y ↦ f i y)))
+          2 volume := by
+            congr 1
+            funext x
+            simp only [Pi.add_apply, Pi.sub_apply]
+            ring
+    _ ≤ _ := eLpNorm_add_le hmeasU hmeasV (by norm_num : (1 : ℝ≥0∞) ≤ 2)
+
+private theorem aux_mainTwisted_s0_expand (b : windowBasedBumpFunctions) :
+    b.smoothingPartialSum 0 =
+      fun x => b.phi0 x +
+        (windowBasedBumpFunctions.phiZero b (-2) x +
+          (windowBasedBumpFunctions.phiZero b (-1) x +
+            windowBasedBumpFunctions.phiZero b 0 x)) := by
+  funext x
+  simp only [windowBasedBumpFunctions.smoothingPartialSum, aux_integerIntervalSum]
+  have hset : Finset.Icc (-2 : ℤ) 0 = {-2, -1, 0} := by
+    ext k
+    simp only [Finset.mem_Icc, Finset.mem_insert, Finset.mem_singleton]
+    omega
+  change b.phi0 x + (∑ j ∈ Finset.Icc (-2 : ℤ) 0, b.phiZero j x) +
+      (∑ j ∈ Finset.Icc (0 : ℤ) (-1),
+        (b.phiOne j x + b.phiTwo j x)) = _
+  rw [hset]
+  simp
+
+private noncomputable def aux_mainTwisted_jumpNorm {n J : ℕ}
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (t : aux_scaleChain J) (j : Fin J) (chi : ℝ → ℝ) : ℝ≥0∞ :=
+  eLpNorm
+    (fun x ↦ twistedAverageAtScale (t.1 j.succ) chi (fun i y ↦ f i y) x -
+      twistedAverageAtScale (t.1 j.castSucc) chi (fun i y ↦ f i y) x)
+    2 volume
+
+private theorem aux_mainTwisted_jumpNorm_add_le {n J : ℕ} (hn : 2 ≤ n)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (t : aux_scaleChain J) (j : Fin J) (u v : ℝ → ℝ)
+    (hu : MemLp u 2 volume) (hv : MemLp v 2 volume) :
+    aux_mainTwisted_jumpNorm f t j (u + v) ≤
+      aux_mainTwisted_jumpNorm f t j u + aux_mainTwisted_jumpNorm f t j v := by
+  simpa only [aux_mainTwisted_jumpNorm] using
+    aux_mainTwisted_jump_norm_add_le hn f t j u v hu hv
+
+/-- Pointwise smoothing decomposition for one adjacent pair of scales. -/
+private theorem aux_mainTwisted_pointwise_smoothing_bound {n J : ℕ} (hn : 2 ≤ n)
+    (b : windowBasedBumpFunctions)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (t : aux_scaleChain J) (j : Fin J)
+    (hI : MemLp (aux_indicator (Set.Icc (0 : ℝ) 1)) 2 volume)
+    (hphi0 : MemLp (fun x ↦ b.phi0 x) 2 volume)
+    (hzero : ∀ k : ℤ, MemLp (windowBasedBumpFunctions.phiZero b k) 2 volume)
+    (hone : ∀ k : ℤ, MemLp (windowBasedBumpFunctions.phiOne b k) 2 volume)
+    (htwo : ∀ k : ℤ, MemLp (windowBasedBumpFunctions.phiTwo b k) 2 volume) :
+    aux_mainTwisted_jumpNorm f t j (aux_indicator (Set.Icc (0 : ℝ) 1)) ≤
+      aux_mainTwisted_jumpNorm f t j (fun x ↦ b.phi0 x) +
+        (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-2)) +
+          (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-1)) +
+            aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b 0)) +
+          ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+            (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))) +
+        ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+          (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ))) +
+        ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+          (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ))) := by
+  have hs0mem : MemLp (b.smoothingPartialSum 0) 2 volume := by
+    rw [aux_mainTwisted_s0_expand]
+    exact hphi0.add ((hzero (-2)).add ((hzero (-1)).add (hzero 0)))
+  have hresmem : MemLp
+      (aux_indicator (Set.Icc (0 : ℝ) 1) - b.smoothingPartialSum 0) 2 volume :=
+    hI.sub hs0mem
+  have hdeltamem (q : ℕ) : MemLp (aux_mainTwisted_delta b q) 2 volume := by
+    rw [aux_mainTwisted_delta_expand]
+    have hrest : MemLp
+        (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)) +
+          windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ))) 2 volume :=
+      (hone (-((q + 1 : ℕ) : ℤ))).add (htwo (-((q + 1 : ℕ) : ℤ)))
+    exact (hzero ((q + 1 : ℕ) : ℤ)).add hrest
+  have hresidual : aux_mainTwisted_jumpNorm f t j
+      (aux_indicator (Set.Icc (0 : ℝ) 1) - b.smoothingPartialSum 0) ≤
+      ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j (aux_mainTwisted_delta b q) := by
+    simpa only [aux_mainTwisted_jumpNorm] using
+      aux_mainTwisted_jump_norm_le_tsum hn f
+        (aux_indicator (Set.Icc (0 : ℝ) 1) - b.smoothingPartialSum 0)
+        (aux_mainTwisted_delta b) hresmem hdeltamem (aux_mainTwisted_delta_converges b)
+        (t.2.2 _) (t.2.2 _)
+  have hdelta (q : ℕ) : aux_mainTwisted_jumpNorm f t j (aux_mainTwisted_delta b q) ≤
+      aux_mainTwisted_jumpNorm f t j
+          (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)) +
+        (aux_mainTwisted_jumpNorm f t j
+            (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ))) +
+          aux_mainTwisted_jumpNorm f t j
+            (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))) := by
+    rw [aux_mainTwisted_delta_expand]
+    let z : ℝ → ℝ := windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)
+    let o : ℝ → ℝ := windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ))
+    let w : ℝ → ℝ := windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ))
+    have hz : MemLp z 2 volume := by
+      dsimp [z]
+      exact hzero _
+    have ho : MemLp o 2 volume := by
+      dsimp [o]
+      exact hone _
+    have hw : MemLp w 2 volume := by
+      dsimp [w]
+      exact htwo _
+    change aux_mainTwisted_jumpNorm f t j (z + (o + w)) ≤
+      aux_mainTwisted_jumpNorm f t j z +
+        (aux_mainTwisted_jumpNorm f t j o + aux_mainTwisted_jumpNorm f t j w)
+    exact (aux_mainTwisted_jumpNorm_add_le hn f t j z (o + w) hz (ho.add hw)).trans
+      (add_le_add_right (aux_mainTwisted_jumpNorm_add_le hn f t j o w ho hw) _)
+  have hsumdelta : ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j (aux_mainTwisted_delta b q) ≤
+      (∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+          (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))) +
+        ((∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+            (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))) +
+          ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+            (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))) := by
+    let z : ℕ → ℝ≥0∞ := fun q ↦ aux_mainTwisted_jumpNorm f t j
+      (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))
+    let o : ℕ → ℝ≥0∞ := fun q ↦ aux_mainTwisted_jumpNorm f t j
+      (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))
+    let w : ℕ → ℝ≥0∞ := fun q ↦ aux_mainTwisted_jumpNorm f t j
+      (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))
+    change (∑' q : ℕ, aux_mainTwisted_jumpNorm f t j (aux_mainTwisted_delta b q)) ≤
+      (∑' q : ℕ, z q) + ((∑' q : ℕ, o q) + ∑' q : ℕ, w q)
+    calc
+      ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j (aux_mainTwisted_delta b q) ≤
+          ∑' q : ℕ, (z q + (o q + w q)) := by
+        apply ENNReal.tsum_le_tsum
+        intro q
+        change aux_mainTwisted_jumpNorm f t j (aux_mainTwisted_delta b q) ≤
+          z q + (o q + w q)
+        exact hdelta q
+      _ = _ := by
+        rw [ENNReal.tsum_add, ENNReal.tsum_add]
+  have hs0bound : aux_mainTwisted_jumpNorm f t j (b.smoothingPartialSum 0) ≤
+      aux_mainTwisted_jumpNorm f t j (fun x ↦ b.phi0 x) +
+        (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-2)) +
+          (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-1)) +
+            aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b 0))) := by
+    rw [aux_mainTwisted_s0_expand]
+    let p : ℝ → ℝ := fun x ↦ b.phi0 x
+    let z2 : ℝ → ℝ := windowBasedBumpFunctions.phiZero b (-2)
+    let z1 : ℝ → ℝ := windowBasedBumpFunctions.phiZero b (-1)
+    let z0 : ℝ → ℝ := windowBasedBumpFunctions.phiZero b 0
+    have hp : MemLp p 2 volume := by
+      dsimp [p]
+      exact hphi0
+    have hz2 : MemLp z2 2 volume := by
+      dsimp [z2]
+      exact hzero _
+    have hz1 : MemLp z1 2 volume := by
+      dsimp [z1]
+      exact hzero _
+    have hz0 : MemLp z0 2 volume := by
+      dsimp [z0]
+      exact hzero _
+    change aux_mainTwisted_jumpNorm f t j (p + (z2 + (z1 + z0))) ≤
+      aux_mainTwisted_jumpNorm f t j p +
+        (aux_mainTwisted_jumpNorm f t j z2 +
+          (aux_mainTwisted_jumpNorm f t j z1 + aux_mainTwisted_jumpNorm f t j z0))
+    exact (aux_mainTwisted_jumpNorm_add_le hn f t j p (z2 + (z1 + z0)) hp
+      (hz2.add (hz1.add hz0))).trans
+      (add_le_add_right
+        ((aux_mainTwisted_jumpNorm_add_le hn f t j z2 (z1 + z0) hz2 (hz1.add hz0)).trans
+          (add_le_add_right
+            (aux_mainTwisted_jumpNorm_add_le hn f t j z1 z0 hz1 hz0) _)) _)
+  have hsplit : aux_mainTwisted_jumpNorm f t j
+      (aux_indicator (Set.Icc (0 : ℝ) 1)) ≤
+      aux_mainTwisted_jumpNorm f t j (b.smoothingPartialSum 0) +
+        aux_mainTwisted_jumpNorm f t j
+          (aux_indicator (Set.Icc (0 : ℝ) 1) - b.smoothingPartialSum 0) := by
+    calc
+      aux_mainTwisted_jumpNorm f t j (aux_indicator (Set.Icc (0 : ℝ) 1)) =
+          aux_mainTwisted_jumpNorm f t j (b.smoothingPartialSum 0 +
+            (aux_indicator (Set.Icc (0 : ℝ) 1) - b.smoothingPartialSum 0)) := by
+        congr 1
+        funext x
+        simp only [Pi.add_apply, Pi.sub_apply]
+        ring
+      _ ≤ _ := aux_mainTwisted_jumpNorm_add_le hn f t j _ _ hs0mem hresmem
+  calc
+    aux_mainTwisted_jumpNorm f t j (aux_indicator (Set.Icc (0 : ℝ) 1)) ≤
+        aux_mainTwisted_jumpNorm f t j (b.smoothingPartialSum 0) +
+          aux_mainTwisted_jumpNorm f t j
+            (aux_indicator (Set.Icc (0 : ℝ) 1) - b.smoothingPartialSum 0) := hsplit
+    _ ≤ (aux_mainTwisted_jumpNorm f t j (fun x ↦ b.phi0 x) +
+          (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-2)) +
+            (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-1)) +
+              aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b 0)))) +
+          ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j (aux_mainTwisted_delta b q) :=
+      add_le_add hs0bound hresidual
+    _ ≤ (aux_mainTwisted_jumpNorm f t j (fun x ↦ b.phi0 x) +
+          (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-2)) +
+            (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-1)) +
+              aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b 0)))) +
+          ((∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+              (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))) +
+            ((∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+                (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))) +
+              ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+                (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ))))) :=
+      add_le_add_right hsumdelta _
+    _ = _ := by ac_rfl
+
+/-- Pure ENNReal bookkeeping for the final four-family square estimate. -/
+private theorem aux_mainTwisted_four_family_aggregation
+    {R E0 E1 E2 E3 : ℝ≥0∞} {C0 C1 C2 C3 : ℝ}
+    (hC0 : 0 ≤ C0) (hC1 : 0 ≤ C1) (hC2 : 0 ≤ C2) (hC3 : 0 ≤ C3)
+    (h0 : E0 ≤ ENNReal.ofReal C0 * R)
+    (h1 : E1 ≤ (64 : ℝ≥0∞) * (ENNReal.ofReal C1 * R))
+    (h2 : E2 ≤ ENNReal.ofReal C2 * R)
+    (h3 : E3 ≤ (64 : ℝ≥0∞) * (ENNReal.ofReal C3 * R)) :
+    (4 : ℝ≥0∞) * (E0 + E1 + E2 + E3) ≤
+      ENNReal.ofReal (4 * (C0 + 64 * C1 + C2 + 64 * C3)) * R := by
+  have h64C1 : 0 ≤ 64 * C1 := mul_nonneg (by norm_num) hC1
+  have h64C3 : 0 ≤ 64 * C3 := mul_nonneg (by norm_num) hC3
+  have h01 : 0 ≤ C0 + 64 * C1 := add_nonneg hC0 h64C1
+  have h012 : 0 ≤ C0 + 64 * C1 + C2 := add_nonneg h01 hC2
+  have hsum :
+      E0 + E1 + E2 + E3 ≤
+        (ENNReal.ofReal C0 + 64 * ENNReal.ofReal C1 + ENNReal.ofReal C2 +
+          64 * ENNReal.ofReal C3) * R := by
+    calc
+      E0 + E1 + E2 + E3 ≤
+          (ENNReal.ofReal C0 * R) +
+            (64 * (ENNReal.ofReal C1 * R)) +
+            (ENNReal.ofReal C2 * R) +
+            (64 * (ENNReal.ofReal C3 * R)) := by
+              gcongr
+      _ = (ENNReal.ofReal C0 + 64 * ENNReal.ofReal C1 + ENNReal.ofReal C2 +
+          64 * ENNReal.ofReal C3) * R := by ring
+  calc
+    (4 : ℝ≥0∞) * (E0 + E1 + E2 + E3) ≤
+        (4 : ℝ≥0∞) *
+          ((ENNReal.ofReal C0 + 64 * ENNReal.ofReal C1 + ENNReal.ofReal C2 +
+            64 * ENNReal.ofReal C3) * R) := by
+              gcongr
+    _ = ENNReal.ofReal (4 * (C0 + 64 * C1 + C2 + 64 * C3)) * R := by
+      rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4)]
+      rw [ENNReal.ofReal_add h012 h64C3]
+      rw [ENNReal.ofReal_add h01 hC2]
+      rw [ENNReal.ofReal_add hC0 h64C1]
+      rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 64)]
+      rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 64)]
+      norm_num
+      ring
+
+private theorem aux_mainTwisted_four_family_aggregation_ofReal_weights
+    {R E0 E1 E2 E3 : ℝ≥0∞} {C0 C1 C2 C3 : ℝ}
+    (hC0 : 0 ≤ C0) (hC1 : 0 ≤ C1) (hC2 : 0 ≤ C2) (hC3 : 0 ≤ C3)
+    (h0 : E0 ≤ ENNReal.ofReal C0 * R)
+    (h1 : E1 ≤ ENNReal.ofReal (64 * C1) * R)
+    (h2 : E2 ≤ ENNReal.ofReal C2 * R)
+    (h3 : E3 ≤ ENNReal.ofReal (64 * C3) * R) :
+    (4 : ℝ≥0∞) * (E0 + E1 + E2 + E3) ≤
+      ENNReal.ofReal (4 * (C0 + 64 * C1 + C2 + 64 * C3)) * R := by
+  apply aux_mainTwisted_four_family_aggregation hC0 hC1 hC2 hC3 h0
+  · simpa [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 64), mul_assoc] using h1
+  · exact h2
+  · simpa [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 64), mul_assoc] using h3
+
+private theorem aux_mainTwisted_four_family_aggregation_main_constant {n : ℕ}
+    {R E0 E1 E2 E3 : ℝ≥0∞}
+    (hC0 : 0 ≤ C_mainBumpOne n) (hC1 : 0 ≤ C_mainBumpTwo n)
+    (hC2 : 0 ≤ C_leftBump n) (hC3 : 0 ≤ C_leftBumpOne n)
+    (h0 : E0 ≤ ENNReal.ofReal (C_mainBumpOne n) * R)
+    (h1 : E1 ≤ ENNReal.ofReal (64 * C_mainBumpTwo n) * R)
+    (h2 : E2 ≤ ENNReal.ofReal (C_leftBump n) * R)
+    (h3 : E3 ≤ ENNReal.ofReal (64 * C_leftBumpOne n) * R) :
+    (4 : ℝ≥0∞) * (E0 + E1 + E2 + E3) ≤
+      ENNReal.ofReal (C_mainTwistedTheorem n) * R := by
+  have hC : C_mainTwistedTheorem n =
+      4 * (C_mainBumpOne n + 64 * C_mainBumpTwo n + C_leftBump n +
+        64 * C_leftBumpOne n) := by
+    norm_num [C_mainTwistedTheorem]
+  rw [hC]
+  exact aux_mainTwisted_four_family_aggregation_ofReal_weights hC0 hC1 hC2 hC3 h0 h1 h2 h3
+
+private theorem aux_mainTwisted_ennreal_add_sq_le (u v : ℝ≥0∞) :
+    (u + v) ^ 2 ≤ 2 * (u ^ 2 + v ^ 2) := by
+  have h := ENNReal.rpow_add_le_mul_rpow_add_rpow u v (p := (2 : ℝ))
+    (by norm_num)
+  have htwo : (2 : ℝ≥0∞) ^ ((2 : ℝ) - 1) = 2 := by norm_num
+  simpa [ENNReal.rpow_two, htwo] using h
+
+private theorem aux_mainTwisted_ennreal_four_add_sq_le (a b c d : ℝ≥0∞) :
+    (a + b + c + d) ^ 2 ≤ 4 * (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) := by
+  calc
+    (a + b + c + d) ^ 2 = ((a + b) + (c + d)) ^ 2 := by ring
+    _ ≤ 2 * ((a + b) ^ 2 + (c + d) ^ 2) :=
+      aux_mainTwisted_ennreal_add_sq_le _ _
+    _ ≤ 2 * (2 * (a ^ 2 + b ^ 2) + 2 * (c ^ 2 + d ^ 2)) := by
+      gcongr
+      · exact aux_mainTwisted_ennreal_add_sq_le _ _
+      · exact aux_mainTwisted_ennreal_add_sq_le _ _
+    _ = 4 * (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) := by ring
+
+private theorem aux_mainTwisted_finset_four_family_square {ι : Type*} (s : Finset ι)
+    (a b c d : ι → ℝ≥0∞) :
+    (∑ i ∈ s, (a i + b i + c i + d i) ^ 2) ≤
+      4 * ((∑ i ∈ s, a i ^ 2) + (∑ i ∈ s, b i ^ 2) +
+        (∑ i ∈ s, c i ^ 2) + (∑ i ∈ s, d i ^ 2)) := by
+  calc
+    (∑ i ∈ s, (a i + b i + c i + d i) ^ 2) ≤
+        ∑ i ∈ s, 4 * (a i ^ 2 + b i ^ 2 + c i ^ 2 + d i ^ 2) := by
+          exact Finset.sum_le_sum fun i hi => aux_mainTwisted_ennreal_four_add_sq_le _ _ _ _
+    _ = 4 * ((∑ i ∈ s, a i ^ 2) + (∑ i ∈ s, b i ^ 2) +
+        (∑ i ∈ s, c i ^ 2) + (∑ i ∈ s, d i ^ 2)) := by
+          simp only [mul_add, Finset.sum_add_distrib, ← Finset.mul_sum]
+
+/-- The terminal reduction: pointwise smoothing plus four family energy bounds. -/
+private theorem aux_mainTwisted_terminal_aggregation {n J : ℕ} (hn : 2 ≤ n)
+    (b : windowBasedBumpFunctions)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (t : aux_scaleChain J) (R : ℝ≥0∞)
+    (hI : MemLp (aux_indicator (Set.Icc (0 : ℝ) 1)) 2 volume)
+    (hphi0 : MemLp (fun x ↦ b.phi0 x) 2 volume)
+    (hzero : ∀ k : ℤ, MemLp (windowBasedBumpFunctions.phiZero b k) 2 volume)
+    (hone : ∀ k : ℤ, MemLp (windowBasedBumpFunctions.phiOne b k) 2 volume)
+    (htwo : ∀ k : ℤ, MemLp (windowBasedBumpFunctions.phiTwo b k) 2 volume)
+    (hC0 : 0 ≤ C_mainBumpOne n) (hC1 : 0 ≤ C_mainBumpTwo n)
+    (hC2 : 0 ≤ C_leftBump n) (hC3 : 0 ≤ C_leftBumpOne n)
+    (h0 : ∑ j : Fin J, (aux_mainTwisted_jumpNorm f t j (fun x ↦ b.phi0 x)) ^ 2 ≤
+      ENNReal.ofReal (C_mainBumpOne n) * R)
+    (h1 : ∑ j : Fin J,
+        (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-2)) +
+          (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-1)) +
+            aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b 0)) +
+          ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+            (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))) ^ 2 ≤
+      ENNReal.ofReal (64 * C_mainBumpTwo n) * R)
+    (h2 : ∑ j : Fin J,
+        (∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+          (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))) ^ 2 ≤
+      ENNReal.ofReal (C_leftBump n) * R)
+    (h3 : ∑ j : Fin J,
+        (∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+          (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))) ^ 2 ≤
+      ENNReal.ofReal (64 * C_leftBumpOne n) * R) :
+    ∑ j : Fin J,
+      (aux_mainTwisted_jumpNorm f t j (aux_indicator (Set.Icc (0 : ℝ) 1))) ^ 2 ≤
+      ENNReal.ofReal (C_mainTwistedTheorem n) * R := by
+  let a : Fin J → ℝ≥0∞ := fun j ↦ aux_mainTwisted_jumpNorm f t j (fun x ↦ b.phi0 x)
+  let z : Fin J → ℝ≥0∞ := fun j ↦
+    aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-2)) +
+      (aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b (-1)) +
+        aux_mainTwisted_jumpNorm f t j (windowBasedBumpFunctions.phiZero b 0)) +
+      ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+        (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))
+  let o : Fin J → ℝ≥0∞ := fun j ↦ ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+    (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))
+  let w : Fin J → ℝ≥0∞ := fun j ↦ ∑' q : ℕ, aux_mainTwisted_jumpNorm f t j
+    (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))
+  have hpoint (j : Fin J) :
+      aux_mainTwisted_jumpNorm f t j (aux_indicator (Set.Icc (0 : ℝ) 1)) ≤
+        a j + z j + o j + w j := by
+    dsimp only [a, z, o, w]
+    simpa only [add_assoc] using
+      aux_mainTwisted_pointwise_smoothing_bound hn b f t j hI hphi0 hzero hone htwo
+  have hsum : ∑ j : Fin J,
+      (aux_mainTwisted_jumpNorm f t j (aux_indicator (Set.Icc (0 : ℝ) 1))) ^ 2 ≤
+      ∑ j : Fin J, (a j + z j + o j + w j) ^ 2 := by
+    exact Finset.sum_le_sum fun j _ => pow_le_pow_left' (hpoint j) 2
+  have ha : (∑ j : Fin J, a j ^ 2) ≤ ENNReal.ofReal (C_mainBumpOne n) * R := by
+    simpa only [a] using h0
+  have hz : (∑ j : Fin J, z j ^ 2) ≤ ENNReal.ofReal (64 * C_mainBumpTwo n) * R := by
+    simpa only [z] using h1
+  have ho : (∑ j : Fin J, o j ^ 2) ≤ ENNReal.ofReal (C_leftBump n) * R := by
+    simpa only [o] using h2
+  have hw : (∑ j : Fin J, w j ^ 2) ≤ ENNReal.ofReal (64 * C_leftBumpOne n) * R := by
+    simpa only [w] using h3
+  calc
+    ∑ j : Fin J,
+        (aux_mainTwisted_jumpNorm f t j (aux_indicator (Set.Icc (0 : ℝ) 1))) ^ 2 ≤
+        ∑ j : Fin J, (a j + z j + o j + w j) ^ 2 := hsum
+    _ ≤ 4 * ((∑ j : Fin J, a j ^ 2) + (∑ j : Fin J, z j ^ 2) +
+        (∑ j : Fin J, o j ^ 2) + (∑ j : Fin J, w j ^ 2)) :=
+      aux_mainTwisted_finset_four_family_square Finset.univ a z o w
+    _ ≤ ENNReal.ofReal (C_mainTwistedTheorem n) * R :=
+      aux_mainTwisted_four_family_aggregation_main_constant hC0 hC1 hC2 hC3 ha hz ho hw
+
+/-- Exact conversion of `mainBumpOne` to the terminal component-energy shape. -/
+private theorem aux_mainTwisted_mainBumpOne_energy {n J : ℕ} (hn : 2 ≤ n)
+    (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n)
+    (t : aux_scaleChain J) (hJ : 0 < J) :
+    ∑ j : Fin J, (aux_mainTwisted_jumpNorm f.1 t j (fun x ↦ b.phi0 x)) ^ 2 ≤
+      ENNReal.ofReal (C_mainBumpOne n) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+  have h := mainBumpOne hn b.phi0 b.phi1 b.universalPair f J hJ t
+  simpa only [aux_mainTwisted_jumpNorm, aux_jumpEnergy, twistedJumpEnergy] using h
+
+open Filter Finset MeasureTheory
+open scoped BigOperators ENNReal NNReal Real
+open Codex.Reduction.TwistedAverages
+open Codex.Reduction.SmoothingDecomposition
+open Codex.Reduction.OnDiagonalOffDiagonal
+
+private theorem aux_mainTwisted_weighted_tsum_sq_of_sq_le {J : ℕ}
+    (a : ℕ → Fin J → ℝ≥0∞) (u : ℕ → ℝ≥0∞) (e : ℕ → Fin J → ℝ≥0∞)
+    (h : ∀ q j, (a q j) ^ 2 ≤ u q * e q j) :
+    ∑ j, (∑' q, a q j) ^ 2 ≤
+      (∑' q, u q) * ∑' q, ∑ j, e q j := by
+  have hroot : ∀ q j, a q j ≤ (u q) ^ (1 / (2 : ℝ)) * (e q j) ^ (1 / (2 : ℝ)) := by
+    intro q j
+    calc
+      a q j = ((a q j) ^ 2) ^ (1 / (2 : ℝ)) := by
+        rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+        norm_num
+      _ ≤ (u q * e q j) ^ (1 / (2 : ℝ)) :=
+        ENNReal.rpow_le_rpow (h q j) (by positivity)
+      _ = (u q) ^ (1 / (2 : ℝ)) * (e q j) ^ (1 / (2 : ℝ)) :=
+        ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
+  have hsquare : ∀ j : Fin J,
+      (∑' q, a q j) ^ 2 ≤ (∑' q, u q) * ∑' q, e q j := by
+    intro j
+    have htsum : ∑' q, a q j ≤
+        (∑' q, ((u q) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) *
+          (∑' q, ((e q j) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) := by
+      apply ENNReal.tsum_le_of_sum_range_le
+      intro N
+      calc
+        ∑ q ∈ Finset.range N, a q j ≤
+            ∑ q ∈ Finset.range N, (u q) ^ (1 / (2 : ℝ)) *
+              (e q j) ^ (1 / (2 : ℝ)) :=
+          Finset.sum_le_sum fun q _ => hroot q j
+        _ ≤ (∑ q ∈ Finset.range N, ((u q) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^
+              (1 / (2 : ℝ)) *
+            (∑ q ∈ Finset.range N, ((e q j) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^
+              (1 / (2 : ℝ)) :=
+          ENNReal.inner_le_Lp_mul_Lq (Finset.range N)
+            (fun q => (u q) ^ (1 / (2 : ℝ)))
+            (fun q => (e q j) ^ (1 / (2 : ℝ))) Real.HolderConjugate.two_two
+        _ ≤ (∑' q, ((u q) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) *
+            (∑' q, ((e q j) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) := by
+          gcongr <;> exact ENNReal.sum_le_tsum _
+    calc
+      (∑' q, a q j) ^ 2 ≤
+          ((∑' q, ((u q) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) *
+            (∑' q, ((e q j) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ))) ^ 2 :=
+        pow_le_pow_left' htsum 2
+      _ = (∑' q, u q) * ∑' q, e q j := by
+        simp only [mul_pow, ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+        norm_num
+  calc
+    ∑ j, (∑' q, a q j) ^ 2 ≤
+        ∑ j, (∑' q, u q) * ∑' q, e q j :=
+      Finset.sum_le_sum fun j _ => hsquare j
+    _ = (∑' q, u q) * ∑ j, ∑' q, e q j := by rw [Finset.mul_sum]
+    _ = (∑' q, u q) * ∑' q, ∑ j, e q j := by
+      congr 1
+      rw [← tsum_fintype (L := .unconditional _) (fun j : Fin J => ∑' q, e q j)]
+      rw [← ENNReal.tsum_comm]
+      apply tsum_congr
+      intro q
+      exact tsum_fintype (L := .unconditional _) _
+
+private theorem aux_mainTwisted_weighted_tsum_energy_bound {J : ℕ}
+    (a : ℕ → Fin J → ℝ≥0∞) (v B : ℕ → ℝ≥0∞) (P U V : ℝ≥0∞)
+    (hv0 : ∀ q, v q ≠ 0) (hvt : ∀ q, v q ≠ ∞)
+    (henergy : ∀ q, ∑ j, (a q j) ^ 2 ≤ B q * P)
+    (hU : (∑' q, (v q)⁻¹) ≤ U)
+    (hV : (∑' q, v q * B q) ≤ V) :
+    ∑ j, (∑' q, a q j) ^ 2 ≤ U * (V * P) := by
+  let u : ℕ → ℝ≥0∞ := fun q ↦ (v q)⁻¹
+  let e : ℕ → Fin J → ℝ≥0∞ := fun q j ↦ v q * (a q j) ^ 2
+  have hpoint (q : ℕ) (j : Fin J) : (a q j) ^ 2 ≤ u q * e q j := by
+    dsimp [u, e]
+    rw [← mul_assoc, ENNReal.inv_mul_cancel (hv0 q) (hvt q), one_mul]
+  have hmain := aux_mainTwisted_weighted_tsum_sq_of_sq_le a u e hpoint
+  have hinner (q : ℕ) : ∑ j, e q j = v q * ∑ j, (a q j) ^ 2 := by
+    dsimp [e]
+    rw [← Finset.mul_sum]
+  calc
+    ∑ j, (∑' q, a q j) ^ 2 ≤ (∑' q, u q) * ∑' q, ∑ j, e q j := hmain
+    _ = (∑' q, (v q)⁻¹) * ∑' q, v q * ∑ j, (a q j) ^ 2 := by
+      dsimp [u]
+      congr 1
+      apply tsum_congr
+      intro q
+      exact hinner q
+    _ ≤ (∑' q, (v q)⁻¹) * ∑' q, (v q * B q) * P := by
+      have hterm (q : ℕ) : v q * ∑ j, (a q j) ^ 2 ≤ (v q * B q) * P := by
+        calc
+          v q * ∑ j, (a q j) ^ 2 ≤ v q * (B q * P) :=
+            mul_le_mul_right (henergy q) (v q)
+          _ = (v q * B q) * P := by ring
+      apply mul_le_mul_right
+      apply ENNReal.tsum_le_tsum
+      exact hterm
+    _ = (∑' q, (v q)⁻¹) * ((∑' q, v q * B q) * P) := by
+      rw [ENNReal.tsum_mul_right]
+    _ ≤ U * (V * P) := by gcongr
+
+private theorem aux_mainTwisted_halfHeightTsum (C : ℝ) (hC : 0 ≤ C) :
+    (∑' h : ℕ, ENNReal.ofReal (C * (1 / 2 : ℝ) ^ h)) ≤
+      ENNReal.ofReal (2 * C) := by
+  let r : ℝ := 1 / 2
+  have hrlt : ‖r‖ < 1 := by
+    dsimp [r]
+    norm_num [Real.norm_eq_abs]
+  have hrsum : Summable (fun h : ℕ => r ^ h) :=
+    summable_geometric_of_norm_lt_one hrlt
+  have hactual : Summable (fun h : ℕ => C * (1 / 2 : ℝ) ^ h) := by
+    simpa only [r] using hrsum.mul_left C
+  have hsum : (∑' h : ℕ, C * (1 / 2 : ℝ) ^ h) ≤ 2 * C := by
+    calc
+      (∑' h : ℕ, C * (1 / 2 : ℝ) ^ h) = C * (∑' h : ℕ, r ^ h) := by
+        rw [tsum_mul_left]
+      _ = C * ((1 - r)⁻¹) := by rw [tsum_geometric_of_norm_lt_one hrlt]
+      _ = 2 * C := by dsimp [r]; norm_num; ring
+      _ ≤ 2 * C := le_rfl
+  have hnonneg (h : ℕ) : 0 ≤ C * (1 / 2 : ℝ) ^ h :=
+    mul_nonneg hC (pow_nonneg (by norm_num) _)
+  calc
+    (∑' h : ℕ, ENNReal.ofReal (C * (1 / 2 : ℝ) ^ h)) =
+        ENNReal.ofReal (∑' h : ℕ, C * (1 / 2 : ℝ) ^ h) :=
+      (ENNReal.ofReal_tsum_of_nonneg hnonneg hactual).symm
+    _ ≤ ENNReal.ofReal (2 * C) := ENNReal.ofReal_le_ofReal hsum
+
+private theorem aux_mainTwisted_high_dyadic_product (q : ℕ) :
+    ((2 : ℝ) ^ q) * (2 : ℝ) ^ (-2 * ((q + 1 : ℕ) : ℤ)) =
+      (1 / 4 : ℝ) * (1 / 2 : ℝ) ^ q := by
+  rw [← zpow_natCast, ← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+  have hpow : ((q : ℤ) + -2 * ((q + 1 : ℕ) : ℤ)) = -2 + -(q : ℤ) := by
+    push_cast
+    ring
+  rw [hpow, zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
+  rw [zpow_neg, zpow_neg, zpow_natCast, ← inv_pow]
+  norm_num
+
+private theorem aux_mainTwisted_high_dyadic_ENNReal_product (C : ℝ) (q : ℕ) :
+    ENNReal.ofReal ((2 : ℝ) ^ q) *
+      ENNReal.ofReal (C * (2 : ℝ) ^ (-2 * ((q + 1 : ℕ) : ℤ))) =
+      ENNReal.ofReal ((C / 4) * (1 / 2 : ℝ) ^ q) := by
+  rw [← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  calc
+    (2 : ℝ) ^ q * (C * (2 : ℝ) ^ (-2 * ((q + 1 : ℕ) : ℤ))) =
+        C * ((2 : ℝ) ^ q * (2 : ℝ) ^ (-2 * ((q + 1 : ℕ) : ℤ))) := by ring
+    _ = C * ((1 / 4 : ℝ) * (1 / 2 : ℝ) ^ q) := by
+      rw [aux_mainTwisted_high_dyadic_product]
+    _ = (C / 4) * (1 / 2 : ℝ) ^ q := by ring
+
+private theorem aux_mainTwisted_inv_dyadic_ENNReal (q : ℕ) :
+    (ENNReal.ofReal ((2 : ℝ) ^ q))⁻¹ = ENNReal.ofReal ((1 / 2 : ℝ) ^ q) := by
+  rw [← ENNReal.ofReal_inv_of_pos (by positivity)]
+  congr 1
+  rw [← inv_pow]
+  norm_num
+
+private theorem aux_mainTwisted_high_phiZero_energy {n : ℕ} (hn : 2 ≤ n)
+    (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n)
+    (J : ℕ) (hJ : 0 < J) (t : aux_scaleChain J)
+    (hC : 0 ≤ C_mainBumpTwo n) :
+    ∑ j : Fin J, (∑' q : ℕ, eLpNorm
+      (fun x ↦ twistedAverageAtScale (t.1 j.succ)
+          (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))
+          (fun i y ↦ f.1 i y) x -
+        twistedAverageAtScale (t.1 j.castSucc)
+          (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))
+          (fun i y ↦ f.1 i y) x) 2 volume) ^ 2 ≤
+      ENNReal.ofReal (C_mainBumpTwo n) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+  let a : ℕ → Fin J → ℝ≥0∞ := fun q j ↦ eLpNorm
+    (fun x ↦ twistedAverageAtScale (t.1 j.succ)
+        (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))
+        (fun i y ↦ f.1 i y) x -
+      twistedAverageAtScale (t.1 j.castSucc)
+        (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))
+        (fun i y ↦ f.1 i y) x) 2 volume
+  let v : ℕ → ℝ≥0∞ := fun q ↦ ENNReal.ofReal ((2 : ℝ) ^ q)
+  let B : ℕ → ℝ≥0∞ := fun q ↦ ENNReal.ofReal
+    (C_mainBumpTwo n * (2 : ℝ) ^ (-2 * ((q + 1 : ℕ) : ℤ)))
+  let P : ℝ≥0∞ := ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
+  have hv0 (q : ℕ) : v q ≠ 0 := by
+    dsimp [v]
+    exact (ENNReal.ofReal_pos.mpr (by positivity)).ne'
+  have hvt (q : ℕ) : v q ≠ ∞ := by
+    dsimp [v]
+    exact ENNReal.ofReal_ne_top
+  have henergy (q : ℕ) : ∑ j, (a q j) ^ 2 ≤ B q * P := by
+    have h := mainBumpTwo hn b f ((q + 1 : ℕ) : ℤ) (by omega) J hJ t
+    simpa only [a, B, P, aux_jumpEnergy, twistedJumpEnergy] using h
+  have hU : (∑' q, (v q)⁻¹) ≤ (2 : ℝ≥0∞) := by
+    calc
+      (∑' q, (v q)⁻¹) = ∑' q, ENNReal.ofReal ((1 / 2 : ℝ) ^ q) := by
+        apply tsum_congr
+        intro q
+        exact aux_mainTwisted_inv_dyadic_ENNReal q
+      _ ≤ ENNReal.ofReal (2 * 1) := by
+        simpa using aux_mainTwisted_halfHeightTsum 1 (by norm_num)
+      _ = 2 := by norm_num
+  have hV : (∑' q, v q * B q) ≤ ENNReal.ofReal (C_mainBumpTwo n / 2) := by
+    calc
+      (∑' q, v q * B q) =
+          ∑' q, ENNReal.ofReal ((C_mainBumpTwo n / 4) * (1 / 2 : ℝ) ^ q) := by
+        apply tsum_congr
+        intro q
+        exact aux_mainTwisted_high_dyadic_ENNReal_product _ q
+      _ ≤ ENNReal.ofReal (2 * (C_mainBumpTwo n / 4)) :=
+        aux_mainTwisted_halfHeightTsum _ (div_nonneg hC (by norm_num))
+      _ = ENNReal.ofReal (C_mainBumpTwo n / 2) := by ring_nf
+  have hmain := aux_mainTwisted_weighted_tsum_energy_bound a v B P (2 : ℝ≥0∞)
+    (ENNReal.ofReal (C_mainBumpTwo n / 2)) hv0 hvt henergy hU hV
+  change ∑ j : Fin J, (∑' q : ℕ, a q j) ^ 2 ≤
+    ENNReal.ofReal (C_mainBumpTwo n) * P
+  calc
+    ∑ j : Fin J, (∑' q : ℕ, a q j) ^ 2 ≤
+        2 * (ENNReal.ofReal (C_mainBumpTwo n / 2) * P) := hmain
+    _ = ENNReal.ofReal (C_mainBumpTwo n) * P := by
+      have hcoef : (2 : ℝ≥0∞) * ENNReal.ofReal (C_mainBumpTwo n / 2) =
+          ENNReal.ofReal (C_mainBumpTwo n) := by
+        rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by norm_num,
+          ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
+        congr 1
+        ring
+      rw [← mul_assoc, hcoef]
+
+private theorem aux_mainTwisted_high_phiOne_energy {n : ℕ} (hn : 2 ≤ n)
+    (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n)
+    (J : ℕ) (hJ : 0 < J) (t : aux_scaleChain J)
+    (hC : 0 ≤ C_leftBump n) :
+    ∑ j : Fin J, (∑' q : ℕ, eLpNorm
+      (fun x ↦ twistedAverageAtScale (t.1 j.succ)
+          (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))
+          (fun i y ↦ f.1 i y) x -
+        twistedAverageAtScale (t.1 j.castSucc)
+          (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))
+          (fun i y ↦ f.1 i y) x) 2 volume) ^ 2 ≤
+      ENNReal.ofReal (C_leftBump n) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+  let a : ℕ → Fin J → ℝ≥0∞ := fun q j ↦ eLpNorm
+    (fun x ↦ twistedAverageAtScale (t.1 j.succ)
+        (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))
+        (fun i y ↦ f.1 i y) x -
+      twistedAverageAtScale (t.1 j.castSucc)
+        (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))
+        (fun i y ↦ f.1 i y) x) 2 volume
+  let v : ℕ → ℝ≥0∞ := fun q ↦ ENNReal.ofReal ((2 : ℝ) ^ q)
+  let B : ℕ → ℝ≥0∞ := fun q ↦ ENNReal.ofReal
+    (C_leftBump n * (2 : ℝ) ^ (-2 * ((q + 1 : ℕ) : ℤ)))
+  let P : ℝ≥0∞ := ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
+  have hv0 (q : ℕ) : v q ≠ 0 := by
+    dsimp [v]
+    exact (ENNReal.ofReal_pos.mpr (by positivity)).ne'
+  have hvt (q : ℕ) : v q ≠ ∞ := by
+    dsimp [v]
+    exact ENNReal.ofReal_ne_top
+  have henergy (q : ℕ) : ∑ j, (a q j) ^ 2 ≤ B q * P := by
+    have h := leftBump hn b f (-((q + 1 : ℕ) : ℤ)) (by omega) J hJ t
+    have hpow : (2 * -((q + 1 : ℕ) : ℤ)) = -2 * ((q + 1 : ℕ) : ℤ) := by ring
+    rw [hpow] at h
+    simpa only [a, B, P, aux_jumpEnergy, twistedJumpEnergy] using h
+  have hU : (∑' q, (v q)⁻¹) ≤ (2 : ℝ≥0∞) := by
+    calc
+      (∑' q, (v q)⁻¹) = ∑' q, ENNReal.ofReal ((1 / 2 : ℝ) ^ q) := by
+        apply tsum_congr
+        intro q
+        exact aux_mainTwisted_inv_dyadic_ENNReal q
+      _ ≤ ENNReal.ofReal (2 * 1) := by
+        simpa using aux_mainTwisted_halfHeightTsum 1 (by norm_num)
+      _ = 2 := by norm_num
+  have hV : (∑' q, v q * B q) ≤ ENNReal.ofReal (C_leftBump n / 2) := by
+    calc
+      (∑' q, v q * B q) =
+          ∑' q, ENNReal.ofReal ((C_leftBump n / 4) * (1 / 2 : ℝ) ^ q) := by
+        apply tsum_congr
+        intro q
+        exact aux_mainTwisted_high_dyadic_ENNReal_product _ q
+      _ ≤ ENNReal.ofReal (2 * (C_leftBump n / 4)) :=
+        aux_mainTwisted_halfHeightTsum _ (div_nonneg hC (by norm_num))
+      _ = ENNReal.ofReal (C_leftBump n / 2) := by ring_nf
+  have hmain := aux_mainTwisted_weighted_tsum_energy_bound a v B P (2 : ℝ≥0∞)
+    (ENNReal.ofReal (C_leftBump n / 2)) hv0 hvt henergy hU hV
+  change ∑ j : Fin J, (∑' q : ℕ, a q j) ^ 2 ≤
+    ENNReal.ofReal (C_leftBump n) * P
+  calc
+    ∑ j : Fin J, (∑' q : ℕ, a q j) ^ 2 ≤
+        2 * (ENNReal.ofReal (C_leftBump n / 2) * P) := hmain
+    _ = ENNReal.ofReal (C_leftBump n) * P := by
+      have hcoef : (2 : ℝ≥0∞) * ENNReal.ofReal (C_leftBump n / 2) =
+          ENNReal.ofReal (C_leftBump n) := by
+        rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by norm_num,
+          ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
+        congr 1
+        ring
+      rw [← mul_assoc, hcoef]
+
+private theorem aux_mainTwisted_rpow_inv (q : ℕ) :
+    (ENNReal.ofReal (Real.rpow 2 ((q : ℝ) / 4)))⁻¹ =
+      ENNReal.ofReal (Real.rpow 2 (-((q : ℝ) / 4))) := by
+  rw [show Real.rpow 2 (-((q : ℝ) / 4)) =
+      (Real.rpow 2 ((q : ℝ) / 4))⁻¹ by
+        exact Real.rpow_neg (by norm_num) _]
+  exact (ENNReal.ofReal_inv_of_pos
+    (Real.rpow_pos_of_pos (by norm_num) ((q : ℝ) / 4))).symm
+
+private theorem aux_mainTwisted_rpow_weighted_product (C : ℝ) (q : ℕ) :
+    ENNReal.ofReal (Real.rpow 2 ((q : ℝ) / 4)) *
+      ENNReal.ofReal (C * Real.rpow 2 (-(((q + 1 : ℕ) : ℝ) / 2))) =
+      ENNReal.ofReal (C * Real.rpow 2 (-(1 / 2 : ℝ) - ((q : ℝ) / 4))) := by
+  rw [← ENNReal.ofReal_mul
+    (p := Real.rpow 2 ((q : ℝ) / 4))
+    (q := C * Real.rpow 2 (-(((q + 1 : ℕ) : ℝ) / 2)))
+    (Real.rpow_nonneg (by norm_num) _)]
+  congr 1
+  calc
+    Real.rpow 2 ((q : ℝ) / 4) *
+        (C * Real.rpow 2 (-(((q + 1 : ℕ) : ℝ) / 2))) =
+        C * (Real.rpow 2 ((q : ℝ) / 4) *
+          Real.rpow 2 (-(((q + 1 : ℕ) : ℝ) / 2))) := by ring
+    _ = C * Real.rpow 2 ((q : ℝ) / 4 - ((q + 1 : ℕ) : ℝ) / 2) := by
+      change C * ((2 : ℝ) ^ ((q : ℝ) / 4) *
+        (2 : ℝ) ^ (-(((q + 1 : ℕ) : ℝ) / 2))) =
+          C * (2 : ℝ) ^ ((q : ℝ) / 4 - ((q + 1 : ℕ) : ℝ) / 2)
+      rw [← Real.rpow_add (by norm_num : (0 : ℝ) < 2)]
+      congr 2
+    _ = C * Real.rpow 2 (-(1 / 2 : ℝ) - ((q : ℝ) / 4)) := by
+      congr 2
+      push_cast
+      ring
+
+private theorem aux_mainTwisted_rpow_weighted_product_le (C : ℝ) (hC : 0 ≤ C) (q : ℕ) :
+    ENNReal.ofReal (Real.rpow 2 ((q : ℝ) / 4)) *
+      ENNReal.ofReal (C * Real.rpow 2 (-(((q + 1 : ℕ) : ℝ) / 2))) ≤
+      ENNReal.ofReal (C * Real.rpow 2 (-((q : ℝ) / 4))) := by
+  rw [aux_mainTwisted_rpow_weighted_product]
+  apply ENNReal.ofReal_le_ofReal
+  have hfactor : Real.rpow 2 (-(1 / 2 : ℝ) - ((q : ℝ) / 4)) ≤
+      Real.rpow 2 (-((q : ℝ) / 4)) := by
+    apply Real.rpow_le_rpow_of_exponent_le (by norm_num : (1 : ℝ) ≤ 2)
+    linarith
+  exact mul_le_mul_of_nonneg_left hfactor hC
+
+private theorem aux_mainTwisted_high_phiTwo_energy {n : ℕ} (hn : 2 ≤ n)
+    (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n)
+    (J : ℕ) (hJ : 0 < J) (t : aux_scaleChain J)
+    (hC : 0 ≤ C_leftBumpOne n) :
+    ∑ j : Fin J, (∑' q : ℕ, eLpNorm
+      (fun x ↦ twistedAverageAtScale (t.1 j.succ)
+          (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))
+          (fun i y ↦ f.1 i y) x -
+        twistedAverageAtScale (t.1 j.castSucc)
+          (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))
+          (fun i y ↦ f.1 i y) x) 2 volume) ^ 2 ≤
+      ENNReal.ofReal (64 * C_leftBumpOne n) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+  let a : ℕ → Fin J → ℝ≥0∞ := fun q j ↦ eLpNorm
+    (fun x ↦ twistedAverageAtScale (t.1 j.succ)
+        (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))
+        (fun i y ↦ f.1 i y) x -
+      twistedAverageAtScale (t.1 j.castSucc)
+        (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))
+        (fun i y ↦ f.1 i y) x) 2 volume
+  let v : ℕ → ℝ≥0∞ := fun q ↦ ENNReal.ofReal (Real.rpow 2 ((q : ℝ) / 4))
+  let B : ℕ → ℝ≥0∞ := fun q ↦ ENNReal.ofReal
+    (C_leftBumpOne n * Real.rpow 2 (-(((q + 1 : ℕ) : ℝ) / 2)))
+  let P : ℝ≥0∞ := ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
+  have hv0 (q : ℕ) : v q ≠ 0 := by
+    dsimp [v]
+    exact (ENNReal.ofReal_pos.mpr (Real.rpow_pos_of_pos (by norm_num) _)).ne'
+  have hvt (q : ℕ) : v q ≠ ∞ := by
+    dsimp [v]
+    exact ENNReal.ofReal_ne_top
+  have henergy (q : ℕ) : ∑ j, (a q j) ^ 2 ≤ B q * P := by
+    have h := leftBumpOne hn b f (-((q + 1 : ℕ) : ℤ)) (by omega) J hJ t
+    have hscale : ((-((q + 1 : ℕ) : ℤ) : ℝ) / 2) =
+        -(((q + 1 : ℕ) : ℝ) / 2) := by
+      push_cast
+      ring
+    simp only [Int.cast_neg] at h
+    rw [hscale] at h
+    simpa only [a, B, P, aux_jumpEnergy, twistedJumpEnergy] using h
+  have hU : (∑' q, (v q)⁻¹) ≤ (8 : ℝ≥0∞) := by
+    calc
+      (∑' q, (v q)⁻¹) =
+          ∑' q : ℕ, ENNReal.ofReal (Real.rpow 2 (-((q : ℝ) / 4))) := by
+        apply tsum_congr
+        intro q
+        exact aux_mainTwisted_rpow_inv q
+      _ ≤ ENNReal.ofReal ((2 : ℝ) ^ 3 * 1) := by
+        simpa using quarterHeightTsum 1 (by norm_num)
+      _ = 8 := by norm_num
+  have hV : (∑' q, v q * B q) ≤ ENNReal.ofReal (8 * C_leftBumpOne n) := by
+    calc
+      (∑' q, v q * B q) ≤
+          ∑' q : ℕ, ENNReal.ofReal
+            (C_leftBumpOne n * Real.rpow 2 (-((q : ℝ) / 4))) := by
+          apply ENNReal.tsum_le_tsum
+          intro q
+          exact aux_mainTwisted_rpow_weighted_product_le _ hC q
+      _ ≤ ENNReal.ofReal ((2 : ℝ) ^ 3 * C_leftBumpOne n) :=
+        quarterHeightTsum _ hC
+      _ = ENNReal.ofReal (8 * C_leftBumpOne n) := by norm_num
+  have hmain := aux_mainTwisted_weighted_tsum_energy_bound a v B P (8 : ℝ≥0∞)
+    (ENNReal.ofReal (8 * C_leftBumpOne n)) hv0 hvt henergy hU hV
+  change ∑ j : Fin J, (∑' q : ℕ, a q j) ^ 2 ≤
+    ENNReal.ofReal (64 * C_leftBumpOne n) * P
+  calc
+    ∑ j : Fin J, (∑' q : ℕ, a q j) ^ 2 ≤
+        8 * (ENNReal.ofReal (8 * C_leftBumpOne n) * P) := hmain
+    _ = ENNReal.ofReal (64 * C_leftBumpOne n) * P := by
+      have hcoef : (8 : ℝ≥0∞) * ENNReal.ofReal (8 * C_leftBumpOne n) =
+          ENNReal.ofReal (64 * C_leftBumpOne n) := by
+        rw [show (8 : ℝ≥0∞) = ENNReal.ofReal 8 by norm_num,
+          ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 8)]
+        congr 1
+        ring
+      rw [← mul_assoc, hcoef]
+
+
+private noncomputable def aux_mainTwisted_low_jumpNorm {n J : ℕ}
+    (t : aux_scaleChain J)
+    (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
+    (chi : ℝ → ℝ) (j : Fin J) : ℝ≥0∞ :=
+  eLpNorm
+    (fun x ↦ twistedAverageAtScale (t.1 j.succ) chi (fun i y ↦ f i y) x -
+      twistedAverageAtScale (t.1 j.castSucc) chi (fun i y ↦ f i y) x)
+    2 volume
+
+private theorem aux_mainTwisted_weighted_finset_energy {ι : Type*} [Fintype ι] {J : ℕ}
+    (a : ι → Fin J → ℝ≥0∞) (v B : ι → ℝ≥0∞) (P : ℝ≥0∞)
+    (hv0 : ∀ i, v i ≠ 0) (hvt : ∀ i, v i ≠ ∞)
+    (henergy : ∀ i, ∑ j, (a i j) ^ 2 ≤ B i * P) :
+    ∑ j, (∑ i, a i j) ^ 2 ≤
+      (∑ i, (v i)⁻¹) * ((∑ i, v i * B i) * P) := by
+  let u : ι → ℝ≥0∞ := fun i ↦ (v i)⁻¹
+  let e : ι → Fin J → ℝ≥0∞ := fun i j ↦ v i * (a i j) ^ 2
+  have hroot (i : ι) (j : Fin J) :
+      a i j ≤ (u i) ^ (1 / (2 : ℝ)) * (e i j) ^ (1 / (2 : ℝ)) := by
+    calc
+      a i j = ((a i j) ^ 2) ^ (1 / (2 : ℝ)) := by
+        rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+        norm_num
+      _ ≤ (u i * e i j) ^ (1 / (2 : ℝ)) :=
+        ENNReal.rpow_le_rpow (by
+          dsimp [u, e]
+          rw [← mul_assoc, ENNReal.inv_mul_cancel (hv0 i) (hvt i), one_mul]) (by positivity)
+      _ = (u i) ^ (1 / (2 : ℝ)) * (e i j) ^ (1 / (2 : ℝ)) :=
+        ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
+  have hsquare (j : Fin J) :
+      (∑ i, a i j) ^ 2 ≤ (∑ i, u i) * ∑ i, e i j := by
+    have hinter :
+        ∑ i, a i j ≤
+          (∑ i, ((u i) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) *
+            (∑ i, ((e i j) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) := by
+      calc
+        ∑ i, a i j ≤ ∑ i, (u i) ^ (1 / (2 : ℝ)) *
+            (e i j) ^ (1 / (2 : ℝ)) :=
+          Finset.sum_le_sum fun i _ => hroot i j
+        _ ≤ (∑ i, ((u i) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) *
+            (∑ i, ((e i j) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) :=
+          ENNReal.inner_le_Lp_mul_Lq Finset.univ
+            (fun i => (u i) ^ (1 / (2 : ℝ)))
+            (fun i => (e i j) ^ (1 / (2 : ℝ))) Real.HolderConjugate.two_two
+    calc
+      (∑ i, a i j) ^ 2 ≤
+          ((∑ i, ((u i) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) *
+            (∑ i, ((e i j) ^ (1 / (2 : ℝ))) ^ (2 : ℝ)) ^ (1 / (2 : ℝ))) ^ 2 :=
+        pow_le_pow_left' hinter 2
+      _ = (∑ i, u i) * ∑ i, e i j := by
+        simp only [mul_pow, ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+        norm_num
+  have hinner (i : ι) : ∑ j, e i j = v i * ∑ j, (a i j) ^ 2 := by
+    dsimp [e]
+    rw [← Finset.mul_sum]
+  calc
+    ∑ j, (∑ i, a i j) ^ 2 ≤ ∑ j, (∑ i, u i) * ∑ i, e i j :=
+      Finset.sum_le_sum fun j _ => hsquare j
+    _ = (∑ i, u i) * ∑ j, ∑ i, e i j := by rw [Finset.mul_sum]
+    _ = (∑ i, u i) * ∑ i, ∑ j, e i j := by
+      congr 1
+      rw [Finset.sum_comm]
+    _ = (∑ i, (v i)⁻¹) * ∑ i, v i * ∑ j, (a i j) ^ 2 := by
+      dsimp [u]
+      congr 1
+      apply Finset.sum_congr rfl
+      intro i _
+      exact hinner i
+    _ ≤ (∑ i, (v i)⁻¹) * (∑ i, (v i * B i) * P) := by
+      have hterm (i : ι) : v i * ∑ j, (a i j) ^ 2 ≤ (v i * B i) * P := by
+        calc
+          v i * ∑ j, (a i j) ^ 2 ≤ v i * (B i * P) :=
+            mul_le_mul_right (henergy i) (v i)
+          _ = (v i * B i) * P := by ring
+      apply mul_le_mul_right
+      apply Finset.sum_le_sum
+      intro i _
+      exact hterm i
+    _ = (∑ i, (v i)⁻¹) * ((∑ i, v i * B i) * P) := by
+      congr 1
+      simpa using
+        (Finset.sum_mul Finset.univ (fun i : ι => v i * B i) P).symm
+
+private theorem aux_mainTwisted_low_high_phiZero_energy {n : ℕ} (hn : 2 ≤ n)
+    (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n)
+    (J : ℕ) (hJ : 0 < J) (t : aux_scaleChain J)
+    (hC : 0 ≤ C_mainBumpTwo n)
+    (hhigh : ∑ j : Fin J, (∑' q : ℕ,
+      aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)) j) ^ 2 ≤
+        ENNReal.ofReal (C_mainBumpTwo n) *
+          ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) :
+    ∑ j : Fin J,
+        (aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b (-2)) j +
+          aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b (-1)) j +
+          aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b 0) j +
+          ∑' q : ℕ,
+            aux_mainTwisted_low_jumpNorm t f.1
+              (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)) j) ^ 2 ≤
+      ENNReal.ofReal (64 * C_mainBumpTwo n) *
+        ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
+  let P : ℝ≥0∞ := ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
+  let a : Fin 4 → Fin J → ℝ≥0∞ := ![
+    aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b (-2)) ,
+    aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b (-1)) ,
+    aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b 0) ,
+    fun j ↦ ∑' q : ℕ,
+      aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)) j]
+  let v : Fin 4 → ℝ≥0∞ := ![(1 / 4 : ℝ≥0∞), (1 / 2 : ℝ≥0∞), 1, 1]
+  let B : Fin 4 → ℝ≥0∞ := ![
+    16 * ENNReal.ofReal (C_mainBumpTwo n),
+    4 * ENNReal.ofReal (C_mainBumpTwo n),
+    ENNReal.ofReal (C_mainBumpTwo n),
+    ENNReal.ofReal (C_mainBumpTwo n)]
+  have hv0 (i : Fin 4) : v i ≠ 0 := by
+    fin_cases i <;> simp [v]
+  have hvt (i : Fin 4) : v i ≠ ∞ := by
+    fin_cases i <;> simp [v]
+  have henergy (i : Fin 4) : ∑ j, (a i j) ^ 2 ≤ B i * P := by
+    fin_cases i
+    · have h := mainBumpTwo hn b f (-2) (by omega) J hJ t
+      have h' : ∑ j, (a 0 j) ^ 2 ≤
+          ENNReal.ofReal (C_mainBumpTwo n * (2 : ℝ) ^ (-2 * (-2 : ℤ))) * P := by
+        simpa [a, P, aux_mainTwisted_low_jumpNorm, aux_jumpEnergy, twistedJumpEnergy] using h
+      calc
+        ∑ j, (a 0 j) ^ 2 ≤
+            ENNReal.ofReal (C_mainBumpTwo n * (2 : ℝ) ^ (-2 * (-2 : ℤ))) * P := h'
+        _ = B 0 * P := by
+          rw [ENNReal.ofReal_mul hC]
+          norm_num [B]
+          ac_rfl
+    · have h := mainBumpTwo hn b f (-1) (by omega) J hJ t
+      have h' : ∑ j, (a 1 j) ^ 2 ≤
+          ENNReal.ofReal (C_mainBumpTwo n * (2 : ℝ) ^ (-2 * (-1 : ℤ))) * P := by
+        simpa [a, P, aux_mainTwisted_low_jumpNorm, aux_jumpEnergy, twistedJumpEnergy] using h
+      calc
+        ∑ j, (a 1 j) ^ 2 ≤
+            ENNReal.ofReal (C_mainBumpTwo n * (2 : ℝ) ^ (-2 * (-1 : ℤ))) * P := h'
+        _ = B 1 * P := by
+          rw [ENNReal.ofReal_mul hC]
+          norm_num [B]
+          ac_rfl
+    · have h := mainBumpTwo hn b f 0 (by omega) J hJ t
+      simpa [a, B, P, aux_mainTwisted_low_jumpNorm, aux_jumpEnergy, twistedJumpEnergy] using h
+    · simpa [a, B, P] using hhigh
+  have hmain := aux_mainTwisted_weighted_finset_energy a v B P hv0 hvt henergy
+  calc
+    ∑ j : Fin J,
+        (aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b (-2)) j +
+          aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b (-1)) j +
+          aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b 0) j +
+          ∑' q : ℕ,
+            aux_mainTwisted_low_jumpNorm t f.1
+              (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)) j) ^ 2 =
+        ∑ j : Fin J, (∑ i : Fin 4, a i j) ^ 2 := by
+          congr 1
+          funext j
+          simp [a, Fin.sum_univ_succ]
+          ac_rfl
+    _ ≤
+        (∑ i : Fin 4, (v i)⁻¹) * ((∑ i : Fin 4, v i * B i) * P) := hmain
+    _ = ENNReal.ofReal (64 * C_mainBumpTwo n) * P := by
+      have hinv : (∑ i : Fin 4, (v i)⁻¹) = (8 : ℝ≥0∞) := by
+        norm_num [v, Fin.sum_univ_succ]
+      have hB : (∑ i : Fin 4, v i * B i) =
+          8 * ENNReal.ofReal (C_mainBumpTwo n) := by
+        have h4 : (4 : ℝ≥0∞)⁻¹ * 4 = 1 :=
+          ENNReal.inv_mul_cancel (by norm_num) (by norm_num)
+        have h2 : (2 : ℝ≥0∞)⁻¹ * 2 = 1 :=
+          ENNReal.inv_mul_cancel (by norm_num) (by norm_num)
+        have hcalc :
+          (4 : ℝ≥0∞)⁻¹ * (16 * ENNReal.ofReal (C_mainBumpTwo n)) +
+              (2 : ℝ≥0∞)⁻¹ * (4 * ENNReal.ofReal (C_mainBumpTwo n)) +
+                (ENNReal.ofReal (C_mainBumpTwo n) + ENNReal.ofReal (C_mainBumpTwo n)) =
+              8 * ENNReal.ofReal (C_mainBumpTwo n) := by
+          calc
+            (4 : ℝ≥0∞)⁻¹ * (16 * ENNReal.ofReal (C_mainBumpTwo n)) +
+                (2 : ℝ≥0∞)⁻¹ * (4 * ENNReal.ofReal (C_mainBumpTwo n)) +
+                  (ENNReal.ofReal (C_mainBumpTwo n) + ENNReal.ofReal (C_mainBumpTwo n)) =
+              ((4 : ℝ≥0∞)⁻¹ * 4) * (4 * ENNReal.ofReal (C_mainBumpTwo n)) +
+                ((2 : ℝ≥0∞)⁻¹ * 2) * (2 * ENNReal.ofReal (C_mainBumpTwo n)) +
+                  (ENNReal.ofReal (C_mainBumpTwo n) + ENNReal.ofReal (C_mainBumpTwo n)) := by ring
+            _ = 8 * ENNReal.ofReal (C_mainBumpTwo n) := by rw [h4, h2]; ring
+        calc
+          (∑ i : Fin 4, v i * B i) =
+              (4 : ℝ≥0∞)⁻¹ * (16 * ENNReal.ofReal (C_mainBumpTwo n)) +
+                (2 : ℝ≥0∞)⁻¹ * (4 * ENNReal.ofReal (C_mainBumpTwo n)) +
+                  (ENNReal.ofReal (C_mainBumpTwo n) + ENNReal.ofReal (C_mainBumpTwo n)) := by
+                    simp [v, B, Fin.sum_univ_succ]
+                    ac_rfl
+          _ = 8 * ENNReal.ofReal (C_mainBumpTwo n) := hcalc
+      rw [hinv, hB, ← mul_assoc]
+      rw [← mul_assoc]
+      norm_num
+
+
 /--
 The reduction-side version of Theorem \ref{thm:nct main real}.  It has exactly
 the same conclusion as `Codex.Introduction.mainTwistedTheorem`, but is stated
@@ -10904,7 +12345,94 @@ theorem mainTwistedTheoremReduction {n : ℕ} (hn : 2 ≤ n) :
             2 volume ^ 2 ≤
           ENNReal.ofReal C * ENNReal.ofReal
             ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) := by
-  sorry
+  classical
+  refine ⟨(2 : ℝ) ^ 666, by positivity, ?_⟩
+  intro J hJ t ht htpos f hf
+  obtain ⟨phi0, phi1, hpair⟩ := existsUniversalPair
+  let b : windowBasedBumpFunctions := ⟨phi0, phi1, hpair⟩
+  let F : ReductionNormalizedTuple n := ⟨f, hf⟩
+  let T : aux_scaleChain J := ⟨t, ht, htpos⟩
+  let R : ℝ≥0∞ := ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
+  have hI : MemLp (aux_indicator (Set.Icc (0 : ℝ) 1)) 2 volume :=
+    memLp_indicator_const 2 measurableSet_Icc (1 : ℝ)
+      (Or.inr measure_Icc_lt_top.ne)
+  have hphi0 : MemLp (fun x ↦ b.phi0 x) 2 volume := b.phi0.memLp 2 volume
+  have hzero (k : ℤ) : MemLp (windowBasedBumpFunctions.phiZero b k) 2 volume :=
+    aux_mainTwisted_phiZero_memLp_of_phiThree_eq b k
+      (aux_mainBumpTwo_phiThree_eq_rescaled b k)
+  have hone (k : ℤ) : MemLp (windowBasedBumpFunctions.phiOne b k) 2 volume :=
+    aux_mainTwisted_phiOne_memLp_of_thetaTilde_eq b k
+      (aux_leftBump_phiOne_eq_scaled_thetaTilde b k)
+  have htwo (k : ℤ) : MemLp (windowBasedBumpFunctions.phiTwo b k) 2 volume :=
+    aux_mainTwisted_phiTwo_memLp_of_phiFour_eq b k
+      (aux_leftBumpOne_phiTwo_eq_neg_oneRescaled_phiFour b k)
+  have hAuxOne : 0 ≤ C_mainAuxOne n := aux_C_mainAuxOne_nonneg n
+  have hAuxTwo : 0 ≤ C_mainAuxTwo n := by
+    unfold C_mainAuxTwo
+    exact mul_nonneg (by norm_num) hAuxOne
+  have hC0 : 0 ≤ C_mainBumpOne n := by
+    unfold C_mainBumpOne
+    exact add_nonneg
+      (mul_nonneg (mul_nonneg (by positivity) (sq_nonneg _)) hAuxOne)
+      (mul_nonneg (by norm_num) (aux_mainBumpOne_C_long_pos n).le)
+  have hC1 : 0 ≤ C_mainBumpTwo n := by
+    unfold C_mainBumpTwo
+    exact mul_nonneg hAuxTwo (sq_nonneg _)
+  have hC2 : 0 ≤ C_leftBump n := by
+    unfold C_leftBump
+    exact mul_nonneg hAuxTwo (sq_nonneg _)
+  have hC3 : 0 ≤ C_leftBumpOne n := by
+    unfold C_leftBumpOne
+    exact add_nonneg
+      (mul_nonneg (mul_nonneg (by positivity) (Real.sqrt_nonneg _))
+        (Real.sqrt_nonneg _))
+      (mul_nonneg (by norm_num) (aux_leftBumpOne_long_nonneg n))
+  have h0 : ∑ j : Fin J, (aux_mainTwisted_jumpNorm F.1 T j (fun x ↦ b.phi0 x)) ^ 2 ≤
+      ENNReal.ofReal (C_mainBumpOne n) * R := by
+    simpa only [R] using aux_mainTwisted_mainBumpOne_energy hn b F T hJ
+  have hhighZero := aux_mainTwisted_high_phiZero_energy hn b F J hJ T hC1
+  have hlowZero := aux_mainTwisted_low_high_phiZero_energy hn b F J hJ T hC1 hhighZero
+  have h1 : ∑ j : Fin J,
+      (aux_mainTwisted_jumpNorm F.1 T j (windowBasedBumpFunctions.phiZero b (-2)) +
+        (aux_mainTwisted_jumpNorm F.1 T j (windowBasedBumpFunctions.phiZero b (-1)) +
+          aux_mainTwisted_jumpNorm F.1 T j (windowBasedBumpFunctions.phiZero b 0)) +
+        ∑' q : ℕ, aux_mainTwisted_jumpNorm F.1 T j
+          (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ))) ^ 2 ≤
+      ENNReal.ofReal (64 * C_mainBumpTwo n) * R := by
+    simpa only [aux_mainTwisted_jumpNorm, aux_mainTwisted_low_jumpNorm, R, add_assoc] using hlowZero
+  have hhighOne := aux_mainTwisted_high_phiOne_energy hn b F J hJ T hC2
+  have h2 : ∑ j : Fin J,
+      (∑' q : ℕ, aux_mainTwisted_jumpNorm F.1 T j
+        (windowBasedBumpFunctions.phiOne b (-((q + 1 : ℕ) : ℤ)))) ^ 2 ≤
+      ENNReal.ofReal (C_leftBump n) * R := by
+    simpa only [aux_mainTwisted_jumpNorm, R] using hhighOne
+  have hhighTwo := aux_mainTwisted_high_phiTwo_energy hn b F J hJ T hC3
+  have h3 : ∑ j : Fin J,
+      (∑' q : ℕ, aux_mainTwisted_jumpNorm F.1 T j
+        (windowBasedBumpFunctions.phiTwo b (-((q + 1 : ℕ) : ℤ)))) ^ 2 ≤
+      ENNReal.ofReal (64 * C_leftBumpOne n) * R := by
+    simpa only [aux_mainTwisted_jumpNorm, R] using hhighTwo
+  have hmain := aux_mainTwisted_terminal_aggregation hn b F.1 T R hI hphi0 hzero hone htwo
+    hC0 hC1 hC2 hC3 h0 h1 h2 h3
+  have hconst : C_mainTwistedTheorem n < (2 : ℝ) ^ 666 :=
+    constantMainTwistedTheoremReduction hn
+  calc
+    ∑ j : Fin J, eLpNorm
+        (fun x ↦ twistedAverageAtScale (t j.succ) unitIntervalIndicator
+            (fun i y ↦ f i y) x -
+          twistedAverageAtScale (t j.castSucc) unitIntervalIndicator
+            (fun i y ↦ f i y) x)
+        2 volume ^ 2 =
+        ∑ j : Fin J,
+          (aux_mainTwisted_jumpNorm F.1 T j (aux_indicator (Set.Icc (0 : ℝ) 1))) ^ 2 := by
+            rfl
+    _ ≤ ENNReal.ofReal (C_mainTwistedTheorem n) * R := hmain
+    _ ≤ ENNReal.ofReal ((2 : ℝ) ^ 666) * R := by
+      simpa [mul_comm] using
+        mul_le_mul_right (ENNReal.ofReal_le_ofReal hconst.le) R
+    _ = ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal
+        ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) := by
+          rfl
 
 end
 
