@@ -52,7 +52,7 @@ STATUS_KIND_SCOPES: dict[str, tuple[str, ...]] = {
     "can_prove": ("theorem",),
     "proved": ("theorem",),
     "defined": ("definition",),
-    "fully_proved": ("theorem"),
+    "fully_proved": ("theorem",),
     "external_dependency": ("theorem",),
 }
 
