@@ -1,0 +1,2311 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
+import LeanNct.Introduction
+import LeanNct.Reduction.VariationSeminorms
+import Mathlib.Algebra.BigOperators.Field
+import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.Data.Fin.Tuple.Sort
+
+/-!
+# From real to ergodic
+
+The passage from the real-variable twisted-average estimate to multiple
+ergodic averages.
+-/
+
+namespace Codex.RealToErgodic
+
+open MeasureTheory Set
+open scoped BigOperators ENNReal
+
+noncomputable section
+
+/-- An auxiliary package for the commuting measure-preserving maps used in
+Definition \ref{ergodic averages}. -/
+structure aux_ErgodicSystem (X : Type*) [MeasurableSpace X] (μ : Measure X)
+    (n : ℕ) where
+  transformation : Fin n → X → X
+  measurePreserving : ∀ i, MeasurePreserving (transformation i) μ μ
+  commutes : ∀ i j, Function.Commute (transformation i) (transformation j)
+
+/--
+\begin{definition}[Ergodic averages]\label{ergodic averages}
+Let $(X,\Sigma,\mu)$ be a $\sigma$-finite measure space. We say that $T:X\to
+X$ is measure preserving when it preserves the measure of measurable sets.
+For a family $(T_l)_{l\in[n)}$ of such transformations and an $n$-tuple of
+complex-valued measurable functions, define
+\[
+ M_N(\mathbf f)(x)=\frac1N\sum_{i=0}^{N-1}\prod_{l=0}^{n-1}f_l(T_l^i x).
+\]
+\end{definition}
+-/
+noncomputable def ergodicAverage {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (S : aux_ErgodicSystem X μ n) (N : ℕ)
+    (f : Fin n → X → ℂ) : X → ℂ :=
+  fun x ↦ (N : ℂ)⁻¹ * ∑ m ∈ Finset.range N,
+    ∏ i, f i ((S.transformation i)^[m] x)
+
+/-- The real-valued form of `ergodicAverage`, used for the real endpoint of
+the transference theorem. -/
+noncomputable def aux_realErgodicAverage {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (S : aux_ErgodicSystem X μ n) (N : ℕ)
+    (f : Fin n → X → ℝ) : X → ℝ :=
+  fun x ↦ (N : ℝ)⁻¹ * ∑ m ∈ Finset.range N,
+    ∏ i, f i ((S.transformation i)^[m] x)
+
+/-- The finite squared `L²` jump energy of real multiple ergodic averages. -/
+noncomputable def aux_realErgodicJumpEnergy {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n J : ℕ} (S : aux_ErgodicSystem X μ n)
+    (N : Fin (J + 1) → ℕ) (f : Fin n → X → ℝ) : ℝ≥0∞ :=
+  ∑ j : Fin J, eLpNorm
+    (fun x ↦ aux_realErgodicAverage S (N j.succ) f x -
+      aux_realErgodicAverage S (N j.castSucc) f x) 2 μ ^ 2
+
+/-- The finite squared `L²` jump energy of complex multiple ergodic averages. -/
+noncomputable def aux_ergodicJumpEnergy {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n J : ℕ} (S : aux_ErgodicSystem X μ n)
+    (N : Fin (J + 1) → ℕ) (f : Fin n → X → ℂ) : ℝ≥0∞ :=
+  ∑ j : Fin J, eLpNorm
+    (fun x ↦ ergodicAverage S (N j.succ) f x -
+      ergodicAverage S (N j.castSucc) f x) 2 μ ^ 2
+
+/-- Complexification commutes with the finite ergodic averages. -/
+theorem aux_ergodicAverage_ofReal {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (S : aux_ErgodicSystem X μ n)
+    (N : ℕ) (f : Fin n → X → ℝ) (x : X) :
+    ergodicAverage S N (fun i y ↦ (f i y : ℂ)) x =
+      (aux_realErgodicAverage S N f x : ℂ) := by
+  simp [ergodicAverage, aux_realErgodicAverage]
+
+/-- A product of the transformed `L^{2n}` inputs belongs to `L²`.  This is the
+integrability prerequisite for the `L²` variation in
+Theorem \ref{thm:ergodicthm}. -/
+private theorem aux_ergodicProduct_memLp_two {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (hn : 0 < n)
+    (S : aux_ErgodicSystem X μ n) (m : ℕ) (f : Fin n → X → ℂ)
+    (hf : ∀ i, MemLp (f i) (2 * n) μ) :
+    MemLp (fun x ↦ ∏ i, f i ((S.transformation i)^[m] x)) 2 μ := by
+  have hprod := MemLp.prod' (s := Finset.univ)
+    (f := fun i x ↦ f i ((S.transformation i)^[m] x))
+    (p := fun _ : Fin n ↦ (2 * n : ℝ≥0∞))
+    (fun i _ ↦ (hf i).comp_measurePreserving ((S.measurePreserving i).iterate m))
+  have hsum : (∑ _ : Fin n, ((2 * n : ℝ≥0∞))⁻¹)⁻¹ = 2 := by
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    have hn0 : (n : ℝ≥0∞) ≠ 0 := by
+      exact_mod_cast hn.ne'
+    have hntop : (n : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top _
+    rw [ENNReal.mul_inv (Or.inl hn0) (Or.inl hntop), inv_inv]
+    calc
+      (n : ℝ≥0∞)⁻¹ * (2 * n) = 2 * ((n : ℝ≥0∞)⁻¹ * n) := by
+        ac_rfl
+      _ = 2 := by rw [ENNReal.inv_mul_cancel hn0 hntop, mul_one]
+  rwa [hsum] at hprod
+
+/-- The `L²` representative of every multiple average of `L^{2n}` inputs is
+well defined. -/
+theorem ergodicAverage_memLp_two {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n N : ℕ} (hn : 0 < n)
+    (S : aux_ErgodicSystem X μ n) (f : Fin n → X → ℂ)
+    (hf : ∀ i, MemLp (f i) (2 * n) μ) :
+    MemLp (ergodicAverage S N f) 2 μ := by
+  unfold ergodicAverage
+  change MemLp ((N : ℂ)⁻¹ • fun x ↦ ∑ m ∈ Finset.range N,
+    ∏ i, f i ((S.transformation i)^[m] x)) 2 μ
+  apply MemLp.const_smul
+  apply memLp_finsetSum (Finset.range N)
+  intro m _
+  exact aux_ergodicProduct_memLp_two hn S m f hf
+
+/-- The `L²` class represented by a multiple ergodic average. -/
+noncomputable def aux_ergodicAverageLp {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (hn : 0 < n)
+    (S : aux_ErgodicSystem X μ n) (f : Fin n → X → ℂ)
+    (hf : ∀ i, MemLp (f i) (2 * n) μ) (N : ℕ) :
+    Lp ℂ 2 μ :=
+  (ergodicAverage_memLp_two hn S f hf).toLp (ergodicAverage S N f)
+
+/-- The `L²` distance between two packaged averages is their raw `eLpNorm`
+distance. -/
+private theorem aux_ergodicAverageLp_enorm_sub {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n N M : ℕ} (hn : 0 < n)
+    (S : aux_ErgodicSystem X μ n) (f : Fin n → X → ℂ)
+    (hf : ∀ i, MemLp (f i) (2 * n) μ) :
+    ‖aux_ergodicAverageLp hn S f hf N -
+        aux_ergodicAverageLp hn S f hf M‖ₑ =
+      eLpNorm (fun x ↦ ergodicAverage S N f x -
+        ergodicAverage S M f x) 2 μ := by
+  let hN := ergodicAverage_memLp_two hn S f hf (N := N)
+  let hM := ergodicAverage_memLp_two hn S f hf (N := M)
+  rw [show aux_ergodicAverageLp hn S f hf N =
+      hN.toLp (ergodicAverage S N f) by rfl,
+    show aux_ergodicAverageLp hn S f hf M =
+      hM.toLp (ergodicAverage S M f) by rfl]
+  rw [← MemLp.toLp_sub hN hM]
+  exact Lp.enorm_toLp (hN.sub hM)
+
+/-- The raw jump energy agrees with the jump energy of the corresponding
+`L²`-valued sequence. -/
+private theorem aux_ergodicJumpEnergy_eq_Lp_jumpEnergy {X : Type*}
+    [MeasurableSpace X] {μ : Measure X} {n J : ℕ} (hn : 0 < n)
+    (S : aux_ErgodicSystem X μ n) (N : Fin (J + 1) → ℕ)
+    (f : Fin n → X → ℂ) (hf : ∀ i, MemLp (f i) (2 * n) μ) :
+    aux_ergodicJumpEnergy S N f =
+      ∑ j : Fin J, ‖aux_ergodicAverageLp hn S f hf (N j.succ) -
+        aux_ergodicAverageLp hn S f hf (N j.castSucc)‖ₑ ^ 2 := by
+  unfold aux_ergodicJumpEnergy
+  apply Finset.sum_congr rfl
+  intro j _
+  rw [← aux_ergodicAverageLp_enorm_sub hn S f hf]
+
+@[ext]
+private structure Indexed (J : ℕ) where
+  val : Fin J
+
+private instance (J : ℕ) : Fintype (Indexed J) :=
+  Fintype.ofEquiv (Fin J)
+    { toFun := fun j ↦ ⟨j⟩
+      invFun := fun j ↦ j.val
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+
+private def indexedEquiv (J : ℕ) : Indexed J ≃ Fin J :=
+  { toFun := fun j ↦ j.val
+    invFun := fun j ↦ ⟨j⟩
+    left_inv := fun _ ↦ rfl
+    right_inv := fun _ ↦ rfl }
+
+/- Sort a finite real family in decreasing order, breaking ties by the original index. -/
+private noncomputable def decreasingSort {J : ℕ} (d : Fin J → ℝ) : Fin J → Fin J := by
+  let X := Indexed J
+  let key : X → Lex (OrderDual ℝ × Fin J) := fun j ↦
+    toLex (OrderDual.toDual (d j.val), j.val)
+  have hkey : Function.Injective key := by
+    intro x y hxy
+    have hsecond : x.val = y.val := by
+      have := congrArg (fun z : Lex (OrderDual ℝ × Fin J) ↦ (ofLex z).2) hxy
+      exact this
+    exact Indexed.ext hsecond
+  let inst : LinearOrder X := LinearOrder.lift' key hkey
+  let e := @Fintype.orderIsoFinOfCardEq X inst _ J (by
+    simpa [X] using Fintype.card_congr (indexedEquiv J))
+  exact fun i ↦ (e i).val
+
+private theorem decreasingSort_mono {J : ℕ} (d : Fin J → ℝ) {i j : Fin J} (hij : i ≤ j) :
+    d (decreasingSort d j) ≤ d (decreasingSort d i) := by
+  unfold decreasingSort
+  let X := Indexed J
+  let key : X → Lex (OrderDual ℝ × Fin J) := fun j ↦
+    toLex (OrderDual.toDual (d j.val), j.val)
+  have hkey : Function.Injective key := by
+    intro x y hxy
+    have hsecond : x.val = y.val := by
+      have := congrArg (fun z : Lex (OrderDual ℝ × Fin J) ↦ (ofLex z).2) hxy
+      exact this
+    exact Indexed.ext hsecond
+  let inst : LinearOrder X := LinearOrder.lift' key hkey
+  let e := @Fintype.orderIsoFinOfCardEq X inst _ J (by
+    simpa [X] using Fintype.card_congr (indexedEquiv J))
+  have he : e i ≤ e j := e.monotone hij
+  change d (e j).val ≤ d (e i).val
+  change key (e i) ≤ key (e j) at he
+  rw [Prod.Lex.le_iff] at he
+  rcases he with he | he
+  · change d (e j).val < d (e i).val at he
+    exact he.le
+  · exact le_of_eq (congrArg OrderDual.ofDual he.1).symm
+
+private theorem decreasingSort_bijective {J : ℕ} (d : Fin J → ℝ) :
+    Function.Bijective (decreasingSort d) := by
+  unfold decreasingSort
+  let X := Indexed J
+  let key : X → Lex (OrderDual ℝ × Fin J) := fun j ↦
+    toLex (OrderDual.toDual (d j.val), j.val)
+  have hkey : Function.Injective key := by
+    intro x y hxy
+    have hsecond : x.val = y.val := by
+      have := congrArg (fun z : Lex (OrderDual ℝ × Fin J) ↦ (ofLex z).2) hxy
+      exact this
+    exact Indexed.ext hsecond
+  let inst : LinearOrder X := LinearOrder.lift' key hkey
+  let e := @Fintype.orderIsoFinOfCardEq X inst _ J (by
+    simpa [X] using Fintype.card_congr (indexedEquiv J))
+  change Function.Bijective (fun i ↦ (e i).val)
+  constructor
+  · intro i j hij
+    apply e.injective
+    exact Indexed.ext hij
+  · intro x
+    obtain ⟨i, hi⟩ := e.surjective ⟨x⟩
+    exact ⟨i, congrArg Indexed.val hi⟩
+
+private theorem rpow_interval_lower {p : ℝ} (hp : 1 < p) (m : ℕ) (hm : 1 ≤ m) :
+    ((m + 1 : ℕ) : ℝ) ^ (-p) ≤
+      ∫ x in (m : ℝ)..((m + 1 : ℕ) : ℝ), x ^ (-p) := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast lt_of_lt_of_le Nat.zero_lt_one hm
+  have hle : (m : ℝ) ≤ ((m + 1 : ℕ) : ℝ) := by norm_num
+  have hzero : (0 : ℝ) ∉ Set.uIcc (m : ℝ) ((m + 1 : ℕ) : ℝ) := by
+    rw [Set.uIcc_of_le hle]
+    simp only [Set.mem_Icc, not_and_or]
+    exact Or.inl (not_le_of_gt hmR)
+  have hconst : IntervalIntegrable (fun _ : ℝ ↦ ((m + 1 : ℕ) : ℝ) ^ (-p)) volume
+      (m : ℝ) ((m + 1 : ℕ) : ℝ) := intervalIntegrable_const
+  have hrpow : IntervalIntegrable (fun x : ℝ ↦ x ^ (-p)) volume
+      (m : ℝ) ((m + 1 : ℕ) : ℝ) :=
+    intervalIntegral.intervalIntegrable_rpow (Or.inr hzero)
+  calc
+    ((m + 1 : ℕ) : ℝ) ^ (-p) =
+        ∫ _x in (m : ℝ)..((m + 1 : ℕ) : ℝ), ((m + 1 : ℕ) : ℝ) ^ (-p) := by
+          rw [intervalIntegral.integral_const]
+          norm_num
+    _ ≤ ∫ x in (m : ℝ)..((m + 1 : ℕ) : ℝ), x ^ (-p) := by
+      apply intervalIntegral.integral_mono_on hle hconst hrpow
+      intro x hx
+      exact Real.rpow_le_rpow_of_nonpos (lt_of_lt_of_le hmR hx.1) hx.2 (by linarith)
+
+private theorem pseries_le_one_add_integral {p : ℝ} (hp : 1 < p) (J : ℕ) (hJ : 1 ≤ J) :
+    (∑ i ∈ Finset.range J, ((i + 1 : ℕ) : ℝ) ^ (-p)) ≤
+      1 + ∫ x in (1 : ℝ)..(J : ℝ), x ^ (-p) := by
+  refine Nat.le_induction ?_ ?_ J hJ
+  · norm_num
+  · intro m hm hsum
+    have hmR : (0 : ℝ) < m := by exact_mod_cast lt_of_lt_of_le Nat.zero_lt_one hm
+    have hle : (m : ℝ) ≤ ((m + 1 : ℕ) : ℝ) := by norm_num
+    have hzero : (0 : ℝ) ∉ Set.uIcc (1 : ℝ) (m : ℝ) := by
+      rw [Set.uIcc_of_le (by exact_mod_cast hm)]
+      simp only [Set.mem_Icc, not_and_or]
+      exact Or.inl (by norm_num)
+    have hfirst : IntervalIntegrable (fun x : ℝ ↦ x ^ (-p)) volume (1 : ℝ) (m : ℝ) :=
+      intervalIntegral.intervalIntegrable_rpow (Or.inr hzero)
+    have hzero' : (0 : ℝ) ∉ Set.uIcc (m : ℝ) ((m + 1 : ℕ) : ℝ) := by
+      rw [Set.uIcc_of_le hle]
+      simp only [Set.mem_Icc, not_and_or]
+      exact Or.inl (not_le_of_gt hmR)
+    have hsecond : IntervalIntegrable (fun x : ℝ ↦ x ^ (-p)) volume
+        (m : ℝ) ((m + 1 : ℕ) : ℝ) :=
+      intervalIntegral.intervalIntegrable_rpow (Or.inr hzero')
+    calc
+      (∑ i ∈ Finset.range (m + 1), ((i + 1 : ℕ) : ℝ) ^ (-p)) =
+          (∑ i ∈ Finset.range m, ((i + 1 : ℕ) : ℝ) ^ (-p)) +
+            ((m + 1 : ℕ) : ℝ) ^ (-p) := by rw [Finset.sum_range_succ]
+      _ ≤ (1 + ∫ x in (1 : ℝ)..(m : ℝ), x ^ (-p)) +
+            ((m + 1 : ℕ) : ℝ) ^ (-p) := by gcongr
+      _ ≤ 1 + ((∫ x in (1 : ℝ)..(m : ℝ), x ^ (-p)) +
+            ∫ x in (m : ℝ)..((m + 1 : ℕ) : ℝ), x ^ (-p)) := by
+        linarith [rpow_interval_lower hp m hm]
+      _ = 1 + ∫ x in (1 : ℝ)..((m + 1 : ℕ) : ℝ), x ^ (-p) := by
+        rw [intervalIntegral.integral_add_adjacent_intervals hfirst hsecond]
+
+private theorem pseries_le {p : ℝ} (hp : 1 < p) (J : ℕ) :
+    (∑ i ∈ Finset.range J, ((i + 1 : ℕ) : ℝ) ^ (-p)) ≤ p / (p - 1) := by
+  by_cases hJ : J = 0
+  · subst J
+    simpa using (div_nonneg (by linarith) (by linarith))
+  have hJpos : 1 ≤ J := Nat.one_le_iff_ne_zero.mpr hJ
+  calc
+    (∑ i ∈ Finset.range J, ((i + 1 : ℕ) : ℝ) ^ (-p)) ≤
+        1 + ∫ x in (1 : ℝ)..(J : ℝ), x ^ (-p) :=
+      pseries_le_one_add_integral hp J hJpos
+    _ = 1 + ((J : ℝ) ^ ((-p) + 1) - (1 : ℝ) ^ ((-p) + 1)) / ((-p) + 1) := by
+      rw [integral_rpow (Or.inr ⟨by linarith, by
+        rw [Set.uIcc_of_le (by exact_mod_cast hJpos)]
+        simp only [Set.mem_Icc, not_and_or]
+        exact Or.inl (by norm_num)⟩)]
+    _ ≤ p / (p - 1) := by
+      have hdenom : 0 < p - 1 := by linarith
+      have hpow : 0 ≤ (J : ℝ) ^ ((-p) + 1) :=
+        Real.rpow_nonneg (by positivity) _
+      rw [Real.one_rpow]
+      have hrewrite : -p + 1 = -(p - 1) := by ring
+      rw [hrewrite, div_neg]
+      rw [hrewrite] at hpow
+      have hident : 1 + -(((J : ℝ) ^ (-(p - 1)) - 1) / (p - 1)) =
+          (p - (J : ℝ) ^ (-(p - 1))) / (p - 1) := by
+        field_simp
+        ring
+      rw [hident]
+      exact (div_le_div_iff_of_pos_right hdenom).mpr (by linarith)
+
+private theorem pointwise_decay_sum_bound {J : ℕ} {d : Fin J → ℝ}
+    {C r r0 : ℝ} (hC : 0 ≤ C) (hr0 : 0 < r0) (hr : r0 < r)
+    (hd : ∀ i, 0 ≤ d i)
+    (hpoint : ∀ i, d i ≤ C * ((i.val + 1 : ℕ) : ℝ) ^ (-1 / r0)) :
+    (∑ i, (d i) ^ r) ≤ C ^ r * (r / (r - r0)) := by
+  let p : ℝ := r / r0
+  have hp : 1 < p := by
+    dsimp [p]
+    rw [lt_div_iff₀ hr0]
+    linarith
+  have hrnonneg : 0 ≤ r := by linarith
+  have hterm (i : Fin J) :
+      (d i) ^ r ≤ C ^ r * ((i.val + 1 : ℕ) : ℝ) ^ (-p) := by
+    calc
+      (d i) ^ r ≤ (C * ((i.val + 1 : ℕ) : ℝ) ^ (-1 / r0)) ^ r := by
+        exact Real.rpow_le_rpow (hd i) (hpoint i) hrnonneg
+      _ = C ^ r * ((((i.val + 1 : ℕ) : ℝ) ^ (-1 / r0)) ^ r) := by
+        rw [Real.mul_rpow hC]
+        exact Real.rpow_nonneg (by positivity) _
+      _ = C ^ r * ((i.val + 1 : ℕ) : ℝ) ^ (-p) := by
+        congr 1
+        rw [← Real.rpow_mul (by positivity)]
+        congr 1
+        dsimp [p]
+        field_simp
+  calc
+    (∑ i, (d i) ^ r) ≤ ∑ i : Fin J, C ^ r * ((i.val + 1 : ℕ) : ℝ) ^ (-p) := by
+      exact Finset.sum_le_sum fun i _ ↦ hterm i
+    _ = C ^ r * (∑ i ∈ Finset.range J, ((i + 1 : ℕ) : ℝ) ^ (-p)) := by
+      calc
+        (∑ i : Fin J, C ^ r * ((i.val + 1 : ℕ) : ℝ) ^ (-p)) =
+            ∑ i ∈ Finset.range J, if h : i < J then
+              C ^ r * ((i + 1 : ℕ) : ℝ) ^ (-p) else 0 :=
+          Finset.sum_fin_eq_sum_range (c := fun i : Fin J ↦
+            C ^ r * ((i.val + 1 : ℕ) : ℝ) ^ (-p))
+        _ = ∑ i ∈ Finset.range J, C ^ r * ((i + 1 : ℕ) : ℝ) ^ (-p) := by
+          apply Finset.sum_congr rfl
+          intro i hi
+          simp [Finset.mem_range.mp hi]
+        _ = C ^ r * (∑ i ∈ Finset.range J, ((i + 1 : ℕ) : ℝ) ^ (-p)) := by
+          rw [Finset.mul_sum]
+    _ ≤ C ^ r * (p / (p - 1)) := by
+      exact mul_le_mul_of_nonneg_left (pseries_le hp J) (Real.rpow_nonneg hC _)
+    _ = C ^ r * (r / (r - r0)) := by
+      congr 1
+      dsimp [p]
+      field_simp
+
+/- The endpoint sequence associated with a finite family of non-adjacent selected jumps. -/
+private def doubledEndpoint {J k : ℕ} (N : Fin (J + 1) → ℕ)
+    (e : Fin k → Fin J) (q : Fin (k * 2)) : ℕ :=
+  N (if q.val % 2 = 0 then (e q.divNat).castSucc else (e q.divNat).succ)
+
+private theorem doubledEndpoint_strictMono {J k : ℕ} (N : Fin (J + 1) → ℕ)
+    (hN : StrictMono N) (e : Fin k → Fin J)
+    (hgap : ∀ i j, i < j → (e i).val + 1 < (e j).val) :
+    StrictMono (doubledEndpoint N e) := by
+  intro q q' hqq'
+  have hq : 2 * q.divNat.val + q.val % 2 = q.val := by
+    simpa [Fin.divNat] using Nat.div_add_mod q.val 2
+  have hq' : 2 * q'.divNat.val + q'.val % 2 = q'.val := by
+    simpa [Fin.divNat] using Nat.div_add_mod q'.val 2
+  have hmod : q.val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+  have hmod' : q'.val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+  have hdiv : q.divNat.val ≤ q'.divNat.val := by omega
+  unfold doubledEndpoint
+  by_cases hsame : q.divNat = q'.divNat
+  · have hmods : q.val % 2 < q'.val % 2 := by omega
+    have hqzero : q.val % 2 = 0 := by omega
+    have hq'one : q'.val % 2 = 1 := by omega
+    simp only [hqzero, hq'one, reduceIte, gt_iff_lt]
+    apply hN
+    rw [hsame]
+    exact Fin.castSucc_lt_succ
+  · have hdiv' : q.divNat < q'.divNat := lt_of_le_of_ne hdiv hsame
+    have hegap : (e q.divNat).val + 1 < (e q'.divNat).val := hgap _ _ hdiv'
+    have hpos : (e q.divNat).succ < (e q'.divNat).castSucc := by
+      exact hegap
+    apply hN
+    apply lt_of_le_of_lt
+    · split
+      · exact Fin.castSucc_le_succ _
+      · exact le_rfl
+    · apply lt_of_lt_of_le hpos
+      split
+      · exact le_rfl
+      · exact Fin.castSucc_le_succ _
+
+private def evenJumpPos {k : ℕ} (hk : 0 < k) (i : Fin k) : Fin (k * 2 - 1) :=
+  ⟨2 * i.val, by omega⟩
+
+private def evenJumpStart {k : ℕ} (hk : 0 < k) (i : Fin k) : Fin (k * 2) :=
+  Fin.cast (by omega) (evenJumpPos hk i).castSucc
+
+private def evenJumpEnd {k : ℕ} (hk : 0 < k) (i : Fin k) : Fin (k * 2) :=
+  Fin.cast (by omega) (evenJumpPos hk i).succ
+
+private def allJumpStart {k : ℕ} (hk : 0 < k) (q : Fin (k * 2 - 1)) : Fin (k * 2) :=
+  Fin.cast (by omega) q.castSucc
+
+private def allJumpEnd {k : ℕ} (hk : 0 < k) (q : Fin (k * 2 - 1)) : Fin (k * 2) :=
+  Fin.cast (by omega) q.succ
+
+private theorem doubledEndpoint_evenJump {J k : ℕ} (N : Fin (J + 1) → ℕ)
+    (e : Fin k → Fin J) (hk : 0 < k) (i : Fin k) :
+    doubledEndpoint N e (evenJumpStart hk i) = N (e i).castSucc ∧
+      doubledEndpoint N e (evenJumpEnd hk i) = N (e i).succ := by
+  constructor
+  · simp [doubledEndpoint, evenJumpStart, evenJumpPos, Fin.divNat]
+  · have hdiv : (evenJumpEnd hk i).divNat = i := by
+      apply Fin.ext
+      simp [evenJumpEnd, evenJumpPos, Fin.divNat]
+      omega
+    have hmod : (evenJumpEnd hk i).val % 2 ≠ 0 := by
+      simp [evenJumpEnd, evenJumpPos]
+    simp [doubledEndpoint, hdiv, hmod]
+
+private theorem evenJumpPos_injective {k : ℕ} (hk : 0 < k) :
+    Function.Injective (evenJumpPos hk) := by
+  intro i j hij
+  apply Fin.ext
+  have hval := congrArg Fin.val hij
+  simp only [evenJumpPos, Fin.val_mk] at hval
+  omega
+
+private theorem selected_energy_le_doubled_energy {B : Type*} [SeminormedAddCommGroup B]
+    {J k : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ) (e : Fin k → Fin J) (hk : 0 < k) :
+    (∑ i, ‖a (N (e i).succ) - a (N (e i).castSucc)‖ ^ (2 : ℕ)) ≤
+      ∑ q, ‖a (doubledEndpoint N e (allJumpEnd hk q)) -
+        a (doubledEndpoint N e (allJumpStart hk q))‖ ^ (2 : ℕ) := by
+  let F : Fin (k * 2 - 1) → ℝ := fun q ↦
+    ‖a (doubledEndpoint N e (allJumpEnd hk q)) -
+      a (doubledEndpoint N e (allJumpStart hk q))‖ ^ (2 : ℕ)
+  have hterm (i : Fin k) :
+      ‖a (N (e i).succ) - a (N (e i).castSucc)‖ ^ (2 : ℕ) =
+        F (evenJumpPos hk i) := by
+    obtain ⟨hstart, hend⟩ := doubledEndpoint_evenJump N e hk i
+    simp only [F]
+    have hstart' : allJumpStart hk (evenJumpPos hk i) = evenJumpStart hk i := by
+      apply Fin.ext
+      simp [allJumpStart, evenJumpStart]
+    have hend' : allJumpEnd hk (evenJumpPos hk i) = evenJumpEnd hk i := by
+      apply Fin.ext
+      simp [allJumpEnd, evenJumpEnd]
+    rw [hstart', hend', hstart, hend]
+  calc
+    (∑ i, ‖a (N (e i).succ) - a (N (e i).castSucc)‖ ^ (2 : ℕ)) =
+        ∑ i, F (evenJumpPos hk i) := by
+      apply Finset.sum_congr rfl
+      intro i _
+      exact hterm i
+    _ = ∑ q ∈ Finset.image (evenJumpPos hk) Finset.univ, F q := by
+      symm
+      apply Finset.sum_image
+      intro i hi j hj hij
+      exact evenJumpPos_injective hk hij
+    _ ≤ ∑ q, F q := by
+      apply Finset.sum_le_sum_of_subset_of_nonneg
+      · intro q hq
+        simp
+      · intro q _ _
+        exact sq_nonneg _
+    _ = ∑ q, ‖a (doubledEndpoint N e (allJumpEnd hk q)) -
+        a (doubledEndpoint N e (allJumpStart hk q))‖ ^ (2 : ℕ) := rfl
+
+private theorem sum_orderEmbOfFin {J : ℕ} (s : Finset (Fin J)) (f : Fin J → ℝ) :
+    (∑ i, f (s.orderEmbOfFin rfl i)) = ∑ j ∈ s, f j := by
+  calc
+    (∑ i, f (s.orderEmbOfFin rfl i)) =
+        ∑ i, f ((s.orderIsoOfFin rfl i).val) := rfl
+    _ = ∑ i : s, f i := by
+      exact Equiv.sum_comp (s.orderIsoOfFin rfl).toEquiv (fun i : s ↦ f i)
+    _ = ∑ j ∈ s, f j := by
+      symm
+      exact Finset.sum_subtype s (by simp) f
+
+private theorem selected_energy_bound {B : Type*} [SeminormedAddCommGroup B]
+    {J k : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ)
+    (hN : StrictMono N) (hNpos : ∀ j, 0 < N j)
+    {r0 D : ℝ} (hr0 : 2 ≤ r0) (hD : 0 ≤ D)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / r0))
+    (e : Fin k → Fin J) (hk : 0 < k)
+    (hgap : ∀ i j, i < j → (e i).val + 1 < (e j).val) :
+    (∑ i, ‖a (N (e i).succ) - a (N (e i).castSucc)‖ ^ (2 : ℕ)) ≤
+      D * ((k * 2 : ℕ) : ℝ) ^ (1 - 2 / r0) := by
+  let M : Fin (k * 2 - 1 + 1) → ℕ := fun q ↦
+    doubledEndpoint N e (Fin.cast (by omega) q)
+  have hM : StrictMono M := by
+    intro q q' hqq'
+    apply doubledEndpoint_strictMono N hN e hgap
+    simpa [M] using hqq'
+  have hMpos : ∀ q, 0 < M q := by
+    intro q
+    unfold M doubledEndpoint
+    split
+    · exact hNpos _
+    · exact hNpos _
+  have hj := hjump (k * 2 - 1) (by omega) M hM hMpos
+  have henergy :
+      (∑ q : Fin (k * 2 - 1), ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) =
+        ∑ q, ‖a (doubledEndpoint N e (allJumpEnd hk q)) -
+          a (doubledEndpoint N e (allJumpStart hk q))‖ ^ (2 : ℕ) := by
+    apply Finset.sum_congr rfl
+    intro q _
+    have hstart : Fin.cast (by omega) q.castSucc = allJumpStart hk q := by
+      apply Fin.ext
+      simp [allJumpStart]
+    have hend : Fin.cast (by omega) q.succ = allJumpEnd hk q := by
+      apply Fin.ext
+      simp [allJumpEnd]
+    simp only [M]
+    rw [hstart, hend]
+  have halpha : 0 ≤ 1 - 2 / r0 := by
+    have hr0pos : 0 < r0 := by linarith
+    rw [sub_nonneg]
+    rw [div_le_iff₀ hr0pos]
+    linarith
+  have hpow : ((k * 2 - 1 : ℕ) : ℝ) ^ (1 - 2 / r0) ≤
+      ((k * 2 : ℕ) : ℝ) ^ (1 - 2 / r0) := by
+    apply Real.rpow_le_rpow (by positivity)
+    · exact_mod_cast (Nat.sub_le _ _)
+    · exact halpha
+  calc
+    (∑ i, ‖a (N (e i).succ) - a (N (e i).castSucc)‖ ^ (2 : ℕ)) ≤
+        ∑ q, ‖a (doubledEndpoint N e (allJumpEnd hk q)) -
+          a (doubledEndpoint N e (allJumpStart hk q))‖ ^ (2 : ℕ) :=
+      selected_energy_le_doubled_energy a N e hk
+    _ = ∑ q : Fin (k * 2 - 1),
+        ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ) := henergy.symm
+    _ ≤ D * ((k * 2 - 1 : ℕ) : ℝ) ^ (1 - 2 / r0) := hj
+    _ ≤ D * ((k * 2 : ℕ) : ℝ) ^ (1 - 2 / r0) := by gcongr
+
+private theorem even_orderEmb_gap {J : ℕ} (s : Finset (Fin J)) :
+    ∀ i j : Fin ((s.filter fun x ↦ x.val % 2 = 0).card), i < j →
+      ((s.filter fun x ↦ x.val % 2 = 0).orderEmbOfFin rfl i).val + 1 <
+        ((s.filter fun x ↦ x.val % 2 = 0).orderEmbOfFin rfl j).val := by
+  intro i j hij
+  let t := s.filter fun x ↦ x.val % 2 = 0
+  have hlt : t.orderEmbOfFin rfl i < t.orderEmbOfFin rfl j :=
+    (t.orderEmbOfFin rfl).strictMono hij
+  have hi : (t.orderEmbOfFin rfl i).val % 2 = 0 := by
+    have hmem := Finset.orderEmbOfFin_mem t rfl i
+    exact (Finset.mem_filter.mp hmem).2
+  have hj : (t.orderEmbOfFin rfl j).val % 2 = 0 := by
+    have hmem := Finset.orderEmbOfFin_mem t rfl j
+    exact (Finset.mem_filter.mp hmem).2
+  have himod : (t.orderEmbOfFin rfl i).val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+  have hjmod : (t.orderEmbOfFin rfl j).val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+  exact_mod_cast (by omega : (t.orderEmbOfFin rfl i).val + 1 <
+    (t.orderEmbOfFin rfl j).val)
+
+private theorem odd_orderEmb_gap {J : ℕ} (s : Finset (Fin J)) :
+    ∀ i j : Fin ((s.filter fun x ↦ x.val % 2 ≠ 0).card), i < j →
+      ((s.filter fun x ↦ x.val % 2 ≠ 0).orderEmbOfFin rfl i).val + 1 <
+        ((s.filter fun x ↦ x.val % 2 ≠ 0).orderEmbOfFin rfl j).val := by
+  intro i j hij
+  let t := s.filter fun x ↦ x.val % 2 ≠ 0
+  have hlt : t.orderEmbOfFin rfl i < t.orderEmbOfFin rfl j :=
+    (t.orderEmbOfFin rfl).strictMono hij
+  have hi : (t.orderEmbOfFin rfl i).val % 2 ≠ 0 := by
+    have hmem := Finset.orderEmbOfFin_mem t rfl i
+    exact (Finset.mem_filter.mp hmem).2
+  have hj : (t.orderEmbOfFin rfl j).val % 2 ≠ 0 := by
+    have hmem := Finset.orderEmbOfFin_mem t rfl j
+    exact (Finset.mem_filter.mp hmem).2
+  have himod : (t.orderEmbOfFin rfl i).val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+  have hjmod : (t.orderEmbOfFin rfl j).val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+  exact_mod_cast (by omega : (t.orderEmbOfFin rfl i).val + 1 <
+    (t.orderEmbOfFin rfl j).val)
+
+private theorem finset_selected_energy_bound {B : Type*} [SeminormedAddCommGroup B]
+    {J : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ)
+    (hN : StrictMono N) (hNpos : ∀ j, 0 < N j)
+    {r0 D : ℝ} (hr0 : 2 ≤ r0) (hD : 0 ≤ D)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / r0))
+    (s : Finset (Fin J))
+    (hgap : ∀ i j : Fin s.card, i < j →
+      (s.orderEmbOfFin rfl i).val + 1 < (s.orderEmbOfFin rfl j).val) :
+    (∑ j ∈ s, ‖a (N j.succ) - a (N j.castSucc)‖ ^ (2 : ℕ)) ≤
+      D * ((s.card * 2 : ℕ) : ℝ) ^ (1 - 2 / r0) := by
+  by_cases hs : s.card = 0
+  · have hs' : s = ∅ := Finset.card_eq_zero.mp hs
+    subst s
+    simpa using (mul_nonneg hD (Real.rpow_nonneg (by positivity) _))
+  have hk : 0 < s.card := Nat.pos_of_ne_zero hs
+  calc
+    (∑ j ∈ s, ‖a (N j.succ) - a (N j.castSucc)‖ ^ (2 : ℕ)) =
+        ∑ i, ‖a (N (s.orderEmbOfFin rfl i).succ) -
+          a (N (s.orderEmbOfFin rfl i).castSucc)‖ ^ (2 : ℕ) := by
+      symm
+      exact sum_orderEmbOfFin s (fun j ↦
+        ‖a (N j.succ) - a (N j.castSucc)‖ ^ (2 : ℕ))
+    _ ≤ D * ((s.card * 2 : ℕ) : ℝ) ^ (1 - 2 / r0) :=
+      selected_energy_bound a N hN hNpos hr0 hD hjump
+        (s.orderEmbOfFin rfl) hk hgap
+
+private noncomputable def sortedPrefix {J : ℕ} (d : Fin J → ℝ) (m : Fin J) :
+    Finset (Fin J) :=
+  (Finset.Iic m).image (decreasingSort d)
+
+private theorem sortedPrefix_card {J : ℕ} (d : Fin J → ℝ) (m : Fin J) :
+    (sortedPrefix d m).card = m.val + 1 := by
+  unfold sortedPrefix
+  rw [Finset.card_image_of_injective _ (decreasingSort_bijective d).1, Fin.card_Iic]
+
+private theorem sorted_prefix_energy_bound {B : Type*} [SeminormedAddCommGroup B]
+    {J : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ)
+    (hN : StrictMono N) (hNpos : ∀ j, 0 < N j)
+    {r0 D : ℝ} (hr0 : 2 ≤ r0) (hD : 0 ≤ D)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / r0))
+    (m : Fin J) :
+    (∑ j ∈ sortedPrefix
+        (fun j ↦ ‖a (N j.succ) - a (N j.castSucc)‖) m,
+      ‖a (N j.succ) - a (N j.castSucc)‖ ^ (2 : ℕ)) ≤
+      2 * D * ((2 * (m.val + 1) : ℕ) : ℝ) ^ (1 - 2 / r0) := by
+  let d : Fin J → ℝ := fun j ↦ ‖a (N j.succ) - a (N j.castSucc)‖
+  let s : Finset (Fin J) := sortedPrefix d m
+  let se : Finset (Fin J) := s.filter fun j ↦ j.val % 2 = 0
+  let so : Finset (Fin J) := s.filter fun j ↦ j.val % 2 ≠ 0
+  have halpha : 0 ≤ 1 - 2 / r0 := by
+    have hr0pos : 0 < r0 := by linarith
+    rw [sub_nonneg, div_le_iff₀ hr0pos]
+    linarith
+  have hse := finset_selected_energy_bound a N hN hNpos hr0 hD hjump se (by
+    simpa [se, s] using even_orderEmb_gap s)
+  have hso := finset_selected_energy_bound a N hN hNpos hr0 hD hjump so (by
+    simpa [so, s] using odd_orderEmb_gap s)
+  have hs_card : s.card = m.val + 1 := by
+    dsimp [s, d]
+    exact sortedPrefix_card _ _
+  have hse_card : se.card ≤ m.val + 1 := by
+    calc
+      se.card ≤ s.card := Finset.card_filter_le _ _
+      _ = m.val + 1 := hs_card
+  have hso_card : so.card ≤ m.val + 1 := by
+    calc
+      so.card ≤ s.card := Finset.card_filter_le _ _
+      _ = m.val + 1 := hs_card
+  have hse_base : ((se.card * 2 : ℕ) : ℝ) ≤ ((2 * (m.val + 1) : ℕ) : ℝ) := by
+    exact_mod_cast (by omega : se.card * 2 ≤ 2 * (m.val + 1))
+  have hso_base : ((so.card * 2 : ℕ) : ℝ) ≤ ((2 * (m.val + 1) : ℕ) : ℝ) := by
+    exact_mod_cast (by omega : so.card * 2 ≤ 2 * (m.val + 1))
+  have hse_pow : ((se.card * 2 : ℕ) : ℝ) ^ (1 - 2 / r0) ≤
+      ((2 * (m.val + 1) : ℕ) : ℝ) ^ (1 - 2 / r0) :=
+    Real.rpow_le_rpow (by positivity) hse_base halpha
+  have hso_pow : ((so.card * 2 : ℕ) : ℝ) ^ (1 - 2 / r0) ≤
+      ((2 * (m.val + 1) : ℕ) : ℝ) ^ (1 - 2 / r0) :=
+    Real.rpow_le_rpow (by positivity) hso_base halpha
+  have hse' : (∑ j ∈ se, d j ^ (2 : ℕ)) ≤
+      D * ((2 * (m.val + 1) : ℕ) : ℝ) ^ (1 - 2 / r0) := by
+    exact hse.trans (mul_le_mul_of_nonneg_left hse_pow hD)
+  have hso' : (∑ j ∈ so, d j ^ (2 : ℕ)) ≤
+      D * ((2 * (m.val + 1) : ℕ) : ℝ) ^ (1 - 2 / r0) := by
+    exact hso.trans (mul_le_mul_of_nonneg_left hso_pow hD)
+  change (∑ j ∈ s, d j ^ (2 : ℕ)) ≤ _
+  calc
+    (∑ j ∈ s, d j ^ (2 : ℕ)) =
+        (∑ j ∈ se, d j ^ (2 : ℕ)) + ∑ j ∈ so, d j ^ (2 : ℕ) := by
+      rw [← Finset.sum_filter_add_sum_filter_not s (fun j ↦ j.val % 2 = 0)]
+    _ ≤ D * ((2 * (m.val + 1) : ℕ) : ℝ) ^ (1 - 2 / r0) +
+        D * ((2 * (m.val + 1) : ℕ) : ℝ) ^ (1 - 2 / r0) := by
+      gcongr
+    _ = 2 * D * ((2 * (m.val + 1) : ℕ) : ℝ) ^ (1 - 2 / r0) := by ring
+
+private theorem sorted_prefix_lower {J : ℕ} (d : Fin J → ℝ)
+    (hd : ∀ j, 0 ≤ d j) (m : Fin J) :
+    ((m.val + 1 : ℕ) : ℝ) * (d (decreasingSort d m)) ^ (2 : ℕ) ≤
+      ∑ j ∈ sortedPrefix d m, (d j) ^ (2 : ℕ) := by
+  calc
+    ((m.val + 1 : ℕ) : ℝ) * (d (decreasingSort d m)) ^ (2 : ℕ) =
+        ∑ i ∈ Finset.Iic m, (d (decreasingSort d m)) ^ (2 : ℕ) := by
+      rw [Finset.sum_const, Fin.card_Iic, nsmul_eq_mul]
+    _ ≤ ∑ i ∈ Finset.Iic m, (d (decreasingSort d i)) ^ (2 : ℕ) := by
+      apply Finset.sum_le_sum
+      intro i hi
+      apply (sq_le_sq₀ (hd _) (hd _)).mpr
+      exact decreasingSort_mono d (Finset.mem_Iic.mp hi)
+    _ = ∑ j ∈ sortedPrefix d m, (d j) ^ (2 : ℕ) := by
+      unfold sortedPrefix
+      rw [Finset.sum_image]
+      intro i hi j hj hij
+      exact (decreasingSort_bijective d).1 hij
+
+private theorem decay_constant_square {r0 D x : ℝ} (hr0 : 0 < r0)
+    (hD : 0 ≤ D) (hx : 0 < x) :
+    x * (2 ^ (1 - 1 / r0) * √D * x ^ (-1 / r0)) ^ (2 : ℕ) =
+      2 * D * (2 * x) ^ (1 - 2 / r0) := by
+  have htwo : (2 : ℝ) ^ ((1 - 1 / r0) * 2) =
+      2 * 2 ^ (1 - 2 / r0) := by
+    calc
+      (2 : ℝ) ^ ((1 - 1 / r0) * 2) = 2 ^ (1 + (1 - 2 / r0)) := by
+        congr 1
+        ring
+      _ = 2 ^ (1 : ℝ) * 2 ^ (1 - 2 / r0) :=
+        Real.rpow_add (by norm_num) _ _
+      _ = 2 * 2 ^ (1 - 2 / r0) := by norm_num
+  have htwo_sq : ((2 : ℝ) ^ (1 - 1 / r0)) ^ (2 : ℕ) =
+      (2 : ℝ) ^ ((1 - 1 / r0) * 2) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2)]
+    norm_num
+  have hxpow : x * (x ^ (-1 / r0)) ^ (2 : ℕ) = x ^ (1 - 2 / r0) := by
+    calc
+      x * (x ^ (-1 / r0)) ^ (2 : ℕ) =
+          x ^ (1 : ℝ) * (x ^ (-1 / r0)) ^ (2 : ℝ) := by
+        rw [Real.rpow_one]
+        exact congrArg (fun z ↦ x * z)
+          (Real.rpow_natCast (x ^ (-1 / r0)) 2).symm
+      _ = x ^ (1 : ℝ) * x ^ ((-1 / r0) * 2) := by
+        rw [← Real.rpow_mul hx.le]
+      _ = x ^ (1 + (-1 / r0) * 2) := (Real.rpow_add hx _ _).symm
+      _ = x ^ (1 - 2 / r0) := by
+        congr 1
+        field_simp
+        ring
+  rw [mul_pow, mul_pow, Real.sq_sqrt hD, htwo_sq]
+  calc
+    x * ((2 : ℝ) ^ ((1 - 1 / r0) * 2) * D * (x ^ (-1 / r0)) ^ (2 : ℕ)) =
+        (2 : ℝ) ^ ((1 - 1 / r0) * 2) * D *
+          (x * (x ^ (-1 / r0)) ^ (2 : ℕ)) := by ring
+    _ = (2 : ℝ) ^ ((1 - 1 / r0) * 2) * D * x ^ (1 - 2 / r0) := by rw [hxpow]
+    _ = 2 * D * (2 * x) ^ (1 - 2 / r0) := by
+      rw [htwo, Real.mul_rpow (by norm_num : (0 : ℝ) ≤ 2) hx.le]
+      ring
+
+private theorem sorted_pointwise_decay {B : Type*} [SeminormedAddCommGroup B]
+    {J : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ)
+    (hN : StrictMono N) (hNpos : ∀ j, 0 < N j)
+    {r0 D : ℝ} (hr0 : 2 ≤ r0) (hD : 0 ≤ D)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / r0))
+    (m : Fin J) :
+    ‖a (N (decreasingSort (fun j ↦ ‖a (N j.succ) - a (N j.castSucc)‖) m).succ) -
+      a (N (decreasingSort (fun j ↦ ‖a (N j.succ) - a (N j.castSucc)‖) m).castSucc)‖ ≤
+      2 ^ (1 - 1 / r0) * √D * ((m.val + 1 : ℕ) : ℝ) ^ (-1 / r0) := by
+  let d : Fin J → ℝ := fun j ↦ ‖a (N j.succ) - a (N j.castSucc)‖
+  let x : ℝ := ((m.val + 1 : ℕ) : ℝ)
+  have hx : 0 < x := by
+    dsimp [x]
+    positivity
+  have hr0pos : 0 < r0 := by linarith
+  have hupper := sorted_prefix_energy_bound a N hN hNpos hr0 hD hjump m
+  have hlower := sorted_prefix_lower d (fun j ↦ norm_nonneg _) m
+  have hbound : x * (d (decreasingSort d m)) ^ (2 : ℕ) ≤
+      2 * D * (2 * x) ^ (1 - 2 / r0) := by
+    calc
+      x * (d (decreasingSort d m)) ^ (2 : ℕ) ≤
+          ∑ j ∈ sortedPrefix d m, d j ^ (2 : ℕ) := hlower
+      _ ≤ 2 * D * ((2 * (m.val + 1) : ℕ) : ℝ) ^ (1 - 2 / r0) := by
+        simpa [d] using hupper
+      _ = 2 * D * (2 * x) ^ (1 - 2 / r0) := by
+        congr 3
+        dsimp [x]
+        norm_num
+  let R : ℝ := 2 ^ (1 - 1 / r0) * √D * x ^ (-1 / r0)
+  have hR : 0 ≤ R := by
+    dsimp [R]
+    positivity
+  have hRmul : x * R ^ (2 : ℕ) = 2 * D * (2 * x) ^ (1 - 2 / r0) := by
+    exact decay_constant_square hr0pos hD hx
+  have hsq : (d (decreasingSort d m)) ^ (2 : ℕ) ≤ R ^ (2 : ℕ) := by
+    refine le_of_mul_le_mul_left ?_ hx
+    rw [hRmul]
+    exact hbound
+  change d (decreasingSort d m) ≤ _
+  change d (decreasingSort d m) ≤ R
+  exact le_of_sq_le_sq hsq hR
+
+
+private theorem sum_decreasingSort {J : ℕ} (d : Fin J → ℝ) (f : Fin J → ℝ) :
+    (∑ i, f (decreasingSort d i)) = ∑ j, f j := by
+  exact Function.Bijective.sum_comp (decreasingSort_bijective d) f
+
+private theorem chain_variation_rpow_bound {B : Type*} [SeminormedAddCommGroup B]
+    {J : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ)
+    (hN : StrictMono N) (hNpos : ∀ j, 0 < N j)
+    {r0 D r : ℝ} (hr0 : 2 ≤ r0) (hD : 0 ≤ D) (hr : r0 < r)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / r0)) :
+    (∑ j : Fin J, ‖a (N j.succ) - a (N j.castSucc)‖ ^ r) ≤
+      (2 ^ (1 - 1 / r0) * √D) ^ r * (r / (r - r0)) := by
+  let d : Fin J → ℝ := fun j ↦ ‖a (N j.succ) - a (N j.castSucc)‖
+  let C : ℝ := 2 ^ (1 - 1 / r0) * √D
+  have hr0pos : 0 < r0 := by linarith
+  have hC : 0 ≤ C := by
+    dsimp [C]
+    positivity
+  have hpoint (i : Fin J) :
+      d (decreasingSort d i) ≤ C * ((i.val + 1 : ℕ) : ℝ) ^ (-1 / r0) := by
+    simpa [d, C] using sorted_pointwise_decay a N hN hNpos hr0 hD hjump i
+  have hsum := pointwise_decay_sum_bound hC hr0pos hr
+    (fun i ↦ norm_nonneg _) hpoint
+  calc
+    (∑ j : Fin J, ‖a (N j.succ) - a (N j.castSucc)‖ ^ r) = ∑ j, d j ^ r := rfl
+    _ = ∑ i, d (decreasingSort d i) ^ r := (sum_decreasingSort d (fun j ↦ d j ^ r)).symm
+    _ ≤ C ^ r * (r / (r - r0)) := hsum
+    _ = (2 ^ (1 - 1 / r0) * √D) ^ r * (r / (r - r0)) := by rfl
+
+noncomputable def naturalVariationSeminorm {B : Type*} [SeminormedAddCommGroup B]
+    (a : ℕ → B) (r : ℝ) : ℝ≥0∞ :=
+  ⨆ (J : ℕ) (N : {u : Fin (J + 1) → ℕ // StrictMono u ∧ ∀ j, 0 < u j}),
+    (∑ j : Fin J,
+      (‖a (N.1 j.succ) - a (N.1 j.castSucc)‖₊ : ℝ≥0∞) ^ r) ^ r⁻¹
+
+private theorem ennreal_energy_eq_ofReal {B : Type*} [SeminormedAddCommGroup B]
+    {J : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ) {r : ℝ} (hr : 0 ≤ r) :
+    (∑ j : Fin J,
+      (‖a (N j.succ) - a (N j.castSucc)‖₊ : ℝ≥0∞) ^ r) =
+      ENNReal.ofReal (∑ j : Fin J, ‖a (N j.succ) - a (N j.castSucc)‖ ^ r) := by
+  rw [ENNReal.ofReal_sum_of_nonneg]
+  · apply Finset.sum_congr rfl
+    intro j _
+    rw [← enorm_eq_nnnorm, ← ofReal_norm]
+    rw [ENNReal.ofReal_rpow_of_nonneg]
+    · exact norm_nonneg _
+    · exact hr
+  · intro j _
+    exact Real.rpow_nonneg (norm_nonneg _) _
+
+private theorem ennreal_chain_root_le_of_real_bound {B : Type*} [SeminormedAddCommGroup B]
+    {J : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ) {r C q : ℝ}
+    (hr : 0 < r)
+    (hsum : (∑ j : Fin J, ‖a (N j.succ) - a (N j.castSucc)‖ ^ r) ≤ C ^ r * q) :
+    (∑ j : Fin J,
+      (‖a (N j.succ) - a (N j.castSucc)‖₊ : ℝ≥0∞) ^ r) ^ r⁻¹ ≤
+      (ENNReal.ofReal (C ^ r * q)) ^ r⁻¹ := by
+  rw [ennreal_energy_eq_ofReal a N hr.le]
+  apply ENNReal.rpow_le_rpow
+  · exact ENNReal.ofReal_le_ofReal hsum
+  · exact inv_nonneg.mpr hr.le
+
+private theorem naturalVariationSeminorm_le_jump_bound {B : Type*} [SeminormedAddCommGroup B]
+    (a : ℕ → B) {r0 D r : ℝ} (hr0 : 2 ≤ r0) (hD : 0 ≤ D) (hr : r0 < r)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / r0)) :
+    naturalVariationSeminorm a r ≤
+      (ENNReal.ofReal ((2 ^ (1 - 1 / r0) * √D) ^ r * (r / (r - r0)))) ^ r⁻¹ := by
+  have hr0pos : 0 < r0 := by linarith
+  have hrpos : 0 < r := lt_trans hr0pos hr
+  unfold naturalVariationSeminorm
+  apply iSup_le
+  intro J
+  apply iSup_le
+  intro N
+  exact ennreal_chain_root_le_of_real_bound a N.1 hrpos
+    (chain_variation_rpow_bound a N.1 N.2.1 N.2.2 hr0 hD hr hjump)
+
+private theorem ennreal_root_constant_eq {C q r : ℝ} (hC : 0 ≤ C) (hq : 0 ≤ q)
+    (hr : 0 < r) :
+    (ENNReal.ofReal (C ^ r * q)) ^ r⁻¹ =
+      ENNReal.ofReal (C * q ^ (1 / r)) := by
+  rw [ENNReal.ofReal_rpow_of_nonneg]
+  · rw [Real.mul_rpow (Real.rpow_nonneg hC _) hq,
+      Real.rpow_rpow_inv hC hr.ne']
+    congr 1
+    rw [one_div]
+  · exact mul_nonneg (Real.rpow_nonneg hC _) hq
+  · exact inv_nonneg.mpr hr.le
+
+/-- The abstract jump estimate controls natural-number variation, with the
+exact constant in the blueprint. -/
+private theorem jump_estimates_imply_variation {B : Type*} [SeminormedAddCommGroup B]
+    (a : ℕ → B) {r0 D r : ℝ} (hr0 : 2 ≤ r0) (hD : 0 < D) (hr : r0 < r)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / r0)) :
+    naturalVariationSeminorm a r ≤ ENNReal.ofReal
+      (2 ^ (1 - 1 / r0) * (r / (r - r0)) ^ (1 / r) * √D) := by
+  have hr0pos : 0 < r0 := by linarith
+  have hrpos : 0 < r := lt_trans hr0pos hr
+  have hq : 0 ≤ r / (r - r0) := by
+    apply div_nonneg
+    · exact hrpos.le
+    · linarith
+  have hC : 0 ≤ 2 ^ (1 - 1 / r0) * √D := by positivity
+  have h := naturalVariationSeminorm_le_jump_bound a hr0 hD.le hr hjump
+  rw [ennreal_root_constant_eq hC hq hrpos] at h
+  simpa [mul_assoc, mul_left_comm, mul_comm] using h
+
+private theorem chain_endpoint_energy_bound {B : Type*} [SeminormedAddCommGroup B]
+    {J : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ)
+    {D : ℝ} (hD : 0 ≤ D)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / (2 : ℝ)))
+    (hN : StrictMono N) (hNpos : ∀ j, 0 < N j) :
+    (∑ q : Fin J, ‖a (N q.succ) - a (N q.castSucc)‖ ^ (2 : ℕ)) ≤ D := by
+  by_cases hJ : J = 0
+  · subst J
+    simp [hD]
+  have hj := hjump J (Nat.one_le_iff_ne_zero.mpr hJ) N hN hNpos
+  simpa using hj
+
+/-- The endpoint `r₀ = 2` form of `jump_estimates_imply_variation`. -/
+private theorem jump_estimates_imply_variation_endpoint {B : Type*} [SeminormedAddCommGroup B]
+    (a : ℕ → B) {D : ℝ} (hD : 0 < D)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / (2 : ℝ))) :
+    naturalVariationSeminorm a 2 ≤ ENNReal.ofReal √D := by
+  unfold naturalVariationSeminorm
+  apply iSup_le
+  intro J
+  apply iSup_le
+  intro N
+  rw [ennreal_energy_eq_ofReal a N.1 (by norm_num : (0 : ℝ) ≤ 2)]
+  calc
+    (ENNReal.ofReal (∑ j : Fin J,
+      ‖a (N.1 j.succ) - a (N.1 j.castSucc)‖ ^ (2 : ℝ))) ^ (2 : ℝ)⁻¹ ≤
+        (ENNReal.ofReal D) ^ (2 : ℝ)⁻¹ :=
+      ENNReal.rpow_le_rpow
+        (ENNReal.ofReal_le_ofReal
+          (by simpa using chain_endpoint_energy_bound a N.1 hD.le hjump N.2.1 N.2.2))
+        (by norm_num)
+    _ = ENNReal.ofReal √D := by
+      rw [ENNReal.ofReal_rpow_of_nonneg hD.le (by norm_num)]
+      rw [Real.sqrt_eq_rpow]
+      congr 1
+      norm_num
+
+private theorem finite_rpow_norm_le_sqroot {J : ℕ} (d : Fin J → ℝ)
+    (hd : ∀ i, 0 ≤ d i) {r : ℝ} (hr : 2 ≤ r) :
+    (∑ i, d i ^ r) ^ (1 / r) ≤
+      (∑ i, d i ^ (2 : ℕ)) ^ (1 / (2 : ℝ)) := by
+  let S : ℝ := ∑ i, d i ^ (2 : ℕ)
+  let p : ℝ := r / 2
+  have hrpos : 0 < r := by linarith
+  have hp : 1 ≤ p := by
+    dsimp [p]
+    linarith
+  have hpminus : 0 ≤ p - 1 := sub_nonneg.mpr hp
+  have hS : 0 ≤ S := by
+    dsimp [S]
+    exact Finset.sum_nonneg fun i _ ↦ sq_nonneg _
+  have hy (i : Fin J) : 0 ≤ d i ^ (2 : ℕ) := sq_nonneg _
+  have hyS (i : Fin J) : d i ^ (2 : ℕ) ≤ S := by
+    dsimp [S]
+    exact Finset.single_le_sum (fun j _ ↦ sq_nonneg _) (Finset.mem_univ i)
+  have hpow (i : Fin J) : d i ^ r = (d i ^ (2 : ℕ)) ^ p := by
+    calc
+      d i ^ r = d i ^ ((2 : ℝ) * p) := by
+        congr 1
+        dsimp [p]
+        ring
+      _ = (d i ^ (2 : ℝ)) ^ p := Real.rpow_mul (hd i) _ _
+      _ = (d i ^ (2 : ℕ)) ^ p :=
+        congrArg (fun z : ℝ ↦ z ^ p) (Real.rpow_natCast (d i) 2)
+  have hterm (i : Fin J) :
+      (d i ^ (2 : ℕ)) ^ p ≤ d i ^ (2 : ℕ) * S ^ (p - 1) := by
+    calc
+      (d i ^ (2 : ℕ)) ^ p = (d i ^ (2 : ℕ)) ^ (1 + (p - 1)) := by
+        congr 1
+        ring
+      _ = (d i ^ (2 : ℕ)) ^ (1 : ℝ) * (d i ^ (2 : ℕ)) ^ (p - 1) :=
+        Real.rpow_add_of_nonneg (hy i) zero_le_one hpminus
+      _ ≤ (d i ^ (2 : ℕ)) ^ (1 : ℝ) * S ^ (p - 1) := by
+        rw [Real.rpow_one]
+        exact mul_le_mul_of_nonneg_left
+          (Real.rpow_le_rpow (hy i) (hyS i) hpminus) (hy i)
+      _ = d i ^ (2 : ℕ) * S ^ (p - 1) := by rw [Real.rpow_one]
+  have hsum : (∑ i, d i ^ r) ≤ S ^ p := by
+    calc
+      (∑ i, d i ^ r) = ∑ i, (d i ^ (2 : ℕ)) ^ p := by
+        apply Finset.sum_congr rfl
+        intro i _
+        exact hpow i
+      _ ≤ ∑ i, d i ^ (2 : ℕ) * S ^ (p - 1) := by
+        exact Finset.sum_le_sum fun i _ ↦ hterm i
+      _ = S * S ^ (p - 1) := by
+        rw [Finset.sum_mul]
+      _ = S ^ p := by
+        calc
+          S * S ^ (p - 1) = S ^ (1 : ℝ) * S ^ (p - 1) := by rw [Real.rpow_one]
+          _ = S ^ (1 + (p - 1)) :=
+            (Real.rpow_add_of_nonneg hS zero_le_one hpminus).symm
+          _ = S ^ p := by
+            congr 1
+            ring
+  have hsum_nonneg : 0 ≤ ∑ i, d i ^ r :=
+    Finset.sum_nonneg fun i _ ↦ Real.rpow_nonneg (hd i) _
+  calc
+    (∑ i, d i ^ r) ^ (1 / r) ≤ (S ^ p) ^ (1 / r) :=
+      Real.rpow_le_rpow hsum_nonneg hsum (by positivity)
+    _ = S ^ (1 / (2 : ℝ)) := by
+      rw [← Real.rpow_mul hS]
+      congr 1
+      dsimp [p]
+      field_simp
+
+private theorem ennreal_chain_rpow_mono_two {B : Type*} [SeminormedAddCommGroup B]
+    {J : ℕ} (a : ℕ → B) (N : Fin (J + 1) → ℕ) {r : ℝ} (hr : 2 ≤ r) :
+    (∑ j : Fin J,
+      (‖a (N j.succ) - a (N j.castSucc)‖₊ : ℝ≥0∞) ^ r) ^ r⁻¹ ≤
+      (∑ j : Fin J,
+        (‖a (N j.succ) - a (N j.castSucc)‖₊ : ℝ≥0∞) ^ (2 : ℝ)) ^ (2 : ℝ)⁻¹ := by
+  let d : Fin J → ℝ := fun j ↦ ‖a (N j.succ) - a (N j.castSucc)‖
+  have hrpos : 0 < r := by linarith
+  have hsumr : 0 ≤ ∑ j, d j ^ r :=
+    Finset.sum_nonneg fun j _ ↦ Real.rpow_nonneg (norm_nonneg _) _
+  have hsumtwo : 0 ≤ ∑ j, d j ^ (2 : ℝ) :=
+    Finset.sum_nonneg fun j _ ↦ Real.rpow_nonneg (norm_nonneg _) _
+  dsimp [d] at hsumr hsumtwo ⊢
+  rw [ennreal_energy_eq_ofReal a N hrpos.le,
+    ennreal_energy_eq_ofReal a N (by norm_num : (0 : ℝ) ≤ 2)]
+  rw [ENNReal.ofReal_rpow_of_nonneg hsumr (inv_nonneg.mpr hrpos.le),
+    ENNReal.ofReal_rpow_of_nonneg hsumtwo (by norm_num)]
+  exact ENNReal.ofReal_le_ofReal (by
+    simpa [d, one_div] using finite_rpow_norm_le_sqroot d (fun j ↦ norm_nonneg _) hr)
+
+/-- Finite `ℓ^r` variation is no larger than finite `ℓ²` variation for `r ≥ 2`. -/
+theorem naturalVariationSeminorm_mono_two {B : Type*} [SeminormedAddCommGroup B]
+    (a : ℕ → B) {r : ℝ} (hr : 2 ≤ r) :
+    naturalVariationSeminorm a r ≤ naturalVariationSeminorm a 2 := by
+  unfold naturalVariationSeminorm
+  apply iSup_le
+  intro J
+  apply iSup_le
+  intro N
+  exact le_iSup_of_le J (le_iSup_of_le N
+    (ennreal_chain_rpow_mono_two a N.1 hr))
+
+private theorem real_jump_estimate_of_enorm {B : Type*} [SeminormedAddCommGroup B]
+    (a : ℕ → B) {r0 D : ℝ} (hD : 0 ≤ D)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ₑ ^ (2 : ℝ)) ≤
+        ENNReal.ofReal D * ENNReal.ofReal ((L : ℝ) ^ (1 - 2 / r0))) :
+    ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
+        D * (L : ℝ) ^ (1 - 2 / r0) := by
+  intro L hL M hM hMpos
+  have h := hjump L hL M hM hMpos
+  have hleft : (∑ q : Fin L,
+      ‖a (M q.succ) - a (M q.castSucc)‖ₑ ^ (2 : ℝ)) =
+      ENNReal.ofReal (∑ q : Fin L,
+        ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℝ)) := by
+    simpa only [enorm_eq_nnnorm] using
+      (ennreal_energy_eq_ofReal a M (by norm_num : (0 : ℝ) ≤ 2))
+  rw [hleft, ← ENNReal.ofReal_mul hD] at h
+  apply (ENNReal.ofReal_le_ofReal_iff (mul_nonneg hD (Real.rpow_nonneg (by positivity) _))).mp
+  simpa using h
+
+/-- **From jump estimates to variation.**
+
+For a sequence `a : ℕ → B`, assume that every positive strict finite chain has
+squared jump energy at most `D * J ^ (1 - 2 / r₀)`, where `r₀ ≥ 2` and `D > 0`.
+Then its natural-number `r`-variation is bounded by
+`2 ^ (1 - 1 / r₀) * (r / (r - r₀)) ^ (1 / r) * √D` whenever `r₀ < r`.
+This is the `ENNReal` formulation used for the `L²`-valued ergodic averages;
+the endpoint `r₀ = 2` is `jump_estimates_imply_variation_endpoint_enorm`. -/
+theorem jump_estimates_imply_variation_enorm {B : Type*} [SeminormedAddCommGroup B]
+    (a : ℕ → B) {r0 D r : ℝ} (hr0 : 2 ≤ r0) (hD : 0 < D) (hr : r0 < r)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ₑ ^ (2 : ℝ)) ≤
+        ENNReal.ofReal D * ENNReal.ofReal ((L : ℝ) ^ (1 - 2 / r0))) :
+    naturalVariationSeminorm a r ≤ ENNReal.ofReal
+      (2 ^ (1 - 1 / r0) * (r / (r - r0)) ^ (1 / r) * √D) := by
+  exact jump_estimates_imply_variation a hr0 hD hr
+    (real_jump_estimate_of_enorm a hD.le hjump)
+
+/-- The endpoint `r₀ = 2` version for `ENNReal` jump-energy hypotheses. -/
+theorem jump_estimates_imply_variation_endpoint_enorm {B : Type*}
+    [SeminormedAddCommGroup B] (a : ℕ → B) {D : ℝ} (hD : 0 < D)
+    (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
+      StrictMono M → (∀ q, 0 < M q) →
+      (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ₑ ^ (2 : ℝ)) ≤
+        ENNReal.ofReal D * ENNReal.ofReal ((L : ℝ) ^ (1 - 2 / (2 : ℝ)))) :
+    naturalVariationSeminorm a 2 ≤ ENNReal.ofReal √D := by
+  exact jump_estimates_imply_variation_endpoint a hD
+    (real_jump_estimate_of_enorm a hD.le hjump)
+
+private theorem strongDual_apply_eq_sum {n : ℕ} (f : StrongDual ℝ (Fin n → ℝ))
+    (x : Fin n → ℝ) :
+    f x = ∑ i, f (Pi.single i 1) * x i := by
+  have hx : (∑ i, Pi.single i (x i)) = x :=
+    LinearMap.sum_single_apply (fun _ : Fin n ↦ ℝ) x
+  calc
+    f x = f (∑ i, Pi.single i (x i)) := by rw [hx]
+    _ = ∑ i, f (Pi.single i (x i)) := by rw [map_sum]
+    _ = ∑ i, f (x i • Pi.single i 1) := by
+      congr with i
+      simp [← Pi.single_smul]
+    _ = ∑ i, x i * f (Pi.single i 1) := by
+      simp
+    _ = ∑ i, f (Pi.single i 1) * x i := by
+      apply Finset.sum_congr rfl
+      intro i _
+      ring
+
+/-- A finite-dimensional support-functional characterization of the convex hull of a
+permutation orbit. This is the separation-theorem part of the exponent-polytope proof. -/
+private theorem mem_convexHull_perm_of_forall_dot_le {n : ℕ} (b x : Fin n → ℝ)
+    (h : ∀ c : Fin n → ℝ, ∃ σ : Equiv.Perm (Fin n),
+      ∑ i, c i * x i ≤ ∑ i, c i * b (σ i)) :
+    x ∈ convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ fun i ↦ b (σ i)) := by
+  classical
+  let s : Set (Fin n → ℝ) := Set.range fun σ : Equiv.Perm (Fin n) ↦ fun i ↦ b (σ i)
+  let C : Set (Fin n → ℝ) := convexHull ℝ s
+  have hclosed : IsClosed C := by
+    exact (Set.finite_range (fun σ : Equiv.Perm (Fin n) ↦ fun i ↦ b (σ i))).isClosed_convexHull
+      (𝕜 := ℝ)
+  by_contra hx
+  have hxC : x ∉ C := by
+    simpa only [C, s] using hx
+  obtain ⟨f, u, hfC, hfx⟩ :=
+    geometric_hahn_banach_closed_point (convex_convexHull ℝ s) hclosed hxC
+  let c : Fin n → ℝ := fun i ↦ f (Pi.single i 1)
+  obtain ⟨σ, hσ⟩ := h c
+  have hfx' : f x = ∑ i, c i * x i := by
+    exact strongDual_apply_eq_sum f x
+  have hfσ : f (fun i ↦ b (σ i)) = ∑ i, c i * b (σ i) := by
+    exact strongDual_apply_eq_sum f _
+  have hmem : (fun i ↦ b (σ i)) ∈ C := by
+    apply subset_convexHull ℝ s
+    exact ⟨σ, rfl⟩
+  have hlt := hfC _ hmem
+  rw [hfx'] at hfx
+  rw [hfσ] at hlt
+  linarith
+
+/-- The summation-by-parts comparison used after sorting a supporting functional. -/
+private theorem dot_le_of_prefix_sums (n : ℕ) (c x b : ℕ → ℝ)
+    (hc : ∀ i, i < n - 1 → c (i + 1) ≤ c i)
+    (hsum : ∑ i ∈ Finset.range n, x i = ∑ i ∈ Finset.range n, b i)
+    (hpref : ∀ k, k ≤ n →
+      ∑ i ∈ Finset.range k, x i ≤ ∑ i ∈ Finset.range k, b i) :
+    ∑ i ∈ Finset.range n, c i * x i ≤ ∑ i ∈ Finset.range n, c i * b i := by
+  have hcoeff : ∀ i ∈ Finset.range (n - 1), 0 ≤ c i - c (i + 1) := by
+    intro i hi
+    exact sub_nonneg.mpr (hc i (Finset.mem_range.mp hi))
+  have hprefix : ∀ i ∈ Finset.range (n - 1),
+      (c i - c (i + 1)) * (∑ j ∈ Finset.range (i + 1), x j) ≤
+        (c i - c (i + 1)) * (∑ j ∈ Finset.range (i + 1), b j) := by
+    intro i hi
+    apply mul_le_mul_of_nonneg_left (hpref (i + 1) ?_) (hcoeff i hi)
+    exact Nat.succ_le_iff.mpr <|
+      lt_of_lt_of_le (Finset.mem_range.mp hi) (Nat.sub_le n 1)
+  have hprefixSum :
+      ∑ i ∈ Finset.range (n - 1),
+          (c i - c (i + 1)) * (∑ j ∈ Finset.range (i + 1), x j) ≤
+        ∑ i ∈ Finset.range (n - 1),
+          (c i - c (i + 1)) * (∑ j ∈ Finset.range (i + 1), b j) :=
+    Finset.sum_le_sum fun i hi ↦ hprefix i hi
+  have hneg (z : ℕ → ℝ) :
+      -(∑ i ∈ Finset.range (n - 1),
+          (c (i + 1) - c i) * (∑ j ∈ Finset.range (i + 1), z j)) =
+        ∑ i ∈ Finset.range (n - 1),
+          (c i - c (i + 1)) * (∑ j ∈ Finset.range (i + 1), z j) := by
+    rw [← Finset.sum_neg_distrib]
+    apply Finset.sum_congr rfl
+    intro i _
+    ring
+  change (∑ i ∈ Finset.range n, c i • x i) ≤ ∑ i ∈ Finset.range n, c i • b i
+  rw [Finset.sum_range_by_parts c x, Finset.sum_range_by_parts c b]
+  rw [hsum]
+  simp only [smul_eq_mul]
+  rw [sub_eq_add_neg, sub_eq_add_neg, hneg x, hneg b]
+  linarith
+
+private def prefixSum {n : ℕ} (b : Fin n → ℝ) (k : ℕ) (hk : k ≤ n) : ℝ :=
+  ∑ i : Fin k, b (Fin.castLE hk i)
+
+private theorem prefixSum_congr {n : ℕ} (b : Fin n → ℝ) {k l : ℕ}
+    (hkl : k = l) (hk : k ≤ n) (hl : l ≤ n) :
+    prefixSum b k hk = prefixSum b l hl := by
+  subst l
+  rfl
+
+private def lowerBoundSet {n : ℕ} (S : ℝ) (lower : ℕ → ℝ) : Set (Fin n → ℝ) :=
+  {y | (∑ i, y i) = S ∧ ∀ I : Finset (Fin n), I.Nonempty → lower I.card ≤ ∑ i ∈ I, y i}
+
+private theorem convex_lowerBoundSet {n : ℕ} (S : ℝ) (lower : ℕ → ℝ) :
+    Convex ℝ (lowerBoundSet (n := n) S lower) := by
+  intro y hy z hz a b ha hb hab
+  rcases hy with ⟨hysum, hylower⟩
+  rcases hz with ⟨hzsum, hzlower⟩
+  constructor
+  · calc
+      (∑ i, (a • y + b • z) i) = a * (∑ i, y i) + b * (∑ i, z i) := by
+        simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_add_distrib,
+          Finset.mul_sum]
+      _ = S := by rw [hysum, hzsum, ← add_mul, hab, one_mul]
+  · intro I hI
+    have hyI := hylower I hI
+    have hzI := hzlower I hI
+    calc
+      lower I.card = a * lower I.card + b * lower I.card := by rw [← add_mul, hab, one_mul]
+      _ ≤ a * (∑ i ∈ I, y i) + b * (∑ i ∈ I, z i) := by
+        exact add_le_add (mul_le_mul_of_nonneg_left hyI ha) (mul_le_mul_of_nonneg_left hzI hb)
+      _ = ∑ i ∈ I, (a • y + b • z) i := by
+        simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_add_distrib,
+          Finset.mul_sum]
+
+private theorem prefixSum_full {n : ℕ} (b : Fin n → ℝ) :
+    prefixSum b n le_rfl = ∑ i, b i := by
+  rfl
+
+/-- The finite-dimensional majorization step in the converse direction of the
+exponent-polytope proposition. -/
+private theorem exists_perm_dot_le_of_upper_subset_bounds {n : ℕ} (b x : Fin n → ℝ)
+    (hsum : ∑ i, x i = ∑ i, b i)
+    (hupper : ∀ I : Finset (Fin n),
+      ∑ i ∈ I, x i ≤ prefixSum b I.card (by simpa using Finset.card_le_univ I)) :
+    ∀ c : Fin n → ℝ, ∃ σ : Equiv.Perm (Fin n),
+      ∑ i, c i * x i ≤ ∑ i, c i * b (σ i) := by
+  classical
+  intro c
+  let τ : Equiv.Perm (Fin n) := Tuple.sort (fun i ↦ -c i)
+  let c' : ℕ → ℝ := fun i ↦ if hi : i < n then c (τ ⟨i, hi⟩) else 0
+  let x' : ℕ → ℝ := fun i ↦ if hi : i < n then x (τ ⟨i, hi⟩) else 0
+  let b' : ℕ → ℝ := fun i ↦ if hi : i < n then b ⟨i, hi⟩ else 0
+  have hc' : ∀ i, i < n - 1 → c' (i + 1) ≤ c' i := by
+    intro i hi
+    have hi0 : i < n := lt_of_lt_of_le hi (Nat.sub_le n 1)
+    have hi1 : i + 1 < n := by omega
+    have hsorted := Tuple.monotone_sort (fun j ↦ -c j)
+    have hle : (-c) (τ ⟨i, hi0⟩) ≤ (-c) (τ ⟨i + 1, hi1⟩) := by
+      simpa [τ, Function.comp_apply] using
+        hsorted (Fin.mk_le_mk.mpr (Nat.le_succ i))
+    dsimp [c']
+    simp only [dif_pos hi0, dif_pos hi1]
+    simpa only [Pi.neg_apply] using (neg_le_neg_iff.mp hle)
+  have hsum' : ∑ i ∈ Finset.range n, x' i = ∑ i ∈ Finset.range n, b' i := by
+    have hxsum : (∑ i ∈ Finset.range n, x' i) = ∑ i : Fin n, x (τ i) := by
+      rw [← Fin.sum_univ_eq_sum_range x' n]
+      apply Finset.sum_congr rfl
+      intro i _
+      simp [x', i.isLt]
+    have hbsum : (∑ i ∈ Finset.range n, b' i) = ∑ i : Fin n, b i := by
+      rw [← Fin.sum_univ_eq_sum_range b' n]
+      apply Finset.sum_congr rfl
+      intro i _
+      simp [b', i.isLt]
+    rw [hxsum, hbsum, Equiv.sum_comp τ]
+    exact hsum
+  have hpref' : ∀ k, k ≤ n →
+      ∑ i ∈ Finset.range k, x' i ≤ ∑ i ∈ Finset.range k, b' i := by
+    intro k hk
+    let I : Finset (Fin n) :=
+      (Finset.univ : Finset (Fin k)).map ((Fin.castLEEmb hk).trans τ.toEmbedding)
+    have hI := hupper I
+    have hcard : I.card = k := by
+      simp [I]
+    have hxI : (∑ i ∈ I, x i) = ∑ i ∈ Finset.range k, x' i := by
+      calc
+        (∑ i ∈ I, x i) = ∑ i : Fin k, x (τ (Fin.castLE hk i)) := by simp [I]
+        _ = ∑ i : Fin k, x' i := by
+          apply Finset.sum_congr rfl
+          intro i _
+          simp only [x', dif_pos (i.isLt.trans_le hk)]
+          congr 2
+        _ = ∑ i ∈ Finset.range k, x' i := Fin.sum_univ_eq_sum_range x' k
+    have hbI : (∑ i ∈ Finset.range k, b' i) = prefixSum b k hk := by
+      calc
+        (∑ i ∈ Finset.range k, b' i) = ∑ i : Fin k, b' i :=
+          (Fin.sum_univ_eq_sum_range b' k).symm
+        _ = ∑ i : Fin k, b (Fin.castLE hk i) := by
+          apply Finset.sum_congr rfl
+          intro i _
+          simp only [b', dif_pos (i.isLt.trans_le hk)]
+          congr 1
+        _ = prefixSum b k hk := rfl
+    calc
+      ∑ i ∈ Finset.range k, x' i = ∑ i ∈ I, x i := hxI.symm
+      _ ≤ prefixSum b I.card _ := hI
+      _ = prefixSum b k hk := prefixSum_congr b hcard _ _
+      _ = ∑ i ∈ Finset.range k, b' i := hbI.symm
+  have hdot := dot_le_of_prefix_sums n c' x' b' hc' hsum' hpref'
+  have hleft : (∑ i ∈ Finset.range n, c' i * x' i) = ∑ i, c i * x i := by
+    rw [show (∑ i ∈ Finset.range n, c' i * x' i) =
+        ∑ i : Fin n, c (τ i) * x (τ i) by
+      rw [← Fin.sum_univ_eq_sum_range (fun i ↦ c' i * x' i) n]
+      apply Finset.sum_congr rfl
+      intro i _
+      simp [c', x', i.isLt]]
+    exact Equiv.sum_comp τ (fun i ↦ c i * x i)
+  have hright : (∑ i ∈ Finset.range n, c' i * b' i) =
+      ∑ i, c i * b (τ.symm i) := by
+    rw [show (∑ i ∈ Finset.range n, c' i * b' i) =
+        ∑ i : Fin n, c (τ i) * b i by
+      rw [← Fin.sum_univ_eq_sum_range (fun i ↦ c' i * b' i) n]
+      apply Finset.sum_congr rfl
+      intro i _
+      simp [c', b', i.isLt]]
+    simpa using Equiv.sum_comp τ (fun i ↦ c i * b (τ.symm i))
+  refine ⟨τ.symm, ?_⟩
+  rwa [hleft, hright] at hdot
+
+/-- A proved majorization criterion for a finite permutation orbit. -/
+private theorem mem_convexHull_perm_of_upper_subset_bounds {n : ℕ} (b x : Fin n → ℝ)
+    (hsum : ∑ i, x i = ∑ i, b i)
+    (hupper : ∀ I : Finset (Fin n),
+      ∑ i ∈ I, x i ≤ prefixSum b I.card (by simpa using Finset.card_le_univ I)) :
+    x ∈ convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ fun i ↦ b (σ i)) :=
+  mem_convexHull_perm_of_forall_dot_le b x
+    (exists_perm_dot_le_of_upper_subset_bounds b x hsum hupper)
+
+/-- The abstract permutahedron criterion underlying the range-of-exponents proposition.
+The endpoint arithmetic is isolated in `hendpoint` and `hprefix`. -/
+private theorem mem_convexHull_perm_iff_lower_subset_bounds {n : ℕ} (b x : Fin n → ℝ)
+    (S : ℝ) (lower : ℕ → ℝ)
+    (hbSum : ∑ i, b i = S)
+    (hendpoint : ∀ σ : Equiv.Perm (Fin n),
+      (∑ i, b (σ i)) = S ∧ ∀ I : Finset (Fin n), I.Nonempty →
+        lower I.card ≤ ∑ i ∈ I, b (σ i))
+    (hprefix : ∀ (k : ℕ) (hk : k ≤ n), k < n →
+      prefixSum b k hk = S - lower (n - k)) :
+    x ∈ convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ fun i ↦ b (σ i)) ↔
+      (∑ i, x i) = S ∧ ∀ I : Finset (Fin n), I.Nonempty → lower I.card ≤ ∑ i ∈ I, x i := by
+  classical
+  constructor
+  · intro hx
+    have hsubset :
+        convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ fun i ↦ b (σ i)) ⊆
+          lowerBoundSet (n := n) S lower :=
+      convexHull_min (by
+        rintro y ⟨σ, rfl⟩
+        exact hendpoint σ) (convex_lowerBoundSet S lower)
+    exact hsubset hx
+  · rintro ⟨hxsum, hxlower⟩
+    apply mem_convexHull_perm_of_upper_subset_bounds b x (hxsum.trans hbSum.symm)
+    intro I
+    let hIcard : I.card ≤ n := by simpa using Finset.card_le_univ I
+    by_cases hI : I = Finset.univ
+    · subst I
+      simp only [Finset.card_univ, Fintype.card_fin]
+      change (∑ i, x i) ≤ prefixSum b n _
+      rw [prefixSum_full]
+      exact (hxsum.trans hbSum.symm).le
+    · have hIlt : I.card < n := by
+        simpa using (Finset.card_lt_iff_ne_univ I).mpr hI
+      have hcompNonempty : Iᶜ.Nonempty := by
+        apply Finset.card_pos.mp
+        rw [Finset.card_compl]
+        exact Nat.sub_pos_of_lt (by simpa using hIlt)
+      have hcomp := hxlower Iᶜ hcompNonempty
+      have hsplit : (∑ i ∈ I, x i) + ∑ i ∈ Iᶜ, x i = S := by
+        rw [Finset.sum_add_sum_compl, hxsum]
+      calc
+        (∑ i ∈ I, x i) = S - ∑ i ∈ Iᶜ, x i := by linarith
+        _ ≤ S - lower Iᶜ.card := by linarith
+        _ = S - lower (n - I.card) := by simp only [Finset.card_compl, Fintype.card_fin]
+        _ = prefixSum b I.card hIcard := (hprefix I.card hIcard hIlt).symm
+
+/-- Integer-scaled coordinates of `(2⁻², 2⁻³, ..., 2⁻ⁿ, 2⁻ⁿ)`. -/
+private def endpointWeight : (m : ℕ) → Fin m → ℕ
+  | 0, i => Fin.elim0 i
+  | 1, _ => 2
+  | m + 2, i => Fin.cases (2 ^ (m + 1)) (endpointWeight (m + 1)) i
+
+/-- The reciprocal-exponent endpoint vector from the blueprint. -/
+noncomputable def endpointReciprocalVector (m : ℕ) : Fin m → ℝ :=
+  fun i ↦ (endpointWeight m i : ℝ) / (2 : ℝ) ^ (m + 1)
+
+private noncomputable def tailOf (m : ℕ) (I : Finset (Fin (m + 1))) : Finset (Fin m) :=
+  I.preimage (Fin.succEmb m) (Fin.succ_injective m).injOn
+
+private theorem map_tailOf (m : ℕ) (I : Finset (Fin (m + 1))) :
+    (tailOf m I).map (Fin.succEmb m) = I.erase 0 := by
+  ext i
+  simp only [Finset.mem_map, Finset.mem_erase, tailOf]
+  constructor
+  · rintro ⟨j, hj, rfl⟩
+    exact ⟨Fin.succ_ne_zero j, Finset.mem_preimage.mp hj⟩
+  · rintro ⟨hi0, hiI⟩
+    obtain ⟨j, rfl⟩ := Fin.exists_succ_eq_of_ne_zero hi0
+    exact ⟨j, Finset.mem_preimage.mpr hiI, rfl⟩
+
+private theorem card_tailOf (m : ℕ) (I : Finset (Fin (m + 1))) :
+    (tailOf m I).card = (I.erase 0).card := by
+  rw [← Finset.card_map (Fin.succEmb m), map_tailOf]
+
+private theorem sum_tailOf (m : ℕ) (I : Finset (Fin (m + 1))) (f : Fin (m + 1) → ℕ) :
+    ∑ i ∈ tailOf m I, f i.succ = ∑ i ∈ I.erase 0, f i := by
+  calc
+    ∑ i ∈ tailOf m I, f i.succ = ∑ i ∈ (tailOf m I).map (Fin.succEmb m), f i :=
+      (Finset.sum_map (tailOf m I) (Fin.succEmb m) f).symm
+    _ = ∑ i ∈ I.erase 0, f i := by rw [map_tailOf]
+
+private theorem endpointWeight_zero (m : ℕ) : endpointWeight (m + 2) 0 = 2 ^ (m + 1) := by
+  simp [endpointWeight]
+
+private theorem endpointWeight_succ (m : ℕ) (i : Fin (m + 1)) :
+    endpointWeight (m + 2) i.succ = endpointWeight (m + 1) i := by
+  simp [endpointWeight]
+
+private theorem sum_endpointWeight : ∀ m : ℕ, 1 ≤ m →
+    (∑ i, endpointWeight m i) = 2 ^ m
+  | 0, hm => by omega
+  | 1, _ => by norm_num [endpointWeight]
+  | m + 2, _ => by
+    rw [Fin.sum_univ_succ]
+    rw [endpointWeight_zero]
+    simp_rw [endpointWeight_succ]
+    rw [sum_endpointWeight (m + 1) (by omega), pow_succ]
+    calc
+      2 ^ m * 2 + 2 ^ m * 2 = 2 ^ m * (2 * 2) := by ring
+      _ = 2 ^ m * 2 ^ 2 := by norm_num
+      _ = 2 ^ (m + 2) := (pow_add _ _ _).symm
+
+private theorem sum_tail_endpointWeight (m : ℕ) (I : Finset (Fin (m + 2))) :
+    ∑ i ∈ tailOf (m + 1) I, endpointWeight (m + 1) i =
+      ∑ i ∈ I.erase 0, endpointWeight (m + 2) i := by
+  calc
+    ∑ i ∈ tailOf (m + 1) I, endpointWeight (m + 1) i =
+        ∑ i ∈ tailOf (m + 1) I, endpointWeight (m + 2) i.succ := by
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [endpointWeight_succ]
+    _ = ∑ i ∈ I.erase 0, endpointWeight (m + 2) i :=
+      sum_tailOf (m + 1) I (endpointWeight (m + 2))
+
+private theorem sum_endpointWeight_of_zero_mem (m : ℕ) (I : Finset (Fin (m + 2)))
+    (h0 : 0 ∈ I) :
+    ∑ i ∈ I, endpointWeight (m + 2) i =
+      2 ^ (m + 1) + ∑ i ∈ tailOf (m + 1) I, endpointWeight (m + 1) i := by
+  rw [← Finset.sum_erase_add I (endpointWeight (m + 2)) h0, endpointWeight_zero,
+    ← sum_tail_endpointWeight]
+  omega
+
+private theorem card_tailOf_of_zero_mem (m : ℕ) (I : Finset (Fin (m + 2)))
+    (h0 : 0 ∈ I) : I.card = (tailOf (m + 1) I).card + 1 := by
+  rw [← Finset.card_erase_add_one h0, ← card_tailOf]
+
+private theorem lower_endpointWeight : ∀ m : ℕ, 1 ≤ m →
+    ∀ I : Finset (Fin m), I.Nonempty →
+      2 ^ I.card ≤ ∑ i ∈ I, endpointWeight m i
+  | 0, hm => by omega
+  | 1, _ => by
+    intro I hI
+    have hIeq : I = Finset.univ := by
+      apply Finset.eq_univ_of_card I
+      apply Nat.le_antisymm (Finset.card_le_univ I)
+      change 1 ≤ I.card
+      have hpos := Finset.card_pos.mpr hI
+      omega
+    subst I
+    norm_num [endpointWeight]
+  | m + 2, _ => by
+    intro I hI
+    by_cases h0 : 0 ∈ I
+    · let J : Finset (Fin (m + 1)) := tailOf (m + 1) I
+      have hsumI :
+          ∑ i ∈ I, endpointWeight (m + 2) i =
+            2 ^ (m + 1) + ∑ i ∈ J, endpointWeight (m + 1) i := by
+        exact sum_endpointWeight_of_zero_mem m I h0
+      have hcardI : I.card = J.card + 1 := by
+        exact card_tailOf_of_zero_mem m I h0
+      by_cases hJ : J.Nonempty
+      · have htail := lower_endpointWeight (m + 1) (by omega) J hJ
+        have hJcard : J.card ≤ m + 1 := by
+          simpa only [Finset.card_univ, Fintype.card_fin] using Finset.card_le_univ J
+        have hpow : 2 ^ J.card ≤ 2 ^ (m + 1) :=
+          Nat.pow_le_pow_right (by omega) hJcard
+        rw [hsumI, hcardI, pow_succ]
+        calc
+          2 ^ J.card * 2 = 2 ^ J.card + 2 ^ J.card := by omega
+          _ ≤ 2 ^ (m + 1) + ∑ i ∈ J, endpointWeight (m + 1) i :=
+            Nat.add_le_add hpow htail
+      · have hJempty : J = ∅ := Finset.not_nonempty_iff_eq_empty.mp hJ
+        have htwo : 2 ≤ 2 ^ (m + 1) := by
+          calc
+            2 = 1 * 2 := by omega
+            _ ≤ 2 ^ m * 2 := Nat.mul_le_mul_right 2 Nat.one_le_two_pow
+            _ = 2 ^ (m + 1) := (pow_succ _ _).symm
+        rw [hsumI, hcardI]
+        simpa [hJempty] using htwo
+    · let J : Finset (Fin (m + 1)) := tailOf (m + 1) I
+      have herase : I.erase 0 = I := by
+        ext i
+        simp [h0]
+      have hsumI :
+          ∑ i ∈ I, endpointWeight (m + 2) i =
+            ∑ i ∈ J, endpointWeight (m + 1) i := by
+        rw [← herase, ← sum_tail_endpointWeight]
+      have hcardI : I.card = J.card := by
+        rw [← herase, ← card_tailOf]
+      have hJ : J.Nonempty := by
+        apply Finset.card_pos.mp
+        rw [card_tailOf, herase]
+        exact Finset.card_pos.mpr hI
+      rw [hsumI, hcardI]
+      exact lower_endpointWeight (m + 1) (by omega) J hJ
+
+private def prefixWeight (m k : ℕ) (hk : k ≤ m) : ℕ :=
+  ∑ i : Fin k, endpointWeight m (Fin.castLE hk i)
+
+private theorem prefixWeight_succ (m k : ℕ) (hk : k + 1 ≤ m + 2) :
+    prefixWeight (m + 2) (k + 1) hk =
+      2 ^ (m + 1) + prefixWeight (m + 1) k (by omega) := by
+  unfold prefixWeight
+  rw [Fin.sum_univ_succ]
+  have hcast0 : Fin.castLE hk 0 = 0 := rfl
+  rw [hcast0, endpointWeight_zero]
+  have hcastSucc (i : Fin k) :
+      Fin.castLE hk i.succ = (Fin.castLE (show k ≤ m + 1 by omega) i).succ := by
+    rfl
+  simp_rw [hcastSucc, endpointWeight_succ]
+
+private theorem prefix_endpointWeight : ∀ m k : ℕ, ∀ hk : k ≤ m, k < m →
+    prefixWeight m k hk = 2 ^ m - 2 ^ (m - k)
+  | 0, k, hk, hlt => by omega
+  | 1, k, hk, hlt => by
+    have hk0 : k = 0 := by omega
+    subst k
+    simp [prefixWeight]
+  | m + 2, k, hk, hlt => by
+    by_cases hk0 : k = 0
+    · subst k
+      simp [prefixWeight]
+    · obtain ⟨l, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk0
+      rw [prefixWeight_succ]
+      rw [prefix_endpointWeight (m + 1) l (by omega) (by omega)]
+      have hsub : m + 2 - (l + 1) = m + 1 - l := by omega
+      rw [hsub]
+      have hpow : 2 ^ (m + 1 - l) ≤ 2 ^ (m + 1) := by
+        apply Nat.pow_le_pow_right (by omega)
+        omega
+      calc
+        2 ^ (m + 1) + (2 ^ (m + 1) - 2 ^ (m + 1 - l)) =
+            (2 ^ (m + 1) + 2 ^ (m + 1)) - 2 ^ (m + 1 - l) :=
+          (Nat.add_sub_assoc hpow _).symm
+        _ = 2 ^ (m + 2) - 2 ^ (m + 1 - l) := by
+          congr 1
+          rw [show m + 2 = (m + 1) + 1 by omega, pow_succ]
+          omega
+
+private theorem endpointReciprocalVector_sum (m : ℕ) (hm : 1 ≤ m) :
+    (∑ i, endpointReciprocalVector m i) = 1 / 2 := by
+  unfold endpointReciprocalVector
+  rw [← Finset.sum_div]
+  rw [← Nat.cast_sum, sum_endpointWeight m hm]
+  push_cast
+  field_simp
+  rw [pow_succ]
+
+private theorem endpointReciprocalVector_lower (m : ℕ) (hm : 1 ≤ m)
+    (I : Finset (Fin m)) (hI : I.Nonempty) :
+    (2 : ℝ) ^ I.card / (2 : ℝ) ^ (m + 1) ≤
+      ∑ i ∈ I, endpointReciprocalVector m i := by
+  unfold endpointReciprocalVector
+  rw [← Finset.sum_div, ← Nat.cast_sum]
+  apply (div_le_div_iff_of_pos_right (by positivity)).mpr
+  exact_mod_cast lower_endpointWeight m hm I hI
+
+private theorem prefix_endpointReciprocalVector (m k : ℕ) (hk : k ≤ m) (hlt : k < m) :
+    prefixSum (endpointReciprocalVector m) k hk =
+      1 / 2 - (2 : ℝ) ^ (m - k) / (2 : ℝ) ^ (m + 1) := by
+  unfold prefixSum endpointReciprocalVector
+  rw [← Finset.sum_div, ← Nat.cast_sum]
+  change (prefixWeight m k hk : ℝ) / (2 : ℝ) ^ (m + 1) = _
+  rw [prefix_endpointWeight m k hk hlt]
+  have hpowNat : 2 ^ (m - k) ≤ 2 ^ m := by
+    apply Nat.pow_le_pow_right (by omega)
+    exact Nat.sub_le _ _
+  rw [Nat.cast_sub hpowNat]
+  push_cast
+  field_simp
+  rw [pow_succ]
+  ring
+
+/-- The convex hull of the permutations of the endpoint reciprocal vector. -/
+noncomputable def endpointPolytope (m : ℕ) : Set (Fin m → ℝ) :=
+  convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin m) ↦
+    fun i ↦ endpointReciprocalVector m (σ i))
+
+/--
+\begin{proposition}[Range of exponents]\label{exponent polytope}
+Let $p_i\in[1,\infty]$ for $i\in[n)$. The vector $(p_i^{-1})_{i\in[n)}$
+belongs to the convex hull of the permutations of
+$(2^{-2},2^{-3},\ldots,2^{-n},2^{-n})$ if and only if its coordinates sum to
+$1/2$ and every nonempty coordinate set $I$ has sum at least
+$2^{|I|-n-1}$.
+\end{proposition}
+
+We state this in terms of the reciprocal vector `x`; the displayed lower bound
+is written as `2 ^ |I| / 2 ^ (n + 1)`, which is the same dyadic number. -/
+theorem exponent_polytope {m : ℕ} (hm : 2 ≤ m) (x : Fin m → ℝ) :
+    x ∈ endpointPolytope m ↔
+      (∑ i, x i) = 1 / 2 ∧
+        ∀ I : Finset (Fin m), I.Nonempty →
+          (2 : ℝ) ^ I.card / (2 : ℝ) ^ (m + 1) ≤ ∑ i ∈ I, x i := by
+  let b := endpointReciprocalVector m
+  let lower : ℕ → ℝ := fun r ↦ (2 : ℝ) ^ r / (2 : ℝ) ^ (m + 1)
+  have hbSum : (∑ i, b i) = 1 / 2 := by
+    exact endpointReciprocalVector_sum m (by omega)
+  have hendpoint : ∀ σ : Equiv.Perm (Fin m),
+      (∑ i, b (σ i)) = 1 / 2 ∧ ∀ I : Finset (Fin m), I.Nonempty →
+        lower I.card ≤ ∑ i ∈ I, b (σ i) := by
+    intro σ
+    constructor
+    · rw [Equiv.sum_comp]
+      exact hbSum
+    · intro I hI
+      let J : Finset (Fin m) := I.map σ.toEmbedding
+      have hJ : J.Nonempty := by
+        rcases hI with ⟨i, hi⟩
+        exact ⟨σ i, Finset.mem_map.mpr ⟨i, hi, rfl⟩⟩
+      have hlower := endpointReciprocalVector_lower m (by omega) J hJ
+      have hcard : J.card = I.card := by simp [J]
+      have hsum : (∑ j ∈ J, b j) = ∑ i ∈ I, b (σ i) := by
+        exact Finset.sum_map I σ.toEmbedding b
+      rw [← hcard, ← hsum]
+      simpa only [b, lower] using hlower
+  have hprefix : ∀ (k : ℕ) (hk : k ≤ m), k < m →
+      prefixSum b k hk = 1 / 2 - lower (m - k) := by
+    intro k hk hlt
+    exact prefix_endpointReciprocalVector m k hk hlt
+  simpa only [endpointPolytope, b, lower] using
+    (mem_convexHull_perm_iff_lower_subset_bounds b x (1 / 2) lower hbSum hendpoint hprefix)
+
+/-- The `p_i` formulation of the range-of-exponents proposition. -/
+theorem exponent_polytope_of_exponents {m : ℕ} (hm : 2 ≤ m)
+    (p : Fin m → ℝ≥0∞) (_hp : ∀ i, 1 ≤ p i) :
+    (fun i ↦ ((p i)⁻¹).toReal) ∈ endpointPolytope m ↔
+      (∑ i, ((p i)⁻¹).toReal) = 1 / 2 ∧
+        ∀ I : Finset (Fin m), I.Nonempty →
+          (2 : ℝ) ^ I.card / (2 : ℝ) ^ (m + 1) ≤ ∑ i ∈ I, ((p i)⁻¹).toReal :=
+  exponent_polytope hm _
+
+private theorem le_mul_two_pow_sub (k d : ℕ) (hk : 1 ≤ k) :
+    k + d ≤ k * 2 ^ d := by
+  induction d with
+  | zero => simp
+  | succ d hd =>
+    rw [pow_succ]
+    have hpos : 1 ≤ k * 2 ^ d := by
+      exact Nat.mul_pos (by omega) (Nat.two_pow_pos _)
+    calc
+      k + (d + 1) = (k + d) + 1 := by omega
+      _ ≤ k * 2 ^ d + 1 := Nat.succ_le_succ hd
+      _ ≤ (k * 2 ^ d) * 2 := by omega
+      _ = k * (2 ^ d * 2) := by ring
+
+private theorem le_card_mul_two_pow_sub (k m : ℕ) (hk : 1 ≤ k) (hkm : k ≤ m) :
+    m ≤ k * 2 ^ (m - k) := by
+  calc
+    m = k + (m - k) := (Nat.add_sub_of_le hkm).symm
+    _ ≤ k * 2 ^ (m - k) := le_mul_two_pow_sub k (m - k) hk
+
+/-- The symmetric reciprocal vector is in the endpoint polytope. -/
+theorem aux_symmetricExponent_mem_endpointPolytope {m : ℕ} (hm : 2 ≤ m) :
+    (fun _ : Fin m ↦ (2 * m : ℝ)⁻¹) ∈ endpointPolytope m := by
+  rw [exponent_polytope hm]
+  constructor
+  · rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    have hm0 : (m : ℝ) ≠ 0 := by exact_mod_cast (by omega : m ≠ 0)
+    field_simp
+  · intro I hI
+    rw [Finset.sum_const, nsmul_eq_mul]
+    have hcard : 1 ≤ I.card := by
+      exact Nat.one_le_iff_ne_zero.mpr (Finset.card_ne_zero.mpr hI)
+    have hcardm : I.card ≤ m := by
+      simpa only [Finset.card_univ, Fintype.card_fin] using Finset.card_le_univ I
+    have hnat : m ≤ I.card * 2 ^ (m - I.card) :=
+      le_card_mul_two_pow_sub I.card m hcard hcardm
+    have hreal : (m : ℝ) ≤ (I.card : ℝ) * (2 : ℝ) ^ (m - I.card) := by
+      exact_mod_cast hnat
+    have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
+    have hpowpos : (0 : ℝ) < (2 : ℝ) ^ (m + 1) := by positivity
+    have hdenpos : (0 : ℝ) < 2 * m := by positivity
+    apply (div_le_div_iff₀ hpowpos hdenpos).mpr
+    rw [show (2 : ℝ) ^ (m + 1) = (2 : ℝ) ^ (m - I.card) *
+        (2 : ℝ) ^ (I.card + 1) by
+      rw [← pow_add]
+      congr 1
+      omega]
+    have hpowcard : (0 : ℝ) < (2 : ℝ) ^ I.card := by positivity
+    have hmul : (2 : ℝ) ^ I.card * m ≤
+        (2 : ℝ) ^ I.card * ((I.card : ℝ) * (2 : ℝ) ^ (m - I.card)) :=
+      mul_le_mul_of_nonneg_left hreal hpowcard.le
+    calc
+      (2 : ℝ) ^ I.card * (2 * m) = 2 * ((2 : ℝ) ^ I.card * m) := by ring
+      _ ≤ 2 * ((2 : ℝ) ^ I.card * ((I.card : ℝ) * (2 : ℝ) ^ (m - I.card))) :=
+        mul_le_mul_of_nonneg_left hmul (by norm_num)
+      _ = (I.card : ℝ) * ((2 : ℝ) ^ (m - I.card) * (2 : ℝ) ^ (I.card + 1)) := by
+        rw [show (2 : ℝ) ^ (I.card + 1) = (2 : ℝ) ^ I.card * 2 by rw [pow_succ]]
+        ring
+
+/-! ## Permuting and normalizing the endpoint estimate -/
+
+abbrev RealVector (n : ℕ) := EuclideanSpace ℝ (Fin n)
+
+noncomputable def coordinatePerm {n : ℕ} (π : Equiv.Perm (Fin n)) :
+    RealVector n ≃ₗᵢ[ℝ] RealVector n :=
+  LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ π
+
+noncomputable def coordinateAxis {n : ℕ} (i : Fin n) : RealVector n :=
+  WithLp.toLp 2 (Pi.single i (1 : ℝ))
+
+theorem coordinatePerm_apply_index {n : ℕ} (π : Equiv.Perm (Fin n))
+    (x : RealVector n) (i : Fin n) :
+    coordinatePerm π x (π i) = x i := by
+  simp [coordinatePerm, LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft']
+
+theorem coordinatePerm_axis {n : ℕ} (π : Equiv.Perm (Fin n)) (i : Fin n) :
+    coordinatePerm π (coordinateAxis i) = coordinateAxis (π i) := by
+  ext j
+  by_cases hj : j = π i
+  · subst j
+    rw [coordinatePerm_apply_index]
+    simp [coordinateAxis]
+  · obtain ⟨k, hk⟩ := π.surjective j
+    rw [← hk, coordinatePerm_apply_index]
+    simp [coordinateAxis]
+
+theorem coordinatePerm_translate {n : ℕ} (π : Equiv.Perm (Fin n))
+    (x : RealVector n) (s : ℝ) (i : Fin n) :
+    coordinatePerm π (x + s • coordinateAxis i) =
+      coordinatePerm π x + s • coordinateAxis (π i) := by
+  rw [map_add, map_smul, coordinatePerm_axis]
+
+theorem coordinatePerm_symm_axis {n : ℕ} (π : Equiv.Perm (Fin n)) (i : Fin n) :
+    (coordinatePerm π).symm (coordinateAxis i) = coordinateAxis (π.symm i) := by
+  apply (coordinatePerm π).injective
+  rw [LinearIsometryEquiv.apply_symm_apply, coordinatePerm_axis]
+  simp
+
+theorem coordinatePerm_symm_translate {n : ℕ} (π : Equiv.Perm (Fin n))
+    (x : RealVector n) (s : ℝ) (i : Fin n) :
+    (coordinatePerm π).symm (coordinatePerm π x + s • coordinateAxis i) =
+      x + s • coordinateAxis (π.symm i) := by
+  rw [map_add, map_smul, LinearIsometryEquiv.symm_apply_apply, coordinatePerm_symm_axis]
+
+theorem coordinatePerm_measurePreserving {n : ℕ} (π : Equiv.Perm (Fin n)) :
+    MeasurePreserving (coordinatePerm π) volume volume := by
+  exact LinearIsometryEquiv.measurePreserving (coordinatePerm π)
+
+noncomputable def permutedSchwartz {n : ℕ} (π : Equiv.Perm (Fin n))
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) :
+    Fin n → SchwartzMap (RealVector n) ℝ :=
+  fun i ↦ SchwartzMap.compCLMOfContinuousLinearEquiv ℝ
+    (coordinatePerm π).symm.toContinuousLinearEquiv (f (π.symm i))
+
+theorem permutedSchwartz_apply {n : ℕ} (π : Equiv.Perm (Fin n))
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) (i : Fin n) (x : RealVector n) :
+    permutedSchwartz π f i x = f (π.symm i) ((coordinatePerm π).symm x) := rfl
+
+theorem eLpNorm_permutedSchwartz {n : ℕ} (π : Equiv.Perm (Fin n))
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) (i : Fin n) (p : ℝ≥0∞) :
+    eLpNorm (permutedSchwartz π f i) p volume =
+      eLpNorm (f (π.symm i)) p volume := by
+  have hmp : MeasurePreserving (coordinatePerm π).symm volume volume :=
+    LinearIsometryEquiv.measurePreserving (coordinatePerm π).symm
+  change eLpNorm (fun x ↦ f (π.symm i) ((coordinatePerm π).symm x)) p volume = _
+  exact eLpNorm_comp_measurePreserving (f (π.symm i)).continuous.aestronglyMeasurable hmp
+
+theorem permuted_product {n : ℕ} (π : Equiv.Perm (Fin n))
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) (x : RealVector n) (s : ℝ) :
+    (∏ k, permutedSchwartz π f k
+        (coordinatePerm π x + s • coordinateAxis k)) =
+      ∏ i, f i (x + s • coordinateAxis i) := by
+  let g : Fin n → ℝ := fun k ↦ permutedSchwartz π f k
+    (coordinatePerm π x + s • coordinateAxis k)
+  change (∏ k, g k) = _
+  calc
+    ∏ k, g k = ∏ i, g (π i) := (Equiv.prod_comp π g).symm
+    _ = ∏ i, f i (x + s • coordinateAxis i) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      simp only [g, permutedSchwartz_apply, coordinatePerm_symm_translate,
+        Equiv.symm_apply_apply]
+
+theorem twistedAverageAtScale_permuted {n : ℕ} (π : Equiv.Perm (Fin n))
+    (t : ℝ) (χ : ℝ → ℝ) (f : Fin n → SchwartzMap (RealVector n) ℝ)
+    (x : RealVector n) :
+    Codex.Introduction.twistedAverageAtScale t χ
+        (fun i y ↦ permutedSchwartz π f i y) (coordinatePerm π x) =
+      Codex.Introduction.twistedAverageAtScale t χ (fun i y ↦ f i y) x := by
+  unfold Codex.Introduction.twistedAverageAtScale
+    Codex.Reduction.TwistedAverages.twistedAverageAtScale
+    Codex.Reduction.TwistedAverages.twistedAverage
+  apply integral_congr_ae
+  filter_upwards [] with s
+  simpa only [coordinateAxis] using congrArg (fun q : ℝ ↦ t⁻¹ * χ (t⁻¹ * s) * q)
+    (permuted_product π f x s)
+
+theorem twistedAverageAtScale_smul_tuple {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
+    (a : Fin n → ℝ) (f : Fin n → RealVector n → ℝ) (x : RealVector n) :
+    Codex.Introduction.twistedAverageAtScale t χ (fun i y ↦ a i * f i y) x =
+      (∏ i, a i) * Codex.Introduction.twistedAverageAtScale t χ f x := by
+  unfold Codex.Introduction.twistedAverageAtScale
+    Codex.Reduction.TwistedAverages.twistedAverageAtScale
+    Codex.Reduction.TwistedAverages.twistedAverage
+  rw [← integral_const_mul]
+  apply integral_congr_ae
+  filter_upwards [] with s
+  rw [Finset.prod_mul_distrib]
+  ring
+
+noncomputable def endpointEnergy {n : ℕ} (J : ℕ) (t : Fin (J + 1) → ℝ)
+    (χ : ℝ → ℝ) (f : Fin n → RealVector n → ℝ) : ℝ≥0∞ :=
+  ∑ j : Fin J, eLpNorm
+      (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ f x -
+        Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ f x)
+      2 volume ^ 2
+
+theorem endpointEnergy_smul_tuple {n : ℕ} (J : ℕ) (t : Fin (J + 1) → ℝ)
+    (χ : ℝ → ℝ) (a : Fin n → ℝ) (f : Fin n → RealVector n → ℝ) :
+    endpointEnergy J t χ (fun i x ↦ a i * f i x) =
+      ‖∏ i, a i‖ₑ ^ 2 * endpointEnergy J t χ f := by
+  unfold endpointEnergy
+  let c : ℝ := ∏ i, a i
+  calc
+    ∑ j : Fin J, eLpNorm
+        (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ
+            (fun i y ↦ a i * f i y) x -
+          Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ
+            (fun i y ↦ a i * f i y) x)
+        2 volume ^ 2 =
+        ∑ j : Fin J, ‖c‖ₑ ^ 2 * eLpNorm
+          (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ f x -
+            Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ f x)
+          2 volume ^ 2 := by
+      apply Finset.sum_congr rfl
+      intro j _
+      have hfun :
+          (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ
+              (fun i y ↦ a i * f i y) x -
+            Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ
+              (fun i y ↦ a i * f i y) x) =
+          (fun x ↦ c *
+            (Codex.Introduction.twistedAverageAtScale (t j.succ) χ f x -
+              Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ f x)) := by
+        funext x
+        rw [twistedAverageAtScale_smul_tuple, twistedAverageAtScale_smul_tuple]
+        ring
+      rw [hfun]
+      change eLpNorm (c • _) 2 volume ^ 2 = _
+      rw [eLpNorm_const_smul, mul_pow]
+    _ = ‖c‖ₑ ^ 2 * ∑ j : Fin J, eLpNorm
+        (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ f x -
+          Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ f x)
+        2 volume ^ 2 := by rw [Finset.mul_sum]
+    _ = ‖∏ i, a i‖ₑ ^ 2 * ∑ j : Fin J, eLpNorm
+        (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ f x -
+          Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ f x)
+        2 volume ^ 2 := by rfl
+
+theorem eLpNorm_normalize {α : Type*} [MeasurableSpace α]
+    (p : ℝ≥0∞) (μ : Measure α) (f : α → ℝ)
+    (hzero : eLpNorm f p μ ≠ 0) (htop : eLpNorm f p μ ≠ ∞) :
+    eLpNorm ((eLpNorm f p μ).toReal⁻¹ • f) p μ = 1 := by
+  let q : ℝ≥0∞ := eLpNorm f p μ
+  have hqpos : 0 < q.toReal := ENNReal.toReal_pos hzero htop
+  rw [eLpNorm_const_smul]
+  change ‖q.toReal⁻¹‖ₑ * q = 1
+  rw [Real.enorm_eq_ofReal (inv_nonneg.mpr hqpos.le),
+    ENNReal.ofReal_inv_of_pos hqpos, ENNReal.ofReal_toReal htop,
+    ENNReal.inv_mul_cancel hzero htop]
+
+theorem schwartz_eq_zero_of_eLpNorm_eq_zero {n : ℕ}
+    (f : SchwartzMap (RealVector n) ℝ) (p : ℝ≥0∞) (hp : p ≠ 0)
+    (h : eLpNorm f p volume = 0) : f = 0 := by
+  ext x
+  have hae : (f : RealVector n → ℝ) =ᵐ[volume] 0 :=
+    (eLpNorm_eq_zero_iff f.continuous.aestronglyMeasurable hp).mp h
+  exact congrFun (Continuous.ae_eq_iff_eq volume f.continuous continuous_zero |>.mp hae) x
+
+theorem twistedAverageAtScale_eq_zero_of_component_eq_zero {n : ℕ}
+    (t : ℝ) (χ : ℝ → ℝ) (f : Fin n → RealVector n → ℝ)
+    (i : Fin n) (hfi : f i = 0) :
+    Codex.Introduction.twistedAverageAtScale t χ f = 0 := by
+  funext x
+  unfold Codex.Introduction.twistedAverageAtScale
+    Codex.Reduction.TwistedAverages.twistedAverageAtScale
+    Codex.Reduction.TwistedAverages.twistedAverage
+  change (∫ s : ℝ, t⁻¹ * χ (t⁻¹ * s) *
+    ∏ k, f k (x + s • WithLp.toLp 2 (Pi.single k (1 : ℝ)))) = 0
+  apply integral_eq_zero_of_ae
+  filter_upwards [] with s
+  change t⁻¹ * χ (t⁻¹ * s) *
+    (∏ k, f k (x + s • WithLp.toLp 2 (Pi.single k (1 : ℝ)))) = (0 : ℝ)
+  have hprod : (∏ k, f k (x + s • WithLp.toLp 2 (Pi.single k (1 : ℝ)))) = 0 := by
+    apply Finset.prod_eq_zero (Finset.mem_univ i)
+    simp [hfi]
+  rw [hprod]
+  ring
+
+theorem endpointEnergy_eq_zero_of_component_eq_zero {n : ℕ}
+    (J : ℕ) (t : Fin (J + 1) → ℝ) (χ : ℝ → ℝ)
+    (f : Fin n → RealVector n → ℝ) (i : Fin n) (hfi : f i = 0) :
+    endpointEnergy J t χ f = 0 := by
+  unfold endpointEnergy
+  apply Finset.sum_eq_zero
+  intro j _
+  simp [twistedAverageAtScale_eq_zero_of_component_eq_zero _ _ f i hfi]
+
+theorem endpointEnergy_homogeneous {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (hp : ∀ i, p i ≠ 0) (J : ℕ) (t : Fin (J + 1) → ℝ) (χ : ℝ → ℝ)
+    (B : ℝ≥0∞)
+    (hendpoint : ∀ g : Fin n → SchwartzMap (RealVector n) ℝ,
+      (∀ i, eLpNorm (g i) (p i) volume = 1) →
+      endpointEnergy J t χ (fun i x ↦ g i x) ≤ B)
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) :
+    endpointEnergy J t χ (fun i x ↦ f i x) ≤
+      B * ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+  let q : Fin n → ℝ≥0∞ := fun i ↦ eLpNorm (f i) (p i) volume
+  have hqtop : ∀ i, q i ≠ ∞ := by
+    intro i
+    apply MemLp.eLpNorm_ne_top
+    exact SchwartzMap.memLp (f i) (p i)
+  by_cases hq : ∀ i, q i ≠ 0
+  · let a : Fin n → ℝ := fun i ↦ (q i).toReal
+    let g : Fin n → SchwartzMap (RealVector n) ℝ := fun i ↦ (a i)⁻¹ • f i
+    have hapos : ∀ i, 0 < a i := fun i ↦ ENNReal.toReal_pos (hq i) (hqtop i)
+    have hgnorm : ∀ i, eLpNorm (g i) (p i) volume = 1 := by
+      intro i
+      change eLpNorm ((q i).toReal⁻¹ • (f i : RealVector n → ℝ)) (p i) volume = 1
+      exact eLpNorm_normalize (p i) volume (f i) (hq i) (hqtop i)
+    have hfg : (fun i x ↦ f i x) = (fun i x ↦ a i * g i x) := by
+      funext i x
+      dsimp [g]
+      change f i x = a i * ((a i)⁻¹ * f i x)
+      rw [← mul_assoc, mul_inv_cancel₀ (hapos i).ne', one_mul]
+    have hscale : ‖∏ i, a i‖ₑ = ∏ i, q i := by
+      rw [Real.enorm_eq_ofReal]
+      · rw [ENNReal.ofReal_prod_of_nonneg]
+        · apply Finset.prod_congr rfl
+          intro i _
+          exact ENNReal.ofReal_toReal (hqtop i)
+        · intro i _
+          exact (hapos i).le
+      · exact Finset.prod_nonneg fun i _ ↦ (hapos i).le
+    calc
+      endpointEnergy J t χ (fun i x ↦ f i x) =
+          endpointEnergy J t χ (fun i x ↦ a i * g i x) := by rw [hfg]
+      _ = ‖∏ i, a i‖ₑ ^ 2 * endpointEnergy J t χ (fun i x ↦ g i x) :=
+        endpointEnergy_smul_tuple J t χ a (fun i x ↦ g i x)
+      _ ≤ ‖∏ i, a i‖ₑ ^ 2 * B := by
+        gcongr
+        exact hendpoint g hgnorm
+      _ = B * ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+        rw [hscale]
+        change (∏ i, q i) ^ 2 * B = B * ∏ i, q i ^ 2
+        rw [Finset.prod_pow]
+        ac_rfl
+  · have hq' : ∃ i, q i = 0 := by
+      by_contra hq'
+      apply hq
+      intro i hqi
+      exact hq' ⟨i, hqi⟩
+    obtain ⟨i, hqi⟩ := hq'
+    have hfi : f i = 0 :=
+      schwartz_eq_zero_of_eLpNorm_eq_zero (f i) (p i) (hp i) hqi
+    rw [endpointEnergy_eq_zero_of_component_eq_zero J t χ (fun i x ↦ f i x) i]
+    · exact bot_le
+    · simpa using congrArg (fun g : SchwartzMap (RealVector n) ℝ ↦
+        (g : RealVector n → ℝ)) hfi
+
+def mainEndpointExponent (n : ℕ) (i : Fin n) : ℝ≥0∞ :=
+  (2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2)
+
+noncomputable def unitIntervalKernel : ℝ → ℝ :=
+  (Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ)
+
+theorem unitIntervalKernel_memLp : MemLp unitIntervalKernel 2 volume := by
+  exact memLp_indicator_const 2 measurableSet_Icc (1 : ℝ)
+    (Or.inr measure_Icc_lt_top.ne)
+
+noncomputable def scaleKernel (t : ℝ) (χ : ℝ → ℝ) : ℝ → ℝ :=
+  fun x ↦ t⁻¹ * χ (t⁻¹ * x)
+
+theorem scaleKernel_memLp {χ : ℝ → ℝ} (hχ : MemLp χ 2 volume)
+    {t : ℝ} (ht : 0 < t) : MemLp (scaleKernel t χ) 2 volume := by
+  let m : ℝ → ℝ := fun x ↦ t⁻¹ * x
+  have hm : AEMeasurable m volume := by
+    dsimp [m]
+    fun_prop
+  have hmap : Measure.map m volume = ENNReal.ofReal t • volume := by
+    rw [show m = fun x : ℝ ↦ t⁻¹ * x by rfl,
+      Real.map_volume_mul_left (inv_ne_zero ht.ne')]
+    simp [abs_of_pos ht]
+  have hχscaled : MemLp χ 2 (ENNReal.ofReal t • volume) :=
+    hχ.smul_measure (by simp)
+  have hχmap : MemLp χ 2 (Measure.map m volume) := by
+    rw [hmap]
+    exact hχscaled
+  have hmeas : AEStronglyMeasurable (χ ∘ m) volume := by
+    apply AEStronglyMeasurable.comp_aemeasurable hχmap.aestronglyMeasurable
+    exact hm
+  have hnorm : eLpNorm (χ ∘ m) 2 volume < ∞ := by
+    rw [← eLpNorm_map_measure hχmap.aestronglyMeasurable hm, hmap]
+    exact hχscaled.2
+  have hcomp : MemLp (χ ∘ m) 2 volume := ⟨hmeas, hnorm⟩
+  have heq : scaleKernel t χ = (t⁻¹) • (χ ∘ m) := by
+    funext x
+    simp [scaleKernel, m, Pi.smul_apply]
+  rw [heq]
+  exact hcomp.const_smul _
+
+theorem twistedAverageAtScale_memLp {n : ℕ} (hn : 2 ≤ n)
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) {t : ℝ} (ht : 0 < t) :
+    MemLp (fun x ↦ Codex.Introduction.twistedAverageAtScale t unitIntervalKernel
+      (fun i y ↦ f i y) x) 2 volume := by
+  change MemLp (Codex.Reduction.TwistedAverages.twistedAverage
+    (scaleKernel t unitIntervalKernel) (fun i x ↦ f i x)) 2 volume
+  exact Codex.Reduction.Miscellany.aux_twistedAverage_memLp hn f
+    (scaleKernel t unitIntervalKernel) (scaleKernel_memLp unitIntervalKernel_memLp ht)
+
+theorem twistedAverageAtScale_sub_memLp {n : ℕ} (hn : 2 ≤ n)
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) {s t : ℝ}
+    (hs : 0 < s) (ht : 0 < t) :
+    MemLp (fun x ↦ Codex.Introduction.twistedAverageAtScale s unitIntervalKernel
+        (fun i y ↦ f i y) x -
+      Codex.Introduction.twistedAverageAtScale t unitIntervalKernel
+        (fun i y ↦ f i y) x) 2 volume :=
+  (twistedAverageAtScale_memLp hn f hs).sub (twistedAverageAtScale_memLp hn f ht)
+
+theorem endpointEnergy_permuted {n : ℕ} (hn : 2 ≤ n)
+    (π : Equiv.Perm (Fin n)) (J : ℕ) (t : Fin (J + 1) → ℝ)
+    (htpos : ∀ j, 0 < t j)
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) :
+    endpointEnergy J t unitIntervalKernel (fun i x ↦ permutedSchwartz π f i x) =
+      endpointEnergy J t unitIntervalKernel (fun i x ↦ f i x) := by
+  unfold endpointEnergy
+  apply Finset.sum_congr rfl
+  intro j _
+  congr 1
+  let dπ : RealVector n → ℝ := fun x ↦
+    Codex.Introduction.twistedAverageAtScale (t j.succ) unitIntervalKernel
+        (fun i y ↦ permutedSchwartz π f i y) x -
+      Codex.Introduction.twistedAverageAtScale (t j.castSucc) unitIntervalKernel
+        (fun i y ↦ permutedSchwartz π f i y) x
+  let d : RealVector n → ℝ := fun x ↦
+    Codex.Introduction.twistedAverageAtScale (t j.succ) unitIntervalKernel
+        (fun i y ↦ f i y) x -
+      Codex.Introduction.twistedAverageAtScale (t j.castSucc) unitIntervalKernel
+        (fun i y ↦ f i y) x
+  have hdπ : MemLp dπ 2 volume := by
+    exact twistedAverageAtScale_sub_memLp hn (permutedSchwartz π f)
+      (htpos j.succ) (htpos j.castSucc)
+  have hcomp : eLpNorm (dπ ∘ coordinatePerm π) 2 volume = eLpNorm dπ 2 volume :=
+    eLpNorm_comp_measurePreserving hdπ.aestronglyMeasurable
+      (coordinatePerm_measurePreserving π)
+  have hpoint : dπ ∘ coordinatePerm π = d := by
+    funext x
+    dsimp [dπ, d, Function.comp_def]
+    rw [twistedAverageAtScale_permuted, twistedAverageAtScale_permuted]
+  change eLpNorm dπ 2 volume = eLpNorm d 2 volume
+  rw [← hpoint]
+  exact hcomp.symm
+
+theorem endpointEstimate_homogeneous {n : ℕ} (hn : 2 ≤ n)
+    (J : ℕ) (hJ : 0 < J) (t : Fin (J + 1) → ℝ)
+    (ht : StrictMono t) (htpos : ∀ j, 0 < t j)
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) :
+    endpointEnergy J t unitIntervalKernel (fun i x ↦ f i x) ≤
+      ENNReal.ofReal ((2 : ℝ) ^ 666) *
+        ENNReal.ofReal ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) *
+          ∏ i, eLpNorm (f i) (mainEndpointExponent n i) volume ^ 2 := by
+  apply endpointEnergy_homogeneous (mainEndpointExponent n) (fun i ↦ by
+    unfold mainEndpointExponent
+    positivity) J t unitIntervalKernel
+    (ENNReal.ofReal ((2 : ℝ) ^ 666) *
+      ENNReal.ofReal ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))))
+  intro g hg
+  exact Codex.Introduction.mainTwistedTheoremBound hn J hJ t ht htpos g hg
+
+/--
+\begin{proposition}[Permutation of the endpoint estimate]\label{permutation of endpoint estimate}
+Let $n\ge 2$, let $\pi$ be a permutation of $[n)$, and let $J\ge 1$ and
+$0<t_0<\cdots<t_J$.  For real-valued Schwartz functions $(f_i)_{i\in[n)}$,
+the endpoint jump estimate holds with the factors permuted by $\pi$.
+\end{proposition}
+-/
+theorem permutation_of_endpoint_estimate {n : ℕ} (hn : 2 ≤ n)
+    (π : Equiv.Perm (Fin n)) (J : ℕ) (hJ : 0 < J)
+    (t : Fin (J + 1) → ℝ) (ht : StrictMono t) (htpos : ∀ j, 0 < t j)
+    (f : Fin n → SchwartzMap (RealVector n) ℝ) :
+    endpointEnergy J t unitIntervalKernel (fun i x ↦ f i x) ≤
+      ENNReal.ofReal ((2 : ℝ) ^ 666) *
+        ENNReal.ofReal ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) *
+          ∏ i, eLpNorm (f i) (mainEndpointExponent n (π i)) volume ^ 2 := by
+  calc
+    endpointEnergy J t unitIntervalKernel (fun i x ↦ f i x) =
+        endpointEnergy J t unitIntervalKernel (fun i x ↦ permutedSchwartz π f i x) :=
+      (endpointEnergy_permuted hn π J t htpos f).symm
+    _ ≤ ENNReal.ofReal ((2 : ℝ) ^ 666) *
+        ENNReal.ofReal ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) *
+          ∏ i, eLpNorm (permutedSchwartz π f i) (mainEndpointExponent n i) volume ^ 2 :=
+      endpointEstimate_homogeneous hn J hJ t ht htpos (permutedSchwartz π f)
+    _ = ENNReal.ofReal ((2 : ℝ) ^ 666) *
+        ENNReal.ofReal ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) *
+          ∏ i, eLpNorm (f i) (mainEndpointExponent n (π i)) volume ^ 2 := by
+      have hprod :
+          (∏ i, eLpNorm (permutedSchwartz π f i) (mainEndpointExponent n i) volume ^ 2) =
+            ∏ i, eLpNorm (f i) (mainEndpointExponent n (π i)) volume ^ 2 := by
+        calc
+          ∏ i, eLpNorm (permutedSchwartz π f i) (mainEndpointExponent n i) volume ^ 2 =
+              ∏ i, eLpNorm (permutedSchwartz π f (π i))
+                (mainEndpointExponent n (π i)) volume ^ 2 :=
+            (Equiv.prod_comp π fun k ↦
+              eLpNorm (permutedSchwartz π f k) (mainEndpointExponent n k) volume ^ 2).symm
+          _ = ∏ i, eLpNorm (f i) (mainEndpointExponent n (π i)) volume ^ 2 := by
+            apply Finset.prod_congr rfl
+            intro i _
+            rw [eLpNorm_permutedSchwartz]
+            simp
+      rw [hprod]
+
+/-- The real or imaginary component selected by a binary choice. -/
+def complexComponent {n : ℕ} {X : Type*} (ε : Fin n → Fin 2)
+    (f : Fin n → X → ℂ) : Fin n → X → ℝ :=
+  fun i x ↦ if ε i = 0 then (f i x).re else (f i x).im
+
+/-- Each real/imaginary component of an `L^p` input is again in `L^p`. -/
+theorem complexComponent_memLp {X : Type*} [MeasurableSpace X] {μ : Measure X}
+    {n : ℕ} (ε : Fin n → Fin 2) (f : Fin n → X → ℂ)
+    {p : ℝ≥0∞} (hf : ∀ i, MemLp (f i) p μ) (i : Fin n) :
+    MemLp (complexComponent ε f i) p μ := by
+  change MemLp (fun x ↦ if ε i = 0 then (f i x).re else (f i x).im) p μ
+  by_cases hε : ε i = 0
+  · simpa [hε] using (hf i).re
+  · simpa [hε] using (hf i).im
+
+/-- A real/imaginary component does not increase the `L^p` norm. -/
+theorem eLpNorm_complexComponent_le {X : Type*} [MeasurableSpace X] {μ : Measure X}
+    {n : ℕ} (ε : Fin n → Fin 2) (f : Fin n → X → ℂ)
+    (p : ℝ≥0∞) (i : Fin n) :
+    eLpNorm (complexComponent ε f i) p μ ≤ eLpNorm (f i) p μ := by
+  apply eLpNorm_mono_ae
+  filter_upwards [] with x
+  by_cases hε : ε i = 0
+  · simpa [complexComponent, hε, Real.norm_eq_abs] using Complex.abs_re_le_norm (f i x)
+  · simpa [complexComponent, hε, Real.norm_eq_abs] using Complex.abs_im_le_norm (f i x)
+
+/-- The unit complex coefficient attached to a real/imaginary choice. -/
+private def aux_complexComponentPhase {n : ℕ} (ε : Fin n → Fin 2) : ℂ :=
+  ∏ i, if ε i = 0 then 1 else Complex.I
+
+private theorem aux_norm_complexComponentPhase {n : ℕ} (ε : Fin n → Fin 2) :
+    ‖aux_complexComponentPhase ε‖ = 1 := by
+  unfold aux_complexComponentPhase
+  rw [norm_prod]
+  apply Finset.prod_eq_one
+  intro i _
+  split_ifs <;> simp
+
+/-- The finite real/imaginary expansion of a complex product. -/
+private theorem aux_complex_product_expand {n : ℕ} {X : Type*}
+    (f : Fin n → X → ℂ) (x : X) :
+    ∏ i, f i x =
+      ∑ ε : Fin n → Fin 2, aux_complexComponentPhase ε *
+        (∏ i, (complexComponent ε f i x : ℂ)) := by
+  calc
+    ∏ i, f i x = ∏ i, ∑ b : Fin 2,
+        (if b = 0 then (1 : ℂ) else Complex.I) *
+          (if b = 0 then (f i x).re else (f i x).im : ℂ) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      rw [Fin.sum_univ_two]
+      simp only [Fin.isValue, ↓reduceIte, one_mul]
+      symm
+      calc
+        (f i x).re + Complex.I * (f i x).im =
+            (f i x).re + (f i x).im * Complex.I := by ring
+        _ = f i x := Complex.re_add_im _
+    _ = ∑ ε : Fin n → Fin 2, ∏ i,
+        (if ε i = 0 then (1 : ℂ) else Complex.I) *
+          (if ε i = 0 then (f i x).re else (f i x).im : ℂ) := by
+      rw [Fintype.prod_sum]
+    _ = ∑ ε : Fin n → Fin 2, aux_complexComponentPhase ε *
+        (∏ i, (complexComponent ε f i x : ℂ)) := by
+      apply Finset.sum_congr rfl
+      intro ε _
+      rw [Finset.prod_mul_distrib]
+      simp only [aux_complexComponentPhase, complexComponent]
+      congr 1
+      apply Finset.prod_congr rfl
+      intro i _
+      split_ifs <;> rfl
+
+/-- The finite real/imaginary expansion of a multiple ergodic average. -/
+private theorem aux_ergodicAverage_complex_expand {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (S : aux_ErgodicSystem X μ n)
+    (N : ℕ) (f : Fin n → X → ℂ) (x : X) :
+    ergodicAverage S N f x =
+      ∑ ε : Fin n → Fin 2, aux_complexComponentPhase ε *
+        (aux_realErgodicAverage S N (complexComponent ε f) x : ℂ) := by
+  unfold ergodicAverage aux_realErgodicAverage
+  have hprod : ∀ m : ℕ,
+      (∏ i, f i ((S.transformation i)^[m] x)) =
+        ∑ ε : Fin n → Fin 2, aux_complexComponentPhase ε *
+          (∏ i, (complexComponent ε f i ((S.transformation i)^[m] x) : ℂ)) := by
+    intro m
+    simpa only [complexComponent] using
+      (aux_complex_product_expand (fun i y ↦ f i ((S.transformation i)^[m] y)) x)
+  simp_rw [hprod]
+  push_cast
+  rw [Finset.mul_sum]
+  simp_rw [Finset.mul_sum]
+  rw [Finset.sum_comm]
+  simp only [mul_left_comm]
+
+private theorem aux_ergodicAverage_sub_complex_expand {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (S : aux_ErgodicSystem X μ n)
+    (N M : ℕ) (f : Fin n → X → ℂ) (x : X) :
+    ergodicAverage S N f x - ergodicAverage S M f x =
+      ∑ ε : Fin n → Fin 2, aux_complexComponentPhase ε *
+        ((aux_realErgodicAverage S N (complexComponent ε f) x -
+          aux_realErgodicAverage S M (complexComponent ε f) x : ℝ) : ℂ) := by
+  rw [aux_ergodicAverage_complex_expand, aux_ergodicAverage_complex_expand]
+  rw [← Finset.sum_sub_distrib]
+  apply Finset.sum_congr rfl
+  intro ε _
+  push_cast
+  ring
+
+/-- Complex multiple ergodic jumps are bounded by the sum of their real/imaginary
+component jumps. This is the finite expansion responsible for the `2 ^ n` loss before
+squaring in the complexification step. -/
+theorem eLpNorm_ergodicAverage_sub_complex_le_sum {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (S : aux_ErgodicSystem X μ n)
+    (N M : ℕ) (f : Fin n → X → ℂ)
+    (hmem : ∀ ε : Fin n → Fin 2,
+      MemLp (fun x ↦ aux_realErgodicAverage S N (complexComponent ε f) x -
+        aux_realErgodicAverage S M (complexComponent ε f) x) 2 μ) :
+    eLpNorm (fun x ↦ ergodicAverage S N f x - ergodicAverage S M f x) 2 μ ≤
+      ∑ ε : Fin n → Fin 2, eLpNorm
+        (fun x ↦ aux_realErgodicAverage S N (complexComponent ε f) x -
+          aux_realErgodicAverage S M (complexComponent ε f) x) 2 μ := by
+  let g : (Fin n → Fin 2) → X → ℂ := fun ε ↦ aux_complexComponentPhase ε • fun x ↦
+    ((aux_realErgodicAverage S N (complexComponent ε f) x -
+      aux_realErgodicAverage S M (complexComponent ε f) x : ℝ) : ℂ)
+  have hsum : eLpNorm (∑ ε, g ε) 2 μ ≤ ∑ ε, eLpNorm (g ε) 2 μ := by
+    refine eLpNorm_sum_le ?_ (by norm_num)
+    intro ε _
+    have hcast : MemLp (fun x ↦
+        ((aux_realErgodicAverage S N (complexComponent ε f) x -
+          aux_realErgodicAverage S M (complexComponent ε f) x : ℝ) : ℂ)) 2 μ := by
+      simpa using (hmem ε).continuousLinearMap_comp Complex.ofRealCLM
+    dsimp [g]
+    exact (hcast.const_smul (aux_complexComponentPhase ε)).aestronglyMeasurable
+  calc
+    eLpNorm (fun x ↦ ergodicAverage S N f x - ergodicAverage S M f x) 2 μ =
+        eLpNorm (∑ ε, g ε) 2 μ := by
+      apply eLpNorm_congr_ae
+      filter_upwards [] with x
+      simpa [g, smul_eq_mul] using aux_ergodicAverage_sub_complex_expand S N M f x
+    _ ≤ ∑ ε, eLpNorm (g ε) 2 μ := hsum
+    _ = ∑ ε : Fin n → Fin 2, eLpNorm
+        (fun x ↦ aux_realErgodicAverage S N (complexComponent ε f) x -
+          aux_realErgodicAverage S M (complexComponent ε f) x) 2 μ := by
+      apply Finset.sum_congr rfl
+      intro ε _
+      dsimp [g]
+      rw [eLpNorm_const_smul]
+      have hphase : ‖aux_complexComponentPhase ε‖ₑ = 1 := by
+        have hnn : ‖aux_complexComponentPhase ε‖₊ = 1 :=
+          NNReal.eq (aux_norm_complexComponentPhase ε)
+        simpa [enorm_eq_nnnorm] using
+          congrArg (fun r : NNReal ↦ (r : ENNReal)) hnn
+      rw [hphase, one_mul]
+      apply eLpNorm_congr_norm_ae
+      filter_upwards [] with x
+      exact Complex.norm_real _
+
+end
+
+end Codex.RealToErgodic

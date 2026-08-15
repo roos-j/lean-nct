@@ -44,6 +44,28 @@ noncomputable def twistedAverageAtScale {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
   Codex.Reduction.TwistedAverages.twistedAverageAtScale t χ f
 
 /--
+The fixed-constant form of Theorem \ref{thm:nct main real}.
+-/
+theorem mainTwistedTheoremBound {n : ℕ} (hn : 2 ≤ n) :
+    ∀ (J : ℕ), 0 < J → ∀ (t : Fin (J + 1) → ℝ),
+      StrictMono t → (∀ j, 0 < t j) →
+      ∀ f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ,
+        (∀ i, eLpNorm (f i) ((2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2)) volume = 1) →
+        ∑ j : Fin J, eLpNorm
+            (fun x ↦ twistedAverageAtScale (t j.succ)
+                ((Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ))
+                (fun i x ↦ f i x) x -
+              twistedAverageAtScale (t j.castSucc)
+                ((Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ))
+                (fun i x ↦ f i x) x)
+            2 volume ^ 2 ≤
+          ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal
+            ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) := by
+  simpa only [twistedAverageAtScale,
+    Codex.Reduction.FinalReduction.unitIntervalIndicator] using
+    Codex.Reduction.FinalReduction.mainTwistedTheoremReductionBound hn
+
+/--
 \begin{theorem}[Main twisted theorem]\label{thm:nct main real}
     Let $n\ge 2$ be an integer. There exists a $C\in (0,\infty)$ such that the following holds.
     For every positive integer $J$ and positive real numbers $t_0<t_1<\cdots < t_J$,

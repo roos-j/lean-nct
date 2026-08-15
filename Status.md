@@ -6,6 +6,14 @@ Definitions use `Todo` or `Completed`. Theorems use `Todo`, `Statement completed
 
 Lean file: Introduction.lean
 
+### Ergodic averages
+
+Lean file: RealToErgodic.lean
+
+#### Definitions
+
+\label{ergodic averages}: [Completed] (Lean: ergodicAverage) (2026-08-14 22:23:43 PDT)
+
 ### Twisted averages
 
 Lean file: Introduction.lean
@@ -17,6 +25,18 @@ Lean file: Introduction.lean
 #### Theorems
 
 \label{thm:nct main real}: [Proof completed] (Lean: mainTwistedTheorem) (2026-08-14 15:02:30 PDT)
+
+## From real to ergodic
+
+Lean file: RealToErgodic.lean
+
+#### Theorems
+
+\label{exponent polytope}: [Proof completed] (Lean: exponent_polytope, exponent_polytope_of_exponents) (2026-08-14 22:32:24 PDT)
+
+\label{permutation of endpoint estimate}: [Proof completed] (Lean: permutation_of_endpoint_estimate) (2026-08-14 22:42:47 PDT)
+
+\label{jump estimates imply variation}: [Proof completed] (Lean: jump_estimates_imply_variation_enorm, jump_estimates_imply_variation_endpoint_enorm) (2026-08-14 23:00:26 PDT)
 
 ## Preliminaries
 

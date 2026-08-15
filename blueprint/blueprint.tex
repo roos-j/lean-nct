@@ -145,7 +145,7 @@ When the constant is invoked, parameters should be explicitly instantiated as ne
 
 \section{Introduction}
 
-\begin{definition}[Ergodic averages]\label{ergodic averages}\uses{}\usesdefs{}
+\begin{definition}[Ergodic averages]\label{ergodic averages}\lean{ergodicAverage}\uses{}\usesdefs{}
 Let $(X,\Sigma,\mu)$ be a $\sigma$-finite measure space. We say that $T: X \to X$ is a measure preserving transformation if for every measurable $A\subset X$ the set $T^{-1}(A)$ is measurable and has the
 same measure as $A$.
 
@@ -223,7 +223,7 @@ The purpose of this section is to prove Theorem \ref{thm:ergodicthm} from Theore
 This section is the only place in the blueprint where we invoke two external theorems, i.e. theorems that are not proved in this blueprint. These are Theorem \ref{multilinear interpolation external} (multilinear complex interpolation) and Theorem \ref{Calderon transference external} (Calder\'on transference principle).
 The latter was recently formalized in Lean by Pernegger \cite{Pernegger2025}.
 
-\begin{proposition}[Permutation of the endpoint estimate]\label{permutation of endpoint estimate}\uses{thm:nct main real}\usesdefs{A_def}
+\begin{proposition}[Permutation of the endpoint estimate]\label{permutation of endpoint estimate}\lean{permutation_of_endpoint_estimate}\leanok\uses{thm:nct main real}\usesdefs{A_def}
 Let $n\ge 2$, let $\pi$ be a permutation of $[n)$, and let $J\ge 1$ and $0<t_0<\cdots<t_J$. For real-valued Schwartz functions $(f_i)_{i\in[n)}$,
 \begin{equation}\label{permuted endpoint estimate}
 \sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_2^2
@@ -253,7 +253,7 @@ Then $T$ extends to an $n$-linear map from $\prod_{i\in[n)}L^{p_i}(X_i)$ to $L^p
 
 This is a standard result in interpolation theory, see e.g. \cite{BerghLofstrom}.
 
-\begin{proposition}[Range of exponents]\label{exponent polytope}\uses{}\usesdefs{}
+\begin{proposition}[Range of exponents]\label{exponent polytope}\lean{exponent_polytope,exponent_polytope_of_exponents}\leanok\uses{}\usesdefs{}
 Let $p_i\in[1,\infty]$ for $i\in[n)$. The vector $(p_i^{-1})_{i\in[n)}$ belongs to the convex hull of the permutations of
 \begin{equation}\label{endpoint reciprocal vector}
 (2^{-2},2^{-3},\ldots,2^{-n},2^{-n})
@@ -361,7 +361,7 @@ We have $\sum_{i\in[n)}(2n)^{-1}=1/2$. If $I\subset[n)$ has $m\ge1$ elements, th
 because $m2^{n-m}\ge n$ for $1\le m\le n$. Thus Theorem \ref{thm:ergodicthm-interpolation} applies.
 \end{proof}
 
-\begin{lemma}[From jump estimates to variation]\label{jump estimates imply variation}\uses{}\usesdefs{}
+\begin{lemma}[From jump estimates to variation]\label{jump estimates imply variation}\lean{jump_estimates_imply_variation_enorm,jump_estimates_imply_variation_endpoint_enorm}\leanok\uses{}\usesdefs{}
 Let $B$ be a seminormed space, let $a:\N\to B$, let $r_0\ge2$, and let $D>0$. Assume that, for every $J\ge1$ and every $0<N_0<\cdots<N_J$,
 \begin{equation}\label{abstract jump estimate}
 \sum_{j\in[J)}\|a(N_{j+1})-a(N_j)\|^2\le D J^{1-2/r_0}.

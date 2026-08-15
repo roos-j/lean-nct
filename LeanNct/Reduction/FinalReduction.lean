@@ -12406,13 +12406,12 @@ private theorem aux_mainTwisted_low_high_phiZero_energy {n : ℕ} (hn : 2 ≤ n)
 
 
 /--
-The reduction-side version of Theorem \ref{thm:nct main real}.  It has exactly
-the same conclusion as `Codex.Introduction.mainTwistedTheorem`, but is stated
-over the shared `Codex.Reduction.TwistedAverages` definitions to keep imports
-acyclic.
+The fixed-constant reduction-side form of Theorem \ref{thm:nct main real}.
+It is stated over the shared `Codex.Reduction.TwistedAverages` definitions to
+keep imports acyclic.
 -/
-theorem mainTwistedTheoremReduction {n : ℕ} (hn : 2 ≤ n) :
-    ∃ C : ℝ, 0 < C ∧ ∀ (J : ℕ), 0 < J → ∀ (t : Fin (J + 1) → ℝ),
+theorem mainTwistedTheoremReductionBound {n : ℕ} (hn : 2 ≤ n) :
+    ∀ (J : ℕ), 0 < J → ∀ (t : Fin (J + 1) → ℝ),
       StrictMono t → (∀ j, 0 < t j) →
       ∀ f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ,
         (∀ i, eLpNorm (f i) ((2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2)) volume = 1) →
@@ -12422,10 +12421,9 @@ theorem mainTwistedTheoremReduction {n : ℕ} (hn : 2 ≤ n) :
               twistedAverageAtScale (t j.castSucc) unitIntervalIndicator
                 (fun i y ↦ f i y) x)
             2 volume ^ 2 ≤
-          ENNReal.ofReal C * ENNReal.ofReal
+          ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal
             ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) := by
   classical
-  refine ⟨(2 : ℝ) ^ 666, by positivity, ?_⟩
   intro J hJ t ht htpos f hf
   obtain ⟨phi0, phi1, hpair⟩ := existsUniversalPair
   let b : windowBasedBumpFunctions := ⟨phi0, phi1, hpair⟩
@@ -12512,6 +12510,25 @@ theorem mainTwistedTheoremReduction {n : ℕ} (hn : 2 ≤ n) :
     _ = ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal
         ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) := by
           rfl
+
+/--
+The existentially packaged compatibility form of
+`mainTwistedTheoremReductionBound`.
+-/
+theorem mainTwistedTheoremReduction {n : ℕ} (hn : 2 ≤ n) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (J : ℕ), 0 < J → ∀ (t : Fin (J + 1) → ℝ),
+      StrictMono t → (∀ j, 0 < t j) →
+      ∀ f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ,
+        (∀ i, eLpNorm (f i) ((2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2)) volume = 1) →
+        ∑ j : Fin J, eLpNorm
+            (fun x ↦ twistedAverageAtScale (t j.succ) unitIntervalIndicator
+                (fun i y ↦ f i y) x -
+              twistedAverageAtScale (t j.castSucc) unitIntervalIndicator
+                (fun i y ↦ f i y) x)
+            2 volume ^ 2 ≤
+          ENNReal.ofReal C * ENNReal.ofReal
+            ((J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))) := by
+  refine ⟨(2 : ℝ) ^ 666, by positivity, mainTwistedTheoremReductionBound hn⟩
 
 end
 

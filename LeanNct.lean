@@ -5,6 +5,7 @@ Authors: Joris Roos, Polona Durcik
 -/
 
 import LeanNct.Introduction
+import LeanNct.RealToErgodic
 import LeanNct.WienerSpace
 import LeanNct.Preliminaries.Notation
 import LeanNct.Preliminaries.MultiplicativelySpacedMonotoneSequences
