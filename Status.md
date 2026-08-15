@@ -14,6 +14,14 @@ Lean file: RealToErgodic.lean
 
 \label{ergodic averages}: [Completed] (Lean: ergodicAverage) (2026-08-14 22:23:43 PDT)
 
+### Main ergodic theorem
+
+Lean file: RealToErgodic.lean
+
+#### Theorems
+
+\label{thm:ergodicthm}: [Statement completed] (Lean: main_ergodic_theorem) (2026-08-14 23:43:11 PDT)
+
 ### Twisted averages
 
 Lean file: Introduction.lean
@@ -32,9 +40,19 @@ Lean file: RealToErgodic.lean
 
 #### Theorems
 
+\label{permutation of endpoint estimate}: [Proof completed] (Lean: permutation_of_endpoint_estimate) (2026-08-14 22:42:47 PDT)
+
+\label{multilinear interpolation external}: [Statement completed] (Lean: multilinear_interpolation_external) (2026-08-14 23:33:53 PDT)
+
 \label{exponent polytope}: [Proof completed] (Lean: exponent_polytope, exponent_polytope_of_exponents) (2026-08-14 22:32:24 PDT)
 
-\label{permutation of endpoint estimate}: [Proof completed] (Lean: permutation_of_endpoint_estimate) (2026-08-14 22:42:47 PDT)
+\label{interpolated real variable estimate}: [Statement completed] (Lean: interpolated_real_variable_estimate) (2026-08-14 23:33:53 PDT)
+
+\label{Calderon transference external}: [Statement completed] (Lean: calderon_transference_external) (2026-08-14 23:33:53 PDT)
+
+\label{thm:ergodicthm-interpolation}: [Statement completed] (Lean: ergodic_jump_estimate_interpolation) (2026-08-14 23:33:53 PDT)
+
+\label{thm:ergodicthmJ}: [Statement completed] (Lean: symmetric_ergodic_jump_estimate) (2026-08-14 23:33:53 PDT)
 
 \label{jump estimates imply variation}: [Proof completed] (Lean: jump_estimates_imply_variation_enorm, jump_estimates_imply_variation_endpoint_enorm) (2026-08-14 23:00:26 PDT)
 

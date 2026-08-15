@@ -19,6 +19,8 @@ ergodic averages.
 
 namespace Codex.RealToErgodic
 
+universe u
+
 open MeasureTheory Set
 open scoped BigOperators ENNReal
 
@@ -905,7 +907,7 @@ private theorem ennreal_root_constant_eq {C q r : ℝ} (hC : 0 ≤ C) (hq : 0 �
 /-- The abstract jump estimate controls natural-number variation, with the
 exact constant in the blueprint. -/
 private theorem jump_estimates_imply_variation {B : Type*} [SeminormedAddCommGroup B]
-    (a : ℕ → B) {r0 D r : ℝ} (hr0 : 2 ≤ r0) (hD : 0 < D) (hr : r0 < r)
+    (a : ℕ → B) {r0 D r : ℝ} (hr0 : 2 ≤ r0) (hD : 0 ≤ D) (hr : r0 < r)
     (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
       StrictMono M → (∀ q, 0 < M q) →
       (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
@@ -919,7 +921,7 @@ private theorem jump_estimates_imply_variation {B : Type*} [SeminormedAddCommGro
     · exact hrpos.le
     · linarith
   have hC : 0 ≤ 2 ^ (1 - 1 / r0) * √D := by positivity
-  have h := naturalVariationSeminorm_le_jump_bound a hr0 hD.le hr hjump
+  have h := naturalVariationSeminorm_le_jump_bound a hr0 hD hr hjump
   rw [ennreal_root_constant_eq hC hq hrpos] at h
   simpa [mul_assoc, mul_left_comm, mul_comm] using h
 
@@ -940,7 +942,7 @@ private theorem chain_endpoint_energy_bound {B : Type*} [SeminormedAddCommGroup 
 
 /-- The endpoint `r₀ = 2` form of `jump_estimates_imply_variation`. -/
 private theorem jump_estimates_imply_variation_endpoint {B : Type*} [SeminormedAddCommGroup B]
-    (a : ℕ → B) {D : ℝ} (hD : 0 < D)
+    (a : ℕ → B) {D : ℝ} (hD : 0 ≤ D)
     (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
       StrictMono M → (∀ q, 0 < M q) →
       (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ ^ (2 : ℕ)) ≤
@@ -958,10 +960,10 @@ private theorem jump_estimates_imply_variation_endpoint {B : Type*} [SeminormedA
         (ENNReal.ofReal D) ^ (2 : ℝ)⁻¹ :=
       ENNReal.rpow_le_rpow
         (ENNReal.ofReal_le_ofReal
-          (by simpa using chain_endpoint_energy_bound a N.1 hD.le hjump N.2.1 N.2.2))
+          (by simpa using chain_endpoint_energy_bound a N.1 hD hjump N.2.1 N.2.2))
         (by norm_num)
     _ = ENNReal.ofReal √D := by
-      rw [ENNReal.ofReal_rpow_of_nonneg hD.le (by norm_num)]
+      rw [ENNReal.ofReal_rpow_of_nonneg hD (by norm_num)]
       rw [Real.sqrt_eq_rpow]
       congr 1
       norm_num
@@ -1089,16 +1091,26 @@ private theorem real_jump_estimate_of_enorm {B : Type*} [SeminormedAddCommGroup 
   apply (ENNReal.ofReal_le_ofReal_iff (mul_nonneg hD (Real.rpow_nonneg (by positivity) _))).mp
   simpa using h
 
-/-- **From jump estimates to variation.**
-
-For a sequence `a : ℕ → B`, assume that every positive strict finite chain has
-squared jump energy at most `D * J ^ (1 - 2 / r₀)`, where `r₀ ≥ 2` and `D > 0`.
-Then its natural-number `r`-variation is bounded by
-`2 ^ (1 - 1 / r₀) * (r / (r - r₀)) ^ (1 / r) * √D` whenever `r₀ < r`.
-This is the `ENNReal` formulation used for the `L²`-valued ergodic averages;
-the endpoint `r₀ = 2` is `jump_estimates_imply_variation_endpoint_enorm`. -/
+/--
+\begin{lemma}[From jump estimates to variation]\label{jump estimates imply variation}
+Let $B$ be a seminormed space, let $a:\N\to B$, let $r_0\ge2$, and let
+$D>0$. Assume that, for every $J\ge1$ and every $0<N_0<\cdots<N_J$,
+\[
+\sum_{j\in[J)}\|a(N_{j+1})-a(N_j)\|^2
+\le D J^{1-2/r_0}.
+\]
+If $r>r_0$, then
+\[
+\|a\|_{V_r(N\in\N,\ N\ge1;B)}
+\le 2^{1-1/r_0}\left(\tfrac{r}{r-r_0}\right)^{1/r}D^{1/2}.
+\]
+If $r_0=2$, then
+\[
+\|a\|_{V_2(N\in\N,\ N\ge1;B)}\le D^{1/2}.
+\]
+\end{lemma} -/
 theorem jump_estimates_imply_variation_enorm {B : Type*} [SeminormedAddCommGroup B]
-    (a : ℕ → B) {r0 D r : ℝ} (hr0 : 2 ≤ r0) (hD : 0 < D) (hr : r0 < r)
+    (a : ℕ → B) {r0 D r : ℝ} (hr0 : 2 ≤ r0) (hD : 0 ≤ D) (hr : r0 < r)
     (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
       StrictMono M → (∀ q, 0 < M q) →
       (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ₑ ^ (2 : ℝ)) ≤
@@ -1106,18 +1118,18 @@ theorem jump_estimates_imply_variation_enorm {B : Type*} [SeminormedAddCommGroup
     naturalVariationSeminorm a r ≤ ENNReal.ofReal
       (2 ^ (1 - 1 / r0) * (r / (r - r0)) ^ (1 / r) * √D) := by
   exact jump_estimates_imply_variation a hr0 hD hr
-    (real_jump_estimate_of_enorm a hD.le hjump)
+    (real_jump_estimate_of_enorm a hD hjump)
 
 /-- The endpoint `r₀ = 2` version for `ENNReal` jump-energy hypotheses. -/
 theorem jump_estimates_imply_variation_endpoint_enorm {B : Type*}
-    [SeminormedAddCommGroup B] (a : ℕ → B) {D : ℝ} (hD : 0 < D)
+    [SeminormedAddCommGroup B] (a : ℕ → B) {D : ℝ} (hD : 0 ≤ D)
     (hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (M : Fin (L + 1) → ℕ),
       StrictMono M → (∀ q, 0 < M q) →
       (∑ q : Fin L, ‖a (M q.succ) - a (M q.castSucc)‖ₑ ^ (2 : ℝ)) ≤
         ENNReal.ofReal D * ENNReal.ofReal ((L : ℝ) ^ (1 - 2 / (2 : ℝ)))) :
     naturalVariationSeminorm a 2 ≤ ENNReal.ofReal √D := by
   exact jump_estimates_imply_variation_endpoint a hD
-    (real_jump_estimate_of_enorm a hD.le hjump)
+    (real_jump_estimate_of_enorm a hD hjump)
 
 private theorem strongDual_apply_eq_sum {n : ℕ} (f : StrongDual ℝ (Fin n → ℝ))
     (x : Fin n → ℝ) :
@@ -1616,15 +1628,20 @@ noncomputable def endpointPolytope (m : ℕ) : Set (Fin m → ℝ) :=
 
 /--
 \begin{proposition}[Range of exponents]\label{exponent polytope}
-Let $p_i\in[1,\infty]$ for $i\in[n)$. The vector $(p_i^{-1})_{i\in[n)}$
-belongs to the convex hull of the permutations of
-$(2^{-2},2^{-3},\ldots,2^{-n},2^{-n})$ if and only if its coordinates sum to
-$1/2$ and every nonempty coordinate set $I$ has sum at least
-$2^{|I|-n-1}$.
-\end{proposition}
-
-We state this in terms of the reciprocal vector `x`; the displayed lower bound
-is written as `2 ^ |I| / 2 ^ (n + 1)`, which is the same dyadic number. -/
+Let $p_i\in[1,\infty]$ for $i\in[n)$. The vector
+$(p_i^{-1})_{i\in[n)}$ belongs to the convex hull of the permutations of
+\[
+(2^{-2},2^{-3},\ldots,2^{-n},2^{-n})
+\]
+if and only if
+\[
+\sum_{i\in[n)}p_i^{-1}=\tfrac12
+\]
+and, for every nonempty $I\subset[n)$,
+\[
+\sum_{i\in I}p_i^{-1}\ge 2^{|I|-n-1}.
+\]
+\end{proposition} -/
 theorem exponent_polytope {m : ℕ} (hm : 2 ≤ m) (x : Fin m → ℝ) :
     x ∈ endpointPolytope m ↔
       (∑ i, x i) = 1 / 2 ∧
@@ -2110,8 +2127,13 @@ theorem endpointEstimate_homogeneous {n : ℕ} (hn : 2 ≤ n)
 /--
 \begin{proposition}[Permutation of the endpoint estimate]\label{permutation of endpoint estimate}
 Let $n\ge 2$, let $\pi$ be a permutation of $[n)$, and let $J\ge 1$ and
-$0<t_0<\cdots<t_J$.  For real-valued Schwartz functions $(f_i)_{i\in[n)}$,
-the endpoint jump estimate holds with the factors permuted by $\pi$.
+$0<t_0<\cdots<t_J$. For real-valued Schwartz functions $(f_i)_{i\in[n)}$,
+\[
+\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f)
+  -A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_2^2
+\le C_{\ref{thm:nct main real}}J^{1-2^{2-n}}
+\prod_{i\in[n)}\|f_i\|_{2^{\pi(i)+\min(n-\pi(i),2)}}^2.
+\]
 \end{proposition}
 -/
 theorem permutation_of_endpoint_estimate {n : ℕ} (hn : 2 ≤ n)
@@ -2305,6 +2327,792 @@ theorem eLpNorm_ergodicAverage_sub_complex_le_sum {X : Type*} [MeasurableSpace X
       apply eLpNorm_congr_norm_ae
       filter_upwards [] with x
       exact Complex.norm_real _
+
+/-- A finite Cauchy--Schwarz estimate for non-infinite extended nonnegative reals. -/
+private theorem aux_ennreal_sq_sum_le_card_mul_sum_sq {ι : Type*} [Fintype ι]
+    (a : ι → ℝ≥0∞) (ha : ∀ i, a i ≠ ∞) :
+    (∑ i, a i) ^ 2 ≤ (Fintype.card ι : ℝ≥0∞) * ∑ i, a i ^ 2 := by
+  have hsum : (∑ i, a i) ≠ ∞ := ENNReal.sum_ne_top.mpr fun i _ ↦ ha i
+  have hsq : ∀ i, a i ^ 2 ≠ ∞ := fun i ↦ ENNReal.pow_ne_top (ha i)
+  have hsumSq : (∑ i, a i ^ 2) ≠ ∞ := ENNReal.sum_ne_top.mpr fun i _ ↦ hsq i
+  have hright : (Fintype.card ι : ℝ≥0∞) * ∑ i, a i ^ 2 ≠ ∞ :=
+    ENNReal.mul_ne_top (ENNReal.natCast_ne_top _) hsumSq
+  apply (ENNReal.toReal_le_toReal (ENNReal.pow_ne_top hsum) hright).mp
+  rw [ENNReal.toReal_pow, ENNReal.toReal_mul,
+    ENNReal.toReal_sum (fun i _ ↦ hsq i)]
+  simpa only [ENNReal.toReal_natCast, ENNReal.toReal_sum (fun i _ ↦ ha i),
+    ENNReal.toReal_pow, Finset.card_univ] using
+    (sq_sum_le_card_mul_sum_sq (s := (Finset.univ : Finset ι))
+      (f := fun i ↦ (a i).toReal))
+
+/-- The squared-energy form of the finite real/imaginary expansion. -/
+private theorem aux_ergodicJumpEnergy_complexification_le {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n J : ℕ} (S : aux_ErgodicSystem X μ n)
+    (N : Fin (J + 1) → ℕ) (f : Fin n → X → ℂ)
+    (hmem : ∀ ε : Fin n → Fin 2, ∀ j : Fin J,
+      MemLp (fun x ↦ aux_realErgodicAverage S (N j.succ) (complexComponent ε f) x -
+        aux_realErgodicAverage S (N j.castSucc) (complexComponent ε f) x) 2 μ) :
+    aux_ergodicJumpEnergy S N f ≤
+      (Fintype.card (Fin n → Fin 2) : ℝ≥0∞) *
+        ∑ ε : Fin n → Fin 2, aux_realErgodicJumpEnergy S N (complexComponent ε f) := by
+  unfold aux_ergodicJumpEnergy aux_realErgodicJumpEnergy
+  calc
+    ∑ j : Fin J, eLpNorm
+        (fun x ↦ ergodicAverage S (N j.succ) f x -
+          ergodicAverage S (N j.castSucc) f x) 2 μ ^ 2 ≤
+        ∑ j : Fin J, (∑ ε : Fin n → Fin 2, eLpNorm
+          (fun x ↦ aux_realErgodicAverage S (N j.succ) (complexComponent ε f) x -
+            aux_realErgodicAverage S (N j.castSucc) (complexComponent ε f) x) 2 μ) ^ 2 := by
+      apply Finset.sum_le_sum
+      intro j _
+      exact pow_le_pow_left'
+        (eLpNorm_ergodicAverage_sub_complex_le_sum S (N j.succ) (N j.castSucc) f
+          (fun ε ↦ hmem ε j)) _
+    _ ≤ ∑ j : Fin J, (Fintype.card (Fin n → Fin 2) : ℝ≥0∞) *
+        ∑ ε : Fin n → Fin 2, eLpNorm
+          (fun x ↦ aux_realErgodicAverage S (N j.succ) (complexComponent ε f) x -
+            aux_realErgodicAverage S (N j.castSucc) (complexComponent ε f) x) 2 μ ^ 2 := by
+      apply Finset.sum_le_sum
+      intro j _
+      exact aux_ennreal_sq_sum_le_card_mul_sum_sq _ (fun ε ↦ (hmem ε j).eLpNorm_ne_top)
+    _ = (Fintype.card (Fin n → Fin 2) : ℝ≥0∞) *
+        ∑ ε : Fin n → Fin 2, ∑ j : Fin J, eLpNorm
+          (fun x ↦ aux_realErgodicAverage S (N j.succ) (complexComponent ε f) x -
+            aux_realErgodicAverage S (N j.castSucc) (complexComponent ε f) x) 2 μ ^ 2 := by
+      simp_rw [Finset.mul_sum]
+      rw [Finset.sum_comm]
+
+/-- A complex ergodic jump energy is bounded by the real/imaginary expansion, with
+the exact `2 ^ (2 * n)` squared-energy loss. -/
+theorem ergodicJumpEnergy_complexification_le {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n J : ℕ} (S : aux_ErgodicSystem X μ n)
+    (N : Fin (J + 1) → ℕ) (f : Fin n → X → ℂ) (B : ℝ≥0∞)
+    (hmem : ∀ ε : Fin n → Fin 2, ∀ j : Fin J,
+      MemLp (fun x ↦ aux_realErgodicAverage S (N j.succ) (complexComponent ε f) x -
+        aux_realErgodicAverage S (N j.castSucc) (complexComponent ε f) x) 2 μ)
+    (hreal : ∀ ε : Fin n → Fin 2,
+      aux_realErgodicJumpEnergy S N (complexComponent ε f) ≤ B) :
+    aux_ergodicJumpEnergy S N f ≤ (2 : ℝ≥0∞) ^ (2 * n) * B := by
+  let K : ℝ≥0∞ := Fintype.card (Fin n → Fin 2)
+  calc
+    aux_ergodicJumpEnergy S N f ≤ K *
+        ∑ ε : Fin n → Fin 2, aux_realErgodicJumpEnergy S N (complexComponent ε f) := by
+      exact aux_ergodicJumpEnergy_complexification_le S N f hmem
+    _ ≤ K * ∑ _ε : Fin n → Fin 2, B := by
+      gcongr with ε
+      exact hreal ε
+    _ = K * (K * B) := by
+      simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+      rfl
+    _ = (2 : ℝ≥0∞) ^ (2 * n) * B := by
+      have hK : K = (2 : ℝ≥0∞) ^ n := by
+        simp [K]
+      rw [hK, ← mul_assoc, ← pow_add]
+      congr 2
+      omega
+
+/-- The complex-valued real-variable average obtained by applying the same
+kernel formula as `A_def` over `ℂ`. -/
+noncomputable def complexTwistedAverage {n : ℕ} (χ : ℝ → ℝ)
+    (f : Fin n → RealVector n → ℂ) : RealVector n → ℂ :=
+  fun x ↦ ∫ s : ℝ, (χ s : ℂ) * ∏ i,
+    f i (x + s • coordinateAxis i)
+
+/-- The scaled complex-valued twisted average. -/
+noncomputable def complexTwistedAverageAtScale {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
+    (f : Fin n → RealVector n → ℂ) : RealVector n → ℂ :=
+  complexTwistedAverage (scaleKernel t χ) f
+
+/-- The squared finite `L²` jump energy of complex real-variable averages. -/
+noncomputable def complexEndpointEnergy {n : ℕ} (J : ℕ)
+    (t : Fin (J + 1) → ℝ) (χ : ℝ → ℝ)
+    (f : Fin n → RealVector n → ℂ) : ℝ≥0∞ :=
+  ∑ j : Fin J, eLpNorm
+    (fun x ↦ complexTwistedAverageAtScale (t j.succ) χ f x -
+      complexTwistedAverageAtScale (t j.castSucc) χ f x)
+    2 volume ^ 2
+
+/-- The growth function in the real-variable and ergodic jump bounds. -/
+noncomputable def jumpGrowth (n J : ℕ) : ℝ :=
+  (J : ℝ) ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2))
+
+/-- The growth function from the jump estimates is at least one on positive
+integer indices, as required by Calderón transference. -/
+private theorem one_le_jumpGrowth {n J : ℕ} (hn : 2 ≤ n) (hJ : 0 < J) :
+    1 ≤ jumpGrowth n J := by
+  unfold jumpGrowth
+  apply Real.one_le_rpow
+  · exact_mod_cast (show 1 ≤ J by omega)
+  · have hn' : (2 : ℝ) ≤ n := by exact_mod_cast hn
+    have hpow : (2 : ℝ) ^ (-(n : ℝ) + 2) ≤ 1 :=
+      Real.rpow_le_one_of_one_le_of_nonpos (by norm_num) (by linarith)
+    linarith
+
+/-- The real-variable interpolation constant in
+Proposition \ref{interpolated real variable estimate}. -/
+noncomputable def C_interpolated_real_variable_estimate (n : ℕ) : ℝ :=
+  (2 : ℝ) ^ (2 * n) * (2 : ℝ) ^ 666
+
+/--
+\begin{exttheorem}[Multilinear interpolation]
+\label{multilinear interpolation external}
+Let $m,n\ge 1$ be integers, let $(X_i,\mu_i)$ and $(Y,\nu)$ be measure
+spaces, let $p\in[1,\infty]$, and let $T$ be an $n$-linear map on
+$n$-tuples of complex-valued simple functions with values in $L^p(Y)$.
+For $a\in[m)$ and $i\in[n)$, let $q_{a,i}\in[1,\infty]$, and assume
+\[
+\|T(f_0,\ldots,f_{n-1})\|_{L^p(Y)}
+\le A_a\prod_{i\in[n)}\|f_i\|_{L^{q_{a,i}}(X_i)}.
+\]
+Let $\theta_a\ge 0$ satisfy $\sum_{a\in[m)}\theta_a=1$, and define
+$p_i\in[1,\infty]$ by
+\[
+\frac1{p_i}=\sum_{a\in[m)}\frac{\theta_a}{q_{a,i}}.
+\]
+Then $T$ extends to an $n$-linear map from
+$\prod_{i\in[n)}L^{p_i}(X_i)$ to $L^p(Y)$ and
+\[
+\|T(f_0,\ldots,f_{n-1})\|_{L^p(Y)}
+\le \prod_{a\in[m)}A_a^{\theta_a}
+\prod_{i\in[n)}\|f_i\|_{L^{p_i}(X_i)}.
+\]
+\end{exttheorem}
+
+This is the application form for the finite jump operator: its hypotheses
+are all real Schwartz endpoint bounds, and its conclusions package the
+required real density extension and complex-valued estimate. -/
+theorem multilinear_interpolation_external {n : ℕ} (hn : 2 ≤ n)
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hpoly : (fun i ↦ ((p i)⁻¹).toReal) ∈ endpointPolytope n)
+    (J : ℕ) (hJ : 0 < J) (t : Fin (J + 1) → ℝ)
+    (ht : StrictMono t) (htpos : ∀ j, 0 < t j)
+    (hendpoint : ∀ (π : Equiv.Perm (Fin n))
+        (g : Fin n → SchwartzMap (RealVector n) ℝ),
+      endpointEnergy J t unitIntervalKernel (fun i x ↦ g i x) ≤
+        ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (g i) (mainEndpointExponent n (π i)) volume ^ 2) :
+    (∀ f : Fin n → RealVector n → ℂ, (∀ i, MemLp (f i) (p i) volume) →
+      complexEndpointEnergy J t unitIntervalKernel f ≤
+        ENNReal.ofReal (C_interpolated_real_variable_estimate n) *
+          ENNReal.ofReal (jumpGrowth n J) *
+            ∏ i, eLpNorm (f i) (p i) volume ^ 2) ∧
+    (∀ f : Fin n → RealVector n → ℝ, (∀ i, MemLp (f i) (p i) volume) →
+      endpointEnergy J t unitIntervalKernel f ≤
+        ENNReal.ofReal (C_interpolated_real_variable_estimate n) *
+          ENNReal.ofReal (jumpGrowth n J) *
+            ∏ i, eLpNorm (f i) (p i) volume ^ 2) := by
+  sorry
+
+/--
+\begin{proposition}[Interpolated real-variable estimate]
+\label{interpolated real variable estimate}
+Let $n\ge 2$, and let $(p_i)_{i\in[n)}$ satisfy
+\eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}.
+For every $J\ge1$, every $0<t_0<\cdots<t_J$, and every $n$-tuple of
+complex-valued measurable functions $f_i\in L^{p_i}(\mathbb R^n)$,
+\[
+\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)
+  - A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
+\le 2^{2n}C_{\ref{thm:nct main real}}J^{1-2^{2-n}}
+\prod_{i\in[n)}\|f_i\|_{p_i}^2.
+\]
+\end{proposition}
+-/
+theorem interpolated_real_variable_estimate {n : ℕ} (hn : 2 ≤ n)
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hsum : (∑ i, ((p i)⁻¹).toReal) = 1 / 2)
+    (hlower : ∀ I : Finset (Fin n), I.Nonempty →
+      (2 : ℝ) ^ I.card / (2 : ℝ) ^ (n + 1) ≤ ∑ i ∈ I, ((p i)⁻¹).toReal)
+    (J : ℕ) (hJ : 0 < J) (t : Fin (J + 1) → ℝ)
+    (ht : StrictMono t) (htpos : ∀ j, 0 < t j)
+    (f : Fin n → RealVector n → ℂ) (hf : ∀ i, MemLp (f i) (p i) volume) :
+    complexEndpointEnergy J t unitIntervalKernel f ≤
+      ENNReal.ofReal (C_interpolated_real_variable_estimate n) *
+        ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+  exact (multilinear_interpolation_external hn p hp
+    ((exponent_polytope_of_exponents hn p hp).mpr ⟨hsum, hlower⟩)
+    J hJ t ht htpos (by
+      intro π g
+      simpa [jumpGrowth] using
+        permutation_of_endpoint_estimate hn π J hJ t ht htpos g)).1 f hf
+
+/-- The real-input component of
+`interpolated_real_variable_estimate`, exposed for Calderón transference. -/
+theorem aux_interpolated_real_variable_estimate_real {n : ℕ} (hn : 2 ≤ n)
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hsum : (∑ i, ((p i)⁻¹).toReal) = 1 / 2)
+    (hlower : ∀ I : Finset (Fin n), I.Nonempty →
+      (2 : ℝ) ^ I.card / (2 : ℝ) ^ (n + 1) ≤ ∑ i ∈ I, ((p i)⁻¹).toReal)
+    (J : ℕ) (hJ : 0 < J) (t : Fin (J + 1) → ℝ)
+    (ht : StrictMono t) (htpos : ∀ j, 0 < t j)
+    (f : Fin n → RealVector n → ℝ) (hf : ∀ i, MemLp (f i) (p i) volume) :
+    endpointEnergy J t unitIntervalKernel f ≤
+      ENNReal.ofReal (C_interpolated_real_variable_estimate n) *
+        ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+  exact (multilinear_interpolation_external hn p hp
+    ((exponent_polytope_of_exponents hn p hp).mpr ⟨hsum, hlower⟩)
+    J hJ t ht htpos (by
+      intro π g
+      simpa [jumpGrowth] using
+        permutation_of_endpoint_estimate hn π J hJ t ht htpos g)).2 f hf
+
+/-- The exponent-polytope hypotheses force every exponent into `(1, ∞)`,
+as needed by the Calderón theorem. -/
+private theorem aux_exponents_strictly_between_one_and_top {n : ℕ}
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hsum : (∑ i, ((p i)⁻¹).toReal) = 1 / 2)
+    (hlower : ∀ I : Finset (Fin n), I.Nonempty →
+      (2 : ℝ) ^ I.card / (2 : ℝ) ^ (n + 1) ≤ ∑ i ∈ I, ((p i)⁻¹).toReal) :
+    ∀ i, 1 < p i ∧ p i < ∞ := by
+  intro i
+  have hsingle := hlower ({i} : Finset (Fin n)) (by simp)
+  simp only [Finset.card_singleton, Finset.sum_singleton] at hsingle
+  have hrecip_pos : 0 < ((p i)⁻¹).toReal := by
+    apply lt_of_lt_of_le (show 0 < (2 : ℝ) ^ 1 / (2 : ℝ) ^ (n + 1) by positivity)
+    exact hsingle
+  have htop : p i ≠ ∞ := by
+    intro htop
+    simp [htop] at hrecip_pos
+  constructor
+  · apply lt_of_le_of_ne (hp i)
+    intro hone
+    have hterm_le : ((p i)⁻¹).toReal ≤ ∑ j, ((p j)⁻¹).toReal := by
+      exact Finset.single_le_sum (s := Finset.univ)
+        (f := fun j ↦ ((p j)⁻¹).toReal)
+        (fun _ _ ↦ ENNReal.toReal_nonneg) (Finset.mem_univ i)
+    rw [hsum] at hterm_le
+    rw [← hone] at hterm_le
+    norm_num at hterm_le
+  · exact (lt_top_iff_ne_top.mpr htop)
+
+/-- Measurability of a real multiple ergodic average, used to turn finite
+jump-energy estimates into `MemLp` facts for complexification. -/
+private theorem aux_realErgodicAverage_aestronglyMeasurable {X : Type*}
+    [MeasurableSpace X] {μ : Measure X} {n : ℕ}
+    (S : aux_ErgodicSystem X μ n) (N : ℕ) (f : Fin n → X → ℝ)
+    (hf : ∀ i, AEStronglyMeasurable (f i) μ) :
+    AEStronglyMeasurable (aux_realErgodicAverage S N f) μ := by
+  unfold aux_realErgodicAverage
+  change AEStronglyMeasurable ((N : ℝ)⁻¹ • fun x ↦
+    ∑ m ∈ Finset.range N, ∏ i, f i ((S.transformation i)^[m] x)) μ
+  apply (Finset.aestronglyMeasurable_fun_sum (Finset.range N) ?_).const_smul
+  intro m _
+  apply Finset.aestronglyMeasurable_fun_prod Finset.univ
+  intro i _
+  change AEStronglyMeasurable (f i ∘ (S.transformation i)^[m]) μ
+  exact (hf i).comp_quasiMeasurePreserving
+    ((S.measurePreserving i).iterate m).quasiMeasurePreserving
+
+private theorem aux_realErgodicAverage_sub_aestronglyMeasurable {X : Type*}
+    [MeasurableSpace X] {μ : Measure X} {n : ℕ}
+    (S : aux_ErgodicSystem X μ n) (N M : ℕ) (f : Fin n → X → ℝ)
+    (hf : ∀ i, AEStronglyMeasurable (f i) μ) :
+    AEStronglyMeasurable (fun x ↦ aux_realErgodicAverage S N f x -
+      aux_realErgodicAverage S M f x) μ := by
+  exact (aux_realErgodicAverage_aestronglyMeasurable S N f hf).sub
+    (aux_realErgodicAverage_aestronglyMeasurable S M f hf)
+
+/-- A finite real jump-energy bound and measurability give `MemLp` for each
+individual real jump. -/
+private theorem aux_realErgodicJump_memLp_of_energy_le {X : Type*}
+    [MeasurableSpace X] {μ : Measure X} {n J : ℕ}
+    (S : aux_ErgodicSystem X μ n) (N : Fin (J + 1) → ℕ)
+    (f : Fin n → X → ℝ) (hf : ∀ i, AEStronglyMeasurable (f i) μ)
+    (j : Fin J) (B : ℝ≥0∞) (hBtop : B ≠ ∞)
+    (henergy : aux_realErgodicJumpEnergy S N f ≤ B) :
+    MemLp (fun x ↦ aux_realErgodicAverage S (N j.succ) f x -
+      aux_realErgodicAverage S (N j.castSucc) f x) 2 μ := by
+  let d : X → ℝ := fun x ↦ aux_realErgodicAverage S (N j.succ) f x -
+    aux_realErgodicAverage S (N j.castSucc) f x
+  let q : Fin J → ℝ≥0∞ := fun k ↦ eLpNorm
+    (fun x ↦ aux_realErgodicAverage S (N k.succ) f x -
+      aux_realErgodicAverage S (N k.castSucc) f x) 2 μ
+  change MemLp d 2 μ
+  refine ⟨?_, ?_⟩
+  · simpa only [d] using aux_realErgodicAverage_sub_aestronglyMeasurable S
+      (N j.succ) (N j.castSucc) f hf
+  · have hsingle : eLpNorm d 2 μ ^ 2 ≤ aux_realErgodicJumpEnergy S N f := by
+      unfold aux_realErgodicJumpEnergy
+      change eLpNorm d 2 μ ^ 2 ≤ ∑ k, q k ^ 2
+      have hdq : q j = eLpNorm d 2 μ := by rfl
+      rw [← hdq]
+      exact Finset.single_le_sum (s := Finset.univ) (f := fun k ↦ q k ^ 2)
+        (fun _ _ ↦ bot_le) (Finset.mem_univ j)
+    have hpowtop : eLpNorm d 2 μ ^ 2 < ∞ :=
+      lt_of_le_of_lt (hsingle.trans henergy) (lt_top_iff_ne_top.mpr hBtop)
+    exact (ENNReal.pow_lt_top_iff.mp hpowtop).resolve_right (by norm_num)
+
+private theorem aux_complexComponent_memLp_pi {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (ε : Fin n → Fin 2) (f : Fin n → X → ℂ)
+    (p : Fin n → ℝ≥0∞) (hf : ∀ i, MemLp (f i) (p i) μ) (i : Fin n) :
+    MemLp (complexComponent ε f i) (p i) μ := by
+  change MemLp (fun x ↦ if ε i = 0 then (f i x).re else (f i x).im) (p i) μ
+  by_cases hε : ε i = 0
+  · simpa [hε] using (hf i).re
+  · simpa [hε] using (hf i).im
+
+/-- The real-variable hypothesis in the Calderón transference principle. -/
+def aux_realVariableJumpBound {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (C : ℝ) (g : ℕ → ℝ) : Prop :=
+  ∀ (J : ℕ), 0 < J → ∀ (t : Fin (J + 1) → ℝ),
+    StrictMono t → (∀ j, 0 < t j) →
+      ∀ f : Fin n → RealVector n → ℝ,
+        (∀ i, MemLp (f i) (p i) volume) →
+          endpointEnergy J t unitIntervalKernel f ≤
+            ENNReal.ofReal C * ENNReal.ofReal (g J) *
+              ∏ i, eLpNorm (f i) (p i) volume ^ 2
+
+/-- The real ergodic conclusion in the Calderón transference principle. -/
+def aux_realErgodicJumpBound {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (C : ℝ) (g : ℕ → ℝ) : Prop :=
+  ∀ (X : Type u) [MeasurableSpace X] (μ : Measure X)
+    (S : aux_ErgodicSystem X μ n) (J : ℕ) (_hJ : 0 < J)
+    (N : Fin (J + 1) → ℕ) (_hN : StrictMono N) (_hNpos : ∀ j, 0 < N j)
+    (f : Fin n → X → ℝ), (∀ i, MemLp (f i) (p i) μ) →
+      aux_realErgodicJumpEnergy S N f ≤
+        ENNReal.ofReal C * ENNReal.ofReal (g J) *
+          ∏ i, eLpNorm (f i) (p i) μ ^ 2
+
+/--
+\begin{exttheorem}[Calderón transference principle]
+\label{Calderon transference external}
+Let $n\ge2$, let $p_i\in(1,\infty)$ satisfy
+$\sum_{i\in[n)}p_i^{-1}=1/2$, and let $g:\mathbb N\to[1,\infty)$.
+Assume that for some $C>0$, every $J\ge1$, every
+$0<t_0<\cdots<t_J$, and every real-valued
+$f_i\in L^{p_i}(\mathbb R^n)$ satisfy
+\[
+\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)
+  - A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
+\le Cg(J)\prod_{i\in[n)}\|f_i\|_{p_i}^2.
+\]
+Then there is a finite constant
+$C_{\ref{Calderon transference external},n,(p_i)_{i\in[n)},C}$ such that,
+for every measure space $(X,\Sigma,\mu)$, every family of mutually commuting
+measure preserving transformations $(T_i)_{i\in[n)}$, every real-valued
+$f_i\in L^{p_i}(X)$, every $J\ge1$, and every positive integers
+$N_0<\cdots<N_J$,
+\[
+\sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
+\le C_{\ref{Calderon transference external},n,(p_i)_{i\in[n)},C}g(J)
+\prod_{i\in[n)}\|f_i\|_{p_i}^2.
+\]
+\end{exttheorem}
+
+The Lean application form below exposes precisely this real-valued conclusion;
+the complex-valued conclusion is proved separately by finite expansion. -/
+theorem calderon_transference_external {n : ℕ} (hn : 2 ≤ n)
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 < p i ∧ p i < ∞)
+    (hsum : (∑ i, ((p i)⁻¹).toReal) = 1 / 2) (C : ℝ) (hC : 0 < C) :
+    ∃ K : ℝ, 0 < K ∧ ∀ g : ℕ → ℝ,
+      (∀ J, 0 < J → 1 ≤ g J) →
+      aux_realVariableJumpBound p C g →
+        aux_realErgodicJumpBound.{u} p K g := by
+  sorry
+
+/-- The finite constant supplied by the external Calderón theorem. -/
+noncomputable def C_calderon_transference_external (n : ℕ)
+    (p : Fin n → ℝ≥0∞) (C : ℝ) : ℝ :=
+  if hn : 2 ≤ n then
+    if hp : ∀ i, 1 < p i ∧ p i < ∞ then
+      if hsum : (∑ i, ((p i)⁻¹).toReal) = 1 / 2 then
+        if hC : 0 < C then
+          Classical.choose (calderon_transference_external.{u} hn p hp hsum C hC)
+        else 1
+      else 1
+    else 1
+  else 1
+
+/-- The choice specification for `C_calderon_transference_external`. -/
+private theorem C_calderon_transference_external_spec {n : ℕ} (hn : 2 ≤ n)
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 < p i ∧ p i < ∞)
+    (hsum : (∑ i, ((p i)⁻¹).toReal) = 1 / 2) (C : ℝ) (hC : 0 < C) :
+    0 < C_calderon_transference_external.{u} n p C ∧ ∀ g : ℕ → ℝ,
+      (∀ J, 0 < J → 1 ≤ g J) →
+      aux_realVariableJumpBound p C g →
+        aux_realErgodicJumpBound.{u} p
+          (C_calderon_transference_external.{u} n p C) g := by
+  rw [C_calderon_transference_external, dif_pos hn, dif_pos hp, dif_pos hsum, dif_pos hC]
+  exact Classical.choose_spec (calderon_transference_external.{u} hn p hp hsum C hC)
+
+/-- The constant in Theorem \ref{thm:ergodicthm-interpolation}. -/
+noncomputable def C_ergodic_jump_estimate_interpolation (n : ℕ)
+    (p : Fin n → ℝ≥0∞) : ℝ :=
+  (2 : ℝ) ^ (2 * n) *
+    C_calderon_transference_external.{u} n p (C_interpolated_real_variable_estimate n)
+
+/--
+\begin{theorem}[Ergodic jump estimate with general exponents]
+\label{thm:ergodicthm-interpolation}
+Let $n\ge2$, and let $(p_i)_{i\in[n)}$ satisfy
+\eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}.
+Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually
+commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be
+complex-valued functions with $f_i\in L^{p_i}(X)$. For every $J\ge1$ and
+positive integers $N_0<\cdots<N_J$,
+\[
+\sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
+\le C_{\ref{thm:ergodicthm-interpolation},n,(p_i)_{i\in[n)}}
+J^{1-2^{2-n}}\prod_{i\in[n)}\|f_i\|_{p_i}^2,
+\]
+where
+\[
+C_{\ref{thm:ergodicthm-interpolation},n,(p_i)_{i\in[n)}}
+=2^{2n}C_{\ref{Calderon transference external},n,(p_i)_{i\in[n)},
+2^{2n}C_{\ref{thm:nct main real}}}.
+\]
+\end{theorem}
+-/
+theorem ergodic_jump_estimate_interpolation {n : ℕ} (hn : 2 ≤ n)
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hsum : (∑ i, ((p i)⁻¹).toReal) = 1 / 2)
+    (hlower : ∀ I : Finset (Fin n), I.Nonempty →
+      (2 : ℝ) ^ I.card / (2 : ℝ) ^ (n + 1) ≤ ∑ i ∈ I, ((p i)⁻¹).toReal)
+    (X : Type u) [MeasurableSpace X] (μ : Measure X)
+    (S : aux_ErgodicSystem X μ n) (J : ℕ) (hJ : 0 < J)
+    (N : Fin (J + 1) → ℕ) (hN : StrictMono N) (hNpos : ∀ j, 0 < N j)
+    (f : Fin n → X → ℂ) (hf : ∀ i, MemLp (f i) (p i) μ) :
+    aux_ergodicJumpEnergy S N f ≤
+      ENNReal.ofReal (C_ergodic_jump_estimate_interpolation.{u} n p) *
+        ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (p i) μ ^ 2 := by
+  have hp' := aux_exponents_strictly_between_one_and_top p hp hsum hlower
+  have hC : 0 < C_interpolated_real_variable_estimate n := by
+    unfold C_interpolated_real_variable_estimate
+    positivity
+  have hreal : aux_realVariableJumpBound p
+      (C_interpolated_real_variable_estimate n) (jumpGrowth n) := by
+    intro K hK t ht htpos g hg
+    exact aux_interpolated_real_variable_estimate_real hn p hp hsum hlower
+      K hK t ht htpos g hg
+  have htransfer := (C_calderon_transference_external_spec.{u} hn p hp' hsum
+    (C_interpolated_real_variable_estimate n) hC).2 (jumpGrowth n)
+      (fun K hK ↦ one_le_jumpGrowth hn hK) hreal
+  let K : ℝ := C_calderon_transference_external.{u} n p
+    (C_interpolated_real_variable_estimate n)
+  have hBtop :
+      ENNReal.ofReal K * ENNReal.ofReal (jumpGrowth n J) *
+        ∏ i, eLpNorm (f i) (p i) μ ^ 2 ≠ ∞ := by
+    apply ENNReal.mul_ne_top
+    · apply ENNReal.mul_ne_top <;> exact ENNReal.ofReal_ne_top
+    · apply ENNReal.prod_ne_top
+      intro i _
+      exact ENNReal.pow_ne_top (hf i).eLpNorm_ne_top
+  have hcomponentNorm : ∀ ε : Fin n → Fin 2,
+      (∏ i, eLpNorm (complexComponent ε f i) (p i) μ ^ 2) ≤
+        ∏ i, eLpNorm (f i) (p i) μ ^ 2 := by
+    intro ε
+    apply Finset.prod_le_prod'
+    intro i _
+    exact ENNReal.pow_le_pow_left (eLpNorm_complexComponent_le ε f (p i) i)
+  have hrealComponent : ∀ ε : Fin n → Fin 2,
+      aux_realErgodicJumpEnergy S N (complexComponent ε f) ≤
+        ENNReal.ofReal K * ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (p i) μ ^ 2 := by
+    intro ε
+    calc
+      aux_realErgodicJumpEnergy S N (complexComponent ε f) ≤
+          ENNReal.ofReal K * ENNReal.ofReal (jumpGrowth n J) *
+            ∏ i, eLpNorm (complexComponent ε f i) (p i) μ ^ 2 := by
+        exact htransfer X μ S J hJ N hN hNpos (complexComponent ε f)
+          (fun i ↦ aux_complexComponent_memLp_pi ε f p hf i)
+      _ ≤ ENNReal.ofReal K * ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (p i) μ ^ 2 := by
+        exact mul_le_mul_of_nonneg_left (hcomponentNorm ε) bot_le
+  have hcomponentJumpMemLp : ∀ ε : Fin n → Fin 2, ∀ j : Fin J,
+      MemLp (fun x ↦ aux_realErgodicAverage S (N j.succ) (complexComponent ε f) x -
+        aux_realErgodicAverage S (N j.castSucc) (complexComponent ε f) x) 2 μ := by
+    intro ε j
+    exact aux_realErgodicJump_memLp_of_energy_le S N (complexComponent ε f)
+      (fun i ↦ (aux_complexComponent_memLp_pi ε f p hf i).aestronglyMeasurable)
+      j _ hBtop (hrealComponent ε)
+  have hcomplex := ergodicJumpEnergy_complexification_le S N f
+    (ENNReal.ofReal K * ENNReal.ofReal (jumpGrowth n J) *
+      ∏ i, eLpNorm (f i) (p i) μ ^ 2) hcomponentJumpMemLp hrealComponent
+  simpa [K, C_ergodic_jump_estimate_interpolation, ENNReal.ofReal_mul, mul_assoc] using hcomplex
+
+/-- Under the exponent-polytope hypotheses, the general ergodic jump constant
+is strictly positive. -/
+theorem C_ergodic_jump_estimate_interpolation_pos {n : ℕ} (hn : 2 ≤ n)
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hsum : (∑ i, ((p i)⁻¹).toReal) = 1 / 2)
+    (hlower : ∀ I : Finset (Fin n), I.Nonempty →
+      (2 : ℝ) ^ I.card / (2 : ℝ) ^ (n + 1) ≤ ∑ i ∈ I, ((p i)⁻¹).toReal) :
+    0 < C_ergodic_jump_estimate_interpolation.{u} n p := by
+  have hp' := aux_exponents_strictly_between_one_and_top p hp hsum hlower
+  have hC : 0 < C_interpolated_real_variable_estimate n := by
+    unfold C_interpolated_real_variable_estimate
+    positivity
+  exact mul_pos (by positivity)
+    (C_calderon_transference_external_spec.{u} hn p hp' hsum
+      (C_interpolated_real_variable_estimate n) hC).1
+
+private theorem aux_symmetric_exponent_conditions {n : ℕ} (hn : 2 ≤ n) :
+    (∀ _i : Fin n, 1 ≤ (2 * n : ℝ≥0∞)) ∧
+      (∑ _i : Fin n, ((2 * n : ℝ≥0∞)⁻¹).toReal) = 1 / 2 ∧
+        ∀ I : Finset (Fin n), I.Nonempty →
+          (2 : ℝ) ^ I.card / (2 : ℝ) ^ (n + 1) ≤
+            ∑ _i ∈ I, ((2 * n : ℝ≥0∞)⁻¹).toReal := by
+  have hmem := aux_symmetricExponent_mem_endpointPolytope hn
+  have hpoly := (exponent_polytope hn (fun _ : Fin n ↦ (2 * n : ℝ)⁻¹)).mp hmem
+  have heq : ∀ i : Fin n, ((2 * n : ℝ≥0∞)⁻¹).toReal = (2 * n : ℝ)⁻¹ := by
+    intro i
+    simp only [ENNReal.toReal_inv, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
+      ENNReal.toReal_natCast]
+  constructor
+  · intro _i
+    exact_mod_cast (show 1 ≤ 2 * n by omega)
+  constructor
+  · convert hpoly.1 using 1
+    apply Finset.sum_congr rfl
+    intro i _
+    exact heq i
+  · intro I hI
+    convert hpoly.2 I hI using 1
+    apply Finset.sum_congr rfl
+    intro i _
+    exact heq i
+
+/-- The constant in Theorem \ref{thm:ergodicthmJ}. -/
+noncomputable def C_symmetric_ergodic_jump_estimate (n : ℕ) : ℝ :=
+  C_ergodic_jump_estimate_interpolation.{u} n (fun _ : Fin n ↦ (2 * n : ℝ≥0∞))
+
+/-- For `n ≥ 2`, the symmetric ergodic jump constant is strictly positive. -/
+theorem C_symmetric_ergodic_jump_estimate_pos {n : ℕ} (hn : 2 ≤ n) :
+    0 < C_symmetric_ergodic_jump_estimate.{u} n := by
+  obtain ⟨hp, hsum, hlower⟩ := aux_symmetric_exponent_conditions hn
+  simpa [C_symmetric_ergodic_jump_estimate] using
+    C_ergodic_jump_estimate_interpolation_pos.{u} hn
+      (fun _ : Fin n ↦ (2 * n : ℝ≥0∞)) hp hsum hlower
+
+/--
+\begin{theorem}[Symmetric ergodic jump estimate]
+\label{thm:ergodicthmJ}
+Let $n\ge2$. Let $(X,\Sigma,\mu)$ be a measure space, let
+$(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations,
+and let $(f_i)_{i\in[n)}$ be complex-valued functions in $L^{2n}(X)$.
+For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
+\[
+\sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
+\le C_{\ref{thm:ergodicthmJ},n}J^{1-2^{2-n}}
+\prod_{i\in[n)}\|f_i\|_{2n}^2,
+\]
+where
+\[
+C_{\ref{thm:ergodicthmJ},n}
+=2^{2n}C_{\ref{Calderon transference external},n,(2n)_{i\in[n)},
+2^{2n}C_{\ref{thm:nct main real}}}.
+\]
+\end{theorem}
+-/
+theorem symmetric_ergodic_jump_estimate {n : ℕ} (hn : 2 ≤ n)
+    (X : Type u) [MeasurableSpace X] (μ : Measure X)
+    (S : aux_ErgodicSystem X μ n) (J : ℕ) (hJ : 0 < J)
+    (N : Fin (J + 1) → ℕ) (hN : StrictMono N) (hNpos : ∀ j, 0 < N j)
+    (f : Fin n → X → ℂ) (hf : ∀ i, MemLp (f i) (2 * n : ℝ≥0∞) μ) :
+    aux_ergodicJumpEnergy S N f ≤
+      ENNReal.ofReal (C_symmetric_ergodic_jump_estimate.{u} n) *
+        ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (2 * n : ℝ≥0∞) μ ^ 2 := by
+  obtain ⟨hp, hsum, hlower⟩ := aux_symmetric_exponent_conditions hn
+  simpa [C_symmetric_ergodic_jump_estimate] using
+    ergodic_jump_estimate_interpolation hn
+      (fun _ : Fin n ↦ (2 * n : ℝ≥0∞)) hp hsum hlower
+      X μ S J hJ N hN hNpos f hf
+
+private theorem aux_inputNormProductSq {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (f : Fin n → X → ℂ)
+    (hf : ∀ i, MemLp (f i) (2 * n : ℝ≥0∞) μ) :
+    ∏ i, eLpNorm (f i) (2 * n : ℝ≥0∞) μ ^ 2 =
+      ENNReal.ofReal (∏ i, (eLpNorm (f i) (2 * n : ℝ≥0∞) μ).toReal ^ 2) := by
+  rw [ENNReal.ofReal_prod_of_nonneg]
+  · apply Finset.prod_congr rfl
+    intro i _
+    rw [ENNReal.ofReal_pow ENNReal.toReal_nonneg]
+    rw [ENNReal.ofReal_toReal (hf i).eLpNorm_ne_top]
+  · intro i _
+    positivity
+
+private theorem aux_jumpBoundRhsRewrite {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n : ℕ} (C G : ℝ) (hC : 0 ≤ C)
+    (f : Fin n → X → ℂ)
+    (hf : ∀ i, MemLp (f i) (2 * n : ℝ≥0∞) μ) :
+    ENNReal.ofReal C * ENNReal.ofReal G *
+        ∏ i, eLpNorm (f i) (2 * n : ℝ≥0∞) μ ^ 2 =
+      ENNReal.ofReal
+          (C * (∏ i, (eLpNorm (f i) (2 * n : ℝ≥0∞) μ).toReal) ^ 2) *
+        ENNReal.ofReal G := by
+  calc
+    ENNReal.ofReal C * ENNReal.ofReal G *
+        ∏ i, eLpNorm (f i) (2 * n : ℝ≥0∞) μ ^ 2 =
+        (ENNReal.ofReal C *
+          ENNReal.ofReal ((∏ i,
+            (eLpNorm (f i) (2 * n : ℝ≥0∞) μ).toReal) ^ 2)) *
+          ENNReal.ofReal G := by
+            rw [aux_inputNormProductSq f hf, Finset.prod_pow]
+            ac_rfl
+    _ = ENNReal.ofReal
+          (C * (∏ i, (eLpNorm (f i) (2 * n : ℝ≥0∞) μ).toReal) ^ 2) *
+        ENNReal.ofReal G := by rw [ENNReal.ofReal_mul hC]
+
+private theorem aux_jumpGrowth_two (J : ℕ) :
+    jumpGrowth 2 J = (J : ℝ) ^ (1 - 2 / (2 : ℝ)) := by
+  simp [jumpGrowth]
+
+private theorem aux_jumpGrowth_as_variation_growth (n J : ℕ) :
+    jumpGrowth n J =
+      (J : ℝ) ^ (1 - 2 / (2 : ℝ) ^ ((n : ℝ) - 1)) := by
+  unfold jumpGrowth
+  congr 1
+  rw [show -(n : ℝ) + 2 = 1 - ((n : ℝ) - 1) by ring]
+  rw [Real.rpow_sub (by norm_num : (0 : ℝ) < 2), Real.rpow_one]
+
+private theorem aux_one_div_two_rpow_sub_one (n : ℕ) :
+    1 / (2 : ℝ) ^ ((n : ℝ) - 1) = (2 : ℝ) ^ (1 - (n : ℝ)) := by
+  rw [show 1 - (n : ℝ) = -((n : ℝ) - 1) by ring,
+    Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2)]
+  ring
+
+/-- The constant in Theorem \ref{thm:ergodicthm}; this is the square root of
+the symmetric jump constant when `n = 2`, and the precise jump-to-variation
+constant otherwise. -/
+noncomputable def C_main_ergodic_theorem (n : ℕ) (r : ℝ) : ℝ :=
+  if n = 2 then
+    √(C_symmetric_ergodic_jump_estimate.{u} n)
+  else
+    2 ^ (1 - (2 : ℝ) ^ (1 - (n : ℝ))) *
+      ((r / (r - (2 : ℝ) ^ ((n : ℝ) - 1))) ^ (1 / r)) *
+        √(C_symmetric_ergodic_jump_estimate.{u} n)
+
+/--
+\begin{theorem}[Main ergodic theorem]\label{thm:ergodicthm}
+Let $n\ge 2$ be an integer and let $r>2^{n-1}$, or $r\ge 2$ if $n=2$.
+Let $(X,\Sigma,\mu)$ be a $\sigma$-finite measure space, let
+$(T_l)_{l\in [n)}$ be an $n$-tuple of mutually commuting measure preserving
+transformations on $X$, and let $\mathbf{f}=(f_l)_{l\in [n)}$ be an
+$n$-tuple of complex-valued measurable functions on $X$ such that
+$\|f_l\|_{L^{2n}(X)}<\infty$ for all $l\in[n)$. Then
+\[
+ \| M_{N} (\mathbf{f}) \|_{V_{r}(N\in\N,\ N\ge1; L^2(X))}
+\le C_{\ref{thm:ergodicthm},n,r}
+ \prod_{l=0}^{n-1} \|f_l\|_{2n},
+\]
+where for $n=2$,
+$C_{\ref{thm:ergodicthm},2,r}=C_{\ref{thm:ergodicthmJ},2}^{1/2}$,
+and, for $n\ge3$,
+$C_{\ref{thm:ergodicthm},n,r}=
+2^{1-2^{1-n}}\left(\tfrac{r}{r-2^{n-1}}\right)^{1/r}
+C_{\ref{thm:ergodicthmJ},n}^{1/2}$.
+\end{theorem} -/
+theorem main_ergodic_theorem {X : Type u} [MeasurableSpace X]
+    {μ : Measure X} [SigmaFinite μ] {n : ℕ} (hn : 2 ≤ n)
+    (S : aux_ErgodicSystem X μ n) (f : Fin n → X → ℂ)
+    (hf : ∀ i, MemLp (f i) (2 * n : ℝ≥0∞) μ) {r : ℝ}
+    (hr : (n = 2 ∧ 2 ≤ r) ∨
+      (3 ≤ n ∧ (2 : ℝ) ^ ((n : ℝ) - 1) < r)) :
+    naturalVariationSeminorm (aux_ergodicAverageLp (by omega) S f hf) r ≤
+      ENNReal.ofReal
+        (C_main_ergodic_theorem.{u} n r *
+          (∏ i, (eLpNorm (f i) (2 * n : ℝ≥0∞) μ).toReal)) := by
+  rcases hr with htwo | hhigh
+  · rcases htwo with ⟨hn2, hr⟩
+    subst n
+    let P : ℝ := ∏ i, (eLpNorm (f i) (2 * 2 : ℝ≥0∞) μ).toReal
+    let C : ℝ := C_symmetric_ergodic_jump_estimate.{u} 2
+    have hC : 0 ≤ C := (C_symmetric_ergodic_jump_estimate_pos (by omega)).le
+    have hP : 0 ≤ P := by
+      dsimp [P]
+      exact Finset.prod_nonneg fun _ _ ↦ ENNReal.toReal_nonneg
+    have hD : 0 ≤ C * P ^ 2 := mul_nonneg hC (sq_nonneg P)
+    have hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (N : Fin (L + 1) → ℕ),
+        StrictMono N → (∀ j, 0 < N j) →
+        (∑ j : Fin L,
+          ‖aux_ergodicAverageLp (by omega) S f hf (N j.succ) -
+            aux_ergodicAverageLp (by omega) S f hf (N j.castSucc)‖ₑ ^ (2 : ℝ)) ≤
+          ENNReal.ofReal (C * P ^ 2) *
+            ENNReal.ofReal ((L : ℝ) ^ (1 - 2 / (2 : ℝ))) := by
+      intro L hL N hN hNpos
+      calc
+        (∑ j : Fin L,
+          ‖aux_ergodicAverageLp (by omega) S f hf (N j.succ) -
+            aux_ergodicAverageLp (by omega) S f hf (N j.castSucc)‖ₑ ^ (2 : ℝ)) =
+            aux_ergodicJumpEnergy S N f := by
+              simpa using
+                (aux_ergodicJumpEnergy_eq_Lp_jumpEnergy (by omega) S N f hf).symm
+        _ ≤ ENNReal.ofReal C * ENNReal.ofReal (jumpGrowth 2 L) *
+            ∏ i, eLpNorm (f i) (2 * 2 : ℝ≥0∞) μ ^ 2 := by
+          simpa [C] using symmetric_ergodic_jump_estimate (by omega)
+            X μ S L (by omega) N hN hNpos f hf
+        _ = ENNReal.ofReal (C * P ^ 2) * ENNReal.ofReal (jumpGrowth 2 L) := by
+          simpa [C, P] using aux_jumpBoundRhsRewrite C (jumpGrowth 2 L) hC f hf
+        _ = ENNReal.ofReal (C * P ^ 2) *
+            ENNReal.ofReal ((L : ℝ) ^ (1 - 2 / (2 : ℝ))) := by
+          rw [aux_jumpGrowth_two]
+    have hvar := jump_estimates_imply_variation_endpoint_enorm
+      (aux_ergodicAverageLp (by omega) S f hf) hD hjump
+    rw [show √(C * P ^ 2) = √C * P by
+      rw [Real.sqrt_mul hC, Real.sqrt_sq hP]] at hvar
+    calc
+      naturalVariationSeminorm (aux_ergodicAverageLp (by omega) S f hf) r ≤
+          naturalVariationSeminorm (aux_ergodicAverageLp (by omega) S f hf) 2 :=
+        naturalVariationSeminorm_mono_two _ hr
+      _ ≤ ENNReal.ofReal (√C * P) := hvar
+      _ = ENNReal.ofReal
+          (C_main_ergodic_theorem.{u} 2 r *
+            (∏ i, (eLpNorm (f i) (2 * 2 : ℝ≥0∞) μ).toReal)) := by
+          simp [C_main_ergodic_theorem, C, P]
+  · rcases hhigh with ⟨hn3, hr⟩
+    let r0 : ℝ := (2 : ℝ) ^ ((n : ℝ) - 1)
+    let P : ℝ := ∏ i, (eLpNorm (f i) (2 * n : ℝ≥0∞) μ).toReal
+    let C : ℝ := C_symmetric_ergodic_jump_estimate.{u} n
+    have hnR : (3 : ℝ) ≤ n := by exact_mod_cast hn3
+    have hr0 : 2 ≤ r0 := by
+      dsimp [r0]
+      calc
+        (2 : ℝ) = (2 : ℝ) ^ 1 := (Real.rpow_one _).symm
+        _ ≤ (2 : ℝ) ^ ((n : ℝ) - 1) :=
+          Real.rpow_le_rpow_of_exponent_le (by norm_num) (by linarith)
+    have hC : 0 ≤ C := (C_symmetric_ergodic_jump_estimate_pos hn).le
+    have hP : 0 ≤ P := by
+      dsimp [P]
+      exact Finset.prod_nonneg fun _ _ ↦ ENNReal.toReal_nonneg
+    have hD : 0 ≤ C * P ^ 2 := mul_nonneg hC (sq_nonneg P)
+    have hjump : ∀ (L : ℕ), 1 ≤ L → ∀ (N : Fin (L + 1) → ℕ),
+        StrictMono N → (∀ j, 0 < N j) →
+        (∑ j : Fin L,
+          ‖aux_ergodicAverageLp (by omega) S f hf (N j.succ) -
+            aux_ergodicAverageLp (by omega) S f hf (N j.castSucc)‖ₑ ^ (2 : ℝ)) ≤
+          ENNReal.ofReal (C * P ^ 2) *
+            ENNReal.ofReal ((L : ℝ) ^ (1 - 2 / r0)) := by
+      intro L hL N hN hNpos
+      calc
+        (∑ j : Fin L,
+          ‖aux_ergodicAverageLp (by omega) S f hf (N j.succ) -
+            aux_ergodicAverageLp (by omega) S f hf (N j.castSucc)‖ₑ ^ (2 : ℝ)) =
+            aux_ergodicJumpEnergy S N f := by
+              simpa using
+                (aux_ergodicJumpEnergy_eq_Lp_jumpEnergy (by omega) S N f hf).symm
+        _ ≤ ENNReal.ofReal C * ENNReal.ofReal (jumpGrowth n L) *
+            ∏ i, eLpNorm (f i) (2 * n : ℝ≥0∞) μ ^ 2 := by
+          simpa [C] using symmetric_ergodic_jump_estimate hn
+            X μ S L (by omega) N hN hNpos f hf
+        _ = ENNReal.ofReal (C * P ^ 2) * ENNReal.ofReal (jumpGrowth n L) := by
+          simpa [C, P] using aux_jumpBoundRhsRewrite C (jumpGrowth n L) hC f hf
+        _ = ENNReal.ofReal (C * P ^ 2) *
+            ENNReal.ofReal ((L : ℝ) ^ (1 - 2 / r0)) := by
+          rw [aux_jumpGrowth_as_variation_growth]
+    have hvar := jump_estimates_imply_variation_enorm
+      (aux_ergodicAverageLp (by omega) S f hf) hr0 hD (by simpa [r0] using hr) hjump
+    rw [show √(C * P ^ 2) = √C * P by
+      rw [Real.sqrt_mul hC, Real.sqrt_sq hP]] at hvar
+    have hn2 : n ≠ 2 := by omega
+    rw [C_main_ergodic_theorem, if_neg hn2]
+    rw [← aux_one_div_two_rpow_sub_one n]
+    convert hvar using 1
+    simp only [C, P, r0]
+    ring_nf
 
 end
 

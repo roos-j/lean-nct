@@ -158,7 +158,7 @@ M_{N}(\mathbf{f})(x) := \tfrac{1}{N}\sum_{i=0}^{N-1} \prod_{l=0}^{n-1} f_l(T_l^i
 
 The averages \eqref{eq:averages-multiple} are then also measurable functions $X\to \C$.
 
-\begin{theorem}[Main ergodic theorem]\label{thm:ergodicthm}\uses{thm:ergodicthmJ,jump estimates imply variation}\usesdefs{ergodic averages}
+\begin{theorem}[Main ergodic theorem]\label{thm:ergodicthm}\lean{main_ergodic_theorem}\uses{thm:ergodicthmJ,jump estimates imply variation}\usesdefs{ergodic averages}
 Let $n\ge 2$ be an integer and let $r>2^{n-1}$, or $r\ge 2$ if $n=2$. Let $(X,\Sigma,\mu)$ be a $\sigma$-finite measure space, let $(T_l)_{l\in [n)}$ be an $n$-tuple of mutually commuting measure preserving transformations on $X$, and let $\mathbf{f}=(f_l)_{l\in [n)}$ be an $n$-tuple of complex-valued measurable functions on $X$ such that $\|f_l\|_{L^{2n}(X)}<\infty$ for all $l\in[n)$. Then
 \begin{equation}\label{main ergodic variation estimate}
  \| M_{N} (\mathbf{f}) \|_{V_{r}(N\in\N,\ N\ge1; L^2(X))}
@@ -236,7 +236,7 @@ Let $n\ge 2$, let $\pi$ be a permutation of $[n)$, and let $J\ge 1$ and $0<t_0<\
 Apply Theorem \ref{thm:nct main real} after permuting the coordinate axes by $\pi$ and permuting the functions by the same permutation. Lebesgue measure, the $L^2$ norm, and the kernel $\mathbf 1_{[0,1]}$ are unchanged by this coordinate permutation. The normalization in Theorem \ref{thm:nct main real} becomes the product on the right-hand side of \eqref{permuted endpoint estimate}; homogeneity gives the stated form.
 \end{proof}
 
-\begin{exttheorem}[Multilinear interpolation]\label{multilinear interpolation external}\uses{}\usesdefs{}
+\begin{exttheorem}[Multilinear interpolation]\label{multilinear interpolation external}\lean{multilinear_interpolation_external}\uses{}\usesdefs{}
 Let $m,n\ge 1$ be integers, let $(X_i,\mu_i)$ and $(Y,\nu)$ be measure spaces, let $p\in[1,\infty]$, and let $T$ be an $n$-linear map on $n$-tuples of complex-valued simple functions with values in $L^p(Y)$. For $a\in[m)$ and $i\in[n)$, let $q_{a,i}\in[1,\infty]$, and assume
 \begin{equation}\label{multilinear interpolation endpoint}
 \|T(f_0,\ldots,f_{n-1})\|_{L^p(Y)}\le A_a\prod_{i\in[n)}\|f_i\|_{L^{q_{a,i}}(X_i)}.
@@ -289,7 +289,7 @@ Let $c\in\R^n$ and simultaneously relabel the coordinates of $c$ and $x$ so that
 The last expression is the maximum of $\sum_i c_i y_i$ over the permutations $y$ of \eqref{endpoint reciprocal vector}. The finite-dimensional separation theorem therefore places $x$ in their convex hull.
 \end{proof}
 
-\begin{proposition}[Interpolated real-variable estimate]\label{interpolated real variable estimate}\uses{permutation of endpoint estimate,exponent polytope,multilinear interpolation external}\usesdefs{A_def}
+\begin{proposition}[Interpolated real-variable estimate]\label{interpolated real variable estimate}\lean{interpolated_real_variable_estimate}\uses{permutation of endpoint estimate,exponent polytope,multilinear interpolation external}\usesdefs{A_def}
 Let $n\ge 2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}. For every $J\ge1$, every $0<t_0<\cdots<t_J$, and every $n$-tuple of complex-valued measurable functions $f_i\in L^{p_i}(\R^n)$,
 \begin{equation}\label{interpolated real estimate}
 \sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
@@ -306,7 +306,7 @@ For fixed $J$ and $(t_j)_{j\in[J+1)}$, consider the $n$-linear map whose value i
 in $L^2(\R^n;\ell^2([J)))$. Proposition \ref{permutation of endpoint estimate} gives its endpoint norm at every permutation of \eqref{endpoint reciprocal vector}. Since all endpoint exponents are finite, approximation by Schwartz functions and the endpoint estimate extend this map uniquely to the corresponding products of real $L^p$ spaces. For complex inputs, expand each $f_i$ into real and imaginary parts and use the triangle inequality. This multiplies every endpoint norm by at most $2^n$. Proposition \ref{exponent polytope} and Theorem \ref{multilinear interpolation external} give \eqref{interpolated real estimate} for complex-valued simple functions. Since \eqref{exponent polytope inequalities} for singleton sets gives $p_i<\infty$, approximation by simple functions and the interpolated estimate extend the map to all $f_i\in L^{p_i}(\R^n)$.
 \end{proof}
 
-\begin{exttheorem}[Calder\'on transference principle]\label{Calderon transference external}\uses{}\usesdefs{ergodic averages,A_def}
+\begin{exttheorem}[Calder\'on transference principle]\label{Calderon transference external}\lean{calderon_transference_external}\uses{}\usesdefs{ergodic averages,A_def}
 Let $n\ge2$, let $p_i\in(1,\infty)$ satisfy $\sum_{i\in[n)}p_i^{-1}=1/2$, and let $g:\N\to[1,\infty)$. Assume that for some $C>0$, every $J\ge1$, every $0<t_0<\cdots<t_J$, and every real-valued $f_i\in L^{p_i}(\R^n)$ satisfy
 \begin{equation}\label{Calderon transference assumption}
 \sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
@@ -321,7 +321,7 @@ Then there is a finite constant $C_{\ref{Calderon transference external},n,(p_i)
 \end{exttheorem}
 This is a standard result and can be found e.g. as Theorem 2.5 of \cite{Pernegger2025}, up to slight restatement with the real-variable averages and ergodic averages used here.
 
-\begin{theorem}[Ergodic jump estimate with general exponents]\label{thm:ergodicthm-interpolation}\uses{interpolated real variable estimate,Calderon transference external}\usesdefs{ergodic averages}
+\begin{theorem}[Ergodic jump estimate with general exponents]\label{thm:ergodicthm-interpolation}\lean{ergodic_jump_estimate_interpolation}\uses{interpolated real variable estimate,Calderon transference external}\usesdefs{ergodic averages}
 Let $n\ge2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be complex-valued functions with $f_i\in L^{p_i}(X)$. For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
 \begin{equation}\label{ergodic jump general exponents}
 \sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
@@ -339,7 +339,7 @@ C_{\ref{thm:ergodicthm-interpolation},n,(p_i)_{i\in[n)}}
 Apply Proposition \ref{interpolated real variable estimate} to real-valued inputs and then Theorem \ref{Calderon transference external} with $g(J)=J^{1-2^{2-n}}$. For complex inputs, expand every $f_i$ into real and imaginary parts. The triangle inequality in $L^2(X;\ell^2([J)))$ contributes at most another factor $2^n$ to the operator norm. Squaring gives the factor $2^{2n}$ in \eqref{ergodic interpolation constant}.
 \end{proof}
 
-\begin{theorem}[Symmetric ergodic jump estimate]\label{thm:ergodicthmJ}\uses{thm:ergodicthm-interpolation}\usesdefs{ergodic averages}
+\begin{theorem}[Symmetric ergodic jump estimate]\label{thm:ergodicthmJ}\lean{symmetric_ergodic_jump_estimate}\uses{thm:ergodicthm-interpolation}\usesdefs{ergodic averages}
 Let $n\ge2$. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be complex-valued functions in $L^{2n}(X)$. For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
 \begin{equation}\label{symmetric ergodic jump estimate}
 \sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
