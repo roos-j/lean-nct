@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import LeanNct.MainArgument.MultipliersHLN
 import LeanNct.MainArgument.GaussianDomination
 
@@ -2074,9 +2080,9 @@ private theorem tendsto_eLpNorm_one_tensorSquareExtension_min_partialSum_sub
             tensorSquareExtension (k + 1) (by omega) (Fin.last k)
               (M (j : ℤ)) (phi (j : ℤ)) y) 1 volume) atTop (nhds 0) := by
   classical
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector (k + 1))) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealVector (k + 1))) :=
     isAddHaarMeasure_volume_pi (Fin (k + 1))
-  letI : Measure.IsAddHaarMeasure
+  let : Measure.IsAddHaarMeasure
       (volume : Measure (RealVector (k + 1) × RealVector (k + 1))) :=
     Measure.prod.instIsAddHaarMeasure _ _
   let P : ℕ → (RealVector (k + 1) × RealVector (k + 1)) → ℝ := fun N y =>
@@ -2190,7 +2196,7 @@ private theorem tendsto_eLpNorm_one_tensorSquareExtension_min_partialSum_sub
         (nhds (M (j : ℤ) z)) := by
       have hconst : Tendsto (fun _ : ℕ => M (j : ℤ) z) atTop
           (nhds (M (j : ℤ) z)) := tendsto_const_nhds
-      convert hconst.min hsum using 1 <;> simp [hM_le (j : ℤ) z]
+      convert hconst.min hsum using 1; simp [hM_le (j : ℤ) z]
     simpa only [tensorSquareExtension, z] using hbase.mul tendsto_const_nhds
   have hdc := tendsto_lintegral_norm_of_dominated_convergence hP_meas
     hB_int.hasFiniteIntegral hbound hlim
@@ -3112,7 +3118,7 @@ private theorem aux_scalar_test {d q A : ℝ} (hd : 0 < d) :
       Real.rpow d (1 : ℝ) * Real.rpow d (1 - q) =
           Real.rpow d ((1 : ℝ) + (1 - q)) :=
         (Real.rpow_add hd (1 : ℝ) (1 - q)).symm
-      _ = Real.rpow d (2 - q) := by congr 1 <;> ring
+      _ = Real.rpow d (2 - q) := by congr 1; ring
   calc
     ((2 : ℝ) ^ (10 : ℕ) * d) * A * Real.rpow d (1 - q) =
         (2 : ℝ) ^ (10 : ℕ) * A * (d * Real.rpow d (1 - q)) := by ring
@@ -3155,7 +3161,10 @@ private theorem aux_increaseData_implies_diagonalBand_interior {n k : ℕ} {C : 
             (1 + (ι.1.1.natAbs : ℝ))) * R) := by
     have h := aux_lMultiplier_seminorm_interior_bound hk hkn hC hIncrease γ hγ i ι
       (by simpa [hγ] using hinterior)
-    convert h using 1 <;> dsimp [A, R, d, q] <;> ring
+    convert h using 1
+    all_goals
+      dsimp [A, R, d, q]
+      ring
   have hsum := aux_sumOverMultiplierIndex_quarter_le γ
     (fun ι => kernelSequenceSeminorm n γ.k γ.one_le_k γ.k_le_n
       (sandwichKernel γ (lMultiplier γ ι) i)) A R hA hR hpoint
@@ -3395,8 +3404,9 @@ private theorem aux_sumOverMultiplierIndex_half_le {n : ℕ}
       (aux_lMultiplierPosIndices M) := by
     rw [Finset.disjoint_left]
     rintro ⟨h, l⟩ hleft hpos
-    simp [aux_lMultiplierNegIndices, aux_lMultiplierVerticalIndices,
-      aux_lMultiplierPosIndices] at hleft hpos
+    simp only [aux_lMultiplierNegIndices, Int.reduceNeg, aux_lMultiplierVerticalIndices,
+      Finset.mem_union, Finset.mem_image, Finset.mem_Icc, Prod.mk.injEq, ↓existsAndEq,
+      true_and, exists_eq_right_right, aux_lMultiplierPosIndices] at hleft hpos
     rcases hleft with hneg | hvert <;> omega
   have hweights :
       (∑ x ∈ aux_multiplierIndexTruncation γ M,
@@ -3460,7 +3470,7 @@ private theorem aux_sum_multiplier_blocks_half_le (N D : ℕ) (hD : 1 ≤ D) :
     (∑ x ∈ aux_lMultiplierNegIndices N,
       Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
         (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ)) +
-      (∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) +
+      (∑ _x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) +
       ∑ x ∈ aux_lMultiplierPosIndices N,
         Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 2) *
           (1 + (x.1.natAbs : ℝ)) ^ (2 : ℕ) ≤ (2 : ℝ) ^ (10 : ℕ) * D := by
@@ -3484,7 +3494,8 @@ private theorem aux_truncation_mono {n : ℕ} (γ : GeometricParameters n)
     {N M : ℕ} (hNM : N ≤ M) :
     aux_multiplierIndexTruncation γ N ⊆ aux_multiplierIndexTruncation γ M := by
   rintro ⟨x1, x2⟩ hx
-  simp [aux_multiplierIndexTruncation] at hx ⊢
+  simp only [aux_multiplierIndexTruncation, Finset.product_eq_sprod, Finset.mem_filter,
+    Finset.mem_product, Finset.mem_Icc] at hx ⊢
   rcases hx with ⟨hbox, hset⟩
   refine ⟨?_, hset⟩
   rcases hbox with ⟨⟨hx1, hx2⟩, hx3, hx4⟩
@@ -3494,7 +3505,8 @@ private theorem aux_mem_multiplierIndex_of_truncation {n : ℕ}
     (γ : GeometricParameters n) (N : ℕ) {x : ℤ × ℤ}
     (hx : x ∈ aux_multiplierIndexTruncation γ N) : x ∈ multiplierIndexSet γ := by
   rcases x with ⟨x1, x2⟩
-  simp [aux_multiplierIndexTruncation] at hx
+  simp only [aux_multiplierIndexTruncation, Finset.product_eq_sprod, Finset.mem_filter,
+    Finset.mem_product, Finset.mem_Icc] at hx
   exact hx.2
 
 private theorem aux_sumOverMultiplierIndex_quarter_le {n : ℕ}
@@ -3563,8 +3575,9 @@ private theorem aux_sumOverMultiplierIndex_quarter_le {n : ℕ}
       (aux_lMultiplierPosIndices M) := by
     rw [Finset.disjoint_left]
     rintro ⟨h, l⟩ hleft hpos
-    simp [aux_lMultiplierNegIndices, aux_lMultiplierVerticalIndices,
-      aux_lMultiplierPosIndices] at hleft hpos
+    simp only [aux_lMultiplierNegIndices, Int.reduceNeg, aux_lMultiplierVerticalIndices,
+      Finset.mem_union, Finset.mem_image, Finset.mem_Icc, Prod.mk.injEq, ↓existsAndEq,
+      true_and, exists_eq_right_right, aux_lMultiplierPosIndices] at hleft hpos
     rcases hleft with hneg | hvert <;> omega
   have hweights :
       (∑ x ∈ aux_multiplierIndexTruncation γ M,
@@ -4015,7 +4028,7 @@ private theorem aux_sum_quarter_weight_neg_le (N : ℕ) :
     exact congrArg Prod.fst hab
 
 private theorem aux_sum_vertical_one_le (D : ℕ) (hD : 1 ≤ D) :
-    (∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) ≤ 3 * D := by
+    (∑ _x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) ≤ 3 * D := by
   classical
   unfold aux_lMultiplierVerticalIndices
   rw [Finset.sum_image]
@@ -4029,7 +4042,7 @@ private theorem aux_sum_multiplier_blocks_quarter_le (N D : ℕ) (hD : 1 ≤ D) 
     (∑ x ∈ aux_lMultiplierNegIndices N,
       Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
         (1 + (x.1.natAbs : ℝ))) +
-      (∑ x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) +
+      (∑ _x ∈ aux_lMultiplierVerticalIndices D, (1 : ℝ)) +
       ∑ x ∈ aux_lMultiplierPosIndices N,
         Real.rpow 2 (-((x.1.natAbs : ℕ) : ℝ) / 4) *
           (1 + (x.1.natAbs : ℝ)) ≤ (2 : ℝ) ^ (10 : ℕ) * D := by
@@ -4286,7 +4299,7 @@ private theorem aux_lMultiplier_seminorm_interior_of_increase {n : ℕ}
     unfold kernelSequenceSeminorm
     apply le_iSup_of_le J
     apply le_iSup_of_le F
-    simpa [a', P, hlift]
+    simp [a', P, hlift]
   have hP : a' * P ≤ U := by
     apply (ENNReal.ofReal_le_ofReal_iff hU0).mp
     exact hincTerm.trans hinc
@@ -4325,7 +4338,6 @@ private theorem aux_lMultiplier_seminorm_interior_of_increase {n : ℕ}
         dsimp [a']
         congr 2
         congr 1
-        push_cast
         ring
   have hCS :
       |prismForm n γ.k γ.one_le_k γ.k_le_n
@@ -4657,7 +4669,7 @@ private theorem aux_integral_witness_series {n : ℕ} (γ : GeometricParameters 
 
 private theorem aux_nMultiplier_integral_abs_le_witness {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ)
-    {C : ℝ} (hC : 0 ≤ C) (w : aux_GaussianDominationWitness γ hkn i ι C)
+    {C : ℝ} (_hC : 0 ≤ C) (w : aux_GaussianDominationWitness γ hkn i ι C)
     (j : ℤ) :
     (∫ v : RealPlane, |nMultiplier γ hkn ι i j v|) ≤
       (C * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) *
@@ -4745,10 +4757,6 @@ private theorem aux_sandwichKernel_lMultiplier_eq_diagonalConvolution
         sigmaMultiplier γ ι i j q
   simp_rw [hA, hB]
   simp only [Function.update_self]
-  change (A * (∫ p : ℝ,
-      nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * sigmaMultiplier γ ι i j p)) * B =
-    ∫ q : ℝ, (A * nMultiplier γ hkn ι i j (y.1 i - q, y.2 i - q) * B) *
-      sigmaMultiplier γ ι i j q
   calc
     (A * (∫ p : ℝ,
         nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * sigmaMultiplier γ ι i j p)) * B =
@@ -4806,9 +4814,6 @@ private theorem aux_sandwichKernel_eq_diagonalConvolution_of_repr
             (Function.update y.1 i (y.1 i - q) m, Function.update y.2 i (y.2 i - q) m)) * φ q
   simp_rw [hA, hB]
   simp only [Function.update_self]
-  change (A * (∫ p : ℝ,
-      nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * φ p)) * B =
-    ∫ q : ℝ, (A * nMultiplier γ hkn ι i j (y.1 i - q, y.2 i - q) * B) * φ q
   calc
     (A * (∫ p : ℝ,
         nMultiplier γ hkn ι i j (y.1 i - p, y.2 i - p) * φ p)) * B =
@@ -4921,7 +4926,7 @@ theorem aux_kernelSequenceSeminorm_one_le_of_cauchySchwarz {n : ℕ} (hn : 2 < n
     unfold kernelSequenceSeminorm
     apply le_iSup_of_le J
     apply le_iSup_of_le F
-    simpa [a', P]
+    simp [a', P]
   have hP : a' * P ≤ U := by
     apply (ENNReal.ofReal_le_ofReal_iff hU).mp
     exact hTterm.trans hT
@@ -5026,7 +5031,8 @@ theorem distance (n : ℕ) (hn : 1 ≤ n) :
         (vanishingKernelIntegral n hn).2
       have hipt := vanishingDiagonal_implies_inductPositiveTerms
         (n := n) (k := n) (C := 1) hn le_rfl (by norm_num) hterminal
-      convert hipt using 1 <;>
+      convert hipt using 1
+      all_goals
         simp [C_inductPositiveTermsByInduction,
           C_vanishingDiagonalImpliesInductPositiveTerms] <;> ring
   | succ r ih =>
@@ -5043,7 +5049,7 @@ theorem distance (n : ℕ) (hn : 1 ≤ n) :
               InductPositiveTerms n ((n - 1) + 1)
                 (C_inductPositiveTermsByInduction n 0)
                 (by omega) (by omega) hCprev := by
-            convert hprev using 1 <;> omega
+            convert hprev using 1; omega
           have hincrease := inductPositiveTerms_implies_increaseData
             (n := n) (k := n - 1)
             (C := C_inductPositiveTermsByInduction n 0) hk hkn hCprev hprev'
@@ -5073,11 +5079,11 @@ theorem distance (n : ℕ) (hn : 1 ≤ n) :
             hk (by omega)
             (aux_one_le_C_increaseDataImpliesDiagonalBand (n - 1) n hCincrease)
             hvanishing
-          have hterminal : ¬ n - 1 < n - 1 := by omega
-          convert hipt using 1 <;>
+          convert hipt using 1
+          all_goals
             simp [C_inductPositiveTermsByInduction,
               C_vanishingDiagonalImpliesInductPositiveTerms,
-              C_increaseDataImpliesDiagonalBand, hterminal] <;> ring
+              C_increaseDataImpliesDiagonalBand]; ring
       | succ q =>
           have hk : 1 ≤ n - (q + 2) := by omega
           have hkn : n - (q + 2) ≤ n - 1 := by omega
@@ -5088,7 +5094,7 @@ theorem distance (n : ℕ) (hn : 1 ≤ n) :
               InductPositiveTerms n ((n - (q + 2)) + 1)
                 (C_inductPositiveTermsByInduction n (q + 1))
                 (by omega) (by omega) hCprev := by
-            convert hprev using 1 <;> omega
+            convert hprev using 1; omega
           have hincrease := inductPositiveTerms_implies_increaseData
             (n := n) (k := n - (q + 2))
             (C := C_inductPositiveTermsByInduction n (q + 1))
@@ -5119,10 +5125,11 @@ theorem distance (n : ℕ) (hn : 1 ≤ n) :
             hk (by omega)
             (aux_one_le_C_increaseDataImpliesDiagonalBand (n - (q + 2)) n hCincrease)
             hvanishing
-          convert hipt using 1 <;>
+          convert hipt using 1
+          all_goals
             simp [C_inductPositiveTermsByInduction,
               C_vanishingDiagonalImpliesInductPositiveTerms,
-              C_increaseDataImpliesDiagonalBand, hinterior] <;> ring
+              C_increaseDataImpliesDiagonalBand, hinterior]; ring
 
 end aux_inductPositiveTermsByInduction
 
@@ -5132,7 +5139,7 @@ theorem inductPositiveTermsByInduction (n k : ℕ)
     InductPositiveTerms n k
       (C_inductPositiveTermsByInduction n (n - k)) hk hkn
       (aux_one_le_C_inductPositiveTermsByInduction n (n - k)) := by
-  convert aux_inductPositiveTermsByInduction.distance n (hk.trans hkn) (n - k) (by omega) using 1 <;>
+  convert aux_inductPositiveTermsByInduction.distance n (hk.trans hkn) (n - k) (by omega) using 1;
     omega
 
 /-! The recursive constants are dominated by the uniform local induction
@@ -5326,8 +5333,11 @@ private theorem recursive_constant_le_better (n : ℕ) :
   | one =>
       intro hr
       have hbase := base_one_bound (n - 1)
-      convert hbase using 1 <;>
-        simp [C_inductPositiveTermsByInduction] <;> norm_cast <;> omega
+      convert hbase using 1
+      all_goals
+        simp [C_inductPositiveTermsByInduction]
+        norm_cast
+        omega
   | more r ih0 ih1 =>
       intro hr
       have hrprev : r + 1 ≤ n := by omega
@@ -5389,7 +5399,7 @@ theorem inductPositiveTermsTheorem (n : ℕ) (hn : 2 ≤ n) :
         ((18 : ℝ) * (2 : ℝ) ^ (158 : ℕ)) + Real.sqrt 2 - 2)]
     · exact hbase
   · have hbetter2 := betterInduction n 2 (by omega) (by omega)
-    convert hbetter2 using 1 <;>
+    convert hbetter2 using 1;
       norm_num [C_betterInduction, C_inductPositiveTermsTheorem]
 
 end

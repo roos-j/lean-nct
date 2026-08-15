@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import Mathlib
 
 /-!
@@ -12,8 +18,10 @@ namespace Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
 open Set
 
 /--
-\begin{definition}[Multiplicatively spaced monotone sequences]\label{multiplicatively spaced monotone sequences}
-A sequence $a:\Z\to\R$ with $a(j)>0$ for every $j\in\Z$ is called multiplicatively spaced if, for each $j\in\Z$
+\begin{definition}[Multiplicatively spaced monotone sequences]
+\label{multiplicatively spaced monotone sequences}
+A sequence $a:\Z\to\R$ with $a(j)>0$ for every $j\in\Z$ is called multiplicatively
+spaced if, for each $j\in\Z$
 \begin{equation}\label{auto:spaced-sequence-growth}
     2a(j)\le a(j+1)\, .
 \end{equation}
@@ -49,7 +57,7 @@ theorem aux_spacedSequence_monotone {a : ℤ → ℝ} (ha : SpacedSequence a) : 
 theorem aux_pow_two_mul_le_shift {a : ℤ → ℝ} (ha : SpacedSequence a) (j : ℤ) (k : ℕ) :
     (2 : ℝ) ^ k * a j ≤ a (j + k) := by
   induction k with
-  | zero => simpa
+  | zero => simp
   | succ k ih =>
       have hstep := (ha (j + k)).2
       have hmul : 2 * ((2 : ℝ) ^ k * a j) ≤ 2 * a (j + k) := by
@@ -60,12 +68,12 @@ theorem aux_pow_two_mul_le_shift {a : ℤ → ℝ} (ha : SpacedSequence a) (j : 
           ring
         _ ≤ 2 * a (j + k) := hmul
         _ ≤ a (j + Nat.succ k) := by
-          convert hstep using 1 <;> push_cast <;> ring
+          convert hstep using 1; push_cast; ring
 
 /-- This auxiliary theorem is the backwards form of the iterated spacing inequality. -/
 theorem aux_pow_two_mul_shift_le {a : ℤ → ℝ} (ha : SpacedSequence a) (j : ℤ) (k : ℕ) :
     (2 : ℝ) ^ k * a (j - k) ≤ a j := by
-  convert aux_pow_two_mul_le_shift ha (j - k) k using 1 <;> ring
+  convert aux_pow_two_mul_le_shift ha (j - k) k using 1; ring
 
 /-- Auxiliary explicit extension used in Proposition \ref{Extension of sequences}, formalized by
 `extensionOfSequences`. -/
@@ -76,8 +84,11 @@ noncomputable def aux_extensionOfSequence (J : ℕ) (a : ℤ → ℝ) : ℤ → 
 
 /--
 \begin{proposition}[Extension of sequences]\label{Extension of sequences}
-Let $J\in\N$ with $J\ge1$ and let $a:[J)\to\R$ satisfy $a(j)>0$ for every $j\in[J)$ and, for all $j\in[J-1)$, we have $a(j+1)\ge 2a(j)$.
-Then there is a unique $b\in A$ such that for all $j\in [J)$ we have $a(j)=b(j)$ and for $j\ge J$ we have $b(j)=2^{j-J+1} a(J-1)$ and for $j<0$ we have $b(j)=2^j a(0)$\, .
+Let $J\in\N$ with $J\ge1$ and let $a:[J)\to\R$ satisfy $a(j)>0$ for every
+$j\in[J)$ and, for all $j\in[J-1)$, we have $a(j+1)\ge 2a(j)$.
+Then there is a unique $b\in A$ such that for all $j\in [J)$ we have $a(j)=b(j)$
+and for $j\ge J$ we have $b(j)=2^{j-J+1} a(J-1)$ and for $j<0$ we have
+$b(j)=2^j a(0)$\, .
 \end{proposition}
 -/
 theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
@@ -113,12 +124,10 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
         have hbneg : b (-1) = (2 : ℝ) ^ (-1 : ℤ) * a 0 := by
           simp [b, aux_extensionOfSequence]
         have hbzero : b 0 = a 0 := by
-          have hJz : (0 : ℤ) < J := by exact_mod_cast hJ
-          simp [b, aux_extensionOfSequence, hJ, hJz]
+          simp [b, aux_extensionOfSequence, hJ]
         rw [hbneg]
         norm_num
         rw [hbzero]
-        norm_num [zpow_neg]
         apply le_of_eq
         ring
       · have hneg' : j + 1 < 0 := by omega
@@ -133,19 +142,20 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
       by_cases hbefore : j + 1 < (J : ℤ)
       · have hj : j < (J : ℤ) := by omega
         have hnextneg : ¬ (j + 1 < 0) := by omega
-        simp [b, aux_extensionOfSequence, hneg, hj, hnextneg, hbefore]
+        rw [show b j = a j by simp [b, aux_extensionOfSequence, hneg, hj],
+          show b (j + 1) = a (j + 1) by
+            simp [b, aux_extensionOfSequence, hnextneg, hbefore]]
         exact ha_space j hj0 hbefore
       · have hjge : (J : ℤ) ≤ j + 1 := le_of_not_gt hbefore
         by_cases hjlast : j = (J : ℤ) - 1
         · subst j
           have hJneg : ¬ ((J : ℤ) - 1 < 0) := by omega
           have hJlt : (J : ℤ) - 1 < (J : ℤ) := by omega
-          have hJnextneg : ¬ ((J : ℤ) - 1 + 1 < 0) := by omega
-          have hJnext : ¬ ((J : ℤ) - 1 + 1 < (J : ℤ)) := by omega
           rw [show b ((J : ℤ) - 1) = a ((J : ℤ) - 1) by
             simp [b, aux_extensionOfSequence, hJneg, hJlt]]
           rw [show b (((J : ℤ) - 1) + 1) = 2 * a ((J : ℤ) - 1) by
-            simp [b, aux_extensionOfSequence, hJneg, hJlt, hJnextneg, hJnext]]
+            rw [show ((J : ℤ) - 1) + 1 = J by omega]
+            simp [b, aux_extensionOfSequence]]
         · have hjgeJ : (J : ℤ) ≤ j := by omega
           have hnextneg : ¬ (j + 1 < 0) := by omega
           have hjnotlt : ¬ (j < (J : ℤ)) := by omega
@@ -219,7 +229,8 @@ theorem smul_mem_A {a : ℤ → ℝ} (ha : SpacedSequence a) {t : ℝ} (ht : 0 <
 \begin{proposition}[Operations on spaced sequences]\label{Operations on spaced sequences}
 Let $a,b\in {\rm A}$. Then the following hold:
 
-(iii) Let $n\in\mathbb{Z}$. If $c:\Z\to(0,\infty)$ is defined by $c(j)=a(j+n)$ for all $j\in\mathbb{Z}$, then $c\in {\rm A}$.
+(iii) Let $n\in\mathbb{Z}$. If $c:\Z\to(0,\infty)$ is defined by $c(j)=a(j+n)$
+for all $j\in\mathbb{Z}$, then $c\in {\rm A}$.
 \end{proposition}
 -/
 theorem shift_mem_A {a : ℤ → ℝ} (ha : SpacedSequence a) (n : ℤ) :
@@ -227,13 +238,14 @@ theorem shift_mem_A {a : ℤ → ℝ} (ha : SpacedSequence a) (n : ℤ) :
   intro j
   constructor
   · exact (ha (j + n)).1
-  · convert (ha (j + n)).2 using 1 <;> ring
+  · convert (ha (j + n)).2 using 1; ring
 
 /--
 \begin{proposition}[Operations on spaced sequences]\label{Operations on spaced sequences}
 Let $a,b\in {\rm A}$. Then the following hold:
 
-(iv) If $c:\Z\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all $j\in\Z$, then $c\in {\rm A}$.
+(iv) If $c:\Z\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all
+$j\in\Z$, then $c\in {\rm A}$.
 \end{proposition}
 -/
 theorem sqrt_sq_add_sq_mem_A {a b : ℤ → ℝ} (ha : SpacedSequence a) (hb : SpacedSequence b) :
@@ -291,14 +303,14 @@ theorem aux_withinSequenceDistance_symm {a b : ℤ → ℝ} {k : ℕ} :
   constructor <;> intro h <;> intro j
   · constructor
     · have h' := (h (j - k)).2
-      convert h' using 1 <;> ring
+      convert h' using 1; ring
     · have h' := (h (j + k)).1
-      convert h' using 1 <;> ring
+      convert h' using 1; ring
   · constructor
     · have h' := (h (j - k)).2
-      convert h' using 1 <;> ring
+      convert h' using 1; ring
     · have h' := (h (j + k)).1
-      convert h' using 1 <;> ring
+      convert h' using 1; ring
 
 /-- This auxiliary theorem composes the pointwise comparisons used to define sequence distance. -/
 theorem aux_withinSequenceDistance_trans {a b c : ℤ → ℝ} {k l : ℕ}
@@ -354,7 +366,8 @@ Then
 (ii) $\dist(a,b)=\dist(b,a)$
 \end{proposition}
 -/
-theorem sequenceDistance_comm (a b : ℤ → ℝ) : SequenceDistance a b = SequenceDistance b a := by
+theorem sequenceDistance_comm (a b : ℤ → ℝ) :
+    SequenceDistance a b = SequenceDistance b a := by
   classical
   by_cases h : ∃ k : ℕ, WithinSequenceDistance a b k
   · have h' : ∃ k : ℕ, WithinSequenceDistance b a k := by
@@ -405,7 +418,8 @@ Then
 (iv) If $c(j)=b(j+1)$, then $\dist(a,c)\le \dist(a,b)+1$.
 \end{proposition}
 -/
-theorem sequenceDistance_shift_le {a b c : ℤ → ℝ} (ha : SpacedSequence a) (hb : SpacedSequence b)
+theorem sequenceDistance_shift_le {a b c : ℤ → ℝ}
+    (ha : SpacedSequence a) (hb : SpacedSequence b)
     (hc : ∀ j : ℤ, c j = b (j + 1)) :
     SequenceDistance a c ≤ SequenceDistance a b + 1 := by
   classical
@@ -516,7 +530,9 @@ theorem sequenceDistance_pow_two_smul_le {a : ℤ → ℝ} (ha : SpacedSequence 
 /--
 \begin{definition}[Closed balls in $\mathrm{A}$]\label{closed balls in A}
 For $a\in\mathrm{A}$ and $r>0$ denote
-\begin{equation}\label{auto:spaced-sequence-distance-ball}B_{\mathrm{dist}}(a,r)=\{b\in\mathrm{A}\,:\,\dist(a,b)\le r\}.\end{equation}
+\begin{equation}\label{auto:spaced-sequence-distance-ball}
+B_{\mathrm{dist}}(a,r)=\{b\in\mathrm{A}\,:\,\dist(a,b)\le r\}.
+\end{equation}
 \end{definition}
 -/
 def sequenceDistanceBall (a : ℤ → ℝ) (r : WithTop ℕ) : Set (ℤ → ℝ) :=

@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import Mathlib
 import LeanNct.Preliminaries.Notation
 import LeanNct.Reduction.TwistedAverages
@@ -16,7 +22,9 @@ open scoped BigOperators ENNReal
 
 /--
 \begin{definition}[Twisted averages]
-Let $n\geq 1$. For an $n$-tuple of real-valued Schwartz functions $\mathbf f = (f_0,f_1,\dots,f_{n-1})$ on $\R^n$, a bounded measurable function $\chi$ and $x\in\mathbb{R}^n$ denote
+Let $n\geq 1$. For an $n$-tuple of real-valued Schwartz functions
+$\mathbf f = (f_0,f_1,\dots,f_{n-1})$ on $\R^n$, a bounded measurable
+function $\chi$ and $x\in\mathbb{R}^n$ denote
 \begin{equation}\label{A_def}
 A(\chi,\mathbf f)(x) = \int_{\mathbb{R}} \chi(s)\Big(\prod_{i\in [n)} f_i(x+se_i)\Big)\,ds.
 \end{equation}
@@ -40,7 +48,11 @@ noncomputable def twistedAverageAtScale {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
     Let $n\ge 2$ be an integer. There exists a $C\in (0,\infty)$ such that the following holds.
     For every positive integer $J$ and positive real numbers $t_0<t_1<\cdots < t_J$,
     for every $n$-tuple of Schwartz functions ${\mathbf f}=(f_i)_{i \in [n)}$
-    with \[ \|f_{i}\|_{2^{i+\min(n-i,2)}}=1 \] for $i\in [n)$, \begin{equation}\label{e:ncommuting_real} \sum_{j \in [J)} \|A_{t_{j + 1}}(\mathbf{1}_{[0,1]},\mathbf{f}) - A_{t_{j}}(\mathbf{1}_{[0,1]},\mathbf f)\|_{{L}^2(\R^n)}^2 \leq C J^{1-2^{-n+2}}.
+    with \[ \|f_{i}\|_{2^{i+\min(n-i,2)}}=1 \] for $i\in [n)$,
+    \begin{equation}\label{e:ncommuting_real}
+    \sum_{j \in [J)} \|A_{t_{j + 1}}(\mathbf{1}_{[0,1]},\mathbf{f}) -
+      A_{t_{j}}(\mathbf{1}_{[0,1]},\mathbf f)\|_{{L}^2(\R^n)}^2
+      \leq C J^{1-2^{-n+2}}.
     \end{equation}
 \end{theorem}
 -/

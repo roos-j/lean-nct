@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import LeanNct.Preliminaries.Gaussians
 import LeanNct.Preliminaries.Notation
 import Mathlib.Analysis.Calculus.IteratedDeriv.FaaDiBruno
@@ -11,7 +17,8 @@ The concrete bump functions and explicit constants used in the manuscript's bump
 namespace Codex.Preliminaries.BumpsAndEstimates
 
 open MeasureTheory Filter
-open scoped BigOperators FourierTransform Real RealInnerProductSpace Convolution Pointwise EuclideanSpace
+open scoped BigOperators FourierTransform Real RealInnerProductSpace Convolution Pointwise
+open scoped EuclideanSpace
 open Codex.Preliminaries.Notation
 open Codex.Preliminaries.Gaussians
 
@@ -256,9 +263,13 @@ theorem aux_inverseFourier_iteratedDeriv_decay (n : ℕ) (zeta : ℝ → ℂ)
 /--
 \begin{lemma}
 \label{lem:smoothdecay}
-Let $N\geq 2$ be an integer. Let $\zeta:\R\to\C$ be an $N$ times continuously differentiable function with compact support. Then the function $\phi=\mathcal F^{-1}\zeta$ belongs to $W_0(\R)$ and we have for all $x\in\R$, $x\neq0$, the estimate
+Let $N\geq 2$ be an integer. Let $\zeta:\R\to\C$ be an $N$ times continuously differentiable
+function with compact support. Then the function $\phi=\mathcal F^{-1}\zeta$ belongs to $W_0(\R)$
+and we have for all $x\in\R$, $x\neq0$, the estimate
 
-\begin{equation}\label{auto:Fourier-decay-minimum-bound}|\phi(x)|\le \min(\|\widehat{\phi}\|_1, \|\widehat{\phi}^{(N)}\|_1 (2\pi)^{-N} |x|^{-N}).\end{equation}
+\begin{equation}\label{auto:Fourier-decay-minimum-bound}
+|\phi(x)|\le \min(\|\widehat{\phi}\|_1, \|\widehat{\phi}^{(N)}\|_1 (2\pi)^{-N} |x|^{-N}).
+\end{equation}
 \end{lemma}
 -/
 theorem smoothDecay (N : ℕ) (hN : 2 ≤ N) (zeta : ℝ → ℂ)
@@ -762,7 +773,7 @@ theorem aux_intervalDensity_convolution_hasDerivAt (f : ℝ → ℝ) (hf : Conti
         fun t : ℝ => (2 * r)⁻¹ *
           Set.indicator (Set.Icc (-r) r) (fun t => f (y - t)) t := by
       funext t
-      by_cases ht : t ∈ Set.Icc (-r) r <;> simp [ht] <;> ring
+      by_cases ht : t ∈ Set.Icc (-r) r <;> simp [ht] ; ring
     rw [hpoint, MeasureTheory.integral_const_mul,
       MeasureTheory.integral_indicator measurableSet_Icc]
     congr 1
@@ -803,7 +814,7 @@ theorem aux_intervalDifferenceQuotient_le_of_lipschitz (f : ℝ → ℝ) (L r x 
   rw [abs_div, abs_of_pos hden]
   have h := hLip (x + r) (x - r)
   have habs : |(x + r) - (x - r)| = 2 * r := by
-    convert abs_of_pos hden using 1 <;> ring
+    convert abs_of_pos hden using 1; ring
   rw [habs] at h
   calc
     |f (x + r) - f (x - r)| / (2 * r) ≤ (L * (2 * r)) / (2 * r) :=
@@ -822,9 +833,9 @@ theorem aux_intervalDifferenceQuotient_lipschitz (f : ℝ → ℝ) (L r x y : �
       _ = |a| + |b| := by simp
   have hden : 0 < 2 * r := by positivity
   have hp : |f (x + r) - f (y + r)| ≤ L * |x - y| := by
-    convert hLip (x + r) (y + r) using 1 <;> ring_nf
+    convert hLip (x + r) (y + r) using 1; ring_nf
   have hm : |f (x - r) - f (y - r)| ≤ L * |x - y| := by
-    convert hLip (x - r) (y - r) using 1 <;> ring_nf
+    convert hLip (x - r) (y - r) using 1; ring_nf
   rw [show ((f (x + r) - f (x - r)) / (2 * r)) -
       ((f (y + r) - f (y - r)) / (2 * r)) =
       ((f (x + r) - f (y + r)) - (f (x - r) - f (y - r))) / (2 * r) by ring]
@@ -948,12 +959,12 @@ private theorem aux_standardBumpFiniteDensity_one_lipschitz (x y : ℝ) :
       |(∫ t : ℝ in 0..x + aux_standardBumpRadius 0, aux_standardBumpBaseDensity t) -
         ∫ t : ℝ in 0..y + aux_standardBumpRadius 0, aux_standardBumpBaseDensity t| ≤
         |x - y| := by
-    convert hp (x + aux_standardBumpRadius 0) (y + aux_standardBumpRadius 0) using 1 <;> ring
+    convert hp (x + aux_standardBumpRadius 0) (y + aux_standardBumpRadius 0) using 1; ring
   have hminus :
       |(∫ t : ℝ in 0..x - aux_standardBumpRadius 0, aux_standardBumpBaseDensity t) -
         ∫ t : ℝ in 0..y - aux_standardBumpRadius 0, aux_standardBumpBaseDensity t| ≤
         |x - y| := by
-    convert hp (x - aux_standardBumpRadius 0) (y - aux_standardBumpRadius 0) using 1 <;> ring
+    convert hp (x - aux_standardBumpRadius 0) (y - aux_standardBumpRadius 0) using 1; ring
   have hrad : aux_standardBumpRadius 0 = 1 / 8 := by
     norm_num [aux_standardBumpRadius]
   rw [hrad] at hplus hminus ⊢
@@ -1741,7 +1752,7 @@ theorem standardBumpProperties_l1Convergence :
   have h := tendsto_lintegral_norm_of_dominated_convergence hmeas
       ((integrable_inv_one_add_sq.const_mul 24).hasFiniteIntegral) hbound hpoint
   simpa only [eLpNorm_one_eq_lintegral_enorm, Pi.sub_apply,
-    ← ofReal_norm_eq_enorm] using h
+    ← ofReal_norm] using h
 
 /-- For \ref{standard bump properties} and the public theorem
 `standardBumpProperties_linfConvergence`, this turns the decay of the base sinc factor into the
@@ -2708,7 +2719,7 @@ theorem aux_descFactorial_le_two_pow (m q : ℕ) :
   calc
     q.factorial * m.choose q ≤ 2 ^ (q ^ 2) * 2 ^ m :=
       Nat.mul_le_mul (aux_factorial_le_two_pow_sq q) (Nat.choose_le_two_pow m q)
-    _ = 2 ^ (m + q ^ 2) := by rw [← pow_add]; congr 1 <;> omega
+    _ = 2 ^ (m + q ^ 2) := by rw [← pow_add]; congr 1; omega
 
 /-- For \ref{standard bump properties} and the public theorem
 `standardBumpProperties_fourierDerivativeEstimate`, this bounds each derivative of
@@ -3425,7 +3436,9 @@ theorem standardBumpProperties_schwartz :
 /--
 \begin{lemma}
     \label{lem: min and bracket} Let $N\ge 1$ be an integer, then
-\begin{equation}\label{auto:min-power-bracket-bound}\min(1, |x|^{-N})\le 2^N   \langle x\rangle^{N}\, .\end{equation}
+\begin{equation}\label{auto:min-power-bracket-bound}
+\min(1, |x|^{-N})\le 2^N   \langle x\rangle^{N}\, .
+\end{equation}
 \end{lemma}
 -/
 theorem min_and_bracket (N : ℕ) (_hN : 1 ≤ N) (x : ℝ) :
@@ -3636,7 +3649,7 @@ theorem aux_standardBumpMultiplier_iteratedDeriv_le_one (m : ℕ) (xi : ℝ) :
       funext u
       simp
     rw [hPH]
-    convert aux_standardBump_fourier_iteratedDeriv_le_one xi using 1 <;>
+    convert aux_standardBump_fourier_iteratedDeriv_le_one xi using 1;
       norm_num [H, C_standardBumpPropertiesTilde]
   have hPcont : ContDiffAt ℝ 1 P xi := by
     apply (aux_standardBumpMultiplier_contDiff m).contDiffAt.of_le
@@ -3720,7 +3733,7 @@ theorem aux_standardBumpMultiplier_iteratedDeriv_le_two (m : ℕ) (xi : ℝ) :
       funext u
       simp
     rw [hPH]
-    convert aux_standardBump_fourier_iteratedDeriv_le_two xi using 1 <;>
+    convert aux_standardBump_fourier_iteratedDeriv_le_two xi using 1;
       norm_num [H, C_standardBumpPropertiesTilde]
   have hPcont : ContDiffAt ℝ 2 P xi := by
     apply (aux_standardBumpMultiplier_contDiff m).contDiffAt.of_le
@@ -3947,10 +3960,14 @@ theorem aux_C_standardBumpPropertiesTilde_mono (m k N : ℕ) (hk : k ≤ N) :
 /--
 \begin{lemma}
    \label{lem:smoothdecay2}\using{lem:smoothdecay}\using{lem: min and bracket}
-Let $N\geq 2$ be an integer. Let $\zeta:\R\to\C$ be an $N$ times continuously differentiable function with compact support.
-Then the function $\phi=\mathcal F^{-1} \zeta$ belongs to $W_0(\R)$ and we have for all $x\in \R$ the estimate
+Let $N\geq 2$ be an integer. Let $\zeta:\R\to\C$ be an $N$ times continuously differentiable
+function with compact support.
+Then the function $\phi=\mathcal F^{-1} \zeta$ belongs to $W_0(\R)$ and we have for all $x\in \R$
+the estimate
 \begin{equation}\label{E:smoothdecay2}
-|\phi(x)|\leq C_{\ref{lem:smoothdecay2}, N} \max(\|\widehat{\phi}\|_\infty, (2\pi )^{-N}\|\widehat{\phi}^{(N)}\|_\infty)|\supp (\widehat{\phi})|   \langle x\rangle^{N}
+|\phi(x)|\leq C_{\ref{lem:smoothdecay2}, N}
+  \max(\|\widehat{\phi}\|_\infty, (2\pi )^{-N}\|\widehat{\phi}^{(N)}\|_\infty)
+  |\supp (\widehat{\phi})|   \langle x\rangle^{N}
 \end{equation}
 with $C_{\ref{lem:smoothdecay2}, N}=2^{N} $.
 \end{lemma}
@@ -4437,8 +4454,8 @@ theorem aux_scaledIteratedDeriv_modulated_le (N : ℕ) (rhoHat : ℝ → ℂ)
           ring
         _ ≤ (N.choose i : ℝ) * (M * (q ^ (N - i) * a)) := by
           apply mul_le_mul_of_nonneg_left
-          exact mul_le_mul hRho hPhase (by positivity) hM
-          positivity
+          · exact mul_le_mul hRho hPhase (by positivity) hM
+          · positivity
         _ = (N.choose i : ℝ) * (q ^ (N - i) * (M * a)) := by ring
     _ = ∑ i ∈ Finset.range (N + 1),
         ((N.choose i : ℝ) * q ^ (N - i)) * (M * a) := by
@@ -4784,9 +4801,9 @@ theorem aux_small_modulated_inverse_bound (N : ℕ) (hN : 1 ≤ N)
     _ ≤ ((2 : ℝ) ^ N * ((1 + (2 * Real.pi)⁻¹) ^ N * P * a)) * 2 *
           bracketBump z ^ N := by
       apply mul_le_mul_of_nonneg_right
-      apply mul_le_mul_of_nonneg_left hVg
-      positivity
-      exact hbracket
+      · apply mul_le_mul_of_nonneg_left hVg
+        positivity
+      · exact hbracket
     _ = (2 : ℝ) ^ (N + 1) * (1 + (2 * Real.pi)⁻¹) ^ N * P * a *
           bracketBump z ^ N := by
       rw [pow_succ]
@@ -5128,7 +5145,8 @@ theorem standardBumpProperties_derivativeDecay (m N : ℕ) (x : ℝ) :
 
 /--
 \begin{proposition}[standard bump]\label{standard bump properties}\using{lem:smoothdecay2}
-The limit $\lim_{l\to \infty} \Phi_l$ exists in $L^\infty$  and $L^1$ sense and is a Schwartz function $\Phi$
+The limit $\lim_{l\to \infty} \Phi_l$ exists in $L^\infty$ and $L^1$ sense and is a Schwartz
+function $\Phi$
 whose Fourier transform takes values in $[0,1]$, is supported in $[-1,1]$, and constant $1$
 on $[-1/2,1/2]$.
 
@@ -5138,8 +5156,11 @@ It satisfies for every $m,N\in\N$ and every $x\in\R$,
     \|  (\widehat{\Phi^{(m)}})^{(N)}  \|_\infty \le \tilde{C}_{\ref{standard bump properties},m,N}
 \end{equation}
 and
-\begin{equation}\label{auto:standard-bump-derivative-decay} |\Phi^{(m)}(x)| \le C_{\ref{standard bump properties},m,N} \langle x\rangle^N, \end{equation}
-where $\tilde{C}_{\ref{standard bump properties},m,N}=2^{4m + 2N^2 + 5N}$ and $C_{\ref{standard bump properties},m,N}=2^{4m+2N^2+6N+2}.$
+\begin{equation}\label{auto:standard-bump-derivative-decay}
+|\Phi^{(m)}(x)| \le C_{\ref{standard bump properties},m,N} \langle x\rangle^N,
+\end{equation}
+where $\tilde{C}_{\ref{standard bump properties},m,N}=2^{4m + 2N^2 + 5N}$ and
+$C_{\ref{standard bump properties},m,N}=2^{4m+2N^2+6N+2}.$
 \end{proposition}
 -/
 theorem standardBumpProperties :
@@ -5173,12 +5194,18 @@ theorem standardBumpProperties :
     standardBumpProperties_derivativeDecay⟩
 
 /--
-\begin{proposition}[mean value bump estimate]\label{mean value bump estimate 2}\using{lem:smoothdecay2}
+\begin{proposition}[mean value bump estimate]\label{mean value bump estimate 2}
+\using{lem:smoothdecay2}
 Let $N\in\mathbb N$ with $N\ge1$ and let $\rho$ be a $W_0(1)$ function with
-$\widehat{\rho}$ supported in $[-1,1]$ and $\widehat{\rho}$ being $N$ times continuously differentiable.
+$\widehat{\rho}$ supported in $[-1,1]$ and $\widehat{\rho}$ being $N$ times continuously
+differentiable.
 
 Then for all $x,y\in\mathbb{R}$
-\begin{equation}\label{auto:mean-value-bump-bound} |\rho(x+y)-\rho(x)| \le 2^N\max(2,(1+(2\pi)^{-1})^N)\max_{0\le \nu\le N}\|(2\pi)^{-\nu}\widehat{\rho}^{(\nu)}\|_\infty \min(1, 2\pi |y|) (\langle x+y\rangle^N + \langle x\rangle^N). \end{equation}
+\begin{equation}\label{auto:mean-value-bump-bound}
+|\rho(x+y)-\rho(x)| \le 2^N\max(2,(1+(2\pi)^{-1})^N)
+\max_{0\le \nu\le N}\|(2\pi)^{-\nu}\widehat{\rho}^{(\nu)}\|_\infty
+\min(1, 2\pi |y|) (\langle x+y\rangle^N + \langle x\rangle^N).
+\end{equation}
 \end{proposition}
 -/
 theorem meanValueBumpEstimate (N : ℕ) (hN : 1 ≤ N) (rho rhoHat : ℝ → ℂ)
@@ -5344,9 +5371,9 @@ theorem meanValueBumpEstimate (N : ℕ) (hN : 1 ≤ N) (rho rhoHat : ℝ → ℂ
           ring
         _ ≤ ((2 : ℝ) ^ N * P) * 2 * R := by
           apply mul_le_mul_of_nonneg_right
-          apply mul_le_mul_of_nonneg_left hV
-          positivity
-          exact hR
+          · apply mul_le_mul_of_nonneg_left hV
+            positivity
+          · exact hR
         _ = (2 : ℝ) ^ (N + 1) * P * R := by
           rw [pow_succ]
           ring
@@ -5804,7 +5831,8 @@ theorem aux_gaussianDomination_one_term_bound (N s x : ℝ) (hN : 1 < N) (hs : 0
     Let
     $N,s\in\R$, $N>1$, and $s>0$. Then
 \begin{equation}\label{auto:bracket-Gaussian-domination}
-    \left< x\right>^{N}_{(s)}  \le C_{\ref{Gaussian domination}} 2^N   \sum_{m\in {\N}}  2^{(1-N)m} \g_{(2^ms)}(x),
+    \left< x\right>^{N}_{(s)} \le C_{\ref{Gaussian domination}} 2^N
+      \sum_{m\in {\N}} 2^{(1-N)m} \g_{(2^ms)}(x),
 \end{equation}
 where $C_{\ref{Gaussian domination}}=e^\pi$.
 \end{proposition}
@@ -5883,7 +5911,7 @@ theorem aux_twoBump_baseIntegral (n : ℝ) (hn : 1 < n) :
     ∫ x : ℝ, (1 + |x|) ^ (-n) = 2 / (n - 1) := by
   have habs := integral_comp_abs (f := fun x : ℝ => (1 + x) ^ (-n))
   rw [aux_twoBump_halfIntegral n hn] at habs
-  convert habs using 1 <;> ring
+  convert habs using 1; ring
 
 /-- For source label `\ref{two bump estimate}` and public theorem `twoBumpEstimate`, this
 computes the mass of a translated and scaled bracket profile. -/
@@ -5981,12 +6009,10 @@ theorem aux_twoBump_inverse_denominators {A B D r n K : ℝ}
   calc
     r⁻¹ * (A ^ n)⁻¹ * (B ^ n)⁻¹ = D ^ n / (r * A ^ n * B ^ n * D ^ n) := by
       field_simp
-      <;> ring
     _ ≤ (K * (A ^ n + r * B ^ n)) / (r * A ^ n * B ^ n * D ^ n) :=
       (div_le_div_iff_of_pos_right hden).mpr hpow
     _ = K * (D ^ n)⁻¹ * ((A ^ n)⁻¹ + r⁻¹ * (B ^ n)⁻¹) := by
-      field_simp
-      <;> ring
+      field_simp; ring
 
 /-- For source label `\ref{two bump estimate}` and public theorem `twoBumpEstimate`, this is
 the normalized same-exponent pointwise convolution majorization. -/
@@ -6014,7 +6040,7 @@ theorem aux_twoBump_pointwise_sameExponent (n s₀ s₁ u v : ℝ)
   have hDle : D ≤ A + r * B := by
     have huv : s₀⁻¹ * (u + v) = s₀⁻¹ * u + r * (s₁⁻¹ * v) := by
       dsimp [r]
-      field_simp <;> ring
+      field_simp
     have hrabs : |r * (s₁⁻¹ * v)| = r * |s₁⁻¹ * v| := by
       rw [abs_mul, abs_of_nonneg hr.le]
     dsimp [D, A, B]
@@ -6033,7 +6059,7 @@ theorem aux_twoBump_pointwise_sameExponent (n s₀ s₁ u v : ℝ)
   have hinv := aux_twoBump_inverse_denominators hA hB hD hr hpow
   have hsrel : s₁⁻¹ = s₀⁻¹ * r⁻¹ := by
     dsimp [r]
-    field_simp <;> ring
+    field_simp
   change (s₀⁻¹ * A ^ (-n)) * (s₁⁻¹ * B ^ (-n)) ≤
     2 ^ (n - 1) * (s₀⁻¹ * D ^ (-n)) *
       (s₀⁻¹ * A ^ (-n) + s₁⁻¹ * B ^ (-n))
@@ -6110,13 +6136,15 @@ theorem aux_twoBump_constant_bound (n : ℝ) (hn : 1 < n) :
 
 /--
 \begin{proposition}[two bump estimate]\label{two bump estimate}
-    Consider real numbers $x_i$ and  $s_i>0$ and $n_i>1$ for $i=0,1$.  Assume $s_0\ge s_1$ and define
+    Consider real numbers $x_i$, $s_i>0$, and $n_i>1$ for $i=0,1$. Assume $s_0\ge s_1$
+    and define
 \begin{equation}\label{tb0}
      C_{\ref{two bump estimate},n_0,n_1}:=2^{1+\min(n_0,n_1)} [1+(\min(n_0,n_1)-1)^{-1}]
 \end{equation}
   Then
 \begin{equation}\label{two decays}
-   | \int_{\R} (\prod_{i=0}^1 \left<x_i-p\right>^{n_i}_{(s_i)}) dp|\le C_{\ref{two bump estimate},n_0,n_1}
+   | \int_{\R} (\prod_{i=0}^1 \left<x_i-p\right>^{n_i}_{(s_i)}) dp|
+     \le C_{\ref{two bump estimate},n_0,n_1}
 \left<x_0-x_1\right>^{\min(n_0,n_1)}_{(s_0)}\, .
 \end{equation}
 \end{proposition}
@@ -6490,15 +6518,21 @@ theorem aux_orthogonalDecay_from_domination {A n₀ n₁ s₀ s₁ u₀ u₁ p�
         · exact (Real.rpow_nonneg hA.le _).trans (le_max_left _ _)
 
 /--
-\begin{proposition}[orthogonal decay]\label{orthogonal decay}\using{compare brackets}\using{orthogonal domination}
+\begin{proposition}[orthogonal decay]\label{orthogonal decay}
+\using{compare brackets}\using{orthogonal domination}
 Let $\alpha_0,\alpha_1\in\mathbb{R}^2$ be linearly independent unit vectors.
-Let $\alpha_{m}^\perp$ be unit vectors orthogonal to $\alpha_m$ and note that $\alpha_0\cdot \alpha_1^\perp\neq 0$. Setting \begin{equation}\label{auto:orthogonal-decay-constant}
-    C_{\ref{orthogonal decay}, \alpha_0,\alpha_1,n_0,n_1}:=\max( (2 |\alpha_0\cdot \alpha_1^\perp|^{-1})^{n_0},(2 |\alpha_0\cdot \alpha_1^\perp|^{-1})^{n_1}) \, ,
+Let $\alpha_{m}^\perp$ be unit vectors orthogonal to $\alpha_m$ and note that
+$\alpha_0\cdot \alpha_1^\perp\neq 0$. Setting
+\begin{equation}\label{auto:orthogonal-decay-constant}
+    C_{\ref{orthogonal decay}, \alpha_0,\alpha_1,n_0,n_1}:=
+      \max((2 |\alpha_0\cdot \alpha_1^\perp|^{-1})^{n_0},
+        (2 |\alpha_0\cdot \alpha_1^\perp|^{-1})^{n_1}) \, ,
 \end{equation}
 then for all $n_0,n_1,s_0,s_1>0$ and $x\in\mathbb{R}^2$,
 \begin{equation}\label{eq:two bump}
     \langle x\cdot \alpha_0\rangle_{(s_0)}^{n_0} \langle x\cdot \alpha_1\rangle_{(s_1)}^{n_1}
-\le C_{\ref{orthogonal decay},\alpha_0,\alpha_1,n_0,n_1} (\langle x\cdot \alpha_0\rangle_{(s_0)}^{n_0}\langle x\cdot \alpha_0^\perp\rangle_{(s_1)}^{n_1} +
+\le C_{\ref{orthogonal decay},\alpha_0,\alpha_1,n_0,n_1}
+  (\langle x\cdot \alpha_0\rangle_{(s_0)}^{n_0}\langle x\cdot \alpha_0^\perp\rangle_{(s_1)}^{n_1} +
 \langle x\cdot \alpha_1^\perp\rangle_{(s_0)}^{n_0}\langle x\cdot \alpha_1\rangle_{(s_1)}^{n_1}).
 \end{equation}
 \end{proposition}
@@ -6514,9 +6548,11 @@ theorem orthogonalDecay
       C_orthogonalDecay α₀ α₁ n₀ n₁ *
         (scaledBracketBumpReal n₀ s₀ (inner ℝ x α₀) *
             scaledBracketBumpReal n₁ s₁
-              (inner ℝ x ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation.rightAngleRotation α₀)) +
+              (inner ℝ x
+                ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation.rightAngleRotation α₀)) +
           scaledBracketBumpReal n₀ s₀
-              (inner ℝ x ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation.rightAngleRotation α₁)) *
+              (inner ℝ x
+                ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation.rightAngleRotation α₁)) *
             scaledBracketBumpReal n₁ s₁ (inner ℝ x α₁)) := by
   let A : ℝ := 2 * |inner ℝ α₀
     ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation.rightAngleRotation α₁)|⁻¹
@@ -6832,15 +6868,23 @@ theorem aux_bumpTriangleReal {c₀ c₁ u v w s₀ s₁ n₀ n₁ : ℝ}
 
 /--
 \begin{proposition}[bump triangle]\label{bump triangle}\using{compare brackets}
-Let $\alpha_0,\alpha_1\in\mathbb{R}^2$ and let $\alpha_2=c_0\alpha_0+c_1\alpha_1$ be a non-trivial linear combination of $\alpha_0,\alpha_1$, i.e. $c_0\not=0, c_1\not=0$.
+Let $\alpha_0,\alpha_1\in\mathbb{R}^2$ and let $\alpha_2=c_0\alpha_0+c_1\alpha_1$ be a non-trivial
+linear combination of $\alpha_0,\alpha_1$, i.e. $c_0\not=0, c_1\not=0$.
 Let
-\begin{equation}\label{auto:bump-triangle-scale-constant}\tilde{C}_{\ref{bump triangle},c_0,c_1}=\max(2|c_0|, (2|c_0|)^{-1},2|c_1|, (2|c_1|)^{-1}),\end{equation}
+\begin{equation}\label{auto:bump-triangle-scale-constant}
+\tilde{C}_{\ref{bump triangle},c_0,c_1}=\max(2|c_0|, (2|c_0|)^{-1},2|c_1|, (2|c_1|)^{-1}),
+\end{equation}
 \begin{equation}\label{auto:bump-triangle-constant}
-    C_{\ref{bump triangle},c_0,c_1,n_0,n_1}=\max(\tilde{C}_{\ref{bump triangle},c_0,c_1}^{n_0}, \tilde{C}_{\ref{bump triangle},c_0,c_1}^{n_1}).
+    C_{\ref{bump triangle},c_0,c_1,n_0,n_1}=
+      \max(\tilde{C}_{\ref{bump triangle},c_0,c_1}^{n_0},
+        \tilde{C}_{\ref{bump triangle},c_0,c_1}^{n_1}).
 \end{equation}
 Then
-\begin{equation}\label{auto:bump-triangle-bound} \langle x\cdot \alpha_0\rangle_{(s_0)}^{n_0} \langle x\cdot \alpha_1\rangle_{(s_1)}^{n_1}
-\le C_{\ref{bump triangle},c_0,c_1,n_0,n_1}(\langle x\cdot \alpha_0\rangle_{(s_0)}^{n_0}\langle x\cdot \alpha_2\rangle_{(s_1)}^{n_1} + \langle x\cdot \alpha_2\rangle_{(s_0)}^{n_0}\langle x\cdot \alpha_1\rangle_{(s_1)}^{n_1}).
+\begin{equation}\label{auto:bump-triangle-bound}
+\langle x\cdot \alpha_0\rangle_{(s_0)}^{n_0} \langle x\cdot \alpha_1\rangle_{(s_1)}^{n_1}
+\le C_{\ref{bump triangle},c_0,c_1,n_0,n_1}
+  (\langle x\cdot \alpha_0\rangle_{(s_0)}^{n_0}\langle x\cdot \alpha_2\rangle_{(s_1)}^{n_1} +
+    \langle x\cdot \alpha_2\rangle_{(s_0)}^{n_0}\langle x\cdot \alpha_1\rangle_{(s_1)}^{n_1}).
 \end{equation}
 \end{proposition}
 -/
@@ -6910,7 +6954,7 @@ theorem aux_diagonalSquareRoot_inverseFourier_real_of_even (f : ℝ → ℝ) (hf
   change (∫ ξ : ℝ, q ξ) = 0
   have hodd (ξ : ℝ) : q (-ξ) = -q ξ := by
     dsimp [q]
-    simp only [Circle.smul_def, smul_eq_mul, Real.inner_apply, starRingEnd_apply, star_trivial]
+    simp only [starRingEnd_apply, star_trivial]
     rw [heven]
     have hphase : 2 * Real.pi * (x * -ξ) = -(2 * Real.pi * (x * ξ)) := by ring
     rw [hphase, Complex.ofReal_neg, neg_mul]
@@ -6945,7 +6989,8 @@ theorem aux_diagonalSquareRoot_sqrtGaussianKernel_real (x : ℝ) :
 /-- For source label `\ref{diagonal square root}` and public theorem
 `diagonalSquareRoot_bound`, this supplies the integrability needed for Fourier convolution of the
 square-root-Gaussian kernel. -/
-theorem aux_diagonalSquareRoot_sqrtGaussianKernel_integrable : Integrable aux_sqrtGaussianKernel := by
+theorem aux_diagonalSquareRoot_sqrtGaussianKernel_integrable :
+    Integrable aux_sqrtGaussianKernel := by
   have hmem := aux_sqrtGaussianDecayKernel_memW0
   have hreal : Integrable aux_sqrtGaussianDecayKernel := by
     refine hmem.2.mono hmem.1.aestronglyMeasurable (ae_of_all _ fun x => ?_)
@@ -6999,7 +7044,7 @@ theorem aux_diagonalSquareRoot_frequency_factor {t₀ t₁ r ξ : ℝ}
   rw [hfactor]
   rw [Real.sqrt_mul (aux_gaussian_pos _).le]
   congr 1
-  convert aux_diagonalSquareRoot_sqrtGaussian_half (t₀ * ξ) using 1 <;> ring
+  convert aux_diagonalSquareRoot_sqrtGaussian_half (t₀ * ξ) using 1; ring
 
 /-- For source label `\ref{diagonal square root}` and public theorem
 `diagonalSquareRoot_bound`, this evaluates the inverse transform of a scaled Gaussian. -/
@@ -7212,7 +7257,7 @@ theorem aux_diagonalSquareRoot_rhoScale_complex (r x : ℝ) :
       (aux_diagonalSquareRoot_rhoScale r x : ℂ) := by
   unfold aux_diagonalSquareRoot_rhoScale
   rw [aux_diagonalSquareRoot_sqrtGaussianKernel_real]
-  simp [smul_eq_mul]
+  simp
 
 /-- For source label `\ref{diagonal square root}` and public theorem
 `diagonalSquareRoot_bound`, this turns the complex convolution in the Fourier representation into
@@ -7441,6 +7486,7 @@ scales. -/
 theorem aux_scaledBracketBump_scale_le (N : ℕ) {s t A x : ℝ}
     (hs : 0 < s) (ht : 0 < t) (hst : s ≤ t) (hA : 0 ≤ A) (hAt : t ≤ A * s) :
     scaledBracketBump N s x ≤ A * scaledBracketBump N t x := by
+  have _hA := hA
   have hinv : t⁻¹ ≤ s⁻¹ := (inv_le_inv₀ ht hs).2 hst
   have habs : |t⁻¹ * x| ≤ |s⁻¹ * x| := by
     rw [abs_mul, abs_mul, abs_of_pos (inv_pos.mpr ht), abs_of_pos (inv_pos.mpr hs)]
@@ -7547,10 +7593,13 @@ def C_diagonalSquareRoot (N : ℕ) : ℝ :=
 /--
 For all $N\in \mathbb N$ with $N\geq 1$ and $x\in \R$, the following estimate holds:
 \begin{equation}\label{E:s-estimate}
-    |s(x)|\le  C_{\ref{diagonal square root},N} ( \left<x\right>^N_{(t_0)}+ \left<x\right>^2_{(t_1)}),
+    |s(x)|\le C_{\ref{diagonal square root},N}
+      (\left<x\right>^N_{(t_0)}+ \left<x\right>^2_{(t_1)}),
 \end{equation}
 where
-$C_{\ref{diagonal square root},N}=\sqrt{2}\max(C_{\ref{Gaussian bump decay},0,N}, C_{\ref{Gaussian bump decay},0,2}C_{\ref{square root of Gaussian decay}}C_{\ref{two bump estimate},2,2})$.
+$C_{\ref{diagonal square root},N}=\sqrt{2}\max(C_{\ref{Gaussian bump decay},0,N},
+C_{\ref{Gaussian bump decay},0,2}C_{\ref{square root of Gaussian decay}}
+C_{\ref{two bump estimate},2,2})$.
 -/
 theorem diagonalSquareRoot_bound (N : ℕ) (_hN : 1 ≤ N) {t₀ t₁ : ℝ}
     (ht : 0 < 2 * t₀) (hscale : 2 * t₀ ≤ t₁) (x : ℝ) :
@@ -7659,7 +7708,9 @@ theorem aux_diagonalSquareRoot_scaledBracketBump_two_le_quadratic (t x : ℝ) (h
 
 /--
 For $t_0,t_1\in\R$ with $0<2t_0\le t_1$ define
-\begin{equation}\label{auto:diagonal-square-root-definition} s = \mathcal{F}^{-1}(\xi\mapsto \sqrt{\g(t_0 \xi)- \g(t_1 \xi)}), \end{equation}
+\begin{equation}\label{auto:diagonal-square-root-definition}
+s = \mathcal{F}^{-1}(\xi\mapsto \sqrt{\g(t_0 \xi)- \g(t_1 \xi)}),
+\end{equation}
 where the function under the square root is nonnegative. Then
 
 $s\in W_0(\R)$.
@@ -8646,7 +8697,8 @@ theorem aux_constantDiagonalSquareRoot_two_lt :
   nlinarith
 
 /--
-\begin{lemma}[constant $C_{\ref{diagonal square root},N}$ \auto]\label{constant diagonal square root}
+\begin{lemma}[constant $C_{\ref{diagonal square root},N}$ \auto]
+\label{constant diagonal square root}
 For every $N\ge1$,
 \[
 C_{\ref{diagonal square root},N}
@@ -8823,7 +8875,8 @@ derivative recurrence. -/
 theorem aux_gaussianEstimate_coeff_odd_zero (q : ℕ) :
     aux_gaussianEstimate_coeff (2 * q + 1) 0 =
       2 * Real.pi * aux_gaussianEstimate_coeff (2 * q) 0 := by
-  simp [aux_gaussianEstimate_coeff]
+  simp only [aux_gaussianEstimate_coeff, Nat.factorial_zero, Nat.cast_one, mul_zero, tsub_zero,
+    one_mul]
   have h1 : ((2 * q + 1).factorial : ℝ) ≠ 0 := by positivity
   have h2 : ((2 * q).factorial : ℝ) ≠ 0 := by positivity
   rw [div_self h1, div_self h2]
@@ -9176,7 +9229,7 @@ theorem aux_gaussianEstimate_iteratedDeriv (n : ℕ) (x : ℝ) :
             norm_num [Pi.pow_apply]
           rw [← hval]
           exact hraw
-        convert hInner' using 1 <;> ring
+        convert hInner' using 1; ring
       have hExp : HasDerivAt (fun y : ℝ => Real.exp (Real.pi * y ^ 2))
           (Real.exp (Real.pi * x ^ 2) * (2 * Real.pi * x)) x := by
         simpa using hInner.exp
@@ -9717,8 +9770,7 @@ theorem aux_C_gaussianBumpEstimate_bound (N : ℕ) :
   have hrpow : Real.rpow (2 * Real.pi) (-(N : ℝ)) ≤ 1 := by
     apply Real.rpow_le_one_of_one_le_of_nonpos
     · nlinarith [Real.pi_gt_three]
-    · push_cast
-      linarith
+    · linarith
   have hcard : ((N + 1 : ℕ) : ℝ) ≤ (2 : ℝ) ^ (N + 1) := by
     norm_cast
     exact (aux_nat_le_two_pow (N + 1))
@@ -10526,8 +10578,7 @@ theorem aux_orderedFinpartition_card_le_factorial (N : ℕ) :
     Fintype.card (OrderedFinpartition N) ≤ N.factorial := by
   induction N with
   | zero =>
-      have hcard : Fintype.card (OrderedFinpartition 0) = 1 := Fintype.card_unique
-      simpa [hcard]
+      simp
   | succ N ih =>
       calc
         Fintype.card (OrderedFinpartition (N + 1)) =
@@ -10541,7 +10592,7 @@ theorem aux_orderedFinpartition_card_le_factorial (N : ℕ) :
               apply Finset.sum_le_sum
               intro c _
               exact Nat.succ_le_succ c.length_le
-        _ = Fintype.card (OrderedFinpartition N) * (N + 1) := by simp [mul_comm]
+        _ = Fintype.card (OrderedFinpartition N) * (N + 1) := by simp
         _ ≤ N.factorial * (N + 1) := Nat.mul_le_mul_right _ ih
         _ = (N + 1).factorial := by rw [Nat.factorial_succ, Nat.mul_comm]
 
@@ -10721,6 +10772,7 @@ theorem aux_C_faaDiBruno_one_lt : C_faaDiBruno 1 < 27648 := by
     _ < 27648 := by norm_num
 
 set_option maxHeartbeats 2000000 in
+-- The finite product normalization below requires additional elaboration heartbeats.
 private theorem aux_atomicOne_extendLeft_prod :
     ∏ j, C_gaussianBumpDecay
       ((OrderedFinpartition.atomic 1).extendLeft.partSize j) 4 =
@@ -10732,6 +10784,7 @@ private theorem aux_atomicOne_extendLeft_prod :
   norm_num
 
 set_option maxHeartbeats 2000000 in
+-- The finite product normalization below requires additional elaboration heartbeats.
 private theorem aux_atomicOne_extendMiddle_prod (x : Fin (OrderedFinpartition.atomic 1).length) :
     (∏ j, C_gaussianBumpDecay
       (((OrderedFinpartition.atomic 1).extendMiddle x).partSize j) 4) =
@@ -11014,6 +11067,7 @@ private def aux_faaAtomicOneMiddleIndex :
     norm_num⟩
 
 set_option maxHeartbeats 2000000 in
+-- The finite product normalization below requires additional elaboration heartbeats.
 private theorem aux_N3_111_prod :
     (∏ j, C_gaussianBumpDecay
       ((OrderedFinpartition.atomic 1).extendLeft.extendLeft.partSize j) 5) =
@@ -11024,6 +11078,7 @@ private theorem aux_N3_111_prod :
   ring
 
 set_option maxHeartbeats 2000000 in
+-- The finite product normalization below requires additional elaboration heartbeats.
 private theorem aux_N3_11_middle_prod_bound
     (x : Fin ((OrderedFinpartition.atomic 1).extendLeft).length) :
     (∏ j, C_gaussianBumpDecay
@@ -11052,9 +11107,11 @@ private theorem aux_N3_11_middle_prod_bound
         (aux_C_gaussianBumpDecay_nonneg 1 5) (by norm_num))
 
 set_option maxHeartbeats 2000000 in
+-- The finite product normalization below requires additional elaboration heartbeats.
 private theorem aux_N3_middle_left_prod :
     (∏ j, C_gaussianBumpDecay
-      (((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendLeft.partSize j) 5) =
+      (((OrderedFinpartition.atomic 1).extendMiddle
+        aux_faaAtomicOneIndex).extendLeft.partSize j) 5) =
       C_gaussianBumpDecay 2 5 * C_gaussianBumpDecay 1 5 := by
   unfold aux_faaAtomicOneIndex
   change (∏ j : Fin 2,
@@ -11064,6 +11121,7 @@ private theorem aux_N3_middle_left_prod :
   ring
 
 set_option maxHeartbeats 2000000 in
+-- The finite product normalization below requires additional elaboration heartbeats.
 private theorem aux_N3_middle_middle_prod :
     (∏ j, C_gaussianBumpDecay
       (((((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendMiddle
@@ -11076,6 +11134,7 @@ private theorem aux_N3_middle_middle_prod :
   norm_num
 
 set_option maxHeartbeats 2000000 in
+-- The finite sum normalization below requires additional elaboration heartbeats.
 private theorem aux_faaAtomicOne_extendLeft_sum_middle (F : OrderedFinpartition 3 → ℝ) :
     (∑ x : Fin (OrderedFinpartition.atomic 1).extendLeft.length,
       F ((OrderedFinpartition.atomic 1).extendLeft.extendMiddle x)) =
@@ -11086,6 +11145,7 @@ private theorem aux_faaAtomicOne_extendLeft_sum_middle (F : OrderedFinpartition 
   rw [Fin.sum_univ_two]
 
 set_option maxHeartbeats 2000000 in
+-- The finite sum normalization below requires additional elaboration heartbeats.
 private theorem aux_faaAtomicOne_sum_branches (F : OrderedFinpartition 3 → ℝ) :
     (∑ x : Fin (OrderedFinpartition.atomic 1).length,
       (F ((OrderedFinpartition.atomic 1).extendMiddle x).extendLeft +
@@ -11094,14 +11154,15 @@ private theorem aux_faaAtomicOne_sum_branches (F : OrderedFinpartition 3 → ℝ
       F (((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendLeft) +
         F (((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendMiddle
           aux_faaAtomicOneMiddleIndex) := by
-  letI : Unique (Fin (OrderedFinpartition.atomic 1).length) := by
+  let : Unique (Fin (OrderedFinpartition.atomic 1).length) := by
     change Unique (Fin 1)
     infer_instance
   rw [Fintype.sum_unique]
   have hdefault : (default : Fin (OrderedFinpartition.atomic 1).length) =
       aux_faaAtomicOneIndex := Subsingleton.elim _ _
   rw [hdefault]
-  letI : Unique (Fin ((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).length) := by
+  let : Unique
+      (Fin ((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).length) := by
     change Unique (Fin 1)
     infer_instance
   rw [Fintype.sum_unique]
@@ -11122,9 +11183,7 @@ private theorem aux_sum_orderedFinpartition_three (F : OrderedFinpartition 3 →
     ← (OrderedFinpartition.extendEquiv 2).sum_comp, Fintype.sum_sigma,
     Fintype.sum_option, Nat.reduceAdd, OrderedFinpartition.extendEquiv_apply,
     OrderedFinpartition.extend_none, OrderedFinpartition.extend_some,
-    OrderedFinpartition.extendMiddle_length, OrderedFinpartition.default_eq,
-    Fintype.sum_unique, OrderedFinpartition.atomic_length,
-    OrderedFinpartition.extendLeft_length, Fin.sum_univ_two]
+    OrderedFinpartition.default_eq, Fintype.sum_unique]
   have sum_middle_congr {c d : OrderedFinpartition 2} (h : c = d) :
       (∑ x : Fin c.length, F (c.extendMiddle x)) =
         ∑ x : Fin d.length, F (d.extendMiddle x) := by
@@ -11241,13 +11300,15 @@ private theorem aux_N3_middle_left_term_le :
     C_derivativeEstimateForG
         (((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendLeft).length *
         (∏ j, C_gaussianBumpDecay
-          ((((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendLeft).partSize j) 5) ≤
+          ((((OrderedFinpartition.atomic 1).extendMiddle
+            aux_faaAtomicOneIndex).extendLeft).partSize j) 5) ≤
       459542937600 := by
   calc
     C_derivativeEstimateForG
         (((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendLeft).length *
         (∏ j, C_gaussianBumpDecay
-          ((((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendLeft).partSize j) 5) =
+          ((((OrderedFinpartition.atomic 1).extendMiddle
+            aux_faaAtomicOneIndex).extendLeft).partSize j) 5) =
         C_derivativeEstimateForG
           (((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendLeft).length *
           (C_gaussianBumpDecay 2 5 * C_gaussianBumpDecay 1 5) := by
@@ -11308,8 +11369,10 @@ private theorem aux_C_faaDiBruno_three_sum_bound :
     summand ((OrderedFinpartition.atomic 1).extendLeft.extendLeft) +
         summand ((OrderedFinpartition.atomic 1).extendLeft.extendMiddle (0 : Fin 2)) +
           summand ((OrderedFinpartition.atomic 1).extendLeft.extendMiddle (1 : Fin 2)) +
-            summand (((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendLeft) +
-              summand (((OrderedFinpartition.atomic 1).extendMiddle aux_faaAtomicOneIndex).extendMiddle
+            summand (((OrderedFinpartition.atomic 1).extendMiddle
+              aux_faaAtomicOneIndex).extendLeft) +
+              summand (((OrderedFinpartition.atomic 1).extendMiddle
+                aux_faaAtomicOneIndex).extendMiddle
                 aux_faaAtomicOneMiddleIndex) ≤
       8463329722368000 + 459542937600 + 459542937600 + 459542937600 + 51217920 := by
         dsimp [summand]
@@ -11392,7 +11455,7 @@ theorem aux_secondGaussian_iteratedDeriv_ofReal_at (n : ℕ) (f : ℝ → ℝ) (
       have hdiff : DifferentiableAt ℝ (iteratedDeriv n f) x := by
         simpa only [iteratedDerivWithin_univ, differentiableWithinAt_univ] using
           hf.differentiableWithinAt_iteratedDerivWithin
-            (by norm_cast; omega) (by simpa using (uniqueDiffOn_univ : UniqueDiffOn ℝ Set.univ))
+            (by norm_cast; omega) (by simp)
       have hderiv : HasDerivAt (iteratedDeriv n f) (iteratedDeriv (n + 1) f x) x := by
         rw [iteratedDeriv_succ]
         exact hdiff.hasDerivAt
@@ -13187,6 +13250,7 @@ theorem aux_fourScaleGaussian_rescaledSmoothDecay2 (N : ℕ) (hN : 2 ≤ N) (q :
     MemW0 (FourierTransformInv.fourierInv (fun xi : ℝ => q (a * xi))) ∧
       ∀ x : ℝ, ‖FourierTransformInv.fourierInv (fun xi : ℝ => q (a * xi)) x‖ ≤
         2 * C_smoothDecay2 N * max A B * scaledBracketBump N a x := by
+  have _hB := hB
   let Q : ℝ → ℂ := fun xi => q (a * xi)
   let V : ℝ := (volume (tsupport q)).toReal
   let P : ℝ := max (sSup (Set.range fun xi : ℝ => ‖q xi‖))
@@ -13287,6 +13351,7 @@ theorem aux_fourScaleGaussian_rescaledSmoothDecay (N : ℕ) (hN : 2 ≤ N) (r : 
     MemW0 (FourierTransformInv.fourierInv (fun xi : ℝ => r (a * xi))) ∧
       ∀ x : ℝ, ‖FourierTransformInv.fourierInv (fun xi : ℝ => r (a * xi)) x‖ ≤
         (2 : ℝ) ^ N * max A B * scaledBracketBump N a x := by
+  have _hB := hB
   let R : ℝ → ℂ := fun xi => r (a * xi)
   have hRcont : ContDiff ℝ N R := by
     dsimp [R]
@@ -13488,8 +13553,8 @@ theorem aux_fourScaleGaussian_varRho2_rescale (phiHat : ℝ → ℂ)
         (muMinus * Real.sqrt |nu| / lambdaPlus) (lambdaMinus / lambdaPlus)
         (Real.sqrt (muPlus ^ 2 - muMinus ^ 2) / lambdaPlus) nu (lambdaPlus * xi)) := by
   unfold fourScaleGaussianVarRho2
-  rw [← aux_fourScaleGaussian_varRho2Frequency_rescale phiHat muMinus muPlus lambdaMinus lambdaPlus nu
-    hlambdaPlus]
+  rw [← aux_fourScaleGaussian_varRho2Frequency_rescale
+    phiHat muMinus muPlus lambdaMinus lambdaPlus nu hlambdaPlus]
 
 /-- The normalized separation parameter is at least `sqrt 3 / 2`. -/
 theorem aux_fourScaleGaussian_t_lower_bound
@@ -13501,6 +13566,8 @@ theorem aux_fourScaleGaussian_t_lower_bound
     (hscale2 : lambdaPlus ≤ muPlus) :
     Real.sqrt 3 / 2 ≤
       Real.sqrt (muPlus ^ 2 - muMinus ^ 2) / lambdaPlus := by
+  have _hmuPlus := hmuPlus
+  have _hlambdaMinus := hlambdaMinus
   have hmuMinusHalf : muMinus ≤ lambdaPlus / 2 := by
     linarith
   have hmuPlusSq : lambdaPlus ^ 2 ≤ muPlus ^ 2 := by
@@ -13754,7 +13821,8 @@ theorem fourScaleGaussianKernel (c : ℝ) (N : ℕ) (hN : 2 ≤ N)
   let beta : ℝ := muMinus * Real.sqrt |nu| / lambdaPlus
   let a : ℝ := lambdaMinus / lambdaPlus
   let t : ℝ := Real.sqrt (muPlus ^ 2 - muMinus ^ 2) / lambdaPlus
-  rcases aux_fourScaleGaussian_normalized_parameters hmuMinus hlambdaMinus hlambdaPlus hscale0 hscale1 hnu with
+  rcases aux_fourScaleGaussian_normalized_parameters
+    hmuMinus hlambdaMinus hlambdaPlus hscale0 hscale1 hnu with
     ⟨hbetaMinus0, hbetaMinusOne, hbeta0, hbetaOne, hbetaPos, hbetaLeA, haOne⟩
   have hbetaMinus0' : 0 ≤ betaMinus := by simpa only [betaMinus] using hbetaMinus0
   have hbetaMinusOne' : betaMinus ≤ 1 := by simpa only [betaMinus] using hbetaMinusOne
@@ -13764,8 +13832,9 @@ theorem fourScaleGaussianKernel (c : ℝ) (N : ℕ) (hN : 2 ≤ N)
   have hbetaLeA' : beta ≤ a := by simpa only [beta, a] using hbetaLeA
   have haOne' : a ≤ 1 / 2 := by simpa only [a] using haOne
   have ht : Real.sqrt 3 / 2 ≤ t := by
-    simpa only [t] using aux_fourScaleGaussian_t_lower_bound hmuMinus hmuPlus hlambdaMinus hlambdaPlus
-      hscale0 hscale1 hscale2
+    simpa only [t] using
+      aux_fourScaleGaussian_t_lower_bound hmuMinus hmuPlus hlambdaMinus hlambdaPlus
+        hscale0 hscale1 hscale2
   obtain ⟨h0rawMem, h0rawBound⟩ := aux_fourScaleGaussian_gaussian_component_rescale c N hN phiHat hc
     betaMinus lambdaMinus hbetaMinus0' hbetaMinusOne' hlambdaMinus hphi hsupp hphiBound
   obtain ⟨h1rawMem, h1rawBound⟩ := aux_fourScaleGaussian_gaussian_component_rescale c N hN phiHat hc
@@ -13775,7 +13844,8 @@ theorem fourScaleGaussianKernel (c : ℝ) (N : ℕ) (hN : 2 ≤ N)
       hlambdaPlus
   have h0eq := aux_fourScaleGaussian_varRho0_rescale phiHat muMinus lambdaMinus nu hlambdaMinus.ne'
   have h1eq := aux_fourScaleGaussian_varRho1_rescale phiHat muMinus lambdaPlus nu hlambdaPlus.ne'
-  have h2eq := aux_fourScaleGaussian_varRho2_rescale phiHat muMinus muPlus lambdaMinus lambdaPlus nu hlambdaPlus.ne'
+  have h2eq := aux_fourScaleGaussian_varRho2_rescale
+    phiHat muMinus muPlus lambdaMinus lambdaPlus nu hlambdaPlus.ne'
   let A : ℝ := c * (2 * C_smoothDecay2 N *
     max (C_gaussianBumpEstimate 0) (C_gaussianBumpEstimate N))
   let B : ℝ := c * ((2 : ℝ) ^ N *
@@ -13786,7 +13856,8 @@ theorem fourScaleGaussianKernel (c : ℝ) (N : ℕ) (hN : 2 ≤ N)
   have h1mem : MemW0 (fourScaleGaussianVarRho1 phiHat muMinus lambdaPlus nu) := by
     rw [h1eq]
     exact aux_fourScaleGaussian_memW0_neg _ h1rawMem
-  have h2mem : MemW0 (fourScaleGaussianVarRho2 phiHat muMinus muPlus lambdaMinus lambdaPlus nu) := by
+  have h2mem :
+      MemW0 (fourScaleGaussianVarRho2 phiHat muMinus muPlus lambdaMinus lambdaPlus nu) := by
     rw [h2eq]
     exact h2rawMem
   have h0bound (x : ℝ) :
@@ -14390,7 +14461,8 @@ theorem aux_mean_half_scale_compare (N : ℕ) {lambdaMinus lambdaPlus x y : ℝ}
   have hmin : min 1 (2 * Real.pi * lambdaMinus⁻¹ * |y|) ≤ 2 * min 1 z := by
     rw [hphase]
     exact aux_mean_min_double z
-  have hsumNonneg : 0 ≤ scaledBracketBump N lambdaPlus (x + y) + scaledBracketBump N lambdaPlus x := by
+  have hsumNonneg :
+      0 ≤ scaledBracketBump N lambdaPlus (x + y) + scaledBracketBump N lambdaPlus x := by
     apply add_nonneg <;> exact aux_scaledBracketBump_nonneg N hlambdaPlus _
   have hminNonneg : 0 ≤ min 1 (2 * Real.pi * lambdaMinus⁻¹ * |y|) := by
     exact le_min (by norm_num) (by positivity)
@@ -14400,7 +14472,8 @@ theorem aux_mean_half_scale_compare (N : ℕ) {lambdaMinus lambdaPlus x y : ℝ}
         min 1 (2 * Real.pi * lambdaMinus⁻¹ * |y|) *
           (2 * (scaledBracketBump N lambdaPlus (x + y) + scaledBracketBump N lambdaPlus x)) :=
       mul_le_mul_of_nonneg_left hbracketSum hminNonneg
-    _ ≤ (2 * min 1 z) * (2 * (scaledBracketBump N lambdaPlus (x + y) + scaledBracketBump N lambdaPlus x)) :=
+    _ ≤ (2 * min 1 z) *
+          (2 * (scaledBracketBump N lambdaPlus (x + y) + scaledBracketBump N lambdaPlus x)) :=
       mul_le_mul_of_nonneg_right hmin (mul_nonneg (by norm_num) hsumNonneg)
     _ = 4 * min 1 (2 * Real.pi * lambdaPlus⁻¹ * |y|) *
         (scaledBracketBump N lambdaPlus (x + y) + scaledBracketBump N lambdaPlus x) := by
@@ -14434,7 +14507,8 @@ theorem meanFourScaleGaussianKernel (c : ℝ) (N : ℕ) (hN : 2 ≤ N)
   let beta : ℝ := muMinus * Real.sqrt |nu| / lambdaPlus
   let a : ℝ := lambdaMinus / lambdaPlus
   let t : ℝ := Real.sqrt (muPlus ^ 2 - muMinus ^ 2) / lambdaPlus
-  rcases aux_fourScaleGaussian_normalized_parameters hmuMinus hlambdaMinus hlambdaPlus hscale0 hscale1 hnu with
+  rcases aux_fourScaleGaussian_normalized_parameters
+    hmuMinus hlambdaMinus hlambdaPlus hscale0 hscale1 hnu with
     ⟨hbetaMinus0, hbetaMinusOne, hbeta0, hbetaOne, hbetaPos, hbetaLeA, haOne⟩
   have hbetaMinus0' : 0 ≤ betaMinus := by simpa only [betaMinus] using hbetaMinus0
   have hbetaMinusOne' : betaMinus ≤ 1 := by simpa only [betaMinus] using hbetaMinusOne
@@ -14448,8 +14522,9 @@ theorem meanFourScaleGaussianKernel (c : ℝ) (N : ℕ) (hN : 2 ≤ N)
     rw [hlambdaEq]
     field_simp [hlambdaMinus.ne']
   have ht : Real.sqrt 3 / 2 ≤ t := by
-    simpa only [t] using aux_fourScaleGaussian_t_lower_bound hmuMinus hmuPlus hlambdaMinus hlambdaPlus
-      hscale0 hscale1 hscale2
+    simpa only [t] using
+      aux_fourScaleGaussian_t_lower_bound hmuMinus hmuPlus hlambdaMinus hlambdaPlus
+        hscale0 hscale1 hscale2
   let K : ℝ := C_meanValueBumpEstimate N
   let G : ℝ := aux_maxUpTo C_gaussianBumpEstimate N
   let S : ℝ := aux_maxUpTo (fun l => (2 : ℝ) ^ l * C_secondGaussianEstimate l) N
@@ -14526,7 +14601,7 @@ theorem meanFourScaleGaussianKernel (c : ℝ) (N : ℕ) (hN : 2 ≤ N)
           fourScaleGaussianVarRho0 phiHat muMinus lambdaMinus nu x‖ ≤
         K * (c * G) * (min 1 (2 * Real.pi * lambdaMinus⁻¹ * |y|) *
           (scaledBracketBump N lambdaMinus (x + y) + scaledBracketBump N lambdaMinus x)) := by
-          convert h0raw x y using 1 <;> ring
+          convert h0raw x y using 1; ring
       _ ≤ K * (c * G) *
           (4 * min 1 (2 * Real.pi * lambdaPlus⁻¹ * |y|) *
             (scaledBracketBump N lambdaPlus (x + y) + scaledBracketBump N lambdaPlus x)) :=
@@ -14544,7 +14619,7 @@ theorem meanFourScaleGaussianKernel (c : ℝ) (N : ℕ) (hN : 2 ≤ N)
           fourScaleGaussianVarRho2 phiHat muMinus muPlus lambdaMinus lambdaPlus nu x‖ ≤
         K * (c * S) * (min 1 (2 * Real.pi * lambdaMinus⁻¹ * |y|) *
           (scaledBracketBump N lambdaMinus (x + y) + scaledBracketBump N lambdaMinus x)) := by
-          convert h2raw x y using 1 <;> ring
+          convert h2raw x y using 1; ring
       _ ≤ K * (c * S) *
           (4 * min 1 (2 * Real.pi * lambdaPlus⁻¹ * |y|) *
             (scaledBracketBump N lambdaPlus (x + y) + scaledBracketBump N lambdaPlus x)) :=

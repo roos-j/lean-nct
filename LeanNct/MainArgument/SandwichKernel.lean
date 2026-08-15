@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import LeanNct.WienerSpace
 import LeanNct.Preliminaries.Notation
 import LeanNct.Preliminaries.MultiplicativelySpacedMonotoneSequences
@@ -57,7 +63,9 @@ def MemKernelSequence (k : ℕ) (M : KernelSequence k) : Prop :=
 
 /--
 \begin{definition}[geometric parameters]\label{geometric parameters}
-  Let $\Gamma$ be the set of triples $(k,u,a)$ with $k\in\N$, $1\le k\le n$, $u\in[2)^k$, $a\in ({\rm A}^{2})^k$  so that $\dist(a_{i}^0,a_{i}^1)<\infty$ for all $i\in [k)$.
+  Let $\Gamma$ be the set of triples $(k,u,a)$ with $k\in\N$, $1\le k\le n$,
+  $u\in[2)^k$, $a\in ({\rm A}^{2})^k$ so that
+  $\dist(a_{i}^0,a_{i}^1)<\infty$ for all $i\in [k)$.
 \end{definition}
 -/
 structure GeometricParameters (n : ℕ) where
@@ -87,7 +95,8 @@ noncomputable def geometricDelta {n : ℕ} (γ : GeometricParameters n) : ℕ :=
 /--
 \begin{definition}[two unitary matrices]
 For $u\in [2)$ define unitary matrices $W_u\in\R^{2\times 2}$ as follows:
-Let $W_0$ be the $2\times 2$ identity matrix and $W_1=\frac{1}{\sqrt{2}}\begin{pmatrix}1 & 1\\-1 & 1\end{pmatrix}$.
+Let $W_0$ be the $2\times 2$ identity matrix and
+$W_1=\frac{1}{\sqrt{2}}\begin{pmatrix}1 & 1\\-1 & 1\end{pmatrix}$.
 \end{definition}
 -/
 noncomputable def W (u : Fin 2) (v : RealPlane) : RealPlane :=
@@ -160,8 +169,13 @@ noncomputable def gammaGaussian {n : ℕ} (γ : GeometricParameters n) (i : Fin 
 
 /--
 \begin{definition}[sandwich kernel]\label{sandwich kernel}
-Let $\gamma=(k,u,a)\in \Gamma$, $X\in \mathcal{X}_k$, and $i\in [k)$. Define for  $j\in \Z$ and $y\in (\R^{2})^k$,
-\[ (\M(\gamma,X,i))_j(y) =  \Big(\prod_{m\in [i)} (G_{\gamma})_{m,j}(y_m) \Big) X_{i,j}(y_i) \Big(\prod_{m=i+1}^{k-1} (G_{\gamma})_{m,j-1}(y_m) \Big).\]
+Let $\gamma=(k,u,a)\in \Gamma$, $X\in \mathcal{X}_k$, and $i\in [k)$. Define
+for $j\in \Z$ and $y\in (\R^{2})^k$,
+\[
+(\M(\gamma,X,i))_j(y) =
+  \Big(\prod_{m\in [i)} (G_{\gamma})_{m,j}(y_m) \Big) X_{i,j}(y_i)
+  \Big(\prod_{m=i+1}^{k-1} (G_{\gamma})_{m,j-1}(y_m) \Big).
+\]
 \end{definition}
 -/
 noncomputable def sandwichKernel {n : ℕ} (γ : GeometricParameters n) (X : DoubleSequence γ.k)
@@ -183,7 +197,9 @@ noncomputable def gaussianDifference {n : ℕ} (γ : GeometricParameters n) : Do
 \begin{definition}[kernel sequences]\label{kernel sequences}
 Let $k\in\N$ with $1\le k\le n$. Define
 \begin{equation}
-\|\M\|_{{\rm M}(k)}:=\sup_{J\in \N_{>0}, \F \in\mathfrak{F}}\min(1,J^{-1+2^{k-n+1}}) |\Lambda_k(\sum_{j\in [J)} M_j)(\F)| \, .
+\|\M\|_{{\rm M}(k)}:=
+  \sup_{J\in \N_{>0}, \F \in\mathfrak{F}}
+  \min(1,J^{-1+2^{k-n+1}}) |\Lambda_k(\sum_{j\in [J)} M_j)(\F)| \, .
 \end{equation}
 \end{definition}
 -/
@@ -807,14 +823,14 @@ theorem aux_gammaBoundaryProduct_memW0 {n : ℕ} (γ : GeometricParameters n) (j
       EuclideanSpace ℝ (Fin γ.k) × EuclideanSpace ℝ (Fin γ.k) =>
       ∏ i, f i (π i uv)) :=
     MemW0.aux_fintype_tensor_comp_injective hf π hπ
-  letI : Measure.IsAddHaarMeasure
+  let : Measure.IsAddHaarMeasure
       (volume : Measure (EuclideanSpace ℝ (Fin γ.k))) := by infer_instance
-  letI : Measure.IsAddHaarMeasure
+  let : Measure.IsAddHaarMeasure
       (volume : Measure (EuclideanSpace ℝ (Fin γ.k) × EuclideanSpace ℝ (Fin γ.k))) :=
     Measure.prod.instIsAddHaarMeasure _ _
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector γ.k)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealVector γ.k)) :=
     isAddHaarMeasure_volume_pi (Fin γ.k)
-  letI : Measure.IsAddHaarMeasure
+  let : Measure.IsAddHaarMeasure
       (volume : Measure (RealVector γ.k × RealVector γ.k)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   have hraw : MemW0 (fun y : RealVector γ.k × RealVector γ.k =>
@@ -832,9 +848,9 @@ theorem aux_gammaBoundaryProduct_memW0 {n : ℕ} (γ : GeometricParameters n) (j
 /-- The `L¹` norm of every gamma boundary product is one. -/
 theorem aux_eLpNorm_one_gammaBoundaryProduct {n : ℕ} (γ : GeometricParameters n) (j : ℤ) :
     eLpNorm (aux_gammaBoundaryProduct γ j) 1 volume = 1 := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector γ.k)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealVector γ.k)) :=
     isAddHaarMeasure_volume_pi (Fin γ.k)
-  letI : Measure.IsAddHaarMeasure
+  let : Measure.IsAddHaarMeasure
       (volume : Measure (RealVector γ.k × RealVector γ.k)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   have hI : Integrable (aux_gammaBoundaryProduct γ j) :=
@@ -908,14 +924,14 @@ private theorem aux_fintype_plane_product_memW0 (d : ℕ)
       EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) =>
       ∏ a, g a (π a uv)) :=
     MemW0.aux_fintype_tensor_comp_injective hg π hπ
-  letI : Measure.IsAddHaarMeasure
+  let : Measure.IsAddHaarMeasure
       (volume : Measure (EuclideanSpace ℝ (Fin d))) := by infer_instance
-  letI : Measure.IsAddHaarMeasure
+  let : Measure.IsAddHaarMeasure
       (volume : Measure (EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d))) :=
     Measure.prod.instIsAddHaarMeasure _ _
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector d)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealVector d)) :=
     isAddHaarMeasure_volume_pi (Fin d)
-  letI : Measure.IsAddHaarMeasure
+  let : Measure.IsAddHaarMeasure
       (volume : Measure (RealVector d × RealVector d)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   have hraw : MemW0 (fun y : RealVector d × RealVector d =>
@@ -1067,7 +1083,7 @@ private theorem aux_sandwichKernel_eq_tensorSquareExtension {n : ℕ}
     have hne : e r ≠ i := by
       intro heq
       have hcast := congrArg (Fin.cast hK.symm) heq
-      have hs : i'.succAbove r = i' := by simpa [e, i'] using hcast
+      have hs : i'.succAbove r = i' := by simp [e, i'] at hcast
       exact Fin.succAbove_ne i' r hs
     by_cases hlt : e r < i
     · simp [aux_eraseVector, B, a, b, c, e, i', hlt]

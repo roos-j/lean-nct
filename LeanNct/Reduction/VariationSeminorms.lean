@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import Mathlib
 
 /-!
@@ -424,7 +430,8 @@ theorem shortlongJumps {B : Type*} [SeminormedAddCommGroup B]
           intro j _
           dsimp [u, F]
           by_cases hEq : L j.castSucc = L j.succ
-          · simp [hEq]
+          · simp only [ite_pow]
+            rw [if_pos hEq]
             have hs : t j.succ ∈ Set.Icc ((2 : ℝ) ^ L j.succ)
                 ((2 : ℝ) ^ (L j.succ + 1)) := by
               simpa [L] using
@@ -442,7 +449,8 @@ theorem shortlongJumps {B : Type*} [SeminormedAddCommGroup B]
               aux_dyadicLocalChain_eq_of_mem hp]
           · have hle := hLmono (Fin.castSucc_le_succ j)
             have hlt : L j.castSucc < L j.succ := lt_of_le_of_ne hle hEq
-            simp [hEq]
+            simp only [ite_pow, ge_iff_le]
+            rw [if_neg hEq]
             have hs : t j.succ ∈ Set.Icc ((2 : ℝ) ^ L j.succ)
                 ((2 : ℝ) ^ (L j.succ + 1)) := by
               simpa [L] using
@@ -511,9 +519,11 @@ theorem shortlongJumps {B : Type*} [SeminormedAddCommGroup B]
       _ ≤ (∑ j, u j ^ r) ^ r⁻¹ + (∑ j, v j ^ r) ^ r⁻¹ + (∑ j, w j ^ r) ^ r⁻¹ := hMink
       _ ≤ (∑ k ∈ κ, (finiteVariationSeminorm (fun s : aux_dyadicInterval k ↦ a s) r J) ^ r) ^ r⁻¹ +
           finiteVariationSeminorm (fun s : Set.range (fun k : ℤ ↦ (2 : ℝ) ^ k) ↦ a s) r J +
-          (∑ k ∈ κ, (finiteVariationSeminorm (fun s : aux_dyadicInterval k ↦ a s) r J) ^ r) ^ r⁻¹ := by
+          (∑ k ∈ κ,
+            (finiteVariationSeminorm (fun s : aux_dyadicInterval k ↦ a s) r J) ^ r) ^ r⁻¹ := by
         gcongr
-      _ = 2 * (∑ k ∈ κ, (finiteVariationSeminorm (fun s : aux_dyadicInterval k ↦ a s) r J) ^ r) ^ r⁻¹ +
+      _ = 2 * (∑ k ∈ κ,
+        (finiteVariationSeminorm (fun s : aux_dyadicInterval k ↦ a s) r J) ^ r) ^ r⁻¹ +
           finiteVariationSeminorm (fun s : Set.range (fun k : ℤ ↦ (2 : ℝ) ^ k) ↦ a s) r J := by
         ring
   constructor
@@ -715,7 +725,7 @@ private theorem aux_chain_sq_energy_le {J : ℕ} {α β : ℝ} (hα : 0 < α) (h
       ENNReal.ofReal ((β - α) / α) *
         ∫⁻ x in Set.Icc α β, ‖x * deriv a x‖ₑ ^ (2 : ℝ)
           ∂aux_logarithmicMeasure α β := by
-  letI : NullSingletonClass (aux_logarithmicMeasure α β) := by
+  let : NullSingletonClass (aux_logarithmicMeasure α β) := by
     unfold aux_logarithmicMeasure
     infer_instance
   have ht' : Monotone (fun j ↦ (t j : ℝ)) := fun i j hij ↦ ht hij
@@ -765,7 +775,7 @@ private theorem aux_chain_first_ftc {J : ℕ} {α β : ℝ} (hα : 0 < α) (hα�
     · positivity
   have hELp : aux_logarithmicL2 α β (fun t ↦ t * deriv a t) = E ^ ((2 : ℝ)⁻¹) := by
     unfold aux_logarithmicL2 E
-    rw [eLpNorm_eq_lintegral_rpow_enorm (by norm_num) (by norm_num)]
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
     norm_num
     have hsupport : (aux_logarithmicMeasure α β).restrict (Set.Icc α β) =
         aux_logarithmicMeasure α β := by
@@ -870,7 +880,7 @@ private theorem aux_pairwise_square_le_lintegral {α β x y : ℝ} (a : ℝ → 
                 calc
                   2 * ‖a z‖ₑ * ‖deriv a z‖ₑ =
                       2 * (‖a z‖ₑ * ‖deriv a z‖ₑ) := by ring
-                  _ ≤ 8 * (‖a z‖ₑ * ‖deriv a z‖ₑ) := by gcongr <;> norm_num
+                  _ ≤ 8 * (‖a z‖ₑ * ‖deriv a z‖ₑ) := by gcongr; norm_num
           _ = 8 * ∫⁻ z in Set.Ioc x y, ‖a z‖ₑ * ‖deriv a z‖ₑ :=
             lintegral_const_mul' 8 _ (by norm_num)
   · have hcross : a x * a y < 0 := lt_of_not_ge hsign
@@ -915,7 +925,7 @@ private theorem aux_pairwise_square_le_lintegral {α β x y : ℝ} (a : ℝ → 
             rw [lintegral_const_mul' 2 _ (by norm_num)]
             ring
           _ ≤ 8 * ∫⁻ q in Set.Ioc x y, ‖a q‖ₑ * ‖deriv a q‖ₑ := by
-            gcongr <;> norm_num
+            gcongr; norm_num
 
 /-- Cancellation of the logarithmic density on an `Ioc` interval. -/
 private theorem aux_enorm_mul_inv_cancel {z d : ℝ} (hz : 0 < z) :
@@ -980,7 +990,7 @@ private theorem aux_pairwise_square_rpow_le_lintegral {α β x y : ℝ} (a : ℝ
     (hx : x ∈ Set.Icc α β) (hy : y ∈ Set.Icc α β) (hxy : x ≤ y) :
     ‖a y - a x‖ₑ ^ (2 : ℝ) ≤
       8 * ∫⁻ z in Set.Ioc x y, ‖a z‖ₑ * ‖deriv a z‖ₑ := by
-  convert aux_pairwise_square_le_lintegral a ha hx hy hxy using 1 <;>
+  convert aux_pairwise_square_le_lintegral a ha hx hy hxy using 1;
     norm_num [ENNReal.rpow_natCast]
 
 /-- The second FTC estimate summed over one monotone chain. -/

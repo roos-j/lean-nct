@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import LeanNct.MainArgument.SandwichKernel
 import LeanNct.Preliminaries.BumpsAndEstimates
 
@@ -29,7 +35,8 @@ Define the function $s(a,j):\R \to \R$ by
 \[s(a,j) = \mathcal{F}^{-1}(\xi \mapsto \sqrt{\g(a(j-1)\xi)-\g(a(j) \xi)}).\]
 \end{definition}
 -/
-noncomputable def squareRootGaussianDifference (a : ℤ → ℝ) (_ha : SpacedSequence a) (j : ℤ) :
+noncomputable def squareRootGaussianDifference (a : ℤ → ℝ)
+    (_ha : SpacedSequence a) (j : ℤ) :
     ℝ → ℝ := fun x =>
   ∫ ξ : ℝ,
     Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
@@ -85,7 +92,7 @@ theorem aux_squareRootGaussianDifference_integrable {a : ℤ → ℝ}
         Codex.Preliminaries.Notation.gaussian (a j * ξ))) := by
   have ht₀ : 0 < a (j - 1) := (ha (j - 1)).1
   have hscale : 2 * a (j - 1) ≤ a j := by
-    convert (ha (j - 1)).2 using 1 <;> ring
+    convert (ha (j - 1)).2 using 1; ring
   have hrad (ξ : ℝ) :
       0 ≤ Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
         Codex.Preliminaries.Notation.gaussian (a j * ξ) :=
@@ -399,7 +406,7 @@ theorem aux_memW0_shear_difference
     {f : RealPlane → ℝ} (hf : MemW0 f) (t : ℝ) :
     MemW0 (fun z : RealPlane × ℝ =>
       standardBump z.2 * (f (z.1 - z.2 • (t, t)) - f z.1)) := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   let P : RealPlane × ℝ → ℝ := fun z => f z.1 * standardBump z.2
   have hP : MemW0 P := by
@@ -411,14 +418,14 @@ theorem aux_memW0_shear_difference
   funext z
   rcases z with ⟨v, q⟩
   dsimp [P, Function.comp_def, Codex.Preliminaries.MKernels.aux_convolutionAlongShear]
-  simp [smul_eq_mul, sub_mul, mul_comm]
+  simp [sub_mul, mul_comm]
 
 /-- Integrability of the shear difference used in `lMultiplierAtScale_tendsto_hMultiplier`. -/
 theorem aux_integrable_shear_difference
     {f : RealPlane → ℝ} (hf : MemW0 f) (t : ℝ) :
     Integrable (fun z : RealPlane × ℝ =>
       standardBump z.2 * (f (z.1 - z.2 • (t, t)) - f z.1)) := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
     (aux_memW0_shear_difference hf t)
@@ -460,7 +467,7 @@ theorem aux_shear_difference_pointwise_tendsto
     have ht : Tendsto (fun t : ℝ => t) (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) :=
       tendsto_id.mono_left nhdsWithin_le_nhds
     have hq : Tendsto (fun t : ℝ => q * t) (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
-      convert tendsto_const_nhds.mul ht using 1 <;> simp
+      convert tendsto_const_nhds.mul ht using 1; simp
     change Tendsto (fun t : ℝ => (q * t, q * t))
       (nhdsWithin 0 (Set.Ioi 0)) (nhds (0, 0))
     rw [nhds_prod_eq]
@@ -524,7 +531,7 @@ theorem aux_lMultiplierAtScale_scaled_convolution_difference
     {f : RealPlane → ℝ} (hf : MemW0 f) (t : ℝ) (ht : 0 < t) (v : RealPlane) :
     (∫ p : ℝ, f (v.1 - p, v.2 - p) * standardBumpRescale t p) - f v =
       ∫ q : ℝ, standardBump q * (f (v - q • (t, t)) - f v) := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   let P : RealPlane × ℝ → ℝ := fun z => f z.1 * standardBump z.2
   have hP : MemW0 P := by
@@ -575,8 +582,8 @@ theorem aux_lMultiplierAtScale_error_le
       f (v.1 - p, v.2 - p) * standardBumpRescale t p) - f v|) ≤
       ∫ q : ℝ, ∫ v : RealPlane,
         ‖standardBump q * (f (v - q • (t, t)) - f v)‖ := by
-  letI : MeasureSpace (RealPlane × ℝ) := Measure.prod.measureSpace
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+  let : MeasureSpace (RealPlane × ℝ) := Measure.prod.measureSpace
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   have hphi : MemW0 (standardBumpRescale t) := aux_standardBumpRescale_memW0 ht
   have hconv := Codex.Preliminaries.MKernels.aux_memW0_convolutionAlong
@@ -674,7 +681,8 @@ theorem lMultiplierAtScale_tendsto_hMultiplier
 \begin{definition}[L multiplier]\label{L multiplier}
 Let $\gamma=(k,u,a)\in \Gamma$.
 Define the index set
-\[\mathcal{I}_{\gamma} = \{(m,0)\,:\,m\in\mathbb{Z}, m\not=0\} \cup \{(0,l)\,:\,|l|\le \Delta_{\gamma}\} \subset \mathbb{Z}^2.\]
+\[\mathcal{I}_{\gamma} = \{(m,0)\,:\,m\in\mathbb{Z}, m\not=0\} \cup
+\{(0,l)\,:\,|l|\le \Delta_{\gamma}\} \subset \mathbb{Z}^2.\]
 \end{definition}
 -/
 def multiplierIndexSet {n : ℕ} (γ : GeometricParameters n) : Set (ℤ × ℤ) :=
@@ -695,9 +703,11 @@ noncomputable def aux_multiplierIndexTruncation {n : ℕ} (γ : GeometricParamet
 /--
 \begin{definition}[Summation over $\mathcal I_{\gamma}$]\label{summation-definition}
 Let $X$ be a normed $\R$-vector space.
-Let $\gamma=(k,u,a)\in \Gamma$ and let $D_\iota \in X$ for $\iota \in \mathcal{I}_{\gamma}$. We define
+Let $\gamma=(k,u,a)\in \Gamma$ and let $D_\iota \in X$ for
+$\iota \in \mathcal{I}_{\gamma}$. We define
 \[
-\sum_{\iota \in \mathcal{I}_{\gamma}} D_{\iota}:=\lim_{N\to \infty} \sum_{\iota\in\mathcal{I}_{\gamma}, ~|\iota| \leq N} D_{\iota},
+\sum_{\iota \in \mathcal{I}_{\gamma}} D_{\iota}:=\lim_{N\to \infty}
+\sum_{\iota\in\mathcal{I}_{\gamma}, ~|\iota| \leq N} D_{\iota},
 \]
 where the limit is taken in $X$.
 \end{definition}
@@ -718,28 +728,32 @@ noncomputable def sumOverMultiplierIndexENNReal {n : ℕ}
 
 /--
 \begin{definition}[L multiplier]\label{L multiplier}
-For every $\iota \in\mathcal{I}_{\gamma}$, we define  $L_{\gamma,\iota}=(L_{\gamma,\iota})_{i\in [k),j\in \Z}$
+For every $\iota \in\mathcal{I}_{\gamma}$, we define
+$L_{\gamma,\iota}=(L_{\gamma,\iota})_{i\in [k),j\in \Z}$
 such that for $|l|\le \Delta_{\gamma}$,
 \begin{equation}
-  (L_{\gamma,(0,l)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)} (\Phi_{(a_i^1(j+l-1))}-\Phi_{(a_i^1(j+l))})\, ,
+  (L_{\gamma,(0,l)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)}
+  (\Phi_{(a_i^1(j+l-1))}-\Phi_{(a_i^1(j+l))})\, ,
  \end{equation}
 if $h>0$, then
 \begin{equation}
-(L_{\gamma,(h,0)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)} (\Phi_{(2^{h-1}a_i^1(j+\Delta_{\gamma}))}-\Phi_{(2^{h}a_i^1(j+\Delta_{\gamma}))})\, ,
+(L_{\gamma,(h,0)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)}
+(\Phi_{(2^{h-1}a_i^1(j+\Delta_{\gamma}))}-\Phi_{(2^{h}a_i^1(j+\Delta_{\gamma}))})\, ,
 \end{equation}
 and if $h<0$, then
 \begin{equation}
- (L_{\gamma,(h,0)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)} (\Phi_{(2^{h}a_i^1(j-\Delta_{\gamma}-1))}-\Phi_{(2^{h+1}a_i^1(j-\Delta_{\gamma}-1))})\, .
+ (L_{\gamma,(h,0)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)}
+ (\Phi_{(2^{h}a_i^1(j-\Delta_{\gamma}-1))}-\Phi_{(2^{h+1}a_i^1(j-\Delta_{\gamma}-1))})\, .
 \end{equation}
 \end{definition}
 -/
 noncomputable def lMultiplier {n : ℕ} (γ : GeometricParameters n) (ι : MultiplierIndex γ) :
     DoubleSequence γ.k := fun i j v =>
-  if hzero : ι.1.1 = 0 then
+  if _hzero : ι.1.1 = 0 then
     ∫ p : ℝ, hMultiplier γ i j (v.1 - p, v.2 - p) *
       (standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) p -
         standardBumpRescale (γ.scales i 1 (j + ι.1.2)) p)
-  else if hpositive : 0 < ι.1.1 then
+  else if _hpositive : 0 < ι.1.1 then
     ∫ p : ℝ, hMultiplier γ i j (v.1 - p, v.2 - p) *
       (standardBumpRescale ((2 : ℝ) ^ (ι.1.1 - 1) *
           γ.scales i 1 (j + (geometricDelta γ : ℤ))) p -
@@ -793,7 +807,7 @@ theorem aux_fourierPlaneComplex_diagonalConvolution
     (ξ : RealPlane) :
     aux_fourierPlaneComplex (fun v => ∫ p : ℝ, F (v.1 - p, v.2 - p) * ρ p) ξ =
       aux_fourierPlaneComplex F ξ * aux_fourierRealComplex ρ (ξ.1 + ξ.2) := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   let phase : RealPlane → ℂ := fun v => Complex.exp
     (-((2 : ℂ) * Real.pi * Complex.I * (v.1 * ξ.1 + v.2 * ξ.2)))
@@ -1298,7 +1312,8 @@ theorem aux_squareRootGaussianDifference_fourier {a : ℤ → ℝ}
       hf.ofReal hfourierint) ξ
   calc
     aux_fourierReal (squareRootGaussianDifference a ha j) ξ =
-        FourierTransform.fourier (fun x : ℝ => (squareRootGaussianDifference a ha j x : ℂ)) ξ :=
+        FourierTransform.fourier
+          (fun x : ℝ => (squareRootGaussianDifference a ha j x : ℂ)) ξ :=
       aux_fourierReal_eq_fourier _ _
     _ = (f ξ : ℂ) := hprofile
     _ = _ := rfl
@@ -1449,7 +1464,7 @@ theorem aux_squareRootGaussianDifference_fourier_diagonal {a : ℤ → ℝ}
   rw [aux_squareRootGaussianDifference_fourier ha j ξ,
     aux_squareRootGaussianDifference_fourier ha j (-ξ)]
   have hscale : 2 * a (j - 1) ≤ a j := by
-    convert (ha (j - 1)).2 using 1 <;> ring
+    convert (ha (j - 1)).2 using 1; ring
   have hrad : 0 ≤ Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
       Codex.Preliminaries.Notation.gaussian (a j * ξ) :=
     aux_diagonalSquareRootFrequency_nonneg (by nlinarith [(ha (j - 1)).1]) hscale ξ
@@ -1861,7 +1876,7 @@ theorem aux_standardBumpRescale_translation_integral_norm
           have htinv : 0 < t⁻¹ := inv_pos.mpr ht
           rw [← mul_sub, abs_mul, abs_of_pos htinv]
           congr 1
-          congr 2 <;> field_simp
+          congr 2; field_simp
     _ = t⁻¹ * ∫ y : ℝ, g (t⁻¹ * y) := by
           rw [integral_const_mul]
     _ = t⁻¹ * (|(t⁻¹)⁻¹| * ∫ z : ℝ, g z) := by
@@ -1931,7 +1946,7 @@ theorem aux_w0_translation_integral_norm_continuous_oneDim
             ∫ z : ℝ, ‖f ((z - p₀) - (p - p₀)) - f (z - p₀)‖ := by
               apply integral_congr_ae
               filter_upwards [] with z
-              congr 2 <;> ring
+              congr 2; ring
         _ = ∫ z : ℝ, ‖f (z - (p - p₀)) - f z‖ :=
               integral_sub_right_eq_self (fun z : ℝ => ‖f (z - (p - p₀)) - f z‖) p₀
     change |(∫ z : ℝ, ‖f (z - p) - f z‖) -
@@ -2044,20 +2059,20 @@ noncomputable def aux_lMultiplierAtScale_largeScaleShear :
   left_inv := by
     intro p
     rcases p with ⟨⟨x, y⟩, q⟩
-    ext <;> dsimp <;> ring
+    ext <;> dsimp; ring
   right_inv := by
     intro p
     rcases p with ⟨⟨x, q⟩, r⟩
-    ext <;> dsimp <;> ring
+    ext <;> dsimp; ring
   map_add' := by
     intro p q
     rcases p with ⟨⟨x, y⟩, r⟩
     rcases q with ⟨⟨x', y'⟩, r'⟩
-    ext <;> dsimp <;> ring
+    ext <;> dsimp; ring
   map_smul' := by
     intro c p
     rcases p with ⟨⟨x, y⟩, q⟩
-    ext <;> dsimp <;> ring
+    ext <;> dsimp; ring
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
@@ -2067,7 +2082,7 @@ theorem aux_lMultiplierAtScale_largeScaleIntegrand_memW0
     MemW0 (fun z : RealPlane × ℝ =>
       F (z.1.1, z.2) *
         (standardBumpRescale t (z.1.2 - z.2) - standardBumpRescale t z.1.2)) := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   let P : RealPlane × ℝ → ℝ := fun z => F z.1 * standardBumpRescale t z.2
   have hP : MemW0 P := by
@@ -2095,7 +2110,7 @@ theorem aux_lMultiplierAtScale_largeScaleConvolution_bound
       F (xy.1, q) * standardBumpRescale t (xy.2 - q)|) ≤
       ∫ q : ℝ, (∫ x : ℝ, ‖F (x, q)‖) *
         (∫ z : ℝ, ‖standardBump (z - q / t) - standardBump z‖) := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   let φ : ℝ → ℝ := standardBumpRescale t
   let K : RealPlane × ℝ → ℝ := fun z =>
@@ -2425,7 +2440,7 @@ theorem aux_lMultiplierPartialSum_boundary_tendsto_hMultiplier
       simpa using Filter.TendstoNhdsWithinIoi.mul_const haMinus hpow
     refine hmul.congr' ?_
     filter_upwards [] with N
-    simp [zpow_neg, zpow_natCast, div_pow]
+    simp [zpow_neg, zpow_natCast]
   have hlargeScale : Tendsto (fun N : ℕ => (2 : ℝ) ^ (N : ℤ) * aPlus)
       atTop atTop := by
     simpa only [zpow_natCast] using
@@ -2546,7 +2561,8 @@ noncomputable def lMultiplierPartialSum {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) (N : ℕ) : RealPlane → ℝ :=
   ∑ ι ∈ aux_multiplierIndexTruncation γ N, aux_lMultiplierTerm γ i j ι
 
-theorem aux_lMultiplier_negative_block_eq {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ)
+theorem aux_lMultiplier_negative_block_eq {n : ℕ} (γ : GeometricParameters n)
+    (i : Fin γ.k) (j : ℤ)
     (N : ℕ) :
     ∑ x ∈ aux_lMultiplierNegIndices N, aux_lMultiplierTerm γ i j x =
       lMultiplierAtScale γ ((2 : ℝ) ^ (-(N : ℤ)) *
@@ -2579,7 +2595,7 @@ theorem aux_lMultiplier_negative_block_eq {n : ℕ} (γ : GeometricParameters n)
       norm_num
     _ = F (-(N : ℤ)) - F ((-(N : ℤ)) + (N : ℤ)) := by
       simpa using aux_sum_Ico_int_telescope F (-(N : ℤ)) N
-    _ = F (-(N : ℤ)) - F 0 := by congr 2 <;> omega
+    _ = F (-(N : ℤ)) - F 0 := by congr 2; omega
     _ = _ := by simp [F]
 
 theorem aux_lMultiplier_vertical_block_eq {n : ℕ} (γ : GeometricParameters n)
@@ -2605,9 +2621,9 @@ theorem aux_lMultiplier_vertical_block_eq {n : ℕ} (γ : GeometricParameters n)
         change (0 ≠ 0 ∧ l = 0) ∨ (0 = 0 ∧ l.natAbs ≤ D)
         refine Or.inr ⟨rfl, (aux_int_natAbs_le_iff l D).mpr ?_⟩
         exact Finset.mem_Icc.mp hl
-      simp [aux_lMultiplierTerm, hmem]
-      convert aux_lMultiplier_vertical_eq γ ⟨(0, l), hmem⟩ i j rfl using 1 <;>
-        simp [F] <;> congr 3 <;> omega
+      simp only [aux_lMultiplierTerm, hmem, ↓reduceDIte]
+      convert aux_lMultiplier_vertical_eq γ ⟨(0, l), hmem⟩ i j rfl using 1;
+        simp [F]; congr 3; omega
     _ = ∑ l ∈ Finset.Ico (-(D : ℤ)) ((D : ℤ) + 1), (F l - F (l + 1)) := by
       rw [← Finset.Ico_add_one_right_eq_Icc (-(D : ℤ)) D]
     _ = F (-(D : ℤ)) - F ((-(D : ℤ)) + ((2 * D + 1 : ℕ) : ℤ)) := by
@@ -2616,10 +2632,10 @@ theorem aux_lMultiplier_vertical_block_eq {n : ℕ} (γ : GeometricParameters n)
         ring
       rw [← hlen]
       exact aux_sum_Ico_int_telescope F (-(D : ℤ)) (2 * D + 1)
-    _ = F (-(D : ℤ)) - F ((D : ℤ) + 1) := by congr 2 <;> omega
+    _ = F (-(D : ℤ)) - F ((D : ℤ) + 1) := by congr 2; omega
     _ = _ := by
       simp [F]
-      congr 3 <;> omega
+      congr 3; omega
 
 theorem aux_lMultiplier_positive_block_eq {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) (N : ℕ) :
@@ -2646,14 +2662,13 @@ theorem aux_lMultiplier_positive_block_eq {n : ℕ} (γ : GeometricParameters n)
       have hmem : (h, 0) ∈ multiplierIndexSet γ := by
         change (h ≠ 0 ∧ 0 = 0) ∨ (h = 0 ∧ (0 : ℤ).natAbs ≤ geometricDelta γ)
         exact Or.inl ⟨by omega, rfl⟩
-      simp [aux_lMultiplierTerm, hmem]
+      simp only [aux_lMultiplierTerm, hmem, ↓reduceDIte]
       convert aux_lMultiplier_positive_eq γ ⟨(h, 0), hmem⟩ i j
-        (by change h ≠ 0; omega) hpos using 1 <;>
-        simp [F] <;> congr 3 <;> omega
+        (by change h ≠ 0; omega) hpos using 1; simp [F]
     _ = ∑ h ∈ Finset.Ico 1 ((N : ℤ) + 1), (F h - F (h + 1)) := by
       rw [← Finset.Ico_add_one_right_eq_Icc 1 (N : ℤ)]
     _ = F 1 - F (1 + (N : ℤ)) := by
-      convert aux_sum_Ico_int_telescope F 1 N using 1 <;> ring
+      convert aux_sum_Ico_int_telescope F 1 N using 1; ring
     _ = _ := by
       simp [F]
 
@@ -2665,21 +2680,26 @@ theorem aux_lMultiplierPartialSum_eq_boundary {n : ℕ} (γ : GeometricParameter
       lMultiplierAtScale γ ((2 : ℝ) ^ (N : ℤ) *
         γ.scales i 1 (j + (geometricDelta γ : ℤ))) i j := by
   classical
-  have hnv : Disjoint (aux_lMultiplierNegIndices N) (aux_lMultiplierVerticalIndices (geometricDelta γ)) := by
+  have hnv : Disjoint (aux_lMultiplierNegIndices N)
+      (aux_lMultiplierVerticalIndices (geometricDelta γ)) := by
     rw [Finset.disjoint_left]
     rintro ⟨h, l⟩ hneg hvert
     simp [aux_lMultiplierNegIndices, aux_lMultiplierVerticalIndices] at hneg hvert
     omega
-  have hnvpos : Disjoint (aux_lMultiplierNegIndices N ∪ aux_lMultiplierVerticalIndices (geometricDelta γ))
+  have hnvpos : Disjoint
+      (aux_lMultiplierNegIndices N ∪ aux_lMultiplierVerticalIndices (geometricDelta γ))
       (aux_lMultiplierPosIndices N) := by
     rw [Finset.disjoint_left]
     rintro ⟨h, l⟩ hleft hpos
-    simp [aux_lMultiplierNegIndices, aux_lMultiplierVerticalIndices, aux_lMultiplierPosIndices] at hleft hpos
+    simp only [aux_lMultiplierNegIndices, Int.reduceNeg, aux_lMultiplierVerticalIndices,
+      Finset.mem_union, Finset.mem_image, Finset.mem_Icc, Prod.mk.injEq, ↓existsAndEq,
+      true_and, exists_eq_right_right, aux_lMultiplierPosIndices] at hleft hpos
     rcases hleft with hneg | hvert <;> omega
   unfold lMultiplierPartialSum
   rw [aux_lMultiplier_truncation_decomp γ N hN]
   rw [Finset.sum_union hnvpos, Finset.sum_union hnv]
-  rw [aux_lMultiplier_negative_block_eq, aux_lMultiplier_vertical_block_eq, aux_lMultiplier_positive_block_eq]
+  rw [aux_lMultiplier_negative_block_eq, aux_lMultiplier_vertical_block_eq,
+    aux_lMultiplier_positive_block_eq]
   abel
 
 theorem lMultiplier_memDoubleSequence {n : ℕ} (γ : GeometricParameters n)
@@ -3326,10 +3346,13 @@ theorem sigmaMultiplier_memW0 {n : ℕ} (γ : GeometricParameters n)
 
 /-
 \begin{definition}[N multiplier]\label{N multiplier}
-For every $\iota\in\mathcal{I}_{\gamma}$ we define $N_{\gamma,\iota}= (N_{\gamma,\iota})_{i\in [k),j\in \Z}$ such that
+For every $\iota\in\mathcal{I}_{\gamma}$ we define
+$N_{\gamma,\iota}= (N_{\gamma,\iota})_{i\in [k),j\in \Z}$ such that
 \begin{equation}
  (N_{\gamma,\iota})_{i,j} = 
- \mathcal F^{-1}((\xi,\eta) \mapsto \widehat{\sigma_{\gamma,\iota,i,j}}(\xi+\eta)^{-\nu}\widehat{(L_{\gamma,\iota})_{i,j}}(\xi,\eta))\, .
+ \mathcal F^{-1}((\xi,\eta) \mapsto
+ \widehat{\sigma_{\gamma,\iota,i,j}}(\xi+\eta)^{-\nu}
+ \widehat{(L_{\gamma,\iota})_{i,j}}(\xi,\eta))\, .
 \end{equation}
 \end{definition}
 -/
@@ -3452,7 +3475,7 @@ theorem aux_fourScaleGaussianRho_spaced_memW0 (a : ℤ → ℝ) (ha : SpacedSequ
   · exact (ha (r - 1)).1
   · exact (ha r).1
   · refine ⟨le_rfl, ?_, le_rfl⟩
-    convert (ha (r - 1)).2 using 1 <;> ring
+    convert (ha (r - 1)).2 using 1; ring
   · exact hnu
 
 /-- The positive-band scale tuple satisfies the four-scale hypotheses. -/
@@ -3682,7 +3705,7 @@ theorem aux_fourierReal_nMultiplierRho_vertical {n : ℕ}
       2 * a (r - 1) ≤ a r ∧ a r ≤ a r := by
     refine ⟨le_rfl, ?_, le_rfl⟩
     dsimp [a]
-    convert (γ.scales_spaced i 1 (r - 1)).2 using 1 <;> ring
+    convert (γ.scales_spaced i 1 (r - 1)).2 using 1; ring
   have hraw := aux_fourierReal_re_fourScaleGaussianRho
     hmuMinus hmuPlus hmuMinus hmuPlus hscales
     (nMultiplierFourScaleExponent_memIco γ) u
@@ -3966,7 +3989,7 @@ private theorem aux_fourierReal_sigmaMultiplier_vertical {n : ℕ}
         Codex.Preliminaries.Notation.gaussian (γ.scales i 1 (j + ι.1.2) * u)) : ℂ) := by
   rw [sigmaMultiplier, dif_pos hzero]
   convert aux_squareRootGaussianDifference_fourier
-    (shift_mem_A (γ.scales_spaced i 1) ι.1.2) j u using 1 <;> ring
+    (shift_mem_A (γ.scales_spaced i 1) ι.1.2) j u using 1; ring
 
 private theorem aux_fourierReal_sigmaMultiplier_positive {n : ℕ}
     (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
@@ -3983,8 +4006,8 @@ private theorem aux_fourierReal_sigmaMultiplier_positive {n : ℕ}
     dsimp [a]
     exact smul_mem_A (shift_mem_A (γ.scales_spaced i 1) (geometricDelta γ : ℤ))
       (zpow_pos (by norm_num) ι.1.1)
-  convert aux_squareRootGaussianDifference_fourier ha j u using 1 <;>
-    dsimp [a] <;> ring
+  convert aux_squareRootGaussianDifference_fourier ha j u using 1;
+    dsimp [a]; ring
 
 private theorem aux_fourierReal_sigmaMultiplier_negative {n : ℕ}
     (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
@@ -4002,8 +4025,8 @@ private theorem aux_fourierReal_sigmaMultiplier_negative {n : ℕ}
     dsimp [a]
     exact smul_mem_A (shift_mem_A (γ.scales_spaced i 1) (-(geometricDelta γ : ℤ)))
       (zpow_pos (by norm_num) ι.1.1)
-  convert aux_squareRootGaussianDifference_fourier ha j u using 1 <;>
-    dsimp [a] <;> ring
+  convert aux_squareRootGaussianDifference_fourier ha j u using 1;
+    dsimp [a]; ring
 
 
 private theorem aux_fourierReal_realConvolution_nRho_sigma_vertical
@@ -4020,7 +4043,7 @@ private theorem aux_fourierReal_realConvolution_nRho_sigma_vertical
     (γ.scales_spaced i 1 _).1
   have hmuScale : 2 * γ.scales i 1 (j + ι.1.2 - 1) ≤
       γ.scales i 1 (j + ι.1.2) := by
-    convert (γ.scales_spaced i 1 (j + ι.1.2 - 1)).2 using 1 <;> ring
+    convert (γ.scales_spaced i 1 (j + ι.1.2 - 1)).2 using 1; ring
   rw [aux_fourierReal_realConvolution _ _
     (nMultiplierRho_memW0 γ hkn ι i j) (sigmaMultiplier_memW0 γ ι i j) u,
     aux_fourierReal_nMultiplierRho_vertical γ hkn ι i j hzero u,
@@ -4086,7 +4109,7 @@ private theorem aux_fourierReal_realConvolution_nRho_sigma_negative
         (γ.scales_spaced i 1 r).2 hp.le
   have hmuScale : 2 * (p * γ.scales i 1 r) ≤
       p * γ.scales i 1 (j - (geometricDelta γ : ℤ)) := by
-    convert hmuScale' using 1 <;> dsimp [r] <;> ring
+    convert hmuScale' using 1; dsimp [r]; ring
   rw [aux_fourierReal_realConvolution _ _
     (nMultiplierRho_memW0 γ hkn ι i j) (sigmaMultiplier_memW0 γ ι i j) u,
     aux_fourierReal_nMultiplierRho_negative γ hkn ι i j hzero hnegative u,
@@ -4272,8 +4295,6 @@ private theorem aux_realConvolution_nRho_sigma_negative_eq
         (aux_fourierReal_standardBumpRescale_sub _ _ u hs ht).symm
 
 /-- Raw Fourier identity for the endpoint central-band double convolution. -/
-
-
 private theorem aux_fourierReal_realConvolution_nRho_sigmaSq_vertical
     {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
     (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
@@ -4289,7 +4310,7 @@ private theorem aux_fourierReal_realConvolution_nRho_sigmaSq_vertical
     (γ.scales_spaced i 1 _).1
   have hmuScale : 2 * γ.scales i 1 (j + ι.1.2 - 1) ≤
       γ.scales i 1 (j + ι.1.2) := by
-    convert (γ.scales_spaced i 1 (j + ι.1.2 - 1)).2 using 1 <;> ring
+    convert (γ.scales_spaced i 1 (j + ι.1.2 - 1)).2 using 1; ring
   rw [aux_fourierReal_realConvolution _ _
     (nMultiplierRho_memW0 γ hkn ι i j)
     (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
@@ -4367,7 +4388,7 @@ private theorem aux_fourierReal_realConvolution_nRho_sigmaSq_negative
         (γ.scales_spaced i 1 r).2 hp.le
   have hmuScale : 2 * (p * γ.scales i 1 r) ≤
       p * γ.scales i 1 (j - (geometricDelta γ : ℤ)) := by
-    convert hmuScale' using 1 <;> dsimp [r] <;> ring
+    convert hmuScale' using 1; dsimp [r]; ring
   rw [aux_fourierReal_realConvolution _ _
     (nMultiplierRho_memW0 γ hkn ι i j)
     (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
@@ -4508,13 +4529,13 @@ theorem aux_diagonalConvolution_assoc
     (hF : MemW0 F) (hrho : MemW0 rho) (hsigma : MemW0 sigma) (v : RealPlane) :
     (∫ p : ℝ, (∫ q : ℝ, F (v.1 - p - q, v.2 - p - q) * rho q) * sigma p) =
       ∫ r : ℝ, F (v.1 - r, v.2 - r) * realConvolution rho sigma r := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure RealPlane) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure RealPlane) :=
     Measure.prod.instIsAddHaarMeasure _ _
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
-  letI : Measure.IsAddHaarMeasure (volume : Measure ((RealPlane × ℝ) × ℝ)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure ((RealPlane × ℝ) × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × (ℝ × ℝ))) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × (ℝ × ℝ))) :=
     Measure.prod.instIsAddHaarMeasure _ _
   let diag : RealPlane := ((1 : ℝ), (1 : ℝ))
   let shift₁ : ((RealPlane × ℝ) ≃L[ℝ] (RealPlane × ℝ)) :=
@@ -4720,7 +4741,7 @@ theorem aux_hMultiplier_diagonal_convolution_cancellation
     (i : Fin γ.k) (j : ℤ) (x y c : ℝ) :
     (∫ p : ℝ, hMultiplier γ i j (x + y - p, y - p) * rho p) =
       ∫ q : ℝ, hMultiplier γ i j (x + q, q) * (rho (y - q) - rho c) := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   let F : RealPlane → ℝ := fun z => hMultiplier γ i j (aux_diagonalShear z)
   have hF : MemW0 F := by
@@ -4810,7 +4831,7 @@ theorem aux_nMultiplier_caseOne_cancellation {n : ℕ} (γ : GeometricParameters
       ∫ p : ℝ, (nMultiplierRho γ hkn ι i j (w₀ + p) -
         nMultiplierRho γ hkn ι i j w₀) * hMultiplier γ i j (-w₁ - p, w₁ - p) := by
   rw [show (w₀ - w₁, w₀ + w₁) = aux_diagonalShear (-2 * w₁, w₀ + w₁) by
-    ext <;> dsimp [aux_diagonalShear] <;> ring]
+    ext <;> dsimp [aux_diagonalShear]; ring]
   calc
     nMultiplier γ hkn ι i j (aux_diagonalShear (-2 * w₁, w₀ + w₁)) =
       ∫ q : ℝ, hMultiplier γ i j (-2 * w₁ + q, q) *

@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 module
 
 public import Mathlib
@@ -257,7 +263,7 @@ theorem aux_integrable_comp_continuousLinearEquiv_between {E F K : Type*}
     [MeasureSpace F] [BorelSpace F] [Measure.IsAddHaarMeasure (volume : Measure F)]
     [NormedAddCommGroup K] {g : F → K} (hg : Integrable g) (e : E ≃L[ℝ] F) :
     Integrable (g ∘ e) := by
-  letI : Measure.IsAddHaarMeasure (Measure.map (e : E → F) volume) :=
+  let : Measure.IsAddHaarMeasure (Measure.map (e : E → F) volume) :=
     e.isAddHaarMeasure_map volume
   have hscalar : Measure.map (e : E → F) volume =
       Measure.addHaarScalarFactor (Measure.map (e : E → F) volume) volume • volume :=
@@ -278,7 +284,7 @@ theorem aux_integral_comp_continuousLinearEquiv_eq {E F : Type*}
     (∫ x, g (e x)) =
       (Measure.addHaarScalarFactor (Measure.map (e : E → F) volume) volume : ℝ) *
         ∫ y, g y := by
-  letI : Measure.IsAddHaarMeasure (Measure.map (e : E → F) volume) :=
+  let : Measure.IsAddHaarMeasure (Measure.map (e : E → F) volume) :=
     e.isAddHaarMeasure_map volume
   have hscalar : Measure.map (e : E → F) volume =
       Measure.addHaarScalarFactor (Measure.map (e : E → F) volume) volume • volume :=
@@ -801,8 +807,10 @@ theorem memW0_iff_integrable_wienerEnvelope {d : ℕ} {𝕜 : Type*} [NormedAddC
 /-- The `L¹` part of the Wiener-space embedding. -/
 theorem MemW0.aux_integrable {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : MemW0 f) : Integrable f := by
-  refine hf.aux_integrable_envelope.mono hf.aux_continuous.aestronglyMeasurable (ae_of_all _ fun x ↦ ?_)
-  simpa only [Real.norm_eq_abs, abs_of_nonneg (aux_wienerEnvelope_nonneg hf.aux_continuous zero_le_one x)]
+  refine hf.aux_integrable_envelope.mono hf.aux_continuous.aestronglyMeasurable
+    (ae_of_all _ fun x ↦ ?_)
+  simpa only [Real.norm_eq_abs,
+    abs_of_nonneg (aux_wienerEnvelope_nonneg hf.aux_continuous zero_le_one x)]
     using aux_norm_le_wienerEnvelope hf.aux_continuous zero_le_one x
 
 /-- Consequently, `W₀` continuously embeds into `L¹`. -/
@@ -854,7 +862,7 @@ constant used in the draft (for positive dimension). -/
 theorem aux_unitClosedBallVolume_eq_gamma {d : ℕ} (hd : 0 < d) :
     volume.real (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) =
       (Real.sqrt Real.pi) ^ d / Real.Gamma ((d : ℝ) / 2 + 1) := by
-  letI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp hd
+  let : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp hd
   change (volume (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1)).toReal = _
   rw [EuclideanSpace.volume_closedBall]
   simp only [ENNReal.ofReal_one, Fintype.card_fin, one_pow, one_mul,
@@ -1496,9 +1504,9 @@ theorem aux_exists_wienerEnvelope_comp_injective_continuousLinearMap_bound
       (∫ x, wienerEnvelope (f ∘ π) 1 x) ≤ C * ∫ y, wienerEnvelope f 1 y := by
   classical
   let s : Submodule ℝ (EuclideanSpace ℝ (Fin n)) := π.range
-  letI : MeasureSpace (s × sᗮ) :=
+  let : MeasureSpace (s × sᗮ) :=
     ⟨(volume : Measure s).prod (volume : Measure sᗮ)⟩
-  letI : Measure.IsAddHaarMeasure (volume : Measure (s × sᗮ)) := by
+  let : Measure.IsAddHaarMeasure (volume : Measure (s × sᗮ)) := by
     change Measure.IsAddHaarMeasure ((volume : Measure s).prod (volume : Measure sᗮ))
     infer_instance
   let e : EuclideanSpace ℝ (Fin n) ≃L[ℝ] s × sᗮ :=
@@ -2016,7 +2024,9 @@ theorem MemW0.aux_comp_injective_continuousLinearMap_prod
 
 /-- \begin{proposition}\label{W_0 fiber integrals}
 For every injective linear map $\pi:\R^{m}\times \R^{l}\to \R^n$ with $m,l\in\N$, $1\le m+l\le n$
-there are $0<C_{\ref{W_0 fiber integrals},\pi,1},C_{\ref{W_0 fiber integrals},\pi,2}<\infty$ such that the following holds. For every $f\in W_0(n)$ and $u\in\R^m$, the function $h_u$ defined by
+there are $0<C_{\ref{W_0 fiber integrals},\pi,1},
+C_{\ref{W_0 fiber integrals},\pi,2}<\infty$ such that the following holds.
+For every $f\in W_0(n)$ and $u\in\R^m$, the function $h_u$ defined by
 \begin{equation}
     h_u(v)=f(\pi(u,v))
 \end{equation}
@@ -2045,10 +2055,10 @@ theorem exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinear
       (∫ u, wienerEnvelope (fun u : EuclideanSpace ℝ (Fin m) => ∫ v, f (π (u, v))) 1 u) ≤
         C₂ * ∫ y, wienerEnvelope f 1 y := by
   classical
-  letI : MeasureSpace (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin l)) :=
+  let : MeasureSpace (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin l)) :=
     ⟨(volume : Measure (EuclideanSpace ℝ (Fin m))).prod
       (volume : Measure (EuclideanSpace ℝ (Fin l)))⟩
-  letI : Measure.IsAddHaarMeasure
+  let : Measure.IsAddHaarMeasure
       (volume : Measure (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin l))) := by
     change Measure.IsAddHaarMeasure
       ((volume : Measure (EuclideanSpace ℝ (Fin m))).prod
@@ -2104,7 +2114,8 @@ theorem exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinear
     calc
       (∫ v, wienerEnvelope (fun v : EuclideanSpace ℝ (Fin l) => f (π (u, v))) 1 v) ≤
           B * ∫ uv, wienerEnvelope P 1 uv := by
-        simpa only [B, P] using aux_integral_wienerEnvelope_slice_le_unitClosedBallVolume_inv_mul hP u
+        simpa only [B, P] using
+          aux_integral_wienerEnvelope_slice_le_unitClosedBallVolume_inv_mul hP u
       _ ≤ B * ((Ce * Cg) * ∫ y, wienerEnvelope f 1 y) :=
         mul_le_mul_of_nonneg_left hP_bound hB_pos.le
       _ = (B * (Ce * Cg)) * ∫ y, wienerEnvelope f 1 y := by ring
@@ -2405,7 +2416,8 @@ be a linear map such that
 \begin{equation}\label{pi injective}
     \bigcap_{j\in [J)} {\rm ker}\Pi_j=\{0\}\, .
 \end{equation}
-Then there is $0<C_{\ref{W_0 Brascamp Lieb},(\Pi_j)_{j\in [J)}}<\infty$ such that the following holds.
+Then there is $0<C_{\ref{W_0 Brascamp Lieb},(\Pi_j)_{j\in [J)}}<\infty$ such that
+the following holds.
 For $j\in [J)$, let $f_j\in W_0(\R^{l_j})$. Then for each
  $u\in \R^m$, the function
  \begin{equation}
@@ -2417,7 +2429,8 @@ For $j\in [J)$, let $f_j\in W_0(\R^{l_j})$. Then for each
     \end{equation}
     we have $f\in W_0(\R^{m})$ and
     \begin{equation}
-        \|f\|_{W_0}\le C_{\ref{W_0 Brascamp Lieb},(\Pi_j)_{j\in [J)}} \prod_{j\in  [J)}\|f_j\|_{W_0}\, .
+        \|f\|_{W_0}\le C_{\ref{W_0 Brascamp Lieb},(\Pi_j)_{j\in [J)}}
+          \prod_{j\in [J)}\|f_j\|_{W_0}\, .
     \end{equation}
 \end{proposition} -/
 theorem exists_brascamp_lieb_memW0

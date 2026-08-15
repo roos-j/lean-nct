@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import LeanNct.Reduction.WindowsAndPairs
 import LeanNct.Reduction.BumpFunctions
 import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
@@ -456,7 +462,7 @@ private theorem aux_char_convolution_integer_sum_eq (b : windowBasedBumpFunction
           aux_realRescaled ((2 : ℝ) ^ j) (windowBasedBumpFunctions.theta b) (x - y) by
         funext y
         rw [Finset.mul_sum]]
-  rw [MeasureTheory.integral_finset_sum]
+  rw [MeasureTheory.integral_finsetSum]
   intro ell _
   exact aux_char_indicator_mul_integrable _ (hscale ell) x
 
@@ -504,7 +510,7 @@ private theorem aux_char_partial_sum_eq_rescaled (b : windowBasedBumpFunctions) 
   rw [aux_char_convolution_integer_sum_eq, htheta, hsum,
     aux_char_convolution_sub_right _ _ hrescale hphi]
   funext x
-  simp [aux_realRescaled]
+  simp
 
 /-! ### A bounded approximate identity in `L²` -/
 
@@ -567,7 +573,7 @@ private theorem aux_integrable_shear_difference
     · have hnorm (y : ℝ) :
           (∫ x : ℝ, ‖P (x, y)‖) = ‖psi y‖ * ∫ x : ℝ, ‖f x‖ := by
         dsimp [P]
-        simp only [Real.norm_eq_abs, abs_mul]
+        simp only [abs_mul]
         rw [integral_const_mul]
         congr 1
         exact integral_sub_right_eq_self (fun x : ℝ => ‖f x‖) (t * y)
@@ -586,8 +592,8 @@ private theorem aux_integrable_shear_difference
   simpa only [Measure.volume_eq_prod] using hdiff
 
 private theorem aux_scaled_convolution_eq_shear
-    (f psi : ℝ → ℝ) (hf : Integrable f) (hfm : Measurable f)
-    (hpsi : Integrable psi) (hpsim : Measurable psi)
+    (f psi : ℝ → ℝ) (_hf : Integrable f) (hfm : Measurable f)
+    (hpsi : Integrable psi) (_hpsim : Measurable psi)
     (C : ℝ) (hC : ∀ z : ℝ, |f z| ≤ C)
     (hmass : ∫ y : ℝ, psi y = 1)
     (t : ℝ) (ht : 0 < t) (x : ℝ) :
@@ -641,7 +647,7 @@ private theorem aux_realConvolution_swap (f g : ℝ → ℝ) (x : ℝ) :
         ∫ y : ℝ, (fun p : ℝ => f (x - p) * g p) (x - y) := by
           apply integral_congr_ae
           filter_upwards [] with y
-          congr 2 <;> ring
+          congr 2; ring
     _ = ∫ p : ℝ, f (x - p) * g p :=
       integral_sub_left_eq_self (fun p : ℝ => f (x - p) * g p) volume x
 
@@ -678,7 +684,9 @@ private theorem aux_raw_approximate_identity_L1
       AEStronglyMeasurable (fun y : ℝ => ∫ x : ℝ,
         ‖psi y * (f (x - t * y) - f x)‖) := by
     filter_upwards [] with t
-    exact (aux_integrable_shear_difference f psi hf hfm hpsi hpsim t).integral_norm_prod_right.aestronglyMeasurable
+    have hintegrable :=
+      (aux_integrable_shear_difference f psi hf hfm hpsi hpsim t).integral_norm_prod_right
+    exact hintegrable.aestronglyMeasurable
   have hbound : ∀ᶠ t : ℝ in nhdsWithin 0 (Set.Ioi 0), ∀ᵐ y : ℝ,
       ‖∫ x : ℝ, ‖psi y * (f (x - t * y) - f x)‖‖ ≤ B y := by
     filter_upwards [] with t
@@ -989,7 +997,7 @@ private theorem aux_phi0_reproduces (b : windowBasedBumpFunctions) :
   have hpsi : Integrable psi := by
     dsimp [psi, aux_realRescaled]
     convert ((b.phi0.integrable.comp_mul_left'
-      (by norm_num : ((1 / 4 : ℝ)⁻¹) ≠ 0)).const_mul ((1 / 4 : ℝ)⁻¹)).ofReal using 1 <;>
+      (by norm_num : ((1 / 4 : ℝ)⁻¹) ≠ 0)).const_mul ((1 / 4 : ℝ)⁻¹)).ofReal using 1;
       norm_num
   have hG : Integrable G := hphi.integrable_convolution (ContinuousLinearMap.mul ℂ ℂ) hpsi
   have hphiC : Continuous phi := by
@@ -1345,7 +1353,7 @@ private theorem aux_smoothing_phiZero_partial_sum (b : windowBasedBumpFunctions)
               aux_realRescaled ((2 : ℝ) ^ j) (windowBasedBumpFunctions.theta b) (x - y) by
               funext y
               rw [Finset.mul_sum]]
-        rw [MeasureTheory.integral_finset_sum]
+        rw [MeasureTheory.integral_finsetSum]
         intro ell _
         exact aux_smoothing_G_mul_rescaled_theta_integrable b ell x]
   rw [hsum]
@@ -1485,13 +1493,6 @@ private theorem aux_smoothingPartialSum_finite_algebra
     simp [aux_smoothing_R, aux_realRescaled]
   rw [hR0]
   funext x
-  simp only [Pi.add_apply, Pi.sub_apply]
-  change b.phi0 x +
-      ((aux_smoothing_G b x - aux_realConvolution (aux_smoothing_G b)
-        (aux_smoothing_R b ((N : ℤ) + 1)) x)) +
-      (aux_realConvolution (aux_indicator (Set.Ico 0 1))
-        (aux_smoothing_R b (-(N : ℤ))) x -
-        aux_realConvolution (aux_indicator (Set.Ico 0 1)) (fun y ↦ b.phi0 y) x) = _
   change b.phi0 x +
       ((aux_realConvolution (aux_indicator (Set.Ico 0 1)) (fun y ↦ b.phi0 y) x - b.phi0 x) -
         aux_realConvolution (aux_smoothing_G b)
@@ -1949,6 +1950,8 @@ For $1\le N\le3$, $C_{\ref{lem:theta_decay},N}\le2^{2N+17}$.
 -/
 theorem constantThetaDecay (N : ℕ) (hN_one : 1 ≤ N) (hN_three : N ≤ 3) :
     C_thetaDecay N ≤ (2 : ℝ) ^ (2 * N + 17) := by
+  have _ := hN_one
+  have _ := hN_three
   rw [C_thetaDecay, C_uniPair, ← pow_add]
 
 private theorem aux_smoothing_fourier_real_const_mul (c : ℝ) (f : ℝ → ℝ) (xi : ℝ) :
@@ -2545,9 +2548,9 @@ private theorem pair_profile_bounds (c : ℝ) (A B : ℝ → ℂ)
     (hA2 : ‖iteratedDeriv 2 A x‖ ≤ 86)
     (hA3 : ‖iteratedDeriv 3 A x‖ ≤ 2048)
     (hB0 : ‖iteratedDeriv 0 B x‖ ≤ 1)
-    (hB1 : ‖iteratedDeriv 1 B x‖ ≤ 4*c)
-    (hB2 : ‖iteratedDeriv 2 B x‖ ≤ 16*c)
-    (hB3 : ‖iteratedDeriv 3 B x‖ ≤ 64*c) :
+    (hB1 : ‖iteratedDeriv 1 B x‖ ≤ 4 * c)
+    (hB2 : ‖iteratedDeriv 2 B x‖ ≤ 16 * c)
+    (hB3 : ‖iteratedDeriv 3 B x‖ ≤ 64 * c) :
     ‖iteratedDeriv 0 (A * B) x‖ ≤ 4 ∧
       ‖iteratedDeriv 1 (A * B) x‖ ≤ 4 + 16*c ∧
       ‖iteratedDeriv 2 (A * B) x‖ ≤ 96*c + 86 ∧
@@ -2632,13 +2635,13 @@ theorem triple_profile_bound (c : ℝ) (hc : 1 ≤ c)
     (hA2 : ‖iteratedDeriv 2 A x‖ ≤ 86)
     (hA3 : ‖iteratedDeriv 3 A x‖ ≤ 2048)
     (hB0 : ‖iteratedDeriv 0 B x‖ ≤ 1)
-    (hB1 : ‖iteratedDeriv 1 B x‖ ≤ 4*c)
-    (hB2 : ‖iteratedDeriv 2 B x‖ ≤ 16*c)
-    (hB3 : ‖iteratedDeriv 3 B x‖ ≤ 64*c)
+    (hB1 : ‖iteratedDeriv 1 B x‖ ≤ 4 * c)
+    (hB2 : ‖iteratedDeriv 2 B x‖ ≤ 16 * c)
+    (hB3 : ‖iteratedDeriv 3 B x‖ ≤ 64 * c)
     (hC0 : ‖iteratedDeriv 0 C x‖ ≤ 1)
-    (hC1 : ‖iteratedDeriv 1 C x‖ ≤ 3*c)
-    (hC2 : ‖iteratedDeriv 2 C x‖ ≤ 5*c)
-    (hC3 : ‖iteratedDeriv 3 C x‖ ≤ 9*c) :
+    (hC1 : ‖iteratedDeriv 1 C x‖ ≤ 3 * c)
+    (hC2 : ‖iteratedDeriv 2 C x‖ ≤ 5 * c)
+    (hC3 : ‖iteratedDeriv 3 C x‖ ≤ 9 * c) :
     ∀ m : ℕ, m < 4 → ‖iteratedDeriv m (A * B * C) x‖ ≤ D c m := by
   intro m hm
   interval_cases m
@@ -3011,7 +3014,8 @@ private theorem aux_TphiThree_indicator_fourier_contDiff :
       (Complex.ofRealCLM.continuous.measurable.comp hI_meas).norm).aestronglyMeasurable
   filter_upwards [] with x
   by_cases hx : x ∈ Set.Ico (0 : ℝ) 1
-  · simp [aux_indicator, hx]
+  · simp only [Real.norm_eq_abs, aux_indicator, hx, indicator_of_mem, Complex.ofReal_one,
+      norm_one, mul_one, norm_pow, abs_abs]
     have hxabs : |x| ≤ 1 := by
       rw [abs_of_nonneg hx.1]
       exact hx.2.le
@@ -3945,7 +3949,7 @@ private theorem aux_thetaPrimitive_theta_fourier_deriv (b : windowBasedBumpFunct
     funext x
     dsimp [f]
     push_cast
-    simp only [smul_eq_mul]
+    simp only
   have hmain := Real.deriv_fourier hf hmoment
   simpa [f, smul_eq_mul] using hmain
 
@@ -4159,6 +4163,8 @@ $C_{\ref{lem:theta_prim},2}\le2^{31}$.
 theorem constantThetaPrimitive (N : ℕ) (hN_two : 2 ≤ N) (hN_uni : N < N_uniPair) :
     C_thetaPrimitive N ≤ (2 : ℝ) ^ (5 * N + 21) ∧
     C_thetaPrimitive 2 ≤ (2 : ℝ) ^ 31 := by
+  have _ := hN_two
+  have _ := hN_uni
   constructor
   · rw [C_thetaPrimitive, C_uniPair, ← pow_add]
   · norm_num [C_thetaPrimitive, C_uniPair]
@@ -4332,7 +4338,7 @@ theorem phiFour_fourier_pair_eq (b : windowBasedBumpFunctions) (k : ℤ)
   have hphase :
       (Real.fourierChar (-(xi * (2 : ℝ) ^ (-k))) : ℂ) *
         Real.fourierChar (-((-xi) * (2 : ℝ) ^ (-k))) = 1 := by
-    convert aux_fourierChar_neg_mul_self (xi * (2 : ℝ) ^ (-k)) using 1 <;> ring
+    convert aux_fourierChar_neg_mul_self (xi * (2 : ℝ) ^ (-k)) using 1; ring
   have hscale : ((2 : ℝ) ^ k : ℂ) * ((2 : ℝ) ^ k : ℂ) =
       (((2 : ℝ) ^ (2 * k) : ℝ) : ℂ) := by
         push_cast
@@ -4594,7 +4600,7 @@ private noncomputable def aux_translateSchwartz (a : ℝ) (psi : SchwartzMap ℝ
       simp only [pow_one]
       calc
         ‖x‖ = |x| := Real.norm_eq_abs _
-        _ = |(x - a) + a| := by congr 1 <;> ring
+        _ = |(x - a) + a| := by congr 1; ring
         _ ≤ |x - a| + |a| := abs_add_le _ _
         _ ≤ (1 + |a|) * (1 + |x - a|) := by
           nlinarith [abs_nonneg (x - a), abs_nonneg a]
@@ -5184,7 +5190,7 @@ theorem phiFour_T_fourier_eq (b : windowBasedBumpFunctions) (k : ℤ)
       (Real.hasDerivAt_fourierChar (-(xi * a))).scomp xi hlin
   have hq : HasDerivAt q
       (-(2 * Real.pi * Complex.I * (a : ℂ) * q xi)) xi := by
-    convert hq0 using 1 <;> simp [Complex.real_smul] <;> ring
+    convert hq0 using 1; simp [Complex.real_smul]; ring
   let Theta : SchwartzMap ℝ ℂ :=
     (thetaTildeSchwartz b).postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
   have hTheta : (Theta : ℝ → ℂ) = fun x : ℝ =>

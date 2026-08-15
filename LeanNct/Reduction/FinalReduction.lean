@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import LeanNct.Reduction.TwistedAverages
 import LeanNct.Reduction.AToLambda
 import LeanNct.Reduction.WindowsAndPairs
@@ -556,7 +562,7 @@ theorem mainAuxOne {n : ℕ} (hn : 2 ≤ n) (psi : SchwartzMap ℝ ℝ)
   let Fnorm : NormalizedFunctionTuple n := ⟨F, by
     intro i
     convert (hFnorm i ((2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2))).trans
-      (f.2 i) using 1 <;> norm_num⟩
+      (f.2 i) using 1; norm_num⟩
   let M : KernelSequence 1 := fun j y => aux_liftPlaneKernel
     (tensorSquare (aux_mainAuxOne_windowSchwartz psi (a j * t)
       (mul_pos (ha j).1 htpos))) y
@@ -640,8 +646,11 @@ private theorem aux_constantWhitneyProductReduction_sharp {n : ℕ} (hn : 2 ≤ 
             ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 16) * (2 : ℝ) ^ 553 := by
               rw [show (2 : ℝ) ^ 12 = 4096 by norm_num,
                 show (2 : ℝ) ^ 16 = 65536 by norm_num]
-              ring
-        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 16 * (2 : ℝ) ^ 553) := by ring
+              set_option exponentiation.threshold 1000 in
+                ring
+        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 16 * (2 : ℝ) ^ 553) := by
+          set_option exponentiation.threshold 1000 in
+            ring
         _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 569 := by rw [← pow_add]
 
 /-- The sharper form of the `mainAuxOne` constant estimate before its final
@@ -656,7 +665,9 @@ private theorem aux_constantMainAuxOne_sharp {n : ℕ} (hn : 2 ≤ n) :
     _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 573 := by
       calc
         (2 : ℝ) ^ 4 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 569) =
-            (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 569) := by ring
+            (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 569) := by
+              set_option exponentiation.threshold 1000 in
+                ring
         _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 573 := by rw [← pow_add]
 
 /-- The numerical estimate in Lemma \ref{constant main auxiliary one}. -/
@@ -670,7 +681,8 @@ theorem constantMainAuxiliaryOne {n : ℕ} (hn : 2 ≤ n) :
       · positivity
       · norm_num
 
-private noncomputable def aux_shortLong_scaleKernel (phi : SchwartzMap ℝ ℝ) (t : ℝ) : ℝ → ℝ :=
+private noncomputable def aux_shortLong_scaleKernel
+    (phi : SchwartzMap ℝ ℝ) (t : ℝ) : ℝ → ℝ :=
   fun s ↦ t⁻¹ * phi (t⁻¹ * s)
 
 private theorem aux_shortLong_scaleKernel_memLp (phi : SchwartzMap ℝ ℝ) (t : ℝ) :
@@ -736,10 +748,9 @@ private theorem aux_shortLong_twistedAverageAtScale_contDiffOn {n : ℕ}
     have hconttau : ContinuousOn
         (fun t ↦ twistedAverageAtScale t (fun u ↦ tau u) (fun i y ↦ f i y) x)
         (Set.Icc α β) := by
-      apply HasDerivAt.continuousOn
       intro t ht
-      exact aux_twistedAverageAtScale_hasDerivAt tau f x t
-        (lt_of_lt_of_le hα ht.1)
+      exact (aux_twistedAverageAtScale_hasDerivAt tau f x t
+        (lt_of_lt_of_le hα ht.1)).continuousAt.continuousWithinAt
     refine hconttau.congr ?_
     intro t ht
     dsimp [b]
@@ -759,7 +770,8 @@ private theorem aux_shortLong_twistedAverageAtScale_contDiffOn {n : ℕ}
 
 private theorem aux_shortLong_averageLp_enorm_sub {n : ℕ} (hn : 2 ≤ n)
     (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (s t : ℝ) :
-    (‖aux_shortLong_averageLp hn phi f s - aux_shortLong_averageLp hn phi f t‖₊ : ℝ≥0∞) =
+    (‖aux_shortLong_averageLp hn phi f s -
+        aux_shortLong_averageLp hn phi f t‖₊ : ℝ≥0∞) =
       eLpNorm
         (fun x ↦ twistedAverageAtScale s (fun u ↦ phi u) (fun i y ↦ f.1 i y) x -
           twistedAverageAtScale t (fun u ↦ phi u) (fun i y ↦ f.1 i y) x)
@@ -814,10 +826,9 @@ private theorem aux_shortLong_ftcATphi_lintegral {n : ℕ} (phi : SchwartzMap �
     have hconttau : ContinuousOn
         (fun t ↦ twistedAverageAtScale t (fun u ↦ tau u) (fun i y ↦ f i y) x)
         (Set.Icc α β) := by
-      apply HasDerivAt.continuousOn
       intro t ht
-      exact aux_twistedAverageAtScale_hasDerivAt tau f x t
-        (lt_of_lt_of_le hα ht.1)
+      exact (aux_twistedAverageAtScale_hasDerivAt tau f x t
+        (lt_of_lt_of_le hα ht.1)).continuousAt.continuousWithinAt
     refine hconttau.congr ?_
     intro t ht
     rw [← htau]
@@ -1027,7 +1038,7 @@ private theorem aux_shortLong_joint_measurable_twistedAverageAtScale {n : ℕ}
 
 private theorem aux_shortLong_lp_chain_energy_eq_lintegral {n : ℕ} (hn : 2 ≤ n)
     (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (J : ℕ) (k : ℤ)
-    (u : Fin (J + 1) → aux_dyadicInterval k) (hu : Monotone u) :
+    (u : Fin (J + 1) → aux_dyadicInterval k) (_hu : Monotone u) :
     (∑ j : Fin J,
       ‖aux_shortLong_averageLp hn phi f (u j.succ) -
         aux_shortLong_averageLp hn phi f (u j.castSucc)‖ₑ ^ (2 : ℝ)) =
@@ -1046,7 +1057,8 @@ private theorem aux_shortLong_lp_chain_energy_eq_lintegral {n : ℕ} (hn : 2 ≤
       (aux_shortLong_scaleKernel_memLp phi (u j.castSucc))
     change MemLp
       (twistedAverage (aux_shortLong_scaleKernel phi (u j.succ)) (fun i y ↦ f.1 i y) -
-        twistedAverage (aux_shortLong_scaleKernel phi (u j.castSucc)) (fun i y ↦ f.1 i y)) 2 volume
+        twistedAverage (aux_shortLong_scaleKernel phi (u j.castSucc))
+          (fun i y ↦ f.1 i y)) 2 volume
     exact hs.sub ht
   have hmeas (j : Fin J) : AEMeasurable (fun x ↦ ‖g j x‖ₑ ^ (2 : ℝ)) volume :=
     (hmem j).aestronglyMeasurable.enorm.pow_const _
@@ -1065,13 +1077,14 @@ private theorem aux_shortLong_lp_chain_energy_eq_lintegral {n : ℕ} (hn : 2 ≤
       exact eLpNorm_nnreal_pow_eq_lintegral (μ := volume) (f := g j)
         (p := (2 : NNReal)) (by norm_num)
     _ = ∫⁻ x, ∑ j : Fin J, ‖g j x‖ₑ ^ (2 : ℝ) := by
-      simpa using (lintegral_finset_sum' (μ := volume) Finset.univ
+      simpa using (lintegral_finsetSum' (μ := volume) Finset.univ
         (f := fun j x ↦ ‖g j x‖ₑ ^ (2 : ℝ)) (fun j _ ↦ hmeas j)).symm
 
 private theorem aux_shortLong_local_variation_sq_le {n : ℕ} (hn : 2 ≤ n)
     (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (J : ℕ) (k : ℤ) :
     (finiteVariationSeminorm
-      (fun s : aux_dyadicInterval k ↦ aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+      (fun s : aux_dyadicInterval k ↦
+        aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
       ∫⁻ t in Set.Icc (1 : ℝ) 2,
         eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (aux_tBump phi)
           (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹ := by
@@ -1255,9 +1268,11 @@ private theorem aux_shortLong_compress_mono_chain
             exact hq (Fin.succ_lt_succ_iff.mp hij)
         refine ⟨M + 1, Nat.succ_le_succ hMJ, q', hq'strict, ?_, ?_, ?_⟩
         · rfl
-        · simp only [q', Fin.succ_last]
+        · simp only [q']
           exact hqlast
-        · have hqsplit : aux_shortLong_intEnergy d q' = d (t 1) (t 0) + aux_shortLong_intEnergy d q := by
+        · have hqsplit :
+              aux_shortLong_intEnergy d q' =
+                d (t 1) (t 0) + aux_shortLong_intEnergy d q := by
             unfold aux_shortLong_intEnergy
             rw [Fin.sum_univ_succ]
             have hqone : q' (Fin.succ 0) = t 1 := by
@@ -1302,7 +1317,7 @@ private theorem aux_shortLong_energy_of_root_le (E S V : ℝ≥0∞)
         norm_num
 
 private theorem aux_shortLong_long_variation_sq_le {n : ℕ} (hn : 2 ≤ n)
-    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (J : ℕ) (hJ : 0 < J)
+    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (J : ℕ) (_hJ : 0 < J)
     (A : ℝ) (hA : aux_dyadicVariationBound A (fun x ↦ phi x) f.1) :
     (finiteVariationSeminorm
       (fun s : Set.range (fun k : ℤ ↦ (2 : ℝ) ^ k) ↦
@@ -1413,7 +1428,7 @@ private theorem aux_shortLong_dyadic_index_unique {x : ℝ} {k l : ℤ}
     exact (not_lt_of_ge (hp.trans hl.1)) hk.2
 
 private theorem aux_shortLong_kappa_card_le {J : ℕ}
-    (t : Fin (J + 1) → ℝ) (htpos : ∀ j, 0 < t j)
+    (t : Fin (J + 1) → ℝ) (_htpos : ∀ j, 0 < t j)
     (kappa : Finset ℤ)
     (hkappa : ∀ k, k ∈ kappa ↔ ∃ j,
       (2 : ℝ) ^ k ≤ t j ∧ t j < (2 : ℝ) ^ (k + 1)) :
@@ -1567,7 +1582,8 @@ private theorem aux_shortLong_finish_of_local {n : ℕ} (hn : 2 ≤ n)
     (hlocal : ∀ (J : ℕ), 0 < J → ∀ κ : Finset ℤ, κ.card ≤ J + 1 →
       ∑ k ∈ κ,
         (finiteVariationSeminorm
-          (fun s : aux_dyadicInterval k ↦ aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+          (fun s : aux_dyadicInterval k ↦
+            aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
         ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) :
     aux_variationBound (8 * B + 2 * A) (fun x ↦ phi x) f.1 := by
   unfold aux_variationBound
@@ -1634,7 +1650,8 @@ private theorem aux_shortLong_finish {n : ℕ} (hn : 2 ≤ n)
     (hlocal : ∀ (J : ℕ), 0 < J → ∀ κ : Finset ℤ, κ.card ≤ J + 1 →
       ∑ k ∈ κ,
         (finiteVariationSeminorm
-          (fun s : aux_dyadicInterval k ↦ aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+          (fun s : aux_dyadicInterval k ↦
+            aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
         2 * ENNReal.ofReal (C_mainAuxOne n) *
           ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) :
     aux_variationBound (16 * C_mainAuxOne n + 2 * A) (fun x ↦ phi x) f.1 := by
@@ -1721,13 +1738,13 @@ private theorem aux_shortLong_tBump_auxHyp (phi : SchwartzMap ℝ ℝ)
     simp only [smul_eq_mul]
   refine ⟨tau, htau, ?_⟩
   · unfold aux_mainAuxiliaryHypotheses
-    change aux_mainAuxiliaryFourierHypotheses (fun x ↦ tau x)
     rw [show (fun x : ℝ ↦ tau x) =
       Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ phi x) by
         exact htau.trans (aux_shortLong_T_eq_tBump phi).symm]
     exact hTphi
 
-private theorem aux_shortLong_finset_log_integral_le (κ : Finset ℤ) (g : ℤ → ℝ → ℝ≥0∞)
+private theorem aux_shortLong_finset_log_integral_le
+    (κ : Finset ℤ) (g : ℤ → ℝ → ℝ≥0∞)
     (hg : ∀ k ∈ κ, AEMeasurable (g k) (volume.restrict (Set.Icc (1 : ℝ) 2)))
     (B : ℝ≥0∞)
     (hpoint : ∀ᵐ t ∂(volume.restrict (Set.Icc (1 : ℝ) 2)),
@@ -1742,7 +1759,7 @@ private theorem aux_shortLong_finset_log_integral_le (κ : Finset ℤ) (g : ℤ 
         g k t * ENNReal.ofReal t⁻¹) =
         ∫⁻ t in Set.Icc (1 : ℝ) 2,
           ∑ k ∈ κ, g k t * ENNReal.ofReal t⁻¹ := by
-      rw [MeasureTheory.lintegral_finset_sum']
+      rw [MeasureTheory.lintegral_finsetSum']
       intro k hk
       exact (hg k hk).mul hweight
     _ = ∫⁻ t in Set.Icc (1 : ℝ) 2,
@@ -1813,12 +1830,14 @@ private theorem aux_shortLong_local_finset_bound {n : ℕ} (hn : 2 ≤ n)
     (J : ℕ) (hJ : 0 < J) (kappa : Finset ℤ) (hcard : kappa.card ≤ J + 1) :
     ∑ k ∈ kappa,
       (finiteVariationSeminorm
-        (fun s : aux_dyadicInterval k ↦ aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+        (fun s : aux_dyadicInterval k ↦
+          aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
       2 * ENNReal.ofReal (C_mainAuxOne n) *
         ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
   have hterm (k : ℤ) :
       (finiteVariationSeminorm
-        (fun s : aux_dyadicInterval k ↦ aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+        (fun s : aux_dyadicInterval k ↦
+          aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
         ∫⁻ t in Set.Icc (1 : ℝ) 2,
           eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun u ↦ tau u)
             (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹ := by
@@ -1828,7 +1847,8 @@ private theorem aux_shortLong_local_finset_bound {n : ℕ} (hn : 2 ≤ n)
   calc
     (∑ k ∈ kappa,
       (finiteVariationSeminorm
-        (fun s : aux_dyadicInterval k ↦ aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ)) ≤
+        (fun s : aux_dyadicInterval k ↦
+          aux_shortLong_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ)) ≤
         ∑ k ∈ kappa, ∫⁻ t in Set.Icc (1 : ℝ) 2,
           eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun u ↦ tau u)
             (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹ := by
@@ -1863,6 +1883,7 @@ theorem shortLongFtcReduction {n : ℕ} (hn : 2 ≤ n) (phi : SchwartzMap ℝ �
     (f : ReductionNormalizedTuple n) (J : ℕ) (hJ : 0 < J) (A : ℝ)
     (hApos : 0 < A) (hA : aux_dyadicVariationBound A (fun x ↦ phi x) f.1) :
     aux_variationBound (16 * C_mainAuxOne n + 2 * A) (fun x ↦ phi x) f.1 := by
+  have _ := hJ
   obtain ⟨tau, htau, htauHyp⟩ := aux_shortLong_tBump_auxHyp phi hTphi
   apply aux_shortLong_finish hn phi f A hApos (aux_C_mainAuxOne_nonneg n) hA
   intro J hJ kappa hcard
@@ -2354,7 +2375,7 @@ private theorem aux_mainBumpOneLongTwo_nonWhitneySkip_prefix {n : ℕ} (hn : 2 �
   let Fnorm : NormalizedFunctionTuple n := ⟨F, by
     intro i
     convert (hFnorm i ((2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2))).trans
-      (f.2 i) using 1 <;> norm_num⟩
+      (f.2 i) using 1; norm_num⟩
   let M : KernelSequence 1 := aux_nonWhitneySkipSequence phi0 phi1 a
   have hMbound : kernelSequenceSeminorm n 1 (by omega) (by omega) M ≤
       ENNReal.ofReal (C_inductPositiveTermsReductionNonWhitneySkip n) := by
@@ -2496,7 +2517,7 @@ private theorem aux_mainBumpOneLongTwo_chain_pair_eq {n : ℕ} (a : ℤ → ℝ)
             (fun i y ↦ f.1 i y) x)
       2 volume ^ 2 := by
   rw [← ha j.castSucc, ← ha j.succ]
-  congr 5 <;> norm_num
+  congr 5
 
 private noncomputable def aux_mainBumpOneLongTwo_pairEnergy {n : ℕ}
     (phi0 phi1 : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n)
@@ -2519,7 +2540,7 @@ private theorem aux_mainBumpOneLongTwo_pairEnergy_even {n : ℕ}
               (fun i y ↦ f.1 i y) x)
         2 volume ^ 2 := by
   unfold aux_mainBumpOneLongTwo_pairEnergy
-  congr 5 <;> norm_num
+  congr 5
 
 private theorem aux_mainBumpOneLongTwo_pairEnergy_odd {n : ℕ}
     (phi0 phi1 : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n)
@@ -2532,7 +2553,7 @@ private theorem aux_mainBumpOneLongTwo_pairEnergy_odd {n : ℕ}
               (fun u ↦ phi1 u) (fun i y ↦ f.1 i y) x)
         2 volume ^ 2 := by
   unfold aux_mainBumpOneLongTwo_pairEnergy
-  congr 5 <;> norm_num
+  congr 5
 
 private theorem aux_mainBumpOneLongTwo_chain_pairEnergy_eq {n : ℕ} (a : ℤ → ℝ) (J : ℕ)
     (k : aux_dyadicChain J)
@@ -2675,7 +2696,8 @@ theorem mainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n)
               intro r hr
               exact aux_mainBumpOneLongTwo_pairEnergy_even phi0 phi1 f a r
     have heven :
-        (∑ r ∈ Finset.range (K + 1), aux_mainBumpOneLongTwo_pairEnergy phi0 phi1 f a (2 * r)) ≤
+        (∑ r ∈ Finset.range (K + 1),
+          aux_mainBumpOneLongTwo_pairEnergy phi0 phi1 f a (2 * r)) ≤
           ENNReal.ofReal (C_inductPositiveTermsReductionNonWhitneySkip n) *
             ENNReal.ofReal (((2 * K + 1 : ℕ) : ℝ) ^ variationExponent n) := by
       rw [hevenEq]
@@ -2716,7 +2738,8 @@ theorem mainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n)
           (ENNReal.ofReal (C_inductPositiveTermsReductionNonWhitneySkip n) *
             ENNReal.ofReal (((2 * K + 1 : ℕ) : ℝ) ^ variationExponent n)) +
           (ENNReal.ofReal (C_inductPositiveTermsReductionNonWhitneySkip n) *
-            ENNReal.ofReal (((2 * K + 1 : ℕ) : ℝ) ^ variationExponent n)) := add_le_add heven hodd
+            ENNReal.ofReal (((2 * K + 1 : ℕ) : ℝ) ^ variationExponent n)) :=
+              add_le_add heven hodd
       _ = ENNReal.ofReal (C_mainBumpOneLongTwo n) *
           ENNReal.ofReal (((2 * K + 1 : ℕ) : ℝ) ^ variationExponent n) := by
             rw [C_mainBumpOneLongTwo, ENNReal.ofReal_mul (by norm_num)]
@@ -2734,7 +2757,9 @@ theorem constantMainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n) :
     _ = (8 / 9 : ℝ) * (2 : ℝ) ^ 543 := by
       calc
         2 * ((8 / 9 : ℝ) * (2 : ℝ) ^ 542) =
-            (8 / 9 : ℝ) * ((2 : ℝ) ^ 1 * (2 : ℝ) ^ 542) := by ring
+            (8 / 9 : ℝ) * ((2 : ℝ) ^ 1 * (2 : ℝ) ^ 542) := by
+              set_option exponentiation.threshold 1000 in
+                ring
         _ = (8 / 9 : ℝ) * (2 : ℝ) ^ (1 + 542) := by rw [← pow_add]
         _ = (8 / 9 : ℝ) * (2 : ℝ) ^ 543 := by norm_num
 
@@ -2960,7 +2985,9 @@ private theorem aux_mainBumpOneLong_one_sharp {n : ℕ} (hn : 2 ≤ n) :
         (2 * C_uniPair) ^ 2 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 573) =
             (2 : ℝ) ^ 32 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 573) := by
               norm_num [C_uniPair]
-        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 32 * (2 : ℝ) ^ 573) := by ring
+        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 32 * (2 : ℝ) ^ 573) := by
+              set_option exponentiation.threshold 1000 in
+                ring
         _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 605 := by
           rw [← pow_add]
 
@@ -2988,12 +3015,14 @@ theorem constantMainBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
       mul_lt_mul_of_pos_left (add_lt_add h1 h2) (by norm_num)
     _ = ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 63 + 16 / 9) * (2 : ℝ) ^ 543 := by
       rw [h605, h63]
-      ring
+      set_option exponentiation.threshold 1000 in
+        ring
     _ < ((11 / 16 : ℝ) * (2 : ℝ) ^ 63) * (2 : ℝ) ^ 543 :=
       mul_lt_mul_of_pos_right hcore (by positivity)
     _ = (11 / 16 : ℝ) * (2 : ℝ) ^ 606 := by
       rw [h606]
-      ring
+      set_option exponentiation.threshold 1000 in
+        ring
 
 /-- The constant in Lemma \ref{lem:mainbump1}. -/
 noncomputable def C_mainBumpOne (n : ℕ) : ℝ :=
@@ -3071,7 +3100,7 @@ private theorem aux_mainBumpOne_T_fourier_support_window (phi : SchwartzMap ℝ 
   rw [Codex.Reduction.BumpFunctions.aux_annulusOne]
   constructor
   · by_contra hnot
-    push_neg at hnot
+    push Not at hnot
     have hsmall : |xi| < 1 / 2 := by
       norm_num at hnot
       linarith
@@ -3084,7 +3113,7 @@ private theorem aux_mainBumpOne_T_fourier_support_window (phi : SchwartzMap ℝ 
     apply hne
     simpa [iteratedDeriv_zero, hderiv] using hformula
   · by_contra hnot
-    push_neg at hnot
+    push Not at hnot
     have hlarge : 4 < |xi| := by norm_num at hnot ⊢; exact hnot
     have hout : xi ∉ Set.Icc (-1 : ℝ) 1 := by
       intro hmem
@@ -3703,7 +3732,8 @@ theorem constantMainAuxiliaryTwo {n : ℕ} (hn : 2 ≤ n) :
       calc
         24 * (2 : ℝ) ^ 573 = 3 * ((2 : ℝ) ^ 3 * (2 : ℝ) ^ 573) := by
           norm_num
-          ring
+          set_option exponentiation.threshold 1000 in
+            ring
         _ = 3 * (2 : ℝ) ^ 576 := by rw [← pow_add]
     _ < 4 * (2 : ℝ) ^ 576 := by
       exact mul_lt_mul_of_pos_right (by norm_num) (by positivity)
@@ -4092,6 +4122,7 @@ theorem mainBumpTwo {n : ℕ} (hn : 2 ≤ n)
     (hk : -2 ≤ k) :
     aux_variationBound (C_mainBumpTwo n * (2 : ℝ) ^ (-2 * k))
       (windowBasedBumpFunctions.phiZero b k) f.1 := by
+  have _ := hk
   let c : ℝ := C_absDerivFourierTPhiThreeLe 2
   have hc : 0 < c := aux_mainBumpTwo_C_absDerivFourierTPhiThreeLe_two_pos
   have hmain : aux_variationBound (C_mainAuxTwo n)
@@ -4149,8 +4180,11 @@ private theorem aux_mainBumpTwo_C_mainAuxTwo_sharp {n : ℕ} (hn : 2 ≤ n) :
         24 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 573) =
             ((4191 / 8192 : ℝ) * (2 : ℝ) ^ 5) * (2 : ℝ) ^ 573 := by
               norm_num
-              ring
-        _ = (4191 / 8192 : ℝ) * ((2 : ℝ) ^ 5 * (2 : ℝ) ^ 573) := by ring
+              set_option exponentiation.threshold 1000 in
+                ring
+        _ = (4191 / 8192 : ℝ) * ((2 : ℝ) ^ 5 * (2 : ℝ) ^ 573) := by
+          set_option exponentiation.threshold 1000 in
+            ring
         _ = (4191 / 8192 : ℝ) * (2 : ℝ) ^ 578 := by rw [← pow_add]
 
 private theorem aux_mainBumpTwo_C_absDerivFourierTPhiThreeLe_two_sharp :
@@ -4189,7 +4223,9 @@ theorem constantMainBumpTwo {n : ℕ} (hn : 2 ≤ n) :
         (4191 / 8192 : ℝ) * (2 : ℝ) ^ 578 *
             ((41 / 64 : ℝ) ^ 2 * (2 : ℝ) ^ (41 * 2)) =
             ((4191 / 8192 : ℝ) * (41 / 64 : ℝ) ^ 2) *
-              ((2 : ℝ) ^ 578 * (2 : ℝ) ^ (41 * 2)) := by ring
+              ((2 : ℝ) ^ 578 * (2 : ℝ) ^ (41 * 2)) := by
+                set_option exponentiation.threshold 1000 in
+                  ring
         _ = ((4191 / 8192 : ℝ) * (41 / 64 : ℝ) ^ 2) * (2 : ℝ) ^ 660 := by
           rw [← pow_add]
     _ < (27 / 128 : ℝ) * (2 : ℝ) ^ 660 := by
@@ -4199,7 +4235,8 @@ theorem constantMainBumpTwo {n : ℕ} (hn : 2 ≤ n) :
     _ = (27 / 32 : ℝ) * (2 : ℝ) ^ 658 := by
       rw [show (660 : ℕ) = 2 + 658 by norm_num, pow_add]
       norm_num
-      ring
+      set_option exponentiation.threshold 1000 in
+        ring
 
 /-- The constant in Lemma \ref{lem:leftbump}. -/
 noncomputable def C_leftBump (n : ℕ) : ℝ :=
@@ -4387,6 +4424,7 @@ theorem leftBump {n : ℕ} (hn : 2 ≤ n)
     (hk : k ≤ -1) :
     aux_variationBound (C_leftBump n * (2 : ℝ) ^ (2 * k))
       (windowBasedBumpFunctions.phiOne b k) f.1 := by
+  have _ := hk
   let c : ℝ := (2 : ℝ) ^ 14 * C_uniPair
   have hc : 0 < c := by
     dsimp [c]
@@ -4464,7 +4502,8 @@ theorem constantLeftBump {n : ℕ} (hn : 2 ≤ n) :
       calc
         ((4191 / 8192 : ℝ) * (2 : ℝ) ^ 578) * (2 : ℝ) ^ 58 =
             (4191 / 8192 : ℝ) * ((2 : ℝ) ^ 578 * (2 : ℝ) ^ 58) := by
-              ring
+              set_option exponentiation.threshold 1000 in
+                ring
         _ = (4191 / 8192 : ℝ) * (2 : ℝ) ^ (578 + 58) := by
               rw [← pow_add]
         _ = (4191 / 8192 : ℝ) * (2 : ℝ) ^ 636 := by norm_num
@@ -5055,7 +5094,6 @@ private theorem aux_leftBumpOneShort_bracket_inv_mul_le (t x : ℝ) (ht : 1 ≤ 
   change (1 + |t⁻¹ * x|)⁻¹ ≤ t * (1 + |x|)⁻¹
   rw [abs_mul, abs_inv, abs_of_pos htpos]
   rw [show (1 + t⁻¹ * |x|)⁻¹ = 1 / (1 + |x| / t) by
-    congr 2
     field_simp [ne_of_gt htpos],
     show t * (1 + |x|)⁻¹ = t / (1 + |x|) by field_simp]
   apply (div_le_div_iff₀ (by positivity : 0 < 1 + |x| / t)
@@ -5400,7 +5438,7 @@ private theorem aux_leftBumpOneShort_kernel_decay
           scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
             scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2)) := by
           apply mul_le_mul_of_nonneg_left
-          exact aux_leftBumpOneShort_offcenter_rhs_le_whitney v
+          · exact aux_leftBumpOneShort_offcenter_rhs_le_whitney v
           positivity
     _ = (4 * C_thetaPrimitive 2 ^ 2 * C_thetaTOffcenter) *
         ∑ u : Fin 2,
@@ -5505,7 +5543,7 @@ private theorem aux_leftBumpOneShort_integralFctKernel_plane_diagonal_fourier_eq
     funext u
     congr 1
   rw [aux_planeFourier, hcoord, integralFctKernel_fourier_eq]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, neg_mul]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
   congr 1
   funext t
   congr 3
@@ -5629,7 +5667,7 @@ private noncomputable def aux_leftBumpOneShort_integralFctWhitneyData
   kernel_schwartz := c • integralFctKernelSchwartz psi hann
   kernel_schwartz_eq := by
     intro u
-    rw [SchwartzMap.smul_apply, integralFctKernelSchwartz_apply]
+    rw [smul_apply, integralFctKernelSchwartz_apply]
     simp only [smul_eq_mul]
     congr 2
     ext i
@@ -5643,7 +5681,7 @@ private noncomputable def aux_leftBumpOneShort_integralFctWhitneyData
     convert hraw using 1
     funext v
     simp only [Function.comp_apply]
-    rw [SchwartzMap.smul_apply, integralFctKernelSchwartz_apply]
+    rw [smul_apply, integralFctKernelSchwartz_apply]
     simp only [smul_eq_mul]
     change c * integralFctKernel (fun x : ℝ => psi x)
       (WithLp.toLp 2 ![v.1, v.2]) = _
@@ -5796,7 +5834,7 @@ private theorem aux_leftBumpOneShort_pair_deriv_bound
           exact_mod_cast (le_trans hmi hm)
         rw [show iteratedDeriv (m - i) (fun z : ℝ => q (-z)) x =
             ((-1 : ℝ) ^ (m - i)) • iteratedDeriv (m - i) q ((-1 : ℝ) * x) by
-              convert congrFun (iteratedDeriv_comp_const_smul hqmi (-1 : ℝ)) x using 1 <;>
+              convert congrFun (iteratedDeriv_comp_const_smul hqmi (-1 : ℝ)) x using 1;
                 ring]
         rw [norm_smul, Real.norm_eq_abs]
         have hsign : |(-1 : ℝ) ^ (m - i)| = 1 := by
@@ -5965,7 +6003,7 @@ private theorem aux_leftBumpOneShort_pair_logIntegral_deriv_bound
     have heq : iteratedDeriv 2 H = deriv (deriv H) := by
       rw [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ, iteratedDeriv_one]
     rw [← heq]
-    convert hHbound 2 (by norm_num) x using 1 <;> norm_num
+    convert hHbound 2 (by norm_num) x using 1; norm_num
   have hHtwo : ContDiff ℝ 2 H := hH
   have hHderiv : ContDiff ℝ 1 (deriv H) := by simpa using hH.deriv'
   let I0 : ℝ → ℂ := fun z => ∫ t : ℝ in Icc (1 : ℝ) 2,
@@ -6370,9 +6408,9 @@ private theorem aux_leftBumpOneShort_planeRescale_memW0
 private theorem aux_leftBumpOneShort_liftPlaneKernel_memW0
     (M : RealPlane → ℝ) (hM : MemW0 M) :
     MemW0 (aux_liftPlaneKernel M) := by
-  letI : Measure.IsAddHaarMeasure (volume : Measure (RealVector 1 × RealVector 1)) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure (RealVector 1 × RealVector 1)) :=
     Measure.prod.instIsAddHaarMeasure _ _
-  letI : Measure.IsAddHaarMeasure (volume : Measure RealPlane) :=
+  let : Measure.IsAddHaarMeasure (volume : Measure RealPlane) :=
     Measure.prod.instIsAddHaarMeasure _ _
   let e : (RealVector 1 × RealVector 1) ≃L[ℝ] RealPlane :=
     (ContinuousLinearEquiv.piUnique ℝ (fun _ : Fin 1 => ℝ)).prodCongr
@@ -6443,7 +6481,6 @@ private theorem aux_leftBumpOneShort_whitney_lift_positive
         g (u.1 0) * g (u.2 0) * aux_liftPlaneKernel M u := by
       apply integral_congr_ae
       filter_upwards [] with u
-      change G (e u) = _
       dsimp [G, e, e1, aux_liftPlaneKernel]
       rfl
 
@@ -6499,7 +6536,7 @@ private theorem aux_leftBumpOneShort_scaled_integralM_prefix
     dsimp [F]
     convert
       (Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions_eLpNorm f.1 i
-        ((2 : ℝ≥0∞) ^ (i.val + min (d + 1 - i.val) 2))).trans (f.2 i) using 1 <;>
+        ((2 : ℝ≥0∞) ^ (i.val + min (d + 1 - i.val) 2))).trans (f.2 i) using 1;
       norm_num⟩
   let M : KernelSequence 1 := aux_whitneySequence Psi.kernel a
   have hMbound : kernelSequenceSeminorm (d + 1) 1 (by omega) (by omega) M ≤
@@ -6722,7 +6759,8 @@ theorem constantLeftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n) :
         mul_lt_mul_of_pos_left (constantWhitneyGapReduction hn) (by norm_num)
       _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by
         norm_num
-        ring
+        set_option exponentiation.threshold 1000 in
+          ring
       _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
         rw [← pow_add]
   have hA : 0 < (2 : ℝ) ^ 2 * C_thetaPrimitive 2 ^ 2 * C_thetaTOffcenter := by
@@ -6738,7 +6776,8 @@ theorem constantLeftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n) :
       mul_lt_mul_of_pos_left hWhitney hA
     _ = (185801 / 262144 : ℝ) * ((2 : ℝ) ^ 71 * (2 : ℝ) ^ 557) := by
       norm_num [C_thetaPrimitive, C_uniPair, C_thetaTOffcenter]
-      ring
+      set_option exponentiation.threshold 1000 in
+        ring
     _ = (185801 / 262144 : ℝ) * (2 : ℝ) ^ 628 := by
       rw [← pow_add]
 
@@ -6755,7 +6794,7 @@ open Codex.Preliminaries.BumpsAndEstimates
 
 private theorem aux_leftBumpOneShortTwo_product_deriv_bound
     (p q : ℝ → ℂ) (hp : ContDiff ℝ 2 p) (hq : ContDiff ℝ 2 q)
-    (A B : ℝ) (hA : 0 ≤ A) (hB : 0 ≤ B)
+    (A B : ℝ) (hA : 0 ≤ A) (_hB : 0 ≤ B)
     (hpbound : ∀ i : ℕ, i ≤ 2 → ∀ x : ℝ, ‖iteratedDeriv i p x‖ ≤ A)
     (hqbound : ∀ i : ℕ, i ≤ 2 → ∀ x : ℝ, ‖iteratedDeriv i q x‖ ≤ B) :
     ∀ m : ℕ, m ≤ 2 → ∀ x : ℝ,
@@ -6786,8 +6825,8 @@ private theorem aux_leftBumpOneShortTwo_product_deriv_bound
         ↑(m.choose i) * ‖iteratedDeriv i p x‖ * ‖iteratedDeriv (m - i) q x‖ ≤
             ↑(m.choose i) * A * B := by
           gcongr
-          exact hpbound i (le_trans him hm) x
-          exact hqbound (m - i) (le_trans hmi hm) x
+          · exact hpbound i (le_trans him hm) x
+          · exact hqbound (m - i) (le_trans hmi hm) x
         _ = (m.choose i : ℝ) * (A * B) := by ring
     _ ≤ (2 : ℝ) ^ m * A * B := by
       interval_cases m <;> norm_num [Finset.sum_range_succ, Nat.choose] <;>
@@ -6795,7 +6834,7 @@ private theorem aux_leftBumpOneShortTwo_product_deriv_bound
 
 private theorem aux_leftBumpOneShortTwo_product_deriv_bound_at
     (p q : ℝ → ℂ) (hp : ContDiff ℝ 2 p) (hq : ContDiff ℝ 2 q)
-    (A B : ℝ) (hA : 0 ≤ A) (hB : 0 ≤ B) (x : ℝ)
+    (A B : ℝ) (hA : 0 ≤ A) (_hB : 0 ≤ B) (x : ℝ)
     (hpbound : ∀ i : ℕ, i ≤ 2 → ‖iteratedDeriv i p x‖ ≤ A)
     (hqbound : ∀ i : ℕ, i ≤ 2 → ‖iteratedDeriv i q x‖ ≤ B) :
     ∀ m : ℕ, m ≤ 2 →
@@ -6826,18 +6865,20 @@ private theorem aux_leftBumpOneShortTwo_product_deriv_bound_at
         ↑(m.choose i) * ‖iteratedDeriv i p x‖ * ‖iteratedDeriv (m - i) q x‖ ≤
             ↑(m.choose i) * A * B := by
           gcongr
-          exact hpbound i (le_trans him hm)
-          exact hqbound (m - i) (le_trans hmi hm)
+          · exact hpbound i (le_trans him hm)
+          · exact hqbound (m - i) (le_trans hmi hm)
         _ = (m.choose i : ℝ) * (A * B) := by ring
     _ ≤ (2 : ℝ) ^ m * A * B := by
       interval_cases m <;> norm_num [Finset.sum_range_succ, Nat.choose] <;>
         ring_nf <;> exact le_rfl
 
-private noncomputable def aux_leftBumpOneShortTwo_fourier (b : windowBasedBumpFunctions) : ℝ → ℂ :=
+private noncomputable def aux_leftBumpOneShortTwo_fourier
+    (b : windowBasedBumpFunctions) : ℝ → ℂ :=
   FourierTransform.fourier
     (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ))
 
-private noncomputable def aux_leftBumpOneShortTwo_amplitude (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℂ :=
+private noncomputable def aux_leftBumpOneShortTwo_amplitude
+    (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℂ :=
   fun xi =>
     2 * Real.pi * Complex.I * (xi : ℂ) * aux_leftBumpOneShortTwo_fourier b xi -
       ((2 : ℝ) ^ k : ℂ) * (xi : ℂ) * iteratedDeriv 1 (aux_leftBumpOneShortTwo_fourier b) xi
@@ -6886,7 +6927,7 @@ private theorem aux_leftBumpOneShortTwo_amplitude_support (b : windowBasedBumpFu
   have h0 := aux_leftBumpOneShortTwo_fourier_deriv_zero_outside b 0 xi hout
   have h1 := aux_leftBumpOneShortTwo_fourier_deriv_zero_outside b 1 xi hout
   apply Function.mem_support.mp hxi
-  simp only [aux_leftBumpOneShortTwo_amplitude, iteratedDeriv_zero] at h0
+  simp only [iteratedDeriv_zero] at h0
   simp [aux_leftBumpOneShortTwo_amplitude, h0, h1]
 
 private theorem aux_leftBumpOneShortTwo_amplitude_deriv_zero_outside (b : windowBasedBumpFunctions)
@@ -6988,7 +7029,9 @@ private theorem aux_leftBumpOneShortTwo_fourier_deriv_iterated_bound (b : window
   · rw [iteratedDeriv_zero, ← iteratedDeriv_one]
     exact aux_leftBumpOneShortTwo_fourier_deriv_bound b 1 (by norm_num) xi
   · rw [iteratedDeriv_one]
-    have heq : iteratedDeriv 2 (aux_leftBumpOneShortTwo_fourier b) = deriv (deriv (aux_leftBumpOneShortTwo_fourier b)) := by
+    have heq :
+        iteratedDeriv 2 (aux_leftBumpOneShortTwo_fourier b) =
+          deriv (deriv (aux_leftBumpOneShortTwo_fourier b)) := by
       rw [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ,
         iteratedDeriv_one]
     rw [← heq]
@@ -6996,7 +7039,8 @@ private theorem aux_leftBumpOneShortTwo_fourier_deriv_iterated_bound (b : window
   · have heq : iteratedDeriv 3 (aux_leftBumpOneShortTwo_fourier b) =
         deriv (deriv (deriv (aux_leftBumpOneShortTwo_fourier b))) := by
       rw [show (3 : ℕ) = 2 + 1 by norm_num, iteratedDeriv_succ,
-        show iteratedDeriv 2 (aux_leftBumpOneShortTwo_fourier b) = deriv (deriv (aux_leftBumpOneShortTwo_fourier b)) by
+        show iteratedDeriv 2 (aux_leftBumpOneShortTwo_fourier b) =
+            deriv (deriv (aux_leftBumpOneShortTwo_fourier b)) by
           rw [show (2 : ℕ) = 1 + 1 by norm_num, iteratedDeriv_succ,
             iteratedDeriv_one]]
     rw [show iteratedDeriv 2 (deriv (aux_leftBumpOneShortTwo_fourier b)) =
@@ -7005,7 +7049,8 @@ private theorem aux_leftBumpOneShortTwo_fourier_deriv_iterated_bound (b : window
             iteratedDeriv_one], ← heq]
     exact aux_leftBumpOneShortTwo_fourier_deriv_bound b 3 (by norm_num) xi
 
-private theorem aux_leftBumpOneShortTwo_amplitude_contDiff (b : windowBasedBumpFunctions) (k : ℤ) :
+private theorem aux_leftBumpOneShortTwo_amplitude_contDiff
+    (b : windowBasedBumpFunctions) (k : ℤ) :
     ContDiff ℝ 2 (aux_leftBumpOneShortTwo_amplitude b k) := by
   let L : ℝ → ℂ := fun y => 2 * Real.pi * Complex.I * (y : ℂ)
   let X : ℝ → ℂ := fun y => (y : ℂ)
@@ -7033,7 +7078,8 @@ private theorem aux_leftBumpOneShortTwo_amplitude_contDiff (b : windowBasedBumpF
   rw [hfun]
   exact hmain
 
-private theorem aux_leftBumpOneShortTwo_amplitude_deriv_bound (b : windowBasedBumpFunctions) (k : ℤ)
+private theorem aux_leftBumpOneShortTwo_amplitude_deriv_bound
+    (b : windowBasedBumpFunctions) (k : ℤ)
     (hk : k ≤ -1) (m : ℕ) (hm : m < 3) (xi : ℝ) :
     ‖iteratedDeriv m (aux_leftBumpOneShortTwo_amplitude b k) xi‖ ≤
       64 * ((2 : ℝ) ^ 14 * C_uniPair) := by
@@ -7143,7 +7189,8 @@ private theorem aux_leftBumpOneShortTwo_integralFct_plane_diagonal_eq
         (WithLp.toLp 2 ![v.1, v.2]))
       (WithLp.toLp 2 ![z, -z]) =
       ∫ t : ℝ in Icc (1 : ℝ) 2,
-        aux_leftBumpOneShortTwo_amplitude b k (t * z) * aux_leftBumpOneShortTwo_amplitude b k (-(t * z)) *
+        aux_leftBumpOneShortTwo_amplitude b k (t * z) *
+          aux_leftBumpOneShortTwo_amplitude b k (-(t * z)) *
           ((t⁻¹ : ℝ) : ℂ) := by
   have hcoord : (fun u : EuclideanSpace ℝ (Fin 2) =>
       (integralFctKernel
@@ -7177,7 +7224,8 @@ private theorem aux_leftBumpOneShortTwo_integralFct_plane_diagonal_eq
           (fun x : ℝ => ((Codex.Reduction.BumpFunctions.aux_T
             (windowBasedBumpFunctions.phiFour b k) x : ℝ) : ℂ)) (-(t * z)) *
           ((t⁻¹ : ℝ) : ℂ) =
-        (aux_leftBumpOneShortTwo_amplitude b k (t * z) * aux_leftBumpOneShortTwo_amplitude b k (-(t * z))) *
+        (aux_leftBumpOneShortTwo_amplitude b k (t * z) *
+          aux_leftBumpOneShortTwo_amplitude b k (-(t * z))) *
           ((t⁻¹ : ℝ) : ℂ) by
         rw [hpair]
         simp only [aux_leftBumpOneShortTwo_amplitude, aux_leftBumpOneShortTwo_fourier]
@@ -7702,7 +7750,7 @@ private theorem aux_leftBumpOneShortTwo_kernel_decay
           scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).1) *
             scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2)) := by
           apply mul_le_mul_of_nonneg_left
-          exact aux_leftBumpOneShort_offcenter_rhs_le_whitney v
+          · exact aux_leftBumpOneShort_offcenter_rhs_le_whitney v
           positivity
     _ = (16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter) *
         ∑ u : Fin 2,
@@ -7767,7 +7815,8 @@ private theorem aux_leftBumpOneShortTwo_normalized_decay
       mul_le_mul_of_nonneg_left hraw (inv_nonneg.mpr hD.le)
     _ = S := by field_simp [ne_of_gt hD]
 
-private theorem aux_leftBumpOneShortTwo_tPhiFourSchwartz_support (b : windowBasedBumpFunctions) (k : ℤ) :
+private theorem aux_leftBumpOneShortTwo_tPhiFourSchwartz_support
+    (b : windowBasedBumpFunctions) (k : ℤ) :
     Function.support (FourierTransform.fourier
       (fun x : ℝ => (tBumpSchwartz (phiFourSchwartz b k) x : ℂ))) ⊆
         Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
@@ -7988,7 +8037,8 @@ theorem constantLeftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n) :
         mul_lt_mul_of_pos_left (constantWhitneyGapReduction hn) (by norm_num)
       _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by
         norm_num
-        ring
+        set_option exponentiation.threshold 1000 in
+          ring
       _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
         rw [← pow_add]
   have hprim : C_thetaPrimitive 2 ≤ (2 : ℝ) ^ 31 := by
@@ -8035,13 +8085,16 @@ theorem constantLeftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n) :
         rw [← pow_add]
       rw [hpow630, ← hpow]
       norm_num [C_thetaTOffcenter]
-      ring
+      set_option exponentiation.threshold 1000 in
+        ring
     _ < (2 : ℝ) ^ 630 := by
       calc
         (185801 / 262144 : ℝ) * (2 : ℝ) ^ 630 <
             1 * (2 : ℝ) ^ 630 :=
           mul_lt_mul_of_pos_right (by norm_num) (by positivity)
-        _ = (2 : ℝ) ^ 630 := by ring
+        _ = (2 : ℝ) ^ 630 := by
+          set_option exponentiation.threshold 1000 in
+            ring
 
 /-- The long-variation constant in Lemma \ref{lem:leftbump1_long}. -/
 noncomputable def C_leftBumpOneLong (n : ℕ) : ℝ :=
@@ -8101,7 +8154,7 @@ private theorem aux_leftBumpOneLong_bracket_shift_large_raw (R u : ℝ) (hR : 2 
   have hRpos : 0 < R := by linarith
   have habs : |u| ≤ |u - R| + R := by
     calc
-      |u| = |(u - R) + R| := by congr 1 <;> ring
+      |u| = |(u - R) + R| := by congr 1; ring
       _ ≤ |u - R| + |R| := abs_add_le _ _
       _ = |u - R| + R := by rw [abs_of_pos hRpos]
   have hshift : |u| ≤ 3 * |u - R| := by nlinarith
@@ -8134,7 +8187,7 @@ private theorem aux_leftBumpOneLong_bracket_shift_scale_raw (R v : ℝ) (hR : 2 
   have hRpos : 0 < R := by linarith
   have habs : |v| ≤ |v - R| + R := by
     calc
-      |v| = |(v - R) + R| := by congr 1 <;> ring
+      |v| = |(v - R) + R| := by congr 1; ring
       _ ≤ |v - R| + |R| := abs_add_le _ _
       _ = |v - R| + R := by rw [abs_of_pos hRpos]
   have htri : 1 + |v| ≤ ((3 / 2 : ℝ) * R) * (1 + |v - R|) := by
@@ -8344,7 +8397,7 @@ private theorem aux_leftBumpOneLong_shifted_bracket_decay (R u v : ℝ) (hR : 2 
       have hsum : 1 + |u + v| ≤ (7 / 2 : ℝ) * R := by
         have habs : |u + v| ≤ |u - R| + |v - R| + 2 * R := by
           calc
-            |u + v| = |(u - R) + (v - R) + (R + R)| := by congr 1 <;> ring
+            |u + v| = |(u - R) + (v - R) + (R + R)| := by congr 1; ring
             _ ≤ |(u - R) + (v - R)| + |R + R| := abs_add_le _ _
             _ ≤ (|u - R| + |v - R|) + |R + R| := by
               gcongr
@@ -8360,7 +8413,7 @@ private theorem aux_leftBumpOneLong_shifted_bracket_decay (R u v : ℝ) (hR : 2 
       have hproduct : bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2 ≤
           Real.rpow (bracketBump (u - v)) (3 / 2 : ℝ) := by
         convert aux_leftBumpOneLong_bracket_sq_mul_le_three_halves (u - R) (v - R)
-          using 1 <;> ring
+          using 1; ring
       have hcoef := aux_leftBumpOneLong_rpow_seven_halves_le_sixteen
       have hprod : Real.rpow R (-(3 / 2 : ℝ)) *
           (bracketBump (u - R) ^ 2 * bracketBump (v - R) ^ 2) ≤
@@ -8483,7 +8536,7 @@ private theorem aux_leftBumpOneLong_zpow_twice_rpow (k : ℤ) :
     (2 : ℝ) ^ (2 * k) = Real.rpow ((2 : ℝ) ^ (-k)) (-2 : ℝ) := by
   let R : ℝ := (2 : ℝ) ^ (-k)
   have hR : (2 : ℝ) ^ k = R⁻¹ := by
-    simpa [R] using (zpow_neg (2 : ℝ) (-k))
+    simp [R, zpow_neg]
   calc
     (2 : ℝ) ^ (2 * k) = ((2 : ℝ) ^ k) ^ 2 := by
       rw [show 2 * k = k * 2 by ring, zpow_mul]
@@ -8493,7 +8546,7 @@ private theorem aux_leftBumpOneLong_zpow_twice_rpow (k : ℤ) :
       rw [show (-2 : ℤ) = -(2 : ℤ) by norm_num, zpow_neg]
       norm_num
     _ = Real.rpow R (-2 : ℝ) := by
-      simpa using (Real.rpow_intCast R (-2)).symm
+      simp
 
 private theorem aux_leftBumpOneLong_c_scale_physical (k : ℤ) :
     let R : ℝ := (2 : ℝ) ^ (-k)
@@ -8508,7 +8561,7 @@ private theorem aux_leftBumpOneLong_c_scale_physical (k : ℤ) :
       (((2 : ℝ) ^ k * C) * ((2 : ℝ) ^ k * C)) =
         (16 : ℝ)⁻¹ * Real.rpow R (-(3 / 2 : ℝ))
   have hR : (2 : ℝ) ^ k = R⁻¹ := by
-    simpa [R] using (zpow_neg (2 : ℝ) (-k))
+    simp [R, zpow_neg]
   have hRpos : 0 < R := by dsimp [R]; positivity
   have hCpos : 0 < C := by
     dsimp [C]
@@ -8526,7 +8579,7 @@ private theorem aux_leftBumpOneLong_c_scale_physical (k : ℤ) :
             rw [show (-2 : ℤ) = -(2 : ℤ) by norm_num, zpow_neg]
             field_simp [hRpos.ne']
           _ = Real.rpow R (-2 : ℝ) := by
-            simpa using (Real.rpow_intCast R (-2)).symm
+            simp
       calc
         (16 : ℝ)⁻¹ * (R⁻¹ * R⁻¹) * Real.rpow R (1 / 2 : ℝ) =
             (16 : ℝ)⁻¹ * (Real.rpow R (-2 : ℝ) *
@@ -8756,7 +8809,7 @@ private theorem aux_leftBumpOneLong_tensor_whitney_prefix {n : ℕ} (hn : 2 ≤ 
   let Fnorm : NormalizedFunctionTuple n := ⟨F, by
     intro i
     convert (hFnorm i ((2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2))).trans
-      (f.2 i) using 1 <;> norm_num⟩
+      (f.2 i) using 1; norm_num⟩
   let M : KernelSequence 1 := fun j y => aux_liftPlaneKernel
     (tensorSquare (aux_mainAuxOne_windowSchwartz psi (a j) (ha j).1)) y
   let N : KernelSequence 1 := aux_whitneySequence Psi.kernel a
@@ -8993,8 +9046,11 @@ private theorem aux_leftBumpOneLong_whitney_sharp {n : ℕ} (hn : 2 ≤ n) :
         11 * ((127 / 128 : ℝ) * (2 : ℝ) ^ 553) =
             ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 4) * (2 : ℝ) ^ 553 := by
               norm_num
-              ring
-        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by ring
+              set_option exponentiation.threshold 1000 in
+                ring
+        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by
+          set_option exponentiation.threshold 1000 in
+            ring
         _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by rw [← pow_add]
 
 private theorem aux_leftBumpOneLong_sharp {n : ℕ} (hn : 2 ≤ n) :
@@ -9018,7 +9074,9 @@ private theorem aux_leftBumpOneLong_sharp {n : ℕ} (hn : 2 ≤ n) :
       calc
         (2 : ℝ) ^ 6 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) *
             (2 : ℝ) ^ 62 =
-            (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 6 * (2 : ℝ) ^ 557 * (2 : ℝ) ^ 62) := by ring
+            (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 6 * (2 : ℝ) ^ 557 * (2 : ℝ) ^ 62) := by
+              set_option exponentiation.threshold 1000 in
+                ring
         _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 625 := by
           rw [← pow_add, ← pow_add]
 
@@ -9100,10 +9158,9 @@ private theorem aux_leftBumpOne_twistedAverageAtScale_contDiffOn {n : ℕ}
     have hconttau : ContinuousOn
         (fun t ↦ twistedAverageAtScale t (fun u ↦ tau u) (fun i y ↦ f i y) x)
         (Set.Icc α β) := by
-      apply HasDerivAt.continuousOn
       intro t ht
-      exact aux_twistedAverageAtScale_hasDerivAt tau f x t
-        (lt_of_lt_of_le hα ht.1)
+      exact (aux_twistedAverageAtScale_hasDerivAt tau f x t
+        (lt_of_lt_of_le hα ht.1)).continuousAt.continuousWithinAt
     refine hconttau.congr ?_
     intro t ht
     dsimp [b]
@@ -9143,10 +9200,9 @@ private theorem aux_leftBumpOne_Aphi_lintegral {n : ℕ} (phi : SchwartzMap ℝ 
     dsimp [α, β]
     rw [zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0), zpow_one]
   have hconta : ContinuousOn a (Set.Icc α β) := by
-    apply HasDerivAt.continuousOn
     intro t ht
-    exact aux_twistedAverageAtScale_hasDerivAt phi f x t
-      (lt_of_lt_of_le hα ht.1)
+    exact (aux_twistedAverageAtScale_hasDerivAt phi f x t
+      (lt_of_lt_of_le hα ht.1)).continuousAt.continuousWithinAt
   have hinv : ContinuousOn (fun t : ℝ ↦ t⁻¹) (Set.Icc α β) :=
     continuousOn_id.inv₀ (fun t ht ↦ ne_of_gt (lt_of_lt_of_le hα ht.1))
   have hleftCont : ContinuousOn (fun t ↦ |a t| ^ 2 * t⁻¹)
@@ -9246,7 +9302,8 @@ private theorem aux_leftBumpOne_pointwise_local_product {n : ℕ} (phi : Schwart
             (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) *
         (∫⁻ t in Set.Icc (1 : ℝ) 2,
           ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (aux_tBump phi)
-            (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) := by
+              (fun i y ↦ f i y) x‖ₑ ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^
+            ((2 : ℝ)⁻¹) := by
   let α : ℝ := (2 : ℝ) ^ k
   let β : ℝ := (2 : ℝ) ^ (k + 1)
   let a : ℝ → ℝ := fun t ↦
@@ -9375,7 +9432,8 @@ private theorem aux_leftBumpOne_pointwise_local_product {n : ℕ} (phi : Schwart
         aux_logarithmicL2 α β (fun t ↦ t * deriv a t) := hftc
     _ = _ := by rw [hrawRoot, hderivRoot]
 
-private noncomputable def aux_leftBumpOne_scaleKernel (phi : SchwartzMap ℝ ℝ) (t : ℝ) : ℝ → ℝ :=
+private noncomputable def aux_leftBumpOne_scaleKernel
+    (phi : SchwartzMap ℝ ℝ) (t : ℝ) : ℝ → ℝ :=
   fun s ↦ t⁻¹ * phi (t⁻¹ * s)
 
 private theorem aux_leftBumpOne_scaleKernel_memLp (phi : SchwartzMap ℝ ℝ) (t : ℝ) :
@@ -9413,7 +9471,8 @@ private noncomputable def aux_leftBumpOne_averageLp {n : ℕ} (hn : 2 ≤ n)
 
 private theorem aux_leftBumpOne_averageLp_enorm_sub {n : ℕ} (hn : 2 ≤ n)
     (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (s t : ℝ) :
-    (‖aux_leftBumpOne_averageLp hn phi f s - aux_leftBumpOne_averageLp hn phi f t‖₊ : ℝ≥0∞) =
+    (‖aux_leftBumpOne_averageLp hn phi f s -
+        aux_leftBumpOne_averageLp hn phi f t‖₊ : ℝ≥0∞) =
       eLpNorm
         (fun x ↦ twistedAverageAtScale s (fun u ↦ phi u) (fun i y ↦ f.1 i y) x -
           twistedAverageAtScale t (fun u ↦ phi u) (fun i y ↦ f.1 i y) x)
@@ -9429,7 +9488,7 @@ private theorem aux_leftBumpOne_averageLp_enorm_sub {n : ℕ} (hn : 2 ≤ n)
 
 private theorem aux_leftBumpOne_lp_chain_energy_eq_lintegral {n : ℕ} (hn : 2 ≤ n)
     (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (J : ℕ) (k : ℤ)
-    (u : Fin (J + 1) → aux_dyadicInterval k) (hu : Monotone u) :
+    (u : Fin (J + 1) → aux_dyadicInterval k) (_hu : Monotone u) :
     (∑ j : Fin J,
       ‖aux_leftBumpOne_averageLp hn phi f (u j.succ) -
         aux_leftBumpOne_averageLp hn phi f (u j.castSucc)‖ₑ ^ (2 : ℝ)) =
@@ -9448,7 +9507,8 @@ private theorem aux_leftBumpOne_lp_chain_energy_eq_lintegral {n : ℕ} (hn : 2 �
       (aux_leftBumpOne_scaleKernel_memLp phi (u j.castSucc))
     change MemLp
       (twistedAverage (aux_leftBumpOne_scaleKernel phi (u j.succ)) (fun i y ↦ f.1 i y) -
-        twistedAverage (aux_leftBumpOne_scaleKernel phi (u j.castSucc)) (fun i y ↦ f.1 i y)) 2 volume
+        twistedAverage (aux_leftBumpOne_scaleKernel phi (u j.castSucc))
+          (fun i y ↦ f.1 i y)) 2 volume
     exact hs.sub ht
   have hmeas (j : Fin J) : AEMeasurable (fun x ↦ ‖g j x‖ₑ ^ (2 : ℝ)) volume :=
     (hmem j).aestronglyMeasurable.enorm.pow_const _
@@ -9467,7 +9527,7 @@ private theorem aux_leftBumpOne_lp_chain_energy_eq_lintegral {n : ℕ} (hn : 2 �
       exact eLpNorm_nnreal_pow_eq_lintegral (μ := volume) (f := g j)
         (p := (2 : NNReal)) (by norm_num)
     _ = ∫⁻ x, ∑ j : Fin J, ‖g j x‖ₑ ^ (2 : ℝ) := by
-      simpa using (lintegral_finset_sum' (μ := volume) Finset.univ
+      simpa using (lintegral_finsetSum' (μ := volume) Finset.univ
         (f := fun j x ↦ ‖g j x‖ₑ ^ (2 : ℝ)) (fun j _ ↦ hmeas j)).symm
 
 private theorem aux_leftBumpOne_joint_measurable_twistedAverageAtScale {n : ℕ}
@@ -9590,14 +9650,17 @@ private theorem aux_leftBumpOne_local_variation_product {n : ℕ} (hn : 2 ≤ n)
     (phi tau : SchwartzMap ℝ ℝ) (htau : (tau : ℝ → ℝ) = aux_tBump phi)
     (f : ReductionNormalizedTuple n) (J : ℕ) (k : ℤ) :
     (finiteVariationSeminorm
-      (fun s : aux_dyadicInterval k ↦ aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+      (fun s : aux_dyadicInterval k ↦
+        aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
       8 *
         (∫⁻ t in Set.Icc (1 : ℝ) 2,
           eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ phi q)
-            (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) *
+            (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^
+          ((2 : ℝ)⁻¹) *
         (∫⁻ t in Set.Icc (1 : ℝ) 2,
           eLpNorm (twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ tau q)
-            (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^ ((2 : ℝ)⁻¹) := by
+            (fun i y ↦ f.1 i y)) 2 volume ^ (2 : ℝ) * ENNReal.ofReal t⁻¹) ^
+          ((2 : ℝ)⁻¹) := by
   let P : EuclideanSpace ℝ (Fin n) → ℝ≥0∞ := fun x ↦
     ∫⁻ t in Set.Icc (1 : ℝ) 2,
       ‖twistedAverageAtScale ((2 : ℝ) ^ k * t) (fun q ↦ phi q)
@@ -9788,7 +9851,7 @@ private theorem aux_leftBumpOne_finset_sqrt_mul_sqrt_le {ι : Type*} (κ : Finse
       (∑ i ∈ κ, p i) ^ ((2 : ℝ)⁻¹) *
         (∑ i ∈ κ, q i) ^ ((2 : ℝ)⁻¹) := by
   classical
-  letI : MeasurableSpace κ := ⊤
+  let : MeasurableSpace κ := ⊤
   let p' : κ → ℝ≥0∞ := fun i ↦ p i
   let q' : κ → ℝ≥0∞ := fun i ↦ q i
   have hp : AEMeasurable p' Measure.count := Measurable.aemeasurable (by fun_prop)
@@ -9817,7 +9880,7 @@ private theorem aux_leftBumpOne_dyadic_index_unique {x : ℝ} {k l : ℤ}
     exact (not_lt_of_ge (hp.trans hl.1)) hk.2
 
 private theorem aux_leftBumpOne_kappa_card_le {J : ℕ}
-    (t : Fin (J + 1) → ℝ) (htpos : ∀ j, 0 < t j)
+    (t : Fin (J + 1) → ℝ) (_htpos : ∀ j, 0 < t j)
     (kappa : Finset ℤ)
     (hkappa : ∀ k, k ∈ kappa ↔ ∃ j,
       (2 : ℝ) ^ k ≤ t j ∧ t j < (2 : ℝ) ^ (k + 1)) :
@@ -9942,9 +10005,9 @@ private theorem aux_leftBumpOne_ofReal_sqrt_rpow_product (C D : ℝ) (hC : 0 ≤
   rw [ENNReal.ofReal_rpow_of_nonneg hC hhalf,
     ENNReal.ofReal_rpow_of_nonneg hD hhalf]
   have hCsqrt : C ^ ((2 : ℝ)⁻¹) = Real.sqrt C := by
-    convert (Real.sqrt_eq_rpow C).symm using 1 <;> norm_num
+    convert (Real.sqrt_eq_rpow C).symm using 1; norm_num
   have hDsqrt : D ^ ((2 : ℝ)⁻¹) = Real.sqrt D := by
-    convert (Real.sqrt_eq_rpow D).symm using 1 <;> norm_num
+    convert (Real.sqrt_eq_rpow D).symm using 1; norm_num
   rw [hCsqrt, hDsqrt]
   have hsC : 0 ≤ Real.sqrt C := Real.sqrt_nonneg _
   have hsD : 0 ≤ Real.sqrt D := Real.sqrt_nonneg _
@@ -10231,7 +10294,7 @@ private theorem aux_leftBumpOne_compress_mono_chain
             exact hq (Fin.succ_lt_succ_iff.mp hij)
         refine ⟨M + 1, Nat.succ_le_succ hMJ, q', hq'strict, ?_, ?_, ?_⟩
         · rfl
-        · simp only [q', Fin.succ_last]
+        · simp only [q']
           exact hqlast
         · have hqsplit : aux_leftBumpOne_intEnergy d q' =
               d (t 1) (t 0) + aux_leftBumpOne_intEnergy d q := by
@@ -10279,7 +10342,7 @@ private theorem aux_leftBumpOne_energy_of_root_le (E S V : ℝ≥0∞)
         norm_num
 
 private theorem aux_leftBumpOne_long_variation_sq_le {n : ℕ} (hn : 2 ≤ n)
-    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (J : ℕ) (hJ : 0 < J)
+    (phi : SchwartzMap ℝ ℝ) (f : ReductionNormalizedTuple n) (J : ℕ) (_hJ : 0 < J)
     (A : ℝ) (hA : aux_dyadicVariationBound A (fun x ↦ phi x) f.1) :
     (finiteVariationSeminorm
       (fun s : Set.range (fun k : ℤ ↦ (2 : ℝ) ^ k) ↦
@@ -10378,7 +10441,8 @@ private theorem aux_leftBumpOne_shortLong_finish_of_local {n : ℕ} (hn : 2 ≤ 
     (hlocal : ∀ (J : ℕ), 0 < J → ∀ κ : Finset ℤ, κ.card ≤ J + 1 →
       ∑ k ∈ κ,
         (finiteVariationSeminorm
-          (fun s : aux_dyadicInterval k ↦ aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+          (fun s : aux_dyadicInterval k ↦
+            aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
         ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) :
     aux_variationBound (8 * B + 2 * A) (fun x ↦ phi x) f.1 := by
   unfold aux_variationBound
@@ -10528,8 +10592,10 @@ private theorem aux_leftBumpOne_variationBound_neg {n : ℕ} (A : ℝ) (phi : �
             (fun x ↦ -(twistedAverageAtScale (t.1 j.succ) phi (fun i y ↦ f i y) x -
               twistedAverageAtScale (t.1 j.castSucc) phi (fun i y ↦ f i y) x)) 2 volume ^ 2 =
             eLpNorm
-              (-(fun x ↦ twistedAverageAtScale (t.1 j.succ) phi (fun i y ↦ f i y) x -
-                twistedAverageAtScale (t.1 j.castSucc) phi (fun i y ↦ f i y) x)) 2 volume ^ 2 := by
+              (-(fun x ↦ twistedAverageAtScale (t.1 j.succ) phi
+                  (fun i y ↦ f i y) x -
+                twistedAverageAtScale (t.1 j.castSucc) phi
+                  (fun i y ↦ f i y) x)) 2 volume ^ 2 := by
               rfl
         _ = eLpNorm
               (fun x ↦ twistedAverageAtScale (t.1 j.succ) phi (fun i y ↦ f i y) x -
@@ -10565,7 +10631,7 @@ private theorem aux_leftBumpOne_conv_Ici_one_eq_conv_Ici_zero_shift (g : ℝ →
       have hind : Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 1) (1 + z) =
           Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) z := by
         unfold Codex.Reduction.SmoothingDecomposition.aux_indicator
-        by_cases hz : 0 ≤ z <;> simp [hz] <;> linarith
+        by_cases hz : 0 ≤ z <;> simp [hz]
       rw [hind]
       congr 1
       ring
@@ -10680,7 +10746,8 @@ private theorem aux_leftBumpOne_leftBumpOne {n : ℕ} (hn : 2 ≤ n)
   have hlocal : ∀ (J : ℕ), 0 < J → ∀ κ : Finset ℤ, κ.card ≤ J + 1 →
       ∑ ell ∈ κ,
         (finiteVariationSeminorm
-          (fun s : aux_dyadicInterval ell ↦ aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+          (fun s : aux_dyadicInterval ell ↦
+            aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
         ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
     intro J hJ κ hcard
     let Q : ℝ := Real.sqrt (C_leftBumpOneShortOne n) *
@@ -10689,7 +10756,8 @@ private theorem aux_leftBumpOne_leftBumpOne {n : ℕ} (hn : 2 ≤ n)
     calc
       ∑ ell ∈ κ,
         (finiteVariationSeminorm
-          (fun s : aux_dyadicInterval ell ↦ aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
+          (fun s : aux_dyadicInterval ell ↦
+            aux_leftBumpOne_averageLp hn phi f (s : ℝ)) 2 J) ^ (2 : ℝ) ≤
           16 * ENNReal.ofReal Q * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
             simpa [phi, Q] using hlocal0
       _ = ENNReal.ofReal B * ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
@@ -10753,8 +10821,11 @@ private theorem aux_leftBumpOne_whitney_sharp {n : ℕ} (hn : 2 ≤ n) :
         11 * ((127 / 128 : ℝ) * (2 : ℝ) ^ 553) =
             ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 4) * (2 : ℝ) ^ 553 := by
               norm_num
-              ring
-        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by ring
+              set_option exponentiation.threshold 1000 in
+                ring
+        _ = (1397 / 2048 : ℝ) * ((2 : ℝ) ^ 4 * (2 : ℝ) ^ 553) := by
+          set_option exponentiation.threshold 1000 in
+            ring
         _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by rw [← pow_add]
 
 private theorem aux_leftBumpOne_short_two_aux_le :
@@ -10806,7 +10877,9 @@ private theorem aux_leftBumpOne_short_two_sharp {n : ℕ} (hn : 2 ≤ n) :
         (2 : ℝ) ^ 4 * ((1397 / 2048 : ℝ) * (2 : ℝ) ^ 557) * 133 *
             (2 : ℝ) ^ 62 =
             (185801 / 262144 : ℝ) *
-              ((2 : ℝ) ^ 11 * (2 : ℝ) ^ 557 * (2 : ℝ) ^ 62) := by norm_num; ring
+              ((2 : ℝ) ^ 11 * (2 : ℝ) ^ 557 * (2 : ℝ) ^ 62) := by
+                set_option exponentiation.threshold 1000 in
+                  norm_num
         _ = (185801 / 262144 : ℝ) * (2 : ℝ) ^ 630 := by
           rw [← pow_add, ← pow_add]
 
@@ -10827,7 +10900,9 @@ private theorem aux_leftBumpOne_constant_sharp {n : ℕ} (hn : 2 ≤ n) :
       C_leftBumpOneShortOne n * C_leftBumpOneShortTwo n <
           (q * (2 : ℝ) ^ 628) * (q * (2 : ℝ) ^ 630) :=
         mul_lt_mul_of_nonneg h1 h2 h1nonneg h2nonneg
-      _ = q ^ 2 * ((2 : ℝ) ^ 628 * (2 : ℝ) ^ 630) := by ring
+      _ = q ^ 2 * ((2 : ℝ) ^ 628 * (2 : ℝ) ^ 630) := by
+        set_option exponentiation.threshold 1000 in
+          ring
       _ = q ^ 2 * ((2 : ℝ) ^ 629) ^ 2 := by
         congr 1
         rw [← pow_add, ← pow_mul]
@@ -10852,7 +10927,9 @@ private theorem aux_leftBumpOne_constant_sharp {n : ℕ} (hn : 2 ≤ n) :
       _ = q * (2 : ℝ) ^ 636 := by
         calc
           (2 : ℝ) ^ 7 * (q * (2 : ℝ) ^ 629) =
-              q * ((2 : ℝ) ^ 7 * (2 : ℝ) ^ 629) := by ring
+              q * ((2 : ℝ) ^ 7 * (2 : ℝ) ^ 629) := by
+                set_option exponentiation.threshold 1000 in
+                  ring
           _ = q * (2 : ℝ) ^ 636 := by rw [← pow_add]
   have hlong : 2 * C_leftBumpOneLong n <
       (1 / 1024 : ℝ) * (2 : ℝ) ^ 636 := by
@@ -10868,7 +10945,9 @@ private theorem aux_leftBumpOne_constant_sharp {n : ℕ} (hn : 2 ≤ n) :
           Real.sqrt (C_leftBumpOneShortTwo n) + 2 * C_leftBumpOneLong n <
         q * (2 : ℝ) ^ 636 + (1 / 1024 : ℝ) * (2 : ℝ) ^ 636 :=
       add_lt_add hshort hlong
-    _ = (q + 1 / 1024 : ℝ) * (2 : ℝ) ^ 636 := by ring
+    _ = (q + 1 / 1024 : ℝ) * (2 : ℝ) ^ 636 := by
+      set_option exponentiation.threshold 1000 in
+        ring
     _ < (23 / 32 : ℝ) * (2 : ℝ) ^ 636 := by
       apply mul_lt_mul_of_pos_right
       · dsimp [q]
@@ -11180,7 +11259,7 @@ private theorem aux_mainTwisted_jump_norm_le_tsum {n : ℕ} (hn : 2 ≤ n)
   let g : ℕ → ℝ → ℝ := fun N ↦ phi - ∑ q ∈ Finset.range N, phiJ q
   have hgmem (N : ℕ) : MemLp (g N) 2 volume := by
     dsimp [g]
-    convert hphi.sub (memLp_finset_sum (Finset.range N) (fun q _ ↦ hphiJ q)) using 1
+    convert hphi.sub (memLp_finsetSum (Finset.range N) (fun q _ ↦ hphiJ q)) using 1
     ext x
     simp only [Pi.sub_apply, Finset.sum_apply]
   have hgconv : Tendsto (fun N ↦ eLpNorm (g N) 2 volume) atTop (nhds 0) := by
@@ -11449,8 +11528,6 @@ private theorem aux_mainTwisted_pointwise_smoothing_bound {n J : ℕ} (hn : 2 �
           ∑' q : ℕ, (z q + (o q + w q)) := by
         apply ENNReal.tsum_le_tsum
         intro q
-        change aux_mainTwisted_jumpNorm f t j (aux_mainTwisted_delta b q) ≤
-          z q + (o q + w q)
         exact hdelta q
       _ = _ := by
         rw [ENNReal.tsum_add, ENNReal.tsum_add]
@@ -12219,7 +12296,8 @@ private theorem aux_mainTwisted_low_high_phiZero_energy {n : ℕ} (hn : 2 ≤ n)
     (J : ℕ) (hJ : 0 < J) (t : aux_scaleChain J)
     (hC : 0 ≤ C_mainBumpTwo n)
     (hhigh : ∑ j : Fin J, (∑' q : ℕ,
-      aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)) j) ^ 2 ≤
+      aux_mainTwisted_low_jumpNorm t f.1
+        (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)) j) ^ 2 ≤
         ENNReal.ofReal (C_mainBumpTwo n) *
           ENNReal.ofReal ((J : ℝ) ^ variationExponent n)) :
     ∑ j : Fin J,
@@ -12237,7 +12315,8 @@ private theorem aux_mainTwisted_low_high_phiZero_energy {n : ℕ} (hn : 2 ≤ n)
     aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b (-1)) ,
     aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b 0) ,
     fun j ↦ ∑' q : ℕ,
-      aux_mainTwisted_low_jumpNorm t f.1 (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)) j]
+      aux_mainTwisted_low_jumpNorm t f.1
+        (windowBasedBumpFunctions.phiZero b ((q + 1 : ℕ) : ℤ)) j]
   let v : Fin 4 → ℝ≥0∞ := ![(1 / 4 : ℝ≥0∞), (1 / 2 : ℝ≥0∞), 1, 1]
   let B : Fin 4 → ℝ≥0∞ := ![
     16 * ENNReal.ofReal (C_mainBumpTwo n),

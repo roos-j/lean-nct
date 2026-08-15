@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import Mathlib
 
 /-!
@@ -19,9 +25,13 @@ noncomputable def coordinateSum {n : ℕ} (x : EuclideanSpace ℝ (Fin n)) : ℝ
   ∑ i, x i
 
 /--
-For a subset $I\subset [n)$ (which inherits the natural order on $[m)$) and a $x\in \R^n$ we use notation
-\begin{equation}\label{auto:coordinate-subvector} x_I = (x_{i})_{i\in I} \in \mathbb{R}^{|I|} \end{equation}
-and when $I\subset [n)$ and $i\in [n)$ we also write $I\setminus i$ for the set $I$ without the index $i$.
+For a subset $I\subset [n)$ (which inherits the natural order on $[m)$) and a
+$x\in \R^n$ we use notation
+\begin{equation}\label{auto:coordinate-subvector}
+x_I = (x_{i})_{i\in I} \in \mathbb{R}^{|I|}
+\end{equation}
+and when $I\subset [n)$ and $i\in [n)$ we also write $I\setminus i$ for the
+set $I$ without the index $i$.
 -/
 noncomputable def coordinateRestriction {n : ℕ} (I : Finset (Fin n))
     (x : EuclideanSpace ℝ (Fin n)) : EuclideanSpace ℝ I :=
@@ -51,9 +61,12 @@ noncomputable def rescaled {n : ℕ} (t : ℝ)
   fun x ↦ t⁻¹ ^ n * ψ (t⁻¹ • x)
 
 /--
-If $\phi:\R^n\to \C, \psi:\R^m\to\C$ are functions, then $\phi\otimes \psi:\R^{n+m}\to\C$
+If $\phi:\R^n\to \C, \psi:\R^m\to\C$ are functions, then
+$\phi\otimes \psi:\R^{n+m}\to\C$
 denotes their tensor product
-\begin{equation}\label{auto:tensor-product-formula} (\phi\otimes \psi)(x,y) = \phi(x)\psi(y), \end{equation}
+\begin{equation}\label{auto:tensor-product-formula}
+(\phi\otimes \psi)(x,y) = \phi(x)\psi(y),
+\end{equation}
 where we have identified $\R^{n+m}$ with $\R^n\times \R^m$.
 -/
 noncomputable def tensorProduct {n m : ℕ} {𝕜 : Type*} [Mul 𝕜]
@@ -63,7 +76,9 @@ noncomputable def tensorProduct {n m : ℕ} {𝕜 : Type*} [Mul 𝕜]
 
 /--
 For $d\in\N$ also define
-\begin{equation}\label{auto:tensor-power-formula}\chi^{\otimes d} = \underbrace{\chi \otimes \cdots \otimes \chi}_{d\;\text{times}}.\end{equation}
+\begin{equation}\label{auto:tensor-power-formula}
+\chi^{\otimes d} = \underbrace{\chi \otimes \cdots \otimes \chi}_{d\;\text{times}}.
+\end{equation}
 -/
 noncomputable def tensorPower {𝕜 : Type*} [CommMonoid 𝕜]
     (χ : ℝ → 𝕜) (d : ℕ) : EuclideanSpace ℝ (Fin d) → 𝕜 :=

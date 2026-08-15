@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Joris Roos, Polona Durcik. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joris Roos, Polona Durcik
+-/
+
 import LeanNct.WienerSpace
 import LeanNct.Preliminaries.Notation
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
@@ -121,7 +127,7 @@ theorem aux_abs_pow_mul_exp_neg_half_le (d : ℕ) (x : ℝ) :
           Real.rpow B ((d : ℝ) / 2) * Real.rpow B ((d : ℝ) / 2) := by ring
       _ = Real.rpow B ((d : ℝ) / 2 + (d : ℝ) / 2) :=
         (Real.rpow_add hB _ _).symm
-      _ = Real.rpow B (d : ℝ) := by congr 1 <;> ring
+      _ = Real.rpow B (d : ℝ) := by congr 1; ring
       _ = B ^ d := Real.rpow_natCast B d
   have habs : |(|x| ^ d * Real.exp (-(Real.pi / 2) * x ^ 2))| ≤
       |Real.rpow B ((d : ℝ) / 2)| := by
@@ -154,7 +160,7 @@ theorem aux_halfGaussian_le_bracketDecay (x : ℝ) (n : ℕ) :
       _ = ((4 : ℝ) ^ (1 / 2 : ℝ)) ^ (n : ℝ) := by rw [htwo]
       _ = (4 : ℝ) ^ ((1 / 2 : ℝ) * (n : ℝ)) :=
         (Real.rpow_mul (by norm_num) (1 / 2 : ℝ) (n : ℝ)).symm
-      _ = (4 : ℝ) ^ ((n : ℝ) / 2) := by congr 1 <;> ring
+      _ = (4 : ℝ) ^ ((n : ℝ) / 2) := by congr 1; ring
   have htwopow : (2 : ℝ) ^ n ≤
       (4 * ((n + 1 : ℕ) : ℝ)) ^ ((n : ℝ) / 2) := by
     have hbase : (4 : ℝ) ≤ 4 * ((n + 1 : ℕ) : ℝ) := by
@@ -340,7 +346,7 @@ theorem aux_gaussian_iteratedDeriv_hermite (m : ℕ) (x : ℝ) :
     funext z
     dsimp [h, s, gaussian, Notation.gaussian]
     rw [show (Real.sqrt (2 * Real.pi) * z) ^ 2 = (2 * Real.pi) * z ^ 2 by
-      rw [mul_pow, Real.sq_sqrt (by positivity)] <;> ring]
+      rw [mul_pow, Real.sq_sqrt (by positivity)]]
     congr 1
     ring
   have hh : ContDiff ℝ m h := by
@@ -438,7 +444,7 @@ theorem aux_scaledHermite_term_le (m j d : Nat) (hm : m = 2 * j + d) :
       calc
         (Real.sqrt (2 * Real.pi)) ^ d * (Real.sqrt (2 * Real.pi)) ^ d =
             (Real.sqrt (2 * Real.pi)) ^ (d + d) := (pow_add _ _ _).symm
-        _ = (Real.sqrt (2 * Real.pi)) ^ (2 * d) := by congr 1 <;> omega
+        _ = (Real.sqrt (2 * Real.pi)) ^ (2 * d) := by congr 1; omega
         _ = ((Real.sqrt (2 * Real.pi)) ^ 2) ^ d := by rw [pow_mul]
     calc
       (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) * (Real.sqrt (2 * Real.pi)) ^ d =
@@ -455,7 +461,7 @@ theorem aux_scaledHermite_term_le (m j d : Nat) (hm : m = 2 * j + d) :
     calc
       (2 * Real.pi) ^ (j + d) * (2 : Real) ^ (j + d) =
           ((2 * Real.pi) * 2) ^ (j + d) := (mul_pow _ _ _).symm
-      _ = (4 * Real.pi) ^ (j + d) := by congr 1 <;> ring
+      _ = (4 * Real.pi) ^ (j + d) := by congr 1; ring
   have hlast : (4 * Real.pi) ^ d *
       (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) =
       (16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1)) ^ ((d : Real) / 2) := by
@@ -466,7 +472,7 @@ theorem aux_scaledHermite_term_le (m j d : Nat) (hm : m = 2 * j + d) :
       calc
         (4 * Real.pi : Real) ^ d = (4 * Real.pi : Real) ^ (d : Real) :=
           (Real.rpow_natCast (4 * Real.pi) d).symm
-        _ = (4 * Real.pi : Real) ^ ((2 : Real) * ((d : Real) / 2)) := by congr 1 <;> ring
+        _ = (4 * Real.pi : Real) ^ ((2 : Real) * ((d : Real) / 2)) := by congr 1; ring
         _ = ((4 * Real.pi : Real) ^ 2) ^ ((d : Real) / 2) := by
           simpa using (Real.rpow_mul ha (2 : Real) ((d : Real) / 2))
     calc
@@ -482,7 +488,8 @@ theorem aux_scaledHermite_term_le (m j d : Nat) (hm : m = 2 * j + d) :
         field_simp [Real.pi_ne_zero]
         ring
   have hfactor :
-      (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) * ((2 : Real) ^ (j + d) * ((2 * j + d : Nat) : Real) ^ j) *
+      (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) *
+        ((2 : Real) ^ (j + d) * ((2 * j + d : Nat) : Real) ^ j) *
         (Real.sqrt (2 * Real.pi)) ^ d *
         (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) =
       (4 * Real.pi * ((2 * j + d : Nat) : Real)) ^ j *
@@ -512,7 +519,8 @@ theorem aux_scaledHermite_term_le (m j d : Nat) (hm : m = 2 * j + d) :
             rw [mul_pow]
             ring
       _ = (4 * Real.pi * ((2 * j + d : Nat) : Real)) ^ j *
-            (16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1)) ^ ((d : Real) / 2) := by rw [hlast]
+            (16 * Real.pi * ((d + 1 : Nat) : Real) * Real.exp (-1)) ^ ((d : Real) / 2) := by
+        rw [hlast]
   have hpi4 : Real.pi ≤ 4 := by
     exact (le_of_lt Real.pi_lt_d2).trans (by norm_num)
   have hbaseJ : 4 * Real.pi * ((2 * j + d : Nat) : Real) ≤
@@ -551,7 +559,8 @@ theorem aux_scaledHermite_term_le (m j d : Nat) (hm : m = 2 * j + d) :
   have hA : 0 < A := by dsimp [A]; positivity
   have hcast : A ^ j = A ^ (j : Real) := (Real.rpow_natCast A j).symm
   calc
-    (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) * ((2 : Real) ^ (j + d) * ((2 * j + d : Nat) : Real) ^ j) *
+    (Real.sqrt (2 * Real.pi)) ^ (2 * j + d) *
+        ((2 : Real) ^ (j + d) * ((2 * j + d : Nat) : Real) ^ j) *
         (Real.sqrt (2 * Real.pi)) ^ d *
         (((d + 1 : Nat) : Real) * Real.exp (-1) / Real.pi) ^ ((d : Real) / 2) =
       (4 * Real.pi * ((2 * j + d : Nat) : Real)) ^ j *
@@ -757,7 +766,9 @@ theorem aux_gaussian_iteratedDeriv_half_decay (m : ℕ) (x : ℝ) :
 /--
 \begin{proposition}\label{Gaussian bump decay}
 For every $x\in\R$, $m,N\in\N$,
-\begin{equation}\label{auto:Gaussian-derivative-decay} |\g^{(m)}(x)|\le C_{\ref{Gaussian bump decay},m,N} \langle x\rangle^N, \end{equation}
+\begin{equation}\label{auto:Gaussian-derivative-decay}
+|\g^{(m)}(x)|\le C_{\ref{Gaussian bump decay},m,N} \langle x\rangle^N,
+\end{equation}
 where
 \begin{equation}\label{auto:Gaussian-bump-decay-constant}
 C_{\ref{Gaussian bump decay},m,N}
@@ -1537,7 +1548,7 @@ theorem aux_one_sub_gaussian_div_sq_tendsto :
       have hraw : HasDerivAt (fun y : ℝ => y * y) (2 * x) x := by
         rw [← hscalar]
         exact hraw0.congr_of_eventuallyEq
-          (Filter.Eventually.of_forall fun y => by simp [pow_two])
+          (Filter.Eventually.of_forall fun y => by simp)
       simpa only [pow_two] using hraw
   · filter_upwards [self_mem_nhdsWithin] with x hx
     have hx0 : x ≠ 0 := by simpa using hx
@@ -2040,8 +2051,7 @@ theorem aux_auxiliaryFunctionBDerivative_tendsto_zero :
       (aux_sqrtOneMinusGaussian_pos hy0).ne'
     have hscale : 0 < Real.sqrt Real.pi * y := mul_pos hsqrtpi_pos hy
     dsimp only [q]
-    simp only [auxiliaryFunctionBDerivative, if_neg hy0,
-      sign_pos hscale, one_mul]
+    simp only [auxiliaryFunctionBDerivative, if_neg hy0, sign_pos hscale]
     rw [abs_of_pos hy]
     field_simp [hroot, hy0]
     norm_num
@@ -2214,7 +2224,7 @@ theorem aux_auxiliaryFunctionBDerivative_norm_le (x : ℝ) :
   rw [Real.norm_eq_abs]
   by_cases hx : x = 0
   · subst x
-    simp [auxiliaryFunctionBDerivative, aux_poissonFrequency] <;> positivity
+    simp [auxiliaryFunctionBDerivative, aux_poissonFrequency]
   · rw [auxiliaryFunctionBDerivative, if_neg hx]
     rcases lt_or_gt_of_ne hx with hneg | hpos
     · have hscale : Real.sqrt Real.pi * x < 0 :=
@@ -2243,7 +2253,6 @@ theorem aux_auxiliaryFunctionBDerivative_norm_le (x : ℝ) :
             mul_le_mul_of_nonneg_left (aux_exp_neg_abs_sqrt_pi_le_poissonFrequency x)
               (Real.sqrt_nonneg _)
           exact add_le_add hgaussian hpoisson
-
     · have hscale : 0 < Real.sqrt Real.pi * x :=
         mul_pos (Real.sqrt_pos.2 Real.pi_pos) hpos
       have habel :
@@ -2450,7 +2459,7 @@ theorem aux_exp_three_half_pi_sq_le_nine {x : ℝ} (hx : |x| ≤ 1 / 2) :
       Real.exp_le_exp.mpr (by nlinarith)
     _ = Real.exp 1 * Real.exp 1 := by
       rw [← Real.exp_add]
-      congr 1 <;> norm_num
+      congr 1; norm_num
     _ ≤ 3 * 3 := mul_le_mul (le_of_lt Real.exp_one_lt_three)
       (le_of_lt Real.exp_one_lt_three) (Real.exp_pos _).le (by norm_num)
     _ = 9 := by norm_num
@@ -2524,7 +2533,7 @@ theorem aux_BSecondGaussianPart_abs_le_near_zero {x : ℝ}
   have hfpos : 0 < sqrtOneMinusGaussian x := aux_sqrtOneMinusGaussian_pos hx0
   have hL : L ≤ sqrtOneMinusGaussian x := by
     dsimp [L, u]
-    convert aux_sqrtOneMinusGaussian_lower x using 1 <;> ring
+    convert aux_sqrtOneMinusGaussian_lower x using 1; ring
   have hLpos : 0 < L := by
     dsimp [L]
     exact mul_pos (mul_pos (Real.sqrt_pos.2 Real.pi_pos) (abs_pos.mpr hx0))
@@ -2625,7 +2634,7 @@ theorem aux_BSecondGaussianPart_nonneg_le_local {x : ℝ}
   have hfpos : 0 < sqrtOneMinusGaussian x := aux_sqrtOneMinusGaussian_pos hx0
   have hL : L ≤ sqrtOneMinusGaussian x := by
     dsimp [L, u]
-    convert aux_sqrtOneMinusGaussian_lower x using 1 <;> ring
+    convert aux_sqrtOneMinusGaussian_lower x using 1; ring
   have hLpos : 0 < L := by
     dsimp [L]
     exact mul_pos (mul_pos (Real.sqrt_pos.2 Real.pi_pos) (abs_pos.mpr hx0))
@@ -2807,7 +2816,7 @@ theorem aux_BSecondGaussianPart_abs_le_outer {x : ℝ}
     positivity
   have hL : L ≤ sqrtOneMinusGaussian x := by
     dsimp [L, q]
-    convert aux_sqrtOneMinusGaussian_lower x using 1 <;> ring
+    convert aux_sqrtOneMinusGaussian_lower x using 1
   have hLpos : 0 < L := by
     dsimp [L, q]
     exact mul_pos (mul_pos (Real.sqrt_pos.2 Real.pi_pos) (abs_pos.mpr hx0))
@@ -3117,7 +3126,8 @@ theorem aux_integral_gaussian_second_moment :
     (fun x _ => (aux_gaussian_hasDerivAt x).differentiableAt)
   simp only [id, fderiv_id, ContinuousLinearMap.id_apply, one_mul] at hparts
   simp_rw [(aux_gaussian_hasDerivAt _).hasFDerivAt.fderiv] at hparts
-  simp [ContinuousLinearMap.toSpanSingleton_apply] at hparts
+  simp only [neg_mul, ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, mul_neg,
+    one_mul] at hparts
   rw [integral_neg, aux_integral_gaussian] at hparts
   have hmul : (∫ x : ℝ, x * (2 * Real.pi * x * gaussian x)) = 1 := by
     linarith
@@ -3805,7 +3815,7 @@ theorem aux_auxiliaryFunctionBSecondDerivative_measurable :
     Measurable auxiliaryFunctionBSecondDerivative := by
   unfold auxiliaryFunctionBSecondDerivative
   apply Measurable.ite
-    (by simpa only [Set.setOf_eq_eq_singleton] using (measurableSet_singleton (0 : ℝ)))
+    (by simpa only [Set.ofPred_eq_eq_singleton] using (measurableSet_singleton (0 : ℝ)))
   · exact measurable_const
   · have hg : Measurable gaussian := gaussian_continuous.measurable
     have hf : Measurable sqrtOneMinusGaussian :=
@@ -3940,7 +3950,7 @@ theorem aux_auxiliaryFunctionBTrueSecondDerivative_integrable :
   apply aux_auxiliaryFunctionBSecondDerivative_integrable.congr
   have hne : ∀ᵐ x : ℝ ∂volume, x ≠ 0 := by
     rw [MeasureTheory.ae_iff]
-    simpa using (measure_singleton (0 : ℝ))
+    simp
   filter_upwards [hne] with x hx
   simp [hx]
 
@@ -4008,7 +4018,8 @@ theorem aux_sqrtGaussianCoefficient_hasSum (t : ℝ) (ht0 : 0 ≤ t) (ht1 : t < 
       (fun n : ℕ => aux_sqrtGaussianCoefficient n * t ^ (n + 1))
       (1 - Real.sqrt (1 - t)) (SummationFilter.unconditional ℕ) := by
   have hmem : edist (-t) (0 : ℝ) < 1 := by
-    simp [edist_dist, abs_of_nonneg ht0]
+    simp only [edist_dist, dist_zero_right, norm_neg, Real.norm_eq_abs,
+      abs_of_nonneg ht0, ENNReal.ofReal_lt_one]
     exact_mod_cast ht1
   have h := (Real.one_add_rpow_hasFPowerSeriesOnBall_zero (a := (1 / 2 : ℝ))).hasSum
     (Metric.mem_eball.mpr hmem)
@@ -4271,7 +4282,8 @@ theorem auxiliaryFunctionB_properties :
     fun x hx ↦ aux_auxiliaryFunctionB_hasDerivAt_of_ne_zero hx,
     aux_auxiliaryFunctionBDerivative_continuous, aux_auxiliaryFunctionBDerivative_integrable,
     fun x hx ↦ aux_auxiliaryFunctionBDerivative_hasDerivAt_of_ne_zero hx,
-    aux_auxiliaryFunctionBSecondDerivative_measurable, aux_auxiliaryFunctionBSecondDerivative_integrable,
+    aux_auxiliaryFunctionBSecondDerivative_measurable,
+    aux_auxiliaryFunctionBSecondDerivative_integrable,
     aux_auxiliaryFunctionB_eLpNorm_one_le, aux_auxiliaryFunctionBDerivative_eLpNorm_one_le,
     aux_auxiliaryFunctionBSecondDerivative_eLpNorm_one_le⟩
 
@@ -4428,7 +4440,7 @@ theorem aux_integral_norm_auxiliaryFunctionBTrueSecondDerivative_le_fiftySix :
     (∫ ξ : ℝ, ‖if ξ = 0 then -Real.pi else auxiliaryFunctionBSecondDerivative ξ‖) ≤ 56 := by
   have hne : ∀ᵐ ξ : ℝ ∂volume, ξ ≠ 0 := by
     rw [MeasureTheory.ae_iff]
-    simpa using (measure_singleton (0 : ℝ))
+    simp
   calc
     (∫ ξ : ℝ, ‖if ξ = 0 then -Real.pi else auxiliaryFunctionBSecondDerivative ξ‖) =
         ∫ ξ : ℝ, ‖auxiliaryFunctionBSecondDerivative ξ‖ := by
@@ -4857,7 +4869,7 @@ theorem aux_sqrtGaussianDecayKernel_hasSum (x : ℝ) :
     Real.continuous_fourierChar.comp hinner
   have hne : ∀ᵐ ξ : ℝ ∂volume, ξ ≠ 0 := by
     rw [MeasureTheory.ae_iff]
-    simpa using (measure_singleton (0 : ℝ))
+    simp
   have hDCT : HasSum
       (fun n : ℕ => ∫ ξ : ℝ, 𝐞 ⟪ξ, x⟫ •
         ((aux_sqrtGaussianCoefficient n *
@@ -4979,7 +4991,7 @@ theorem aux_norm_sqrtGaussianKernel_le_one (x : ℝ) :
       apply integral_congr_ae
       filter_upwards [] with ξ
       rw [Circle.norm_smul]
-      simp only [one_mul, Complex.norm_real, Real.norm_eq_abs,
+      simp only [Complex.norm_real, Real.norm_eq_abs,
         abs_of_nonneg (aux_one_sub_sqrtOneMinusGaussian_nonneg ξ)]
     _ ≤ ∫ ξ : ℝ, gaussian ξ := by
       apply integral_mono aux_sqrtGaussianFrequencyProfile_integrable_real aux_gaussian_integrable
@@ -5069,7 +5081,9 @@ def C_squareRootGaussianDecay : ℝ := 17
 /--
 \begin{proposition}[square root of Gaussian decay]\label{square root of Gaussian decay}
 For $x\in\R$ let
-\begin{equation}\label{auto:inverse-Fourier-square-root-Gaussian} \rho(x) = \mathcal{F}^{-1}(\xi \mapsto 1- \sqrt{1-\g(\xi)})(x). \end{equation}
+\begin{equation}\label{auto:inverse-Fourier-square-root-Gaussian}
+\rho(x) = \mathcal{F}^{-1}(\xi \mapsto 1- \sqrt{1-\g(\xi)})(x).
+\end{equation}
 This is a well-defined function in $W_0(\R)$ satisfying for all $x\in\R$,
 \begin{equation} \label{sqr gauss C}
     0\le \rho(x) \le C_{\ref{square root of Gaussian decay}} \langle x\rangle^2,
