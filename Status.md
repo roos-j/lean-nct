@@ -48,7 +48,7 @@ Lean file: RealToErgodic.lean
 
 \label{interpolated real variable estimate}: [Statement completed] (Lean: interpolated_real_variable_estimate) (2026-08-14 23:33:53 PDT)
 
-\label{Calderon transference external}: [Statement completed] (Lean: calderon_transference_external) (2026-08-14 23:33:53 PDT)
+\label{Calderon transference external}: [Proof completed] (Lean: calderon_transference_external) (2026-08-16 16:05:37 PDT)
 
 \label{thm:ergodicthm-interpolation}: [Statement completed] (Lean: ergodic_jump_estimate_interpolation) (2026-08-14 23:33:53 PDT)
 
