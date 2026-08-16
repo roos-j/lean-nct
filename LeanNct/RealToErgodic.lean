@@ -2,6 +2,7 @@
 
 import LeanNct.Introduction
 import LeanNct.Reduction.VariationSeminorms
+import LeanNct.CalderonTransference
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Data.Fin.Tuple.Sort
@@ -2649,6 +2650,72 @@ private theorem aux_complexComponent_memLp_pi {X : Type*} [MeasurableSpace X]
   · simpa [hε] using (hf i).re
   · simpa [hε] using (hf i).im
 
+/-! ### Bridge to the Mathlib-only Calderón transference theorem -/
+
+private theorem ct_kernel_eq_of_ne_one (x : ℝ) (hx : x ≠ 1) :
+    Codex.CalderonTransference.unitIntervalKernel x = unitIntervalKernel x := by
+  unfold Codex.CalderonTransference.unitIntervalKernel unitIntervalKernel
+  by_cases h : x ∈ Ico (0 : ℝ) 1
+  · have h' : x ∈ Icc (0 : ℝ) 1 := ⟨h.1, h.2.le⟩
+    simp [h, h']
+  · have h' : x ∉ Icc (0 : ℝ) 1 := by
+      intro hx'
+      apply h
+      exact ⟨hx'.1, lt_of_le_of_ne hx'.2 hx⟩
+    simp [h, h']
+
+private theorem ct_scaled_kernel_ae_eq (t : ℝ) (ht : 0 < t) :
+    (fun s : ℝ ↦ Codex.CalderonTransference.unitIntervalKernel (t⁻¹ * s)) =ᵐ[volume]
+      fun s ↦ unitIntervalKernel (t⁻¹ * s) := by
+  filter_upwards [volume.ae_ne t] with s hs
+  apply ct_kernel_eq_of_ne_one
+  intro h
+  apply hs
+  calc
+    s = (t * t⁻¹) * s := by rw [mul_inv_cancel₀ ht.ne', one_mul]
+    _ = t * (t⁻¹ * s) := by ring
+    _ = t := by rw [h, mul_one]
+
+private theorem ct_twistedAverageAtScale_eq {n : ℕ} (t : ℝ) (ht : 0 < t)
+    (f : Fin n → Codex.CalderonTransference.RealVector n → ℝ) :
+    Codex.CalderonTransference.twistedAverageAtScale t
+      Codex.CalderonTransference.unitIntervalKernel f =
+      Codex.Introduction.twistedAverageAtScale t unitIntervalKernel f := by
+  funext x
+  unfold Codex.CalderonTransference.twistedAverageAtScale
+    Codex.CalderonTransference.twistedAverage
+    Codex.Introduction.twistedAverageAtScale
+    Codex.Reduction.TwistedAverages.twistedAverageAtScale
+    Codex.Reduction.TwistedAverages.twistedAverage
+  apply integral_congr_ae
+  filter_upwards [ct_scaled_kernel_ae_eq t ht] with s hs
+  rw [hs]
+  simp only [Codex.CalderonTransference.coordinateAxis]
+
+private theorem ct_endpointEnergy_eq {n J : ℕ} (t : Fin (J + 1) → ℝ)
+    (ht : ∀ j, 0 < t j)
+    (f : Fin n → Codex.CalderonTransference.RealVector n → ℝ) :
+    Codex.CalderonTransference.endpointEnergy J t
+      Codex.CalderonTransference.unitIntervalKernel f =
+      endpointEnergy J t unitIntervalKernel f := by
+  unfold Codex.CalderonTransference.endpointEnergy endpointEnergy
+  apply Finset.sum_congr rfl
+  intro j _
+  rw [ct_twistedAverageAtScale_eq (t j.succ) (ht j.succ),
+    ct_twistedAverageAtScale_eq (t j.castSucc) (ht j.castSucc)]
+
+private def ctSystem {X : Type*} [MeasurableSpace X] {μ : Measure X} {n : ℕ}
+    (S : aux_ErgodicSystem X μ n) : Codex.CalderonTransference.ErgodicSystem X μ n :=
+  { transformation := S.transformation
+    measurePreserving := S.measurePreserving
+    commutes := S.commutes }
+
+private theorem ct_energy_eq {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {n J : ℕ} (S : aux_ErgodicSystem X μ n)
+    (N : Fin (J + 1) → ℕ) (f : Fin n → X → ℝ) :
+    Codex.CalderonTransference.realErgodicJumpEnergy (ctSystem S) N f =
+      aux_realErgodicJumpEnergy S N f := rfl
+
 /-- The real-variable hypothesis in the Calderón transference principle. -/
 def aux_realVariableJumpBound {n : ℕ} (p : Fin n → ℝ≥0∞)
     (C : ℝ) (g : ℕ → ℝ) : Prop :=
@@ -2706,7 +2773,20 @@ theorem calderon_transference_external {n : ℕ} (hn : 2 ≤ n)
       (∀ J, 0 < J → 1 ≤ g J) →
       aux_realVariableJumpBound p C g →
         aux_realErgodicJumpBound.{u} p K g := by
-  sorry
+  obtain ⟨K, hK, htransfer⟩ :=
+    Codex.CalderonTransference.calderon_transference_external.{u}
+      hn p hp hsum C hC
+  refine ⟨K, hK, ?_⟩
+  intro g hg hreal
+  have hctreal : Codex.CalderonTransference.realVariableJumpBound p C g := by
+    intro J hJ t ht htpos f hf
+    rw [ct_endpointEnergy_eq t htpos f]
+    exact hreal J hJ t ht htpos f hf
+  have hct := htransfer g hg hctreal
+  intro X _ μ S J hJ N hN hNpos f hf
+  have h := hct X μ (ctSystem S) J hJ N hN hNpos f hf
+  rw [ct_energy_eq S N f] at h
+  exact h
 
 /-- The finite constant supplied by the external Calderón theorem. -/
 noncomputable def C_calderon_transference_external (n : ℕ)
