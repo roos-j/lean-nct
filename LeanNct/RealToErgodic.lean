@@ -3,6 +3,7 @@
 import LeanNct.Introduction
 import LeanNct.Reduction.VariationSeminorms
 import LeanNct.CalderonTransference
+import LeanNct.MultilinearInterpolation
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Data.Fin.Tuple.Sort
@@ -2450,6 +2451,2416 @@ Proposition \ref{interpolated real variable estimate}. -/
 noncomputable def C_interpolated_real_variable_estimate (n : ℕ) : ℝ :=
   (2 : ℝ) ^ (2 * n) * (2 : ℝ) ^ 666
 
+/-- The singleton inequalities in the exponent polytope keep every interpolated
+input exponent finite.  This supplies the density hypothesis for the
+multilinear interpolation extension. -/
+private theorem aux_interpolatedExponent_ne_top {n : ℕ} (hn : 2 ≤ n)
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hpoly : (fun i ↦ ((p i)⁻¹).toReal) ∈ endpointPolytope n) :
+    ∀ i, p i ≠ ∞ := by
+  intro i htop
+  have hsingle := (exponent_polytope_of_exponents hn p hp).mp hpoly |>.2 {i}
+    (Finset.singleton_nonempty i)
+  have hzero : ((p i)⁻¹).toReal = 0 := by simp [htop]
+  have hcontr : (2 : ℝ) ^ ({i} : Finset (Fin n)).card /
+      (2 : ℝ) ^ (n + 1) ≤ 0 := by
+    simpa only [Finset.sum_singleton, hzero] using hsingle
+  have hpos : 0 < (2 : ℝ) ^ ({i} : Finset (Fin n)).card /
+      (2 : ℝ) ^ (n + 1) := by positivity
+  exact (not_le_of_gt hpos) hcontr
+
+/-- The polytope's total reciprocal constraint, transported from real coordinates
+back to `ENNReal`; this is the scaling relation needed for raw `L²` averages. -/
+private theorem aux_interpolatedExponent_reciprocal_sum {n : ℕ} (hn : 2 ≤ n)
+    (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hpoly : (fun i ↦ ((p i)⁻¹).toReal) ∈ endpointPolytope n) :
+    ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹ := by
+  have hptop : ∀ i, p i ≠ ∞ :=
+    aux_interpolatedExponent_ne_top hn p hp hpoly
+  have hreal : (∑ i, ((p i)⁻¹).toReal) = 1 / 2 :=
+    (exponent_polytope_of_exponents hn p hp).mp hpoly |>.1
+  have hsum_top : (∑ i, (p i)⁻¹) ≠ ∞ := by
+    apply ENNReal.sum_ne_top.mpr
+    intro i _
+    exact ENNReal.inv_ne_top.mpr (ne_of_gt (lt_of_lt_of_le zero_lt_one (hp i)))
+  apply (ENNReal.toReal_eq_toReal_iff' hsum_top (by norm_num)).mp
+  rw [ENNReal.toReal_sum]
+  · simpa using hreal
+  · intro i _
+    exact ENNReal.inv_ne_top.mpr (ne_of_gt (lt_of_lt_of_le zero_lt_one (hp i)))
+
+/-- The explicit endpoint exponents have the reciprocal vector used to define
+`endpointPolytope`.  This connects the finite interpolation endpoints to the
+convex-hull hypothesis. -/
+private theorem aux_endpointWeight_formula : ∀ (n : ℕ) (i : Fin n),
+    endpointWeight n i =
+      2 ^ (n + 1 - (i.val + min (n - i.val) 2)) := by
+  intro n i
+  induction n using Nat.strong_induction_on with
+  | h n ih =>
+    cases n with
+    | zero => exact Fin.elim0 i
+    | succ n =>
+      cases n with
+      | zero =>
+        exact Fin.eq_zero i ▸ by norm_num [endpointWeight]
+      | succ m =>
+        refine Fin.cases ?_ ?_ i
+        · simp [endpointWeight]
+        · intro j
+          simp only [endpointWeight, Fin.cases_succ]
+          have hrec := ih (m + 1) (by omega) j
+          rw [hrec]
+          congr 1
+          simp only [Fin.val_succ]
+          omega
+
+/-- The reciprocal of `mainEndpointExponent` is its corresponding coordinate
+of `endpointReciprocalVector`. -/
+private theorem aux_mainEndpointExponent_reciprocal_eq_endpointReciprocalVector
+    {n : ℕ} (_hn : 2 ≤ n) (i : Fin n) :
+    ((mainEndpointExponent n i)⁻¹).toReal = endpointReciprocalVector n i := by
+  rw [mainEndpointExponent, endpointReciprocalVector, aux_endpointWeight_formula n i]
+  let a : ℕ := i.val + min (n - i.val) 2
+  have ha : a ≤ n + 1 := by
+    dsimp [a]
+    omega
+  have hpow : (2 : ℝ) ^ a * (2 : ℝ) ^ (n + 1 - a) = (2 : ℝ) ^ (n + 1) := by
+    rw [← pow_add]
+    congr 1
+    omega
+  change ((2 : ℝ≥0∞) ^ a)⁻¹.toReal = _
+  rw [ENNReal.toReal_inv, ENNReal.toReal_pow]
+  push_cast
+  rw [show (2 : ℝ) ^ (n + 1 - a) / (2 : ℝ) ^ (n + 1) =
+      ((2 : ℝ) ^ a)⁻¹ by
+    field_simp
+    nlinarith [hpow]]
+  rfl
+
+/-- The permutation endpoint exponents have reciprocal sum `1 / 2`, as required
+to package their literal averages on `L²`. -/
+private theorem aux_mainEndpointExponent_reciprocal_sum {n : ℕ} (hn : 2 ≤ n)
+    (π : Equiv.Perm (Fin n)) :
+    ∑ i, (mainEndpointExponent n (π i))⁻¹ = (2 : ℝ≥0∞)⁻¹ := by
+  have hreal : (∑ i, ((mainEndpointExponent n (π i))⁻¹).toReal) = 1 / 2 := by
+    calc
+      (∑ i, ((mainEndpointExponent n (π i))⁻¹).toReal) =
+          ∑ i, endpointReciprocalVector n (π i) := by
+            apply Finset.sum_congr rfl
+            intro i _
+            exact aux_mainEndpointExponent_reciprocal_eq_endpointReciprocalVector hn (π i)
+      _ = ∑ i, endpointReciprocalVector n i := Equiv.sum_comp π _
+      _ = 1 / 2 := endpointReciprocalVector_sum n (by omega)
+  have hsum_top : (∑ i, (mainEndpointExponent n (π i))⁻¹) ≠ ∞ := by
+    apply ENNReal.sum_ne_top.mpr
+    intro i _
+    rw [ENNReal.inv_ne_top]
+    unfold mainEndpointExponent
+    exact pow_ne_zero _ (by norm_num)
+  apply (ENNReal.toReal_eq_toReal_iff' hsum_top (by norm_num)).mp
+  rw [ENNReal.toReal_sum]
+  · simpa using hreal
+  · intro i _
+    rw [ENNReal.inv_ne_top]
+    unfold mainEndpointExponent
+    exact pow_ne_zero _ (by norm_num)
+
+/-! ### Raw finite-scale stability
+
+The interpolation argument below works with `Lp` equivalence classes, whereas
+`complexTwistedAverage` is written as a literal scalar Bochner integral.  The
+following private namespace provides the bridge: on the finite measure induced
+by a nonnegative integrable kernel, coordinate translates of `Lp` inputs form
+an `L²` product, and the literal integral is therefore an `L²` representative.
+-/
+namespace RawStability
+
+/-- The coordinate shear preserves the product of Euclidean volume with every
+sigma-finite parameter measure. -/
+theorem aux_axis_shear_measurePreserving {n : ℕ} {ν : Measure ℝ} [SFinite ν]
+    (i : Fin n) :
+    MeasurePreserving
+      (fun xs : RealVector n × ℝ => (xs.1 + xs.2 • coordinateAxis i, xs.2))
+      ((volume : Measure (RealVector n)).prod ν)
+      ((volume : Measure (RealVector n)).prod ν) := by
+  let a : ℝ → RealVector n := fun s => s • coordinateAxis i
+  let G : ℝ → RealVector n → RealVector n := fun s x => x + a s
+  have hGmeas : Measurable (Function.uncurry G) := by
+    dsimp [G, a]
+    fun_prop
+  have hGmap : ∀ᵐ s : ℝ ∂ν, Measure.map (G s) volume = volume := by
+    filter_upwards [] with s
+    exact (measurePreserving_add_right (volume : Measure (RealVector n)) (a s)).map_eq
+  have hskew : MeasurePreserving
+      (fun sx : ℝ × RealVector n => (sx.1, G sx.1 sx.2))
+      (ν.prod volume) (ν.prod volume) :=
+    MeasurePreserving.skew_product (MeasurePreserving.id ν) hGmeas hGmap
+  have hswap1 : MeasurePreserving (Prod.swap : RealVector n × ℝ → ℝ × RealVector n)
+      ((volume : Measure (RealVector n)).prod ν) (ν.prod volume) :=
+    Measure.measurePreserving_swap
+  have hswap2 : MeasurePreserving (Prod.swap : ℝ × RealVector n → RealVector n × ℝ)
+      (ν.prod volume) ((volume : Measure (RealVector n)).prod ν) :=
+    Measure.measurePreserving_swap
+  convert hswap2.comp (hskew.comp hswap1) using 1 <;> rfl
+
+/-- A finite-measure Bochner integral of a jointly `L²` kernel is `L²` in the
+remaining variable. -/
+theorem aux_kernel_integral_memLp
+    {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
+    {μ : Measure X} {ν : Measure S} [SFinite μ] [SFinite ν] [IsFiniteMeasure ν]
+    (K : X × S → ℂ) (hK : MemLp K 2 (μ.prod ν)) :
+    MemLp (fun x : X => ∫ s : S, K (x, s) ∂ν) 2 μ := by
+  let A : X → ℂ := fun x => ∫ s : S, K (x, s) ∂ν
+  let B : X → ℝ := fun x => ∫ s : S, ‖K (x, s)‖ ^ (2 : ℝ) ∂ν
+  let C : ℝ := ∫ s : S, (1 : ℝ) ^ (2 : ℝ) ∂ν
+  have hAmeas : AEStronglyMeasurable A μ := by
+    simpa only [A] using hK.aestronglyMeasurable.integral_prod_right'
+  have hKsq : Integrable (fun z : X × S => ‖K z‖ ^ (2 : ℝ)) (μ.prod ν) := by
+    rw [← memLp_one_iff_integrable]
+    simpa using hK.norm_rpow (by norm_num) (by norm_num)
+  have hB : Integrable B μ := by
+    simpa only [B] using hKsq.integral_prod_left
+  have hCnonneg : 0 ≤ C := by
+    dsimp [C]
+    exact integral_nonneg fun _ => Real.rpow_nonneg (by norm_num) _
+  have hBnonneg (x : X) : 0 ≤ B x := by
+    dsimp [B]
+    exact integral_nonneg fun _ => Real.rpow_nonneg (norm_nonneg _) _
+  have hpoint : ∀ᵐ x ∂μ, ‖A x‖ ^ 2 ≤ C * B x := by
+    filter_upwards [hK.aestronglyMeasurable.prodMk_left, hKsq.prod_right_ae] with x hxmeas hxsq
+    have hx : MemLp (fun s : S => K (x, s)) 2 ν :=
+      (memLp_two_iff_integrable_sq_norm hxmeas).mpr (by
+        simpa only [Real.rpow_two] using hxsq)
+    have hnorm : ‖A x‖ ≤ ∫ s : S, ‖K (x, s)‖ ∂ν := by
+      dsimp [A]
+      exact norm_integral_le_of_norm_le (hx.integrable (by norm_num)).norm
+        (Filter.Eventually.of_forall fun s => le_rfl)
+    have hholder := integral_mul_norm_le_Lp_mul_Lq
+      (μ := ν) (f := fun _ : S => (1 : ℂ)) (g := fun s : S => K (x, s))
+      Real.HolderConjugate.two_two (memLp_const (1 : ℂ)) (by simpa using hx)
+    have hholder' : ∫ s : S, ‖K (x, s)‖ ∂ν ≤ Real.sqrt C * Real.sqrt (B x) := by
+      simpa only [C, B, norm_one, one_mul, Real.sqrt_eq_rpow, one_div] using hholder
+    have hsq : |‖A x‖| ^ 2 ≤ C * B x :=
+      Codex.Preliminaries.KKernels.aux_weightedCauchySchwarz_square_bound
+        hCnonneg (hBnonneg x) (by simpa [abs_of_nonneg (norm_nonneg _)] using hnorm.trans hholder')
+    simpa only [abs_of_nonneg (norm_nonneg _)] using hsq
+  apply (memLp_two_iff_integrable_sq_norm hAmeas).mpr
+  refine (hB.const_mul C).mono' (hAmeas.norm.pow 2) ?_
+  filter_upwards [hpoint] with x hx
+  change |‖A x‖ ^ 2| ≤ C * B x
+  rw [abs_of_nonneg (sq_nonneg _)]
+  exact hx
+
+/-- Quantitative finite-measure Cauchy--Schwarz for a Bochner integral of a
+jointly `L²` kernel.  This is the coarse continuity estimate used when the
+raw averages are packaged as continuous multilinear maps. -/
+theorem aux_kernel_integral_sq_norm_le
+    {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
+    {μ : Measure X} {ν : Measure S} [SFinite μ] [SFinite ν] [IsFiniteMeasure ν]
+    (K : X × S → ℂ) (hK : MemLp K 2 (μ.prod ν)) :
+    (∫ x : X, ‖∫ s : S, K (x, s) ∂ν‖ ^ 2 ∂μ) ≤
+      ν.real Set.univ * ∫ z : X × S, ‖K z‖ ^ (2 : ℝ) ∂μ.prod ν := by
+  let A : X → ℂ := fun x => ∫ s : S, K (x, s) ∂ν
+  let B : X → ℝ := fun x => ∫ s : S, ‖K (x, s)‖ ^ (2 : ℝ) ∂ν
+  let C : ℝ := ∫ s : S, (1 : ℝ) ^ (2 : ℝ) ∂ν
+  have hA : MemLp A 2 μ := aux_kernel_integral_memLp K hK
+  have hA2 : Integrable (fun x : X => ‖A x‖ ^ 2) μ :=
+    (memLp_two_iff_integrable_sq_norm hA.aestronglyMeasurable).mp hA
+  have hKsq : Integrable (fun z : X × S => ‖K z‖ ^ (2 : ℝ)) (μ.prod ν) := by
+    rw [← memLp_one_iff_integrable]
+    simpa using hK.norm_rpow (by norm_num) (by norm_num)
+  have hB : Integrable B μ := by
+    simpa only [B] using hKsq.integral_prod_left
+  have hCnonneg : 0 ≤ C := by
+    dsimp [C]
+    exact integral_nonneg fun _ => Real.rpow_nonneg (by norm_num) _
+  have hBnonneg (x : X) : 0 ≤ B x := by
+    dsimp [B]
+    exact integral_nonneg fun _ => Real.rpow_nonneg (norm_nonneg _) _
+  have hpoint : ∀ᵐ x ∂μ, ‖A x‖ ^ 2 ≤ C * B x := by
+    filter_upwards [hK.aestronglyMeasurable.prodMk_left, hKsq.prod_right_ae] with x hxmeas hxsq
+    have hx : MemLp (fun s : S => K (x, s)) 2 ν :=
+      (memLp_two_iff_integrable_sq_norm hxmeas).mpr (by
+        simpa only [Real.rpow_two] using hxsq)
+    have hnorm : ‖A x‖ ≤ ∫ s : S, ‖K (x, s)‖ ∂ν := by
+      dsimp [A]
+      exact norm_integral_le_of_norm_le (hx.integrable (by norm_num)).norm
+        (Filter.Eventually.of_forall fun s => le_rfl)
+    have hholder := integral_mul_norm_le_Lp_mul_Lq
+      (μ := ν) (f := fun _ : S => (1 : ℂ)) (g := fun s : S => K (x, s))
+      Real.HolderConjugate.two_two (memLp_const (1 : ℂ)) (by simpa using hx)
+    have hholder' : ∫ s : S, ‖K (x, s)‖ ∂ν ≤ Real.sqrt C * Real.sqrt (B x) := by
+      simpa only [C, B, norm_one, one_mul, Real.sqrt_eq_rpow, one_div] using hholder
+    have hsq : |‖A x‖| ^ 2 ≤ C * B x :=
+      Codex.Preliminaries.KKernels.aux_weightedCauchySchwarz_square_bound
+        hCnonneg (hBnonneg x) (by simpa [abs_of_nonneg (norm_nonneg _)] using hnorm.trans hholder')
+    simpa only [abs_of_nonneg (norm_nonneg _)] using hsq
+  change (∫ x : X, ‖A x‖ ^ 2 ∂μ) ≤ _
+  calc
+    (∫ x : X, ‖A x‖ ^ 2 ∂μ) ≤ ∫ x : X, C * B x ∂μ :=
+      integral_mono_ae hA2 (hB.const_mul C) hpoint
+    _ = C * ∫ x : X, B x ∂μ := integral_const_mul C B
+    _ = C * ∫ z : X × S, ‖K z‖ ^ (2 : ℝ) ∂μ.prod ν := by
+      congr 1
+      simpa only [B] using (integral_prod (fun z : X × S => ‖K z‖ ^ (2 : ℝ)) hKsq).symm
+    _ = ν.real Set.univ * ∫ z : X × S, ‖K z‖ ^ (2 : ℝ) ∂μ.prod ν := by
+      congr 1
+      dsimp [C]
+      simp
+
+/-- A square-integral bound for a joint kernel gives the ordinary norm bound
+needed to make its `Lp`-valued integral continuous. -/
+theorem aux_kernel_toLp_norm_le_of_sq_integral_bound
+    {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
+    {μ : Measure X} {ν : Measure S} [SFinite μ] [SFinite ν] [IsFiniteMeasure ν]
+    (K : X × S → ℂ) (hK : MemLp K 2 (μ.prod ν))
+    (D : ℝ) (hD : 0 ≤ D)
+    (hbound : ν.real Set.univ * ∫ z : X × S, ‖K z‖ ^ (2 : ℝ) ∂μ.prod ν ≤ D ^ 2) :
+    ‖(aux_kernel_integral_memLp K hK).toLp
+      (fun x : X => ∫ s : S, K (x, s) ∂ν)‖ ≤ D := by
+  let A : X → ℂ := fun x => ∫ s : S, K (x, s) ∂ν
+  let hA : MemLp A 2 μ := aux_kernel_integral_memLp K hK
+  have hA_sq : (∫ x : X, ‖A x‖ ^ 2 ∂μ) ≤ D ^ 2 := by
+    calc
+      (∫ x : X, ‖A x‖ ^ 2 ∂μ) ≤
+          ν.real Set.univ * ∫ z : X × S, ‖K z‖ ^ (2 : ℝ) ∂μ.prod ν :=
+        aux_kernel_integral_sq_norm_le K hK
+      _ ≤ D ^ 2 := hbound
+  rw [Lp.norm_toLp]
+  rw [toReal_eLpNorm hA.aestronglyMeasurable]
+  rw [lpNorm_eq_integral_norm_rpow_toReal (by norm_num) (by norm_num)
+    hA.aestronglyMeasurable]
+  change (∫ x : X, ‖A x‖ ^ (2 : ℝ) ∂μ) ^ ((2 : ℝ)⁻¹) ≤ D
+  rw [show (2 : ℝ)⁻¹ = 1 / 2 by norm_num]
+  rw [← Real.sqrt_eq_rpow]
+  exact (Real.sqrt_le_iff).mpr ⟨hD, by simpa only [Real.rpow_two] using hA_sq⟩
+
+/-- On a finite parameter measure, the joint product of coordinate translates
+is `L²` whenever the input reciprocal exponents add to `1/2`. -/
+theorem aux_compact_translated_product_memLp
+    {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹)
+    (f : Fin n → RealVector n → ℂ) (hf : ∀ i, MemLp (f i) (p i) volume)
+    {ν : Measure ℝ} [SFinite ν] [IsFiniteMeasure ν] :
+    MemLp
+      (fun xs : RealVector n × ℝ => ∏ i, f i (xs.1 + xs.2 • coordinateAxis i))
+      2 ((volume : Measure (RealVector n)).prod ν) := by
+  have hfactor (i : Fin n) : MemLp
+      (fun xs : RealVector n × ℝ => f i (xs.1 + xs.2 • coordinateAxis i))
+      (p i) ((volume : Measure (RealVector n)).prod ν) := by
+    have hbase : MemLp (fun xs : RealVector n × ℝ => f i xs.1) (p i)
+        ((volume : Measure (RealVector n)).prod ν) :=
+      (hf i).comp_fst ν
+    change MemLp
+      ((fun xs : RealVector n × ℝ => f i xs.1) ∘
+        fun xs : RealVector n × ℝ => (xs.1 + xs.2 • coordinateAxis i, xs.2))
+      (p i) ((volume : Measure (RealVector n)).prod ν)
+    exact hbase.comp_measurePreserving (aux_axis_shear_measurePreserving (ν := ν) i)
+  have hprod : MemLp
+      (fun xs : RealVector n × ℝ => ∏ i, f i (xs.1 + xs.2 • coordinateAxis i))
+      (∑ i, (p i)⁻¹)⁻¹ ((volume : Measure (RealVector n)).prod ν) := by
+    simpa only [Finset.prod_fn] using
+      (MemLp.prod' (s := Finset.univ) (f := fun i (xs : RealVector n × ℝ) =>
+        f i (xs.1 + xs.2 • coordinateAxis i)) (p := p)
+        (fun i _ => hfactor i))
+  rw [hsum] at hprod
+  simpa using hprod
+
+private theorem aux_shear_factor_lintegral
+    {n : ℕ} {ν : Measure ℝ} [SFinite ν]
+    (f : RealVector n → ℂ) (hf : Measurable f) (i : Fin n) (r : ℝ) :
+    (∫⁻ xs : RealVector n × ℝ,
+      ‖f (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ r ∂(volume : Measure (RealVector n)).prod ν) =
+      ν Set.univ * ∫⁻ x : RealVector n, ‖f x‖ₑ ^ r ∂volume := by
+  let F : RealVector n × ℝ → ENNReal := fun xs ↦ ‖f xs.1‖ₑ ^ r
+  have hF : Measurable F := by
+    exact ENNReal.continuous_rpow_const.measurable.comp (hf.enorm.comp measurable_fst)
+  calc
+    (∫⁻ xs : RealVector n × ℝ,
+      ‖f (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ r ∂(volume : Measure (RealVector n)).prod ν) =
+        ∫⁻ xs : RealVector n × ℝ,
+          F (xs.1 + xs.2 • coordinateAxis i, xs.2) ∂(volume : Measure (RealVector n)).prod ν := by
+            rfl
+    _ = ∫⁻ xs : RealVector n × ℝ, F xs ∂(volume : Measure (RealVector n)).prod ν :=
+      (aux_axis_shear_measurePreserving (ν := ν) i).lintegral_comp hF
+    _ = ν Set.univ * ∫⁻ x : RealVector n, ‖f x‖ₑ ^ r ∂volume := by
+      change (∫⁻ xs : RealVector n × ℝ, ‖f xs.1‖ₑ ^ r ∂(volume : Measure (RealVector n)).prod ν) = _
+      have hprod := lintegral_prod_mul
+        (μ := (volume : Measure (RealVector n))) (ν := ν)
+        (f := fun x : RealVector n ↦ ‖f x‖ₑ ^ r) (g := fun _ : ℝ ↦ (1 : ENNReal))
+        (ENNReal.continuous_rpow_const.measurable.comp hf.enorm).aemeasurable aemeasurable_const
+      simpa [mul_comm] using hprod
+
+private theorem aux_enorm_finprod {ι : Type*} [Fintype ι] (a : ι → ℂ) :
+    ‖∏ i, a i‖ₑ = ∏ i, ‖a i‖ₑ := by
+  rw [← ofReal_norm, norm_prod, ENNReal.ofReal_prod_of_nonneg]
+  · apply Finset.prod_congr rfl
+    intro i _
+    exact ofReal_norm (a i)
+  · intro i _
+    exact norm_nonneg _
+
+private theorem aux_eLpNorm_sq_eq_lintegral_rpow
+    {X E : Type*} [MeasurableSpace X] [TopologicalSpace E] [ENorm E]
+    (μ : Measure X) (F : X → E) (p : ENNReal)
+    (hp0 : p ≠ 0) (hptop : p ≠ ∞) :
+    eLpNorm F p μ ^ 2 =
+      (∫⁻ x, ‖F x‖ₑ ^ p.toReal ∂μ) ^ (2 / p.toReal) := by
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop]
+  rw [← ENNReal.rpow_natCast]
+  rw [← ENNReal.rpow_mul]
+  have hexp : (1 / p.toReal) * (↑(2 : ℕ) : ℝ) = 2 / p.toReal := by ring
+  rw [hexp]
+
+private theorem aux_prod_rpow_eq_rpow_sum_of_nonneg
+    {ι : Type*} (s : Finset ι) (B : ENNReal) (q : ι → ℝ)
+    (hq : ∀ i ∈ s, 0 ≤ q i) :
+    ∏ i ∈ s, B ^ q i = B ^ (∑ i ∈ s, q i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.sum_insert ha,
+      ih (fun i hi ↦ hq i (Finset.mem_insert_of_mem hi))]
+    exact (ENNReal.rpow_add_of_nonneg (q a) (∑ i ∈ s, q i)
+      (hq a (Finset.mem_insert_self _ _))
+      (Finset.sum_nonneg fun i hi ↦ hq i (Finset.mem_insert_of_mem hi))).symm
+
+private theorem aux_prod_mul_rpow_eq_mul_prod_rpow
+    {ι : Type*} (s : Finset ι) (B : ENNReal) (I : ι → ENNReal)
+    (q : ι → ℝ) (hq : ∀ i ∈ s, 0 ≤ q i)
+    (hqsum : ∑ i ∈ s, q i = 1) :
+    ∏ i ∈ s, (B * I i) ^ q i = B * ∏ i ∈ s, I i ^ q i := by
+  calc
+    ∏ i ∈ s, (B * I i) ^ q i = ∏ i ∈ s, (B ^ q i * I i ^ q i) := by
+      apply Finset.prod_congr rfl
+      intro i hi
+      rw [ENNReal.mul_rpow_of_nonneg _ _ (hq i hi)]
+    _ = (∏ i ∈ s, B ^ q i) * ∏ i ∈ s, I i ^ q i := Finset.prod_mul_distrib
+    _ = B * ∏ i ∈ s, I i ^ q i := by
+      rw [aux_prod_rpow_eq_rpow_sum_of_nonneg s B q hq, hqsum, ENNReal.rpow_one]
+
+/-- Finite-product Hölder for the squared joint kernel of a raw average. -/
+theorem aux_joint_translated_product_lintegral_sq_le
+    {n : ℕ} (p : Fin n → ENNReal)
+    (hp0 : ∀ i, p i ≠ 0) (hptop : ∀ i, p i ≠ ∞)
+    (hqsum : ∑ i, 2 / (p i).toReal = 1)
+    (f : ∀ i, Lp ℂ (p i) (volume : Measure (RealVector n)))
+    {ν : Measure ℝ} [SFinite ν] [IsFiniteMeasure ν] :
+    (∫⁻ xs : RealVector n × ℝ,
+      ‖∏ i, f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (2 : ℕ)
+        ∂(volume : Measure (RealVector n)).prod ν) ≤
+      ν Set.univ * ∏ i, eLpNorm (f i : RealVector n → ℂ) (p i) volume ^ 2 := by
+  classical
+  let q : Fin n → ℝ := fun i ↦ 2 / (p i).toReal
+  have hq_nonneg : ∀ i, 0 ≤ q i := by
+    intro i
+    dsimp [q]
+    positivity
+  have hfactor_meas (i : Fin n) : Measurable (fun xs : RealVector n × ℝ ↦
+      ‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (p i).toReal) := by
+    exact ENNReal.continuous_rpow_const.measurable.comp
+      ((Lp.stronglyMeasurable (f i)).measurable.enorm.comp
+        (measurable_fst.add (measurable_snd.smul measurable_const)))
+  have hfactor_lintegral (i : Fin n) :
+      (∫⁻ xs : RealVector n × ℝ,
+        ‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (p i).toReal
+          ∂(volume : Measure (RealVector n)).prod ν) =
+        ν Set.univ * ∫⁻ x : RealVector n, ‖f i x‖ₑ ^ (p i).toReal ∂volume :=
+    aux_shear_factor_lintegral (f i) (Lp.stronglyMeasurable (f i)).measurable i (p i).toReal
+  have hholder :
+      (∫⁻ xs : RealVector n × ℝ,
+        ∏ i, (‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (p i).toReal) ^ q i
+          ∂(volume : Measure (RealVector n)).prod ν) ≤
+        ∏ i, (∫⁻ xs : RealVector n × ℝ,
+          ‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (p i).toReal
+            ∂(volume : Measure (RealVector n)).prod ν) ^ q i := by
+    apply ENNReal.lintegral_prod_norm_pow_le Finset.univ
+    · intro i _
+      exact (hfactor_meas i).aemeasurable
+    · simpa only [q] using hqsum
+    · intro i _
+      exact hq_nonneg i
+  have hpoint (xs : RealVector n × ℝ) :
+      ‖∏ i, f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (2 : ℕ) =
+        ∏ i, (‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (p i).toReal) ^ q i := by
+    calc
+      ‖∏ i, f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (2 : ℕ) =
+          (∏ i, ‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ) ^ (2 : ℝ) := by
+        rw [aux_enorm_finprod]
+        norm_num [ENNReal.rpow_natCast]
+      _ = ∏ i, ‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (2 : ℝ) := by
+        simpa only using (ENNReal.prod_rpow_of_nonneg (s := Finset.univ)
+          (f := fun i ↦ ‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ)
+          (show (0 : ℝ) ≤ 2 by norm_num)).symm
+      _ = ∏ i, (‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (p i).toReal) ^ q i := by
+        apply Finset.prod_congr rfl
+        intro i _
+        symm
+        rw [← ENNReal.rpow_mul]
+        congr 1
+        dsimp [q]
+        field_simp [ne_of_gt (ENNReal.toReal_pos (hp0 i) (hptop i))]
+  calc
+    (∫⁻ xs : RealVector n × ℝ,
+      ‖∏ i, f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (2 : ℕ)
+        ∂(volume : Measure (RealVector n)).prod ν) =
+        ∫⁻ xs : RealVector n × ℝ,
+          ∏ i, (‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (p i).toReal) ^ q i
+            ∂(volume : Measure (RealVector n)).prod ν := by
+      apply lintegral_congr
+      intro xs
+      exact hpoint xs
+    _ ≤ ∏ i, (∫⁻ xs : RealVector n × ℝ,
+          ‖f i (xs.1 + xs.2 • coordinateAxis i)‖ₑ ^ (p i).toReal
+            ∂(volume : Measure (RealVector n)).prod ν) ^ q i := hholder
+    _ = ∏ i, (ν Set.univ * ∫⁻ x : RealVector n,
+          ‖f i x‖ₑ ^ (p i).toReal ∂volume) ^ q i := by
+      apply Finset.prod_congr rfl
+      intro i _
+      rw [hfactor_lintegral i]
+    _ = ν Set.univ * ∏ i,
+        (∫⁻ x : RealVector n, ‖f i x‖ₑ ^ (p i).toReal ∂volume) ^ q i := by
+      rw [aux_prod_mul_rpow_eq_mul_prod_rpow Finset.univ (ν Set.univ)
+        (fun i ↦ ∫⁻ x : RealVector n, ‖f i x‖ₑ ^ (p i).toReal ∂volume) q
+        (fun i _ ↦ hq_nonneg i) (by simpa only [q] using hqsum)]
+    _ = ν Set.univ * ∏ i, eLpNorm (f i : RealVector n → ℂ) (p i) volume ^ 2 := by
+      congr 1
+      apply Finset.prod_congr rfl
+      intro i _
+      symm
+      exact aux_eLpNorm_sq_eq_lintegral_rpow volume (f i) (p i) (hp0 i) (hptop i)
+
+private theorem aux_eLpNorm_two_sq_nat {α E : Type*} [MeasurableSpace α]
+    [TopologicalSpace E] [ENorm E] (μ : Measure α) (f : α → E) :
+    eLpNorm f 2 μ ^ 2 = ∫⁻ x, ‖f x‖ₑ ^ (2 : ℕ) ∂μ := by
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+  rw [show (2 : ENNReal).toReal = 2 by norm_num]
+  rw [← ENNReal.rpow_natCast]
+  rw [← ENNReal.rpow_mul]
+  norm_num
+
+/-- The real square-integral form of the finite-product Hölder estimate. -/
+theorem aux_joint_translated_product_integral_sq_le
+    {n : ℕ} (p : Fin n → ENNReal)
+    (hp0 : ∀ i, p i ≠ 0) (hptop : ∀ i, p i ≠ ∞)
+    (hqsum : ∑ i, 2 / (p i).toReal = 1)
+    (f : ∀ i, Lp ℂ (p i) (volume : Measure (RealVector n)))
+    {ν : Measure ℝ} [SFinite ν] [IsFiniteMeasure ν]
+    (hP : MemLp (fun xs : RealVector n × ℝ ↦
+      ∏ i, f i (xs.1 + xs.2 • coordinateAxis i)) 2
+        ((volume : Measure (RealVector n)).prod ν)) :
+    (∫ xs : RealVector n × ℝ,
+      ‖∏ i, f i (xs.1 + xs.2 • coordinateAxis i)‖ ^ 2
+        ∂(volume : Measure (RealVector n)).prod ν) ≤
+      ν.real Set.univ * ∏ i, ‖f i‖ ^ 2 := by
+  let P : RealVector n × ℝ → ℂ := fun xs ↦
+    ∏ i, f i (xs.1 + xs.2 • coordinateAxis i)
+  have hlin := aux_joint_translated_product_lintegral_sq_le p hp0 hptop hqsum f (ν := ν)
+  have hleft_top : (∫⁻ xs : RealVector n × ℝ, ‖P xs‖ₑ ^ (2 : ℕ)
+      ∂(volume : Measure (RealVector n)).prod ν) ≠ ∞ := by
+    rw [← aux_eLpNorm_two_sq_nat ((volume : Measure (RealVector n)).prod ν) P]
+    exact ENNReal.pow_ne_top hP.eLpNorm_ne_top
+  have hright_top : ν Set.univ * ∏ i,
+      eLpNorm (f i : RealVector n → ℂ) (p i) volume ^ 2 ≠ ∞ := by
+    apply ENNReal.mul_ne_top (measure_ne_top ν Set.univ)
+    apply ENNReal.prod_ne_top
+    intro i _
+    exact ENNReal.pow_ne_top (Lp.eLpNorm_ne_top (f i))
+  have hreal := (ENNReal.toReal_le_toReal hleft_top hright_top).mpr (by
+    simpa only [P] using hlin)
+  have hleft :
+      (∫ xs : RealVector n × ℝ, ‖P xs‖ ^ 2
+        ∂(volume : Measure (RealVector n)).prod ν) =
+        (∫⁻ xs : RealVector n × ℝ, ‖P xs‖ₑ ^ (2 : ℕ)
+          ∂(volume : Measure (RealVector n)).prod ν).toReal := by
+    rw [integral_eq_lintegral_of_nonneg_ae]
+    · congr 1
+      apply lintegral_congr
+      intro xs
+      rw [ENNReal.ofReal_pow (norm_nonneg _) 2]
+      rw [ofReal_norm]
+    · exact Filter.Eventually.of_forall fun _ ↦ sq_nonneg _
+    · exact (hP.aestronglyMeasurable.norm.pow 2)
+  rw [hleft]
+  simpa only [ENNReal.toReal_mul, ENNReal.toReal_prod, ENNReal.toReal_pow,
+    Lp.norm_def, Measure.real] using hreal
+
+private theorem aux_real_holder_sum_of_ennreal_reciprocal_sum
+    {n : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹) :
+    ∑ i, 2 / (p i).toReal = 1 := by
+  have hp0 (i : Fin n) : p i ≠ 0 :=
+    ne_of_gt (lt_of_lt_of_le zero_lt_one Fact.out)
+  have hinv_top (i : Fin n) : (p i)⁻¹ ≠ ∞ :=
+    ENNReal.inv_ne_top.mpr (hp0 i)
+  have hreal : ∑ i, ((p i)⁻¹).toReal = 1 / 2 := by
+    have h := congrArg ENNReal.toReal hsum
+    rw [ENNReal.toReal_sum (fun i _ ↦ hinv_top i)] at h
+    simpa using h
+  calc
+    ∑ i, 2 / (p i).toReal = 2 * ∑ i, ((p i)⁻¹).toReal := by
+      rw [Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [ENNReal.toReal_inv]
+      ring
+    _ = 1 := by rw [hreal]; norm_num
+
+/-- The scaled unit-interval kernel is nonnegative and integrable. -/
+theorem aux_scaleKernel_unitInterval_integrable {t : ℝ} (ht : 0 < t) :
+    Integrable (scaleKernel t unitIntervalKernel) volume := by
+  have hunit : Integrable unitIntervalKernel volume := by
+    unfold unitIntervalKernel
+    rw [integrable_indicator_iff measurableSet_Icc]
+    exact integrableOn_const measure_Icc_lt_top.ne
+  let m : ℝ → ℝ := fun x => t⁻¹ * x
+  have hcomp : Integrable (unitIntervalKernel ∘ m) volume := by
+    change Integrable (fun x => unitIntervalKernel (t⁻¹ * x)) volume
+    exact hunit.comp_mul_left' (inv_ne_zero ht.ne')
+  change Integrable (fun x => t⁻¹ * unitIntervalKernel (t⁻¹ * x)) volume
+  simpa [m] using hcomp.const_mul t⁻¹
+
+theorem aux_scaleKernel_unitInterval_nonneg {t : ℝ} (ht : 0 < t) :
+    ∀ s : ℝ, 0 ≤ scaleKernel t unitIntervalKernel s := by
+  intro s
+  unfold scaleKernel unitIntervalKernel
+  by_cases hs : t⁻¹ * s ∈ Icc (0 : ℝ) 1
+  · simp [hs, inv_nonneg.mpr ht.le]
+  · simp [hs]
+
+/-- A nonnegative integrable kernel can be incorporated into a finite
+parameter measure, so the literal scalar average is an `L²` function. -/
+theorem aux_complexTwistedAverage_memLp_of_nonneg
+    {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s)
+    (f : Fin n → RealVector n → ℂ) (hf : ∀ i, MemLp (f i) (p i) volume) :
+    MemLp (complexTwistedAverage h f) 2 volume := by
+  let ν : Measure ℝ := volume.withDensity fun s => ENNReal.ofReal (h s)
+  letI : IsFiniteMeasure ν := by
+    dsimp [ν]
+    exact isFiniteMeasure_withDensity_ofReal hh.hasFiniteIntegral
+  let P : RealVector n × ℝ → ℂ := fun xs => ∏ i,
+    f i (xs.1 + xs.2 • coordinateAxis i)
+  have hP : MemLp P 2 ((volume : Measure (RealVector n)).prod ν) := by
+    exact aux_compact_translated_product_memLp p hsum f hf
+  have hA : MemLp (fun x : RealVector n => ∫ s : ℝ, P (x, s) ∂ν) 2 volume :=
+    aux_kernel_integral_memLp P hP
+  have hdensity_meas : AEMeasurable (fun s => ENNReal.ofReal (h s)) volume :=
+    (hh.aestronglyMeasurable.aemeasurable).ennreal_ofReal
+  have hdensity_top : ∀ᵐ s : ℝ ∂volume, ENNReal.ofReal (h s) < ∞ :=
+    Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top
+  have hraw : complexTwistedAverage h f =
+      (fun x : RealVector n => ∫ s : ℝ, P (x, s) ∂ν) := by
+    funext x
+    change (∫ s : ℝ, (h s : ℂ) * ∏ i,
+      f i (x + s • coordinateAxis i)) = ∫ s : ℝ, P (x, s) ∂ν
+    rw [integral_withDensity_eq_integral_toReal_smul₀ hdensity_meas hdensity_top]
+    apply integral_congr_ae
+    filter_upwards [] with s
+    dsimp [P]
+    rw [ENNReal.toReal_ofReal (h_nonneg s)]
+  rw [hraw]
+  exact hA
+
+/-- The density change-of-measure identity for the literal scalar integral. -/
+theorem aux_complexTwistedAverage_eq_weighted
+    {n : ℕ} (h : ℝ → ℝ) (hh : Integrable h volume)
+    (h_nonneg : ∀ s, 0 ≤ h s) (f : Fin n → RealVector n → ℂ) :
+    complexTwistedAverage h f =
+      (fun x : RealVector n => ∫ s : ℝ,
+        ∏ i, f i (x + s • coordinateAxis i) ∂
+          (volume.withDensity fun s => ENNReal.ofReal (h s))) := by
+  have hdensity_meas : AEMeasurable (fun s => ENNReal.ofReal (h s)) volume :=
+    (hh.aestronglyMeasurable.aemeasurable).ennreal_ofReal
+  have hdensity_top : ∀ᵐ s : ℝ ∂volume, ENNReal.ofReal (h s) < ∞ :=
+    Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top
+  funext x
+  change (∫ s : ℝ, (h s : ℂ) * ∏ i, f i (x + s • coordinateAxis i)) = ∫ s : ℝ,
+      ∏ i, f i (x + s • coordinateAxis i) ∂
+        (volume.withDensity fun s => ENNReal.ofReal (h s))
+  rw [integral_withDensity_eq_integral_toReal_smul₀ hdensity_meas hdensity_top]
+  apply integral_congr_ae
+  filter_upwards [] with s
+  rw [ENNReal.toReal_ofReal (h_nonneg s)]
+  change (h s : ℂ) * ∏ i, f i (x + s • coordinateAxis i) =
+    (h s : ℂ) * ∏ i, f i (x + s • coordinateAxis i)
+  rfl
+
+/-- Changing any collection of input representatives on null sets changes the
+literal raw average only on a null set. -/
+theorem aux_complexTwistedAverage_congr_ae
+    {n : ℕ} (h : ℝ → ℝ) (hh : Integrable h volume)
+    (h_nonneg : ∀ s, 0 ≤ h s)
+    (f g : Fin n → RealVector n → ℂ)
+    (hfg : ∀ i, f i =ᵐ[volume] g i) :
+    complexTwistedAverage h f =ᵐ[volume] complexTwistedAverage h g := by
+  let ν : Measure ℝ := volume.withDensity fun s => ENNReal.ofReal (h s)
+  have hfactor (i : Fin n) :
+      (fun xs : RealVector n × ℝ => f i (xs.1 + xs.2 • coordinateAxis i)) =ᵐ[
+        (volume : Measure (RealVector n)).prod ν]
+      (fun xs : RealVector n × ℝ => g i (xs.1 + xs.2 • coordinateAxis i)) := by
+    have hfst :
+        (fun xs : RealVector n × ℝ => f i xs.1) =ᵐ[
+          (volume : Measure (RealVector n)).prod ν]
+        (fun xs : RealVector n × ℝ => g i xs.1) := by
+      exact Measure.quasiMeasurePreserving_fst.ae_eq_comp (hfg i)
+    have hshear :=
+      (aux_axis_shear_measurePreserving (ν := ν) i).quasiMeasurePreserving.ae_eq_comp hfst
+    simpa only [Function.comp_def] using hshear
+  have hprod :
+      (fun xs : RealVector n × ℝ => ∏ i, f i (xs.1 + xs.2 • coordinateAxis i)) =ᵐ[
+        (volume : Measure (RealVector n)).prod ν]
+      (fun xs : RealVector n × ℝ => ∏ i, g i (xs.1 + xs.2 • coordinateAxis i)) := by
+    classical
+    induction (Finset.univ : Finset (Fin n)) using Finset.induction_on with
+    | empty => simp
+    | insert i s his ih =>
+      filter_upwards [hfactor i, ih] with xs hxi hxs
+      simp only [Finset.prod_insert his, hxi, hxs]
+  rw [aux_complexTwistedAverage_eq_weighted h hh h_nonneg f,
+    aux_complexTwistedAverage_eq_weighted h hh h_nonneg g]
+  filter_upwards [Measure.ae_ae_of_ae_prod hprod] with x hx
+  exact integral_congr_ae hx
+
+/-- If one input representative vanishes almost everywhere, the raw average
+vanishes almost everywhere. -/
+theorem aux_complexTwistedAverage_ae_eq_zero_of_component_ae_eq_zero
+    {n : ℕ} (h : ℝ → ℝ) (hh : Integrable h volume)
+    (h_nonneg : ∀ s, 0 ≤ h s)
+    (f : Fin n → RealVector n → ℂ) (i : Fin n)
+    (hfi : f i =ᵐ[volume] 0) :
+    complexTwistedAverage h f =ᵐ[volume] 0 := by
+  let g : Fin n → RealVector n → ℂ := fun j => if j = i then 0 else f j
+  have hfg (j : Fin n) : f j =ᵐ[volume] g j := by
+    by_cases hj : j = i
+    · subst j
+      simpa [g] using hfi
+    · simp [g, hj]
+  have hcongr := aux_complexTwistedAverage_congr_ae h hh h_nonneg f g hfg
+  have hzero : complexTwistedAverage h g = 0 := by
+    funext x
+    unfold complexTwistedAverage
+    apply integral_eq_zero_of_ae
+    filter_upwards [] with s
+    apply mul_eq_zero_of_right
+    apply Finset.prod_eq_zero (Finset.mem_univ i)
+    simp [g]
+  simpa [hzero] using hcongr
+
+/-- The raw scaled unit-interval average is an `L²` representative for every
+finite tuple of admissible `Lp` inputs. -/
+theorem aux_complexTwistedAverageAtScale_memLp
+    {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹)
+    (f : Fin n → RealVector n → ℂ) (hf : ∀ i, MemLp (f i) (p i) volume)
+    {t : ℝ} (ht : 0 < t) :
+    MemLp (complexTwistedAverageAtScale t unitIntervalKernel f) 2 volume := by
+  unfold complexTwistedAverageAtScale
+  exact aux_complexTwistedAverage_memLp_of_nonneg p hsum
+    (scaleKernel t unitIntervalKernel) (aux_scaleKernel_unitInterval_integrable ht)
+    (aux_scaleKernel_unitInterval_nonneg ht) f hf
+
+private theorem aux_prod_update_add {n : ℕ} (f : Fin n → ℂ) (i : Fin n) (a b : ℂ) :
+    (∏ j, Function.update f i (a + b) j) =
+      (∏ j, Function.update f i a j) + ∏ j, Function.update f i b j := by
+  classical
+  have hprod (c : ℂ) :
+      (∏ j, Function.update f i c j) = (∏ j ∈ Finset.univ.erase i, f j) * c := by
+    rw [← Finset.prod_erase_mul Finset.univ (Function.update f i c) (Finset.mem_univ i)]
+    congr 1
+    · apply Finset.prod_congr rfl
+      intro j hj
+      simp only [Function.update_apply]
+      simp only [Finset.mem_erase] at hj
+      simp [hj.1]
+    · simp
+  rw [hprod, hprod, hprod, mul_add]
+
+private theorem aux_prod_update_smul {n : ℕ} (f : Fin n → ℂ) (i : Fin n) (c a : ℂ) :
+    (∏ j, Function.update f i (c • a) j) =
+      c • ∏ j, Function.update f i a j := by
+  classical
+  have hprod (d : ℂ) :
+      (∏ j, Function.update f i d j) = (∏ j ∈ Finset.univ.erase i, f j) * d := by
+    rw [← Finset.prod_erase_mul Finset.univ (Function.update f i d) (Finset.mem_univ i)]
+    congr 1
+    · apply Finset.prod_congr rfl
+      intro j hj
+      simp only [Function.update_apply]
+      simp only [Finset.mem_erase] at hj
+      simp [hj.1]
+    · simp
+  rw [hprod, hprod]
+  change _ = c * _
+  ring
+
+private theorem aux_joint_prod_update_add {n : ℕ}
+    (f : Fin n → RealVector n → ℂ) (i : Fin n)
+    (a b : RealVector n → ℂ) (x : RealVector n) (s : ℝ) :
+    (∏ j, Function.update f i (a + b) j (x + s • coordinateAxis j)) =
+      (∏ j, Function.update f i a j (x + s • coordinateAxis j)) +
+        ∏ j, Function.update f i b j (x + s • coordinateAxis j) := by
+  classical
+  let g : Fin n → ℂ := fun j => f j (x + s • coordinateAxis j)
+  have hupdate (u : RealVector n → ℂ) :
+      (∏ j, Function.update f i u j (x + s • coordinateAxis j)) =
+        ∏ j, Function.update g i (u (x + s • coordinateAxis i)) j := by
+    apply Finset.prod_congr rfl
+    intro j _
+    by_cases hji : j = i
+    · subst j
+      simp [g]
+    · simp [hji, g]
+  rw [hupdate (a + b), hupdate a, hupdate b]
+  simpa only [Pi.add_apply] using
+    (aux_prod_update_add g i
+      (a (x + s • coordinateAxis i)) (b (x + s • coordinateAxis i)))
+
+private theorem aux_joint_prod_update_smul {n : ℕ}
+    (f : Fin n → RealVector n → ℂ) (i : Fin n)
+    (c : ℂ) (a : RealVector n → ℂ) (x : RealVector n) (s : ℝ) :
+    (∏ j, Function.update f i (c • a) j (x + s • coordinateAxis j)) =
+      c • ∏ j, Function.update f i a j (x + s • coordinateAxis j) := by
+  classical
+  let g : Fin n → ℂ := fun j => f j (x + s • coordinateAxis j)
+  have hupdate (u : RealVector n → ℂ) :
+      (∏ j, Function.update f i u j (x + s • coordinateAxis j)) =
+        ∏ j, Function.update g i (u (x + s • coordinateAxis i)) j := by
+    apply Finset.prod_congr rfl
+    intro j _
+    by_cases hji : j = i
+    · subst j
+      simp [g]
+    · simp [hji, g]
+  rw [hupdate (c • a), hupdate a]
+  simpa only [Pi.smul_apply] using
+    (aux_prod_update_smul g i c (a (x + s • coordinateAxis i)))
+
+/-- An `L²` kernel has `L²`, hence integrable, parameter fibers almost
+everywhere when the parameter measure is finite. -/
+private theorem aux_memLp_two_fiber_ae
+    {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
+    {μ : Measure X} {ν : Measure S} [SFinite μ] [SFinite ν] [IsFiniteMeasure ν]
+    (K : X × S → ℂ) (hK : MemLp K 2 (μ.prod ν)) :
+    ∀ᵐ x : X ∂μ, MemLp (fun s : S => K (x, s)) 2 ν := by
+  have hKsq : Integrable (fun z : X × S => ‖K z‖ ^ (2 : ℝ)) (μ.prod ν) := by
+    rw [← memLp_one_iff_integrable]
+    simpa using hK.norm_rpow (by norm_num) (by norm_num)
+  filter_upwards [hK.aestronglyMeasurable.prodMk_left, hKsq.prod_right_ae] with x hxmeas hxsq
+  exact (memLp_two_iff_integrable_sq_norm hxmeas).mpr (by
+    simpa only [Real.rpow_two] using hxsq)
+
+private theorem aux_complexTwistedAverage_update_add_ae
+    {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s)
+    (f : Fin n → RealVector n → ℂ) (i : Fin n)
+    (a b : RealVector n → ℂ)
+    (hf : ∀ j, MemLp (f j) (p j) volume)
+    (ha : MemLp a (p i) volume) (hb : MemLp b (p i) volume) :
+    complexTwistedAverage h (Function.update f i (a + b)) =ᵐ[volume]
+      complexTwistedAverage h (Function.update f i a) +
+        complexTwistedAverage h (Function.update f i b) := by
+  let ν : Measure ℝ := volume.withDensity fun s => ENNReal.ofReal (h s)
+  letI : IsFiniteMeasure ν := by
+    dsimp [ν]
+    exact isFiniteMeasure_withDensity_ofReal hh.hasFiniteIntegral
+  have hupdate (u : RealVector n → ℂ) (hu : MemLp u (p i) volume) (j : Fin n) :
+      MemLp (Function.update f i u j) (p j) volume := by
+    by_cases hji : j = i
+    · subst j
+      simpa using hu
+    · simpa [Function.update_apply, hji] using hf j
+  let Psum : RealVector n × ℝ → ℂ := fun xs => ∏ j,
+    Function.update f i (a + b) j (xs.1 + xs.2 • coordinateAxis j)
+  let Pa : RealVector n × ℝ → ℂ := fun xs => ∏ j,
+    Function.update f i a j (xs.1 + xs.2 • coordinateAxis j)
+  let Pb : RealVector n × ℝ → ℂ := fun xs => ∏ j,
+    Function.update f i b j (xs.1 + xs.2 • coordinateAxis j)
+  have hPsum : MemLp Psum 2 ((volume : Measure (RealVector n)).prod ν) := by
+    exact aux_compact_translated_product_memLp p hsum (Function.update f i (a + b))
+      (hupdate (a + b) (ha.add hb))
+  have hPa : MemLp Pa 2 ((volume : Measure (RealVector n)).prod ν) := by
+    exact aux_compact_translated_product_memLp p hsum (Function.update f i a)
+      (hupdate a ha)
+  have hPb : MemLp Pb 2 ((volume : Measure (RealVector n)).prod ν) := by
+    exact aux_compact_translated_product_memLp p hsum (Function.update f i b)
+      (hupdate b hb)
+  rw [aux_complexTwistedAverage_eq_weighted h hh h_nonneg,
+    aux_complexTwistedAverage_eq_weighted h hh h_nonneg,
+    aux_complexTwistedAverage_eq_weighted h hh h_nonneg]
+  change (fun x : RealVector n => ∫ s : ℝ, Psum (x, s) ∂ν) =ᵐ[volume]
+    (fun x : RealVector n => ∫ s : ℝ, Pa (x, s) ∂ν) +
+      fun x : RealVector n => ∫ s : ℝ, Pb (x, s) ∂ν
+  filter_upwards [aux_memLp_two_fiber_ae Psum hPsum,
+    aux_memLp_two_fiber_ae Pa hPa, aux_memLp_two_fiber_ae Pb hPb] with x hxsum hxa hxb
+  rw [Pi.add_apply]
+  have hpoint : (fun s : ℝ => Psum (x, s)) =
+      (fun s : ℝ => Pa (x, s) + Pb (x, s)) := by
+    funext s
+    exact aux_joint_prod_update_add f i a b x s
+  rw [hpoint, MeasureTheory.integral_add (hxa.integrable (by norm_num))
+    (hxb.integrable (by norm_num))]
+
+private theorem aux_complexTwistedAverage_update_smul_ae
+    {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s)
+    (f : Fin n → RealVector n → ℂ) (i : Fin n)
+    (c : ℂ) (a : RealVector n → ℂ)
+    (hf : ∀ j, MemLp (f j) (p j) volume)
+    (ha : MemLp a (p i) volume) :
+    complexTwistedAverage h (Function.update f i (c • a)) =ᵐ[volume]
+      c • complexTwistedAverage h (Function.update f i a) := by
+  let ν : Measure ℝ := volume.withDensity fun s => ENNReal.ofReal (h s)
+  letI : IsFiniteMeasure ν := by
+    dsimp [ν]
+    exact isFiniteMeasure_withDensity_ofReal hh.hasFiniteIntegral
+  have hupdate (u : RealVector n → ℂ) (hu : MemLp u (p i) volume) (j : Fin n) :
+      MemLp (Function.update f i u j) (p j) volume := by
+    by_cases hji : j = i
+    · subst j
+      simpa using hu
+    · simpa [Function.update_apply, hji] using hf j
+  let Pc : RealVector n × ℝ → ℂ := fun xs => ∏ j,
+    Function.update f i (c • a) j (xs.1 + xs.2 • coordinateAxis j)
+  let Pa : RealVector n × ℝ → ℂ := fun xs => ∏ j,
+    Function.update f i a j (xs.1 + xs.2 • coordinateAxis j)
+  have hPc : MemLp Pc 2 ((volume : Measure (RealVector n)).prod ν) := by
+    exact aux_compact_translated_product_memLp p hsum (Function.update f i (c • a))
+      (hupdate (c • a) (ha.const_smul c))
+  have hPa : MemLp Pa 2 ((volume : Measure (RealVector n)).prod ν) := by
+    exact aux_compact_translated_product_memLp p hsum (Function.update f i a)
+      (hupdate a ha)
+  rw [aux_complexTwistedAverage_eq_weighted h hh h_nonneg,
+    aux_complexTwistedAverage_eq_weighted h hh h_nonneg]
+  change (fun x : RealVector n => ∫ s : ℝ, Pc (x, s) ∂ν) =ᵐ[volume]
+    c • fun x : RealVector n => ∫ s : ℝ, Pa (x, s) ∂ν
+  filter_upwards [aux_memLp_two_fiber_ae Pc hPc,
+    aux_memLp_two_fiber_ae Pa hPa] with x hxc hxa
+  rw [Pi.smul_apply]
+  have hpoint : (fun s : ℝ => Pc (x, s)) = c • (fun s : ℝ => Pa (x, s)) := by
+    funext s
+    exact aux_joint_prod_update_smul f i c a x s
+  rw [hpoint]
+  change (∫ s : ℝ, c • Pa (x, s) ∂ν) = c • ∫ s : ℝ, Pa (x, s) ∂ν
+  rw [MeasureTheory.integral_smul]
+
+private theorem aux_complexTwistedAverage_lp_update_repr_ae
+    {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s)
+    (m : ∀ i, Lp ℂ (p i) volume) (i : Fin n) (u : Lp ℂ (p i) volume) :
+    complexTwistedAverage h (fun j x => Function.update m i u j x) =ᵐ[volume]
+      complexTwistedAverage h
+        (Function.update (fun j x => m j x) i (fun x => u x)) := by
+  apply aux_complexTwistedAverage_congr_ae h hh h_nonneg
+  intro j
+  by_cases hji : j = i
+  · subst j
+    simp
+  · simp [hji]
+
+private theorem aux_complexTwistedAverage_lp_update_add_ae
+    {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s)
+    (m : ∀ i, Lp ℂ (p i) volume) (i : Fin n)
+    (x y : Lp ℂ (p i) volume) :
+    complexTwistedAverage h (fun j z => Function.update m i (x + y) j z) =ᵐ[volume]
+      complexTwistedAverage h (fun j z => Function.update m i x j z) +
+        complexTwistedAverage h (fun j z => Function.update m i y j z) := by
+  let f : Fin n → RealVector n → ℂ := fun j z => m j z
+  have hsumrepr := aux_complexTwistedAverage_lp_update_repr_ae p h hh h_nonneg m i (x + y)
+  have hxrepr := aux_complexTwistedAverage_lp_update_repr_ae p h hh h_nonneg m i x
+  have hyrepr := aux_complexTwistedAverage_lp_update_repr_ae p h hh h_nonneg m i y
+  have hconvert : complexTwistedAverage h
+      (Function.update f i (fun z => (x + y) z)) =ᵐ[volume]
+      complexTwistedAverage h
+        (Function.update f i ((fun z => x z) + fun z => y z)) := by
+    apply aux_complexTwistedAverage_congr_ae h hh h_nonneg
+    intro j
+    by_cases hji : j = i
+    · subst j
+      simpa only [Function.update_self] using Lp.coeFn_add x y
+    · simp [hji]
+  have hadd := aux_complexTwistedAverage_update_add_ae p hsum h hh h_nonneg f i
+    (fun z => x z) (fun z => y z) (fun j => Lp.memLp (m j))
+      (Lp.memLp x) (Lp.memLp y)
+  exact hsumrepr.trans (hconvert.trans (hadd.trans (hxrepr.symm.add hyrepr.symm)))
+
+private theorem aux_complexTwistedAverage_lp_update_smul_ae
+    {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s)
+    (m : ∀ i, Lp ℂ (p i) volume) (i : Fin n)
+    (c : ℂ) (x : Lp ℂ (p i) volume) :
+    complexTwistedAverage h (fun j z => Function.update m i (c • x) j z) =ᵐ[volume]
+      c • complexTwistedAverage h (fun j z => Function.update m i x j z) := by
+  let f : Fin n → RealVector n → ℂ := fun j z => m j z
+  have hcrepr := aux_complexTwistedAverage_lp_update_repr_ae p h hh h_nonneg m i (c • x)
+  have hxrepr := aux_complexTwistedAverage_lp_update_repr_ae p h hh h_nonneg m i x
+  have hconvert : complexTwistedAverage h
+      (Function.update f i (fun z => (c • x) z)) =ᵐ[volume]
+      complexTwistedAverage h
+        (Function.update f i (c • fun z => x z)) := by
+    apply aux_complexTwistedAverage_congr_ae h hh h_nonneg
+    intro j
+    by_cases hji : j = i
+    · subst j
+      simpa only [Function.update_self] using Lp.coeFn_smul c x
+    · simp [hji]
+  have hsmul := aux_complexTwistedAverage_update_smul_ae p hsum h hh h_nonneg f i c
+    (fun z => x z) (fun j => Lp.memLp (m j)) (Lp.memLp x)
+  exact hcrepr.trans (hconvert.trans (hsmul.trans (hxrepr.symm.const_smul c)))
+
+/-- The literal raw average, packaged as a multilinear map on `Lp` classes.
+Its values retain the raw Bochner-integral representative. -/
+noncomputable def aux_rawAverageLpMultilinearMap
+    {n : ℕ} (p : Fin n → ℝ≥0∞) [∀ i, Fact (1 ≤ p i)]
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s) :
+    MultilinearMap ℂ (fun i => Lp ℂ (p i) (volume : Measure (RealVector n)))
+      (Lp ℂ 2 (volume : Measure (RealVector n))) := by
+  classical
+  let R : (∀ i, Lp ℂ (p i) (volume : Measure (RealVector n))) →
+      Lp ℂ 2 (volume : Measure (RealVector n)) := fun m =>
+    (aux_complexTwistedAverage_memLp_of_nonneg p hsum h hh h_nonneg
+      (fun i x => m i x) (fun i => Lp.memLp (m i))).toLp
+      (complexTwistedAverage h (fun i x => m i x))
+  refine MultilinearMap.mk' R ?_ ?_
+  · intro m i x y
+    have hsumMem : MemLp
+        (complexTwistedAverage h (fun j z => Function.update m i (x + y) j z)) 2 volume :=
+      aux_complexTwistedAverage_memLp_of_nonneg p hsum h hh h_nonneg _
+        (fun j => by
+          by_cases hji : j = i
+          · subst j
+            have hxy : MemLp (fun z => (x + y : Lp ℂ (p i) volume) z) (p i) volume :=
+              ((Lp.memLp x).add (Lp.memLp y)).ae_eq (Lp.coeFn_add x y).symm
+            simpa only [Function.update_self] using hxy
+          · simpa [Function.update_apply, hji] using Lp.memLp (m j))
+    have hxMem : MemLp
+        (complexTwistedAverage h (fun j z => Function.update m i x j z)) 2 volume :=
+      aux_complexTwistedAverage_memLp_of_nonneg p hsum h hh h_nonneg _
+        (fun j => by
+          by_cases hji : j = i
+          · subst j
+            simpa using Lp.memLp x
+          · simpa [Function.update_apply, hji] using Lp.memLp (m j))
+    have hyMem : MemLp
+        (complexTwistedAverage h (fun j z => Function.update m i y j z)) 2 volume :=
+      aux_complexTwistedAverage_memLp_of_nonneg p hsum h hh h_nonneg _
+        (fun j => by
+          by_cases hji : j = i
+          · subst j
+            simpa using Lp.memLp y
+          · simpa [Function.update_apply, hji] using Lp.memLp (m j))
+    have hraw := aux_complexTwistedAverage_lp_update_add_ae p hsum h hh h_nonneg m i x y
+    dsimp [R]
+    calc
+      (hsumMem.toLp _) = (hxMem.add hyMem).toLp _ :=
+        MemLp.toLp_congr hsumMem (hxMem.add hyMem) hraw
+      _ = hxMem.toLp _ + hyMem.toLp _ := MemLp.toLp_add hxMem hyMem
+  · intro m i c x
+    have hcMem : MemLp
+        (complexTwistedAverage h (fun j z => Function.update m i (c • x) j z)) 2 volume :=
+      aux_complexTwistedAverage_memLp_of_nonneg p hsum h hh h_nonneg _
+        (fun j => by
+          by_cases hji : j = i
+          · subst j
+            have hcx : MemLp (fun z => (c • x : Lp ℂ (p i) volume) z) (p i) volume :=
+              ((Lp.memLp x).const_smul c).ae_eq (Lp.coeFn_smul c x).symm
+            simpa only [Function.update_self] using hcx
+          · simpa [Function.update_apply, hji] using Lp.memLp (m j))
+    have hxMem : MemLp
+        (complexTwistedAverage h (fun j z => Function.update m i x j z)) 2 volume :=
+      aux_complexTwistedAverage_memLp_of_nonneg p hsum h hh h_nonneg _
+        (fun j => by
+          by_cases hji : j = i
+          · subst j
+            simpa using Lp.memLp x
+          · simpa [Function.update_apply, hji] using Lp.memLp (m j))
+    have hraw := aux_complexTwistedAverage_lp_update_smul_ae p hsum h hh h_nonneg m i c x
+    dsimp [R]
+    calc
+      hcMem.toLp _ = (hxMem.const_smul c).toLp _ :=
+        MemLp.toLp_congr hcMem (hxMem.const_smul c) hraw
+      _ = c • hxMem.toLp _ := MemLp.toLp_const_smul c hxMem
+
+/-- The literal raw average, now as a continuous multilinear map on `Lp`
+classes.  Its coarse norm bound only records the finite mass of the kernel. -/
+noncomputable def aux_rawAverageLpCMLM
+    {n : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s) :
+    ContinuousMultilinearMap ℂ
+      (fun i ↦ Lp ℂ (p i) (volume : Measure (RealVector n)))
+      (Lp ℂ 2 (volume : Measure (RealVector n))) := by
+  let ν : Measure ℝ := volume.withDensity fun s ↦ ENNReal.ofReal (h s)
+  letI : IsFiniteMeasure ν := by
+    dsimp [ν]
+    exact isFiniteMeasure_withDensity_ofReal hh.hasFiniteIntegral
+  refine MultilinearMap.mkContinuous
+    (aux_rawAverageLpMultilinearMap p hsum h hh h_nonneg) (ν.real Set.univ) ?_
+  intro m
+  let P : RealVector n × ℝ → ℂ := fun xs ↦
+    ∏ i, m i (xs.1 + xs.2 • coordinateAxis i)
+  have hp0 : ∀ i, p i ≠ 0 := fun i ↦
+    ne_of_gt (lt_of_lt_of_le zero_lt_one Fact.out)
+  have hqsum : ∑ i, 2 / (p i).toReal = 1 :=
+    aux_real_holder_sum_of_ennreal_reciprocal_sum p hp_top hsum
+  have hP : MemLp P 2 ((volume : Measure (RealVector n)).prod ν) := by
+    exact aux_compact_translated_product_memLp p hsum (fun i x ↦ m i x)
+      (fun i ↦ Lp.memLp (m i))
+  have hPbound :
+      (∫ xs : RealVector n × ℝ, ‖P xs‖ ^ 2
+        ∂(volume : Measure (RealVector n)).prod ν) ≤
+        ν.real Set.univ * ∏ i, ‖m i‖ ^ 2 := by
+    exact aux_joint_translated_product_integral_sq_le p hp0 hp_top hqsum m hP
+  have hDnonneg : 0 ≤ ν.real Set.univ * ∏ i, ‖m i‖ := by positivity
+  have hDsquare : ν.real Set.univ *
+      (∫ xs : RealVector n × ℝ, ‖P xs‖ ^ 2
+        ∂(volume : Measure (RealVector n)).prod ν) ≤
+      (ν.real Set.univ * ∏ i, ‖m i‖) ^ 2 := by
+    calc
+      ν.real Set.univ *
+          (∫ xs : RealVector n × ℝ, ‖P xs‖ ^ 2
+            ∂(volume : Measure (RealVector n)).prod ν) ≤
+          ν.real Set.univ * (ν.real Set.univ * ∏ i, ‖m i‖ ^ 2) :=
+        mul_le_mul_of_nonneg_left hPbound (by positivity)
+      _ = (ν.real Set.univ * ∏ i, ‖m i‖) ^ 2 := by
+        rw [mul_pow, ← Finset.prod_pow]
+        ring
+  have hnorm := aux_kernel_toLp_norm_le_of_sq_integral_bound P hP
+    (ν.real Set.univ * ∏ i, ‖m i‖) hDnonneg (by
+      simpa only [Real.rpow_two] using hDsquare)
+  have hraw : complexTwistedAverage h (fun i x ↦ m i x) =
+      (fun x : RealVector n ↦ ∫ s : ℝ, P (x, s) ∂ν) := by
+    simpa only [P, ν] using
+      (aux_complexTwistedAverage_eq_weighted h hh h_nonneg (fun i x ↦ m i x))
+  have hmem : MemLp (complexTwistedAverage h (fun i x ↦ m i x)) 2 volume :=
+    aux_complexTwistedAverage_memLp_of_nonneg p hsum h hh h_nonneg _
+      (fun i ↦ Lp.memLp (m i))
+  change ‖hmem.toLp (complexTwistedAverage h (fun i x ↦ m i x))‖ ≤ _
+  calc
+    ‖hmem.toLp (complexTwistedAverage h (fun i x ↦ m i x))‖ =
+        ‖(aux_kernel_integral_memLp P hP).toLp
+          (fun x : RealVector n ↦ ∫ s : ℝ, P (x, s) ∂ν)‖ := by
+      congr 1
+      exact MemLp.toLp_congr hmem (aux_kernel_integral_memLp P hP)
+        (Filter.Eventually.of_forall fun x ↦ congrFun hraw x)
+    _ ≤ ν.real Set.univ * ∏ i, ‖m i‖ := hnorm
+
+/-- The `Lp` value of `aux_rawAverageLpMultilinearMap` has the literal raw
+Bochner integral as an almost-everywhere representative. -/
+theorem aux_rawAverageLpMultilinearMap_raw_ae
+    {n : ℕ} (p : Fin n → ℝ≥0∞) [∀ i, Fact (1 ≤ p i)]
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ℝ≥0∞)⁻¹)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s)
+    (m : ∀ i, Lp ℂ (p i) (volume : Measure (RealVector n))) :
+    ((aux_rawAverageLpMultilinearMap p hsum h hh h_nonneg m :
+      Lp ℂ 2 (volume : Measure (RealVector n))) : RealVector n → ℂ) =ᵐ[volume]
+      complexTwistedAverage h (fun i x => m i x) := by
+  have hmem : MemLp (complexTwistedAverage h (fun i x => m i x)) 2 volume :=
+    aux_complexTwistedAverage_memLp_of_nonneg p hsum h hh h_nonneg _
+      (fun i => Lp.memLp (m i))
+  unfold aux_rawAverageLpMultilinearMap
+  change ↑↑(hmem.toLp _) =ᵐ[volume] _
+  exact MemLp.coeFn_toLp hmem
+
+/-- The continuous multilinear packaging has the same literal raw integral as
+its almost-everywhere representative. -/
+theorem aux_rawAverageLpCMLM_raw_ae
+    {n : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (h : ℝ → ℝ) (hh : Integrable h volume) (h_nonneg : ∀ s, 0 ≤ h s)
+    (m : ∀ i, Lp ℂ (p i) (volume : Measure (RealVector n))) :
+    ((aux_rawAverageLpCMLM p hp_top hsum h hh h_nonneg m :
+      Lp ℂ 2 (volume : Measure (RealVector n))) : RealVector n → ℂ) =ᵐ[volume]
+      complexTwistedAverage h (fun i x => m i x) := by
+  change ((aux_rawAverageLpMultilinearMap p hsum h hh h_nonneg m :
+    Lp ℂ 2 (volume : Measure (RealVector n))) : RealVector n → ℂ) =ᵐ[volume] _
+  exact aux_rawAverageLpMultilinearMap_raw_ae p hsum h hh h_nonneg m
+
+/-- Pack the successive differences of a finite family of `L²`-valued
+continuous multilinear maps into a single counting-product `L²` space. -/
+noncomputable def aux_packDifferenceCMLM
+    {J : ℕ} {ι Y : Type*} {X : ι → Type*} [Fintype ι]
+    [MeasurableSpace Y] {μ : Measure Y} [SFinite μ]
+    [∀ i, SeminormedAddCommGroup (X i)] [∀ i, NormedSpace ℂ (X i)]
+    (B : Fin (J + 1) → ContinuousMultilinearMap ℂ X (Lp ℂ 2 μ)) :
+    ContinuousMultilinearMap ℂ X
+      (Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod μ)) :=
+  Codex.MultilinearInterpolation.aux_packLpCMLM (fun j ↦ B j.succ - B j.castSucc)
+
+/-- The packed differences have the corresponding coordinatewise raw
+representative on the counting-product space. -/
+theorem aux_packDifferenceCMLM_coeFn_ae_of_forall
+    {J : ℕ} {ι Y : Type*} {X : ι → Type*} [Fintype ι]
+    [MeasurableSpace Y] {μ : Measure Y} [SFinite μ]
+    [∀ i, SeminormedAddCommGroup (X i)] [∀ i, NormedSpace ℂ (X i)]
+    (B : Fin (J + 1) → ContinuousMultilinearMap ℂ X (Lp ℂ 2 μ)) (x : ∀ i, X i)
+    (raw : Fin (J + 1) → Y → ℂ) (hraw : ∀ j, (B j x : Y → ℂ) =ᵐ[μ] raw j) :
+    ((aux_packDifferenceCMLM B x : Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod μ)) :
+      Fin J × Y → ℂ) =ᵐ[(Measure.count : Measure (Fin J)).prod μ]
+      fun z ↦ raw z.1.succ z.2 - raw z.1.castSucc z.2 := by
+  unfold aux_packDifferenceCMLM
+  refine Codex.MultilinearInterpolation.aux_packLpCMLM_coeFn_ae_of_forall
+    (fun j ↦ B j.succ - B j.castSucc) x
+    (fun j y ↦ raw j.succ y - raw j.castSucc y) ?_
+  intro j
+  change ((B j.succ x - B j.castSucc x : Lp ℂ 2 μ) : Y → ℂ) =ᵐ[μ] _
+  filter_upwards [Lp.coeFn_sub (B j.succ x) (B j.castSucc x),
+    hraw j.succ, hraw j.castSucc] with y hsub hsucc hpred
+  rw [hsub]
+  simpa only [Pi.sub_apply] using congrArg₂ (· - ·) hsucc hpred
+
+/-- The squared `L²` norm of the packed differences is the sum of their raw
+coordinate energies. -/
+theorem aux_eLpNorm_sq_packDifferenceCMLM_eq_sum_raw
+    {J : ℕ} {ι Y : Type*} {X : ι → Type*} [Fintype ι]
+    [MeasurableSpace Y] {μ : Measure Y} [SFinite μ]
+    [∀ i, SeminormedAddCommGroup (X i)] [∀ i, NormedSpace ℂ (X i)]
+    (B : Fin (J + 1) → ContinuousMultilinearMap ℂ X (Lp ℂ 2 μ)) (x : ∀ i, X i)
+    (raw : Fin (J + 1) → Y → ℂ) (hraw : ∀ j, (B j x : Y → ℂ) =ᵐ[μ] raw j) :
+    eLpNorm ((aux_packDifferenceCMLM B x :
+      Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod μ)) : Fin J × Y → ℂ) 2
+        ((Measure.count : Measure (Fin J)).prod μ) ^ 2 =
+      ∑ j : Fin J, eLpNorm (fun y ↦ raw j.succ y - raw j.castSucc y) 2 μ ^ 2 := by
+  unfold aux_packDifferenceCMLM
+  refine Codex.MultilinearInterpolation.aux_eLpNorm_sq_packLpCMLM_eq_sum_raw
+    (fun j ↦ B j.succ - B j.castSucc) x
+    (fun j y ↦ raw j.succ y - raw j.castSucc y) ?_
+  intro j
+  change ((B j.succ x - B j.castSucc x : Lp ℂ 2 μ) : Y → ℂ) =ᵐ[μ] _
+  filter_upwards [Lp.coeFn_sub (B j.succ x) (B j.castSucc x),
+    hraw j.succ, hraw j.castSucc] with y hsub hsucc hpred
+  rw [hsub]
+  simpa only [Pi.sub_apply] using congrArg₂ (· - ·) hsucc hpred
+
+/-- The one-scale continuous multilinear map for a scaled unit-interval
+average. -/
+noncomputable def aux_averageAtScaleLpCMLM
+    {n J : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k) (k : Fin (J + 1)) :
+    ContinuousMultilinearMap ℂ
+      (fun i ↦ Lp ℂ (p i) (volume : Measure (RealVector n)))
+      (Lp ℂ 2 (volume : Measure (RealVector n))) :=
+  aux_rawAverageLpCMLM p hp_top hsum (scaleKernel (t k) unitIntervalKernel)
+    (aux_scaleKernel_unitInterval_integrable (htpos k))
+    (aux_scaleKernel_unitInterval_nonneg (htpos k))
+
+/-- The packed finite-jump operator for scaled unit-interval twisted averages. -/
+noncomputable def aux_endpointLpCMLM
+    {n J : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k) :
+    ContinuousMultilinearMap ℂ
+      (fun i ↦ Lp ℂ (p i) (volume : Measure (RealVector n)))
+      (Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))) :=
+  aux_packDifferenceCMLM
+    (fun k ↦ aux_averageAtScaleLpCMLM p hp_top hsum t htpos k)
+
+/-- The packed endpoint operator is represented almost everywhere by the
+literal successive differences of the scaled twisted averages. -/
+theorem aux_endpointLpCMLM_raw_ae
+    {n J : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k)
+    (m : ∀ i, Lp ℂ (p i) (volume : Measure (RealVector n))) :
+    ((aux_endpointLpCMLM p hp_top hsum t htpos m :
+      Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) =ᵐ[
+        (Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))]
+      fun z ↦ complexTwistedAverageAtScale (t z.1.succ) unitIntervalKernel
+        (fun i x ↦ m i x) z.2 -
+        complexTwistedAverageAtScale (t z.1.castSucc) unitIntervalKernel
+          (fun i x ↦ m i x) z.2 := by
+  unfold aux_endpointLpCMLM
+  refine aux_packDifferenceCMLM_coeFn_ae_of_forall
+    (fun k ↦ aux_averageAtScaleLpCMLM p hp_top hsum t htpos k) m
+    (fun k x ↦ complexTwistedAverageAtScale (t k) unitIntervalKernel
+      (fun i y ↦ m i y) x) ?_
+  intro k
+  simpa [aux_averageAtScaleLpCMLM, complexTwistedAverageAtScale] using
+    (aux_rawAverageLpCMLM_raw_ae p hp_top hsum
+      (scaleKernel (t k) unitIntervalKernel)
+      (aux_scaleKernel_unitInterval_integrable (htpos k))
+      (aux_scaleKernel_unitInterval_nonneg (htpos k)) m)
+
+/-- The squared `L²` norm of `aux_endpointLpCMLM` is exactly the finite raw
+complex endpoint energy. -/
+theorem aux_eLpNorm_sq_endpointLpCMLM_eq_complexEndpointEnergy
+    {n J : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k)
+    (m : ∀ i, Lp ℂ (p i) (volume : Measure (RealVector n))) :
+    eLpNorm ((aux_endpointLpCMLM p hp_top hsum t htpos m :
+      Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) 2
+        ((Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))) ^ 2 =
+      complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ m i x) := by
+  unfold aux_endpointLpCMLM complexEndpointEnergy
+  refine aux_eLpNorm_sq_packDifferenceCMLM_eq_sum_raw
+    (fun k ↦ aux_averageAtScaleLpCMLM p hp_top hsum t htpos k) m
+    (fun k x ↦ complexTwistedAverageAtScale (t k) unitIntervalKernel
+      (fun i y ↦ m i y) x) ?_
+  intro k
+  simpa [aux_averageAtScaleLpCMLM, complexTwistedAverageAtScale] using
+    (aux_rawAverageLpCMLM_raw_ae p hp_top hsum
+      (scaleKernel (t k) unitIntervalKernel)
+      (aux_scaleKernel_unitInterval_integrable (htpos k))
+      (aux_scaleKernel_unitInterval_nonneg (htpos k)) m)
+
+/-- Endpoint packagings at two admissible exponent tuples agree almost
+everywhere when their input representatives agree coordinatewise. -/
+theorem aux_endpointLpCMLM_congr_ae
+    {n J : ℕ} (p q : Fin n → ENNReal)
+    [∀ i, Fact (1 ≤ p i)] [∀ i, Fact (1 ≤ q i)]
+    (hp_top : ∀ i, p i ≠ ∞) (hq_top : ∀ i, q i ≠ ∞)
+    (hpsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (hqsum : ∑ i, (q i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k)
+    (f : ∀ i, Lp ℂ (p i) (volume : Measure (RealVector n)))
+    (g : ∀ i, Lp ℂ (q i) (volume : Measure (RealVector n)))
+    (hfg : ∀ i, (f i : RealVector n → ℂ) =ᵐ[volume] (g i : RealVector n → ℂ)) :
+    ((aux_endpointLpCMLM p hp_top hpsum t htpos f :
+      Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) =ᵐ[
+        (Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))]
+      ((aux_endpointLpCMLM q hq_top hqsum t htpos g :
+        Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+          (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) := by
+  let R : Fin (J + 1) → RealVector n → ℂ := fun k x ↦
+    complexTwistedAverageAtScale (t k) unitIntervalKernel (fun i y ↦ f i y) x
+  let S : Fin (J + 1) → RealVector n → ℂ := fun k x ↦
+    complexTwistedAverageAtScale (t k) unitIntervalKernel (fun i y ↦ g i y) x
+  have hR (k : Fin (J + 1)) : R k =ᵐ[volume] S k := by
+    dsimp [R, S, complexTwistedAverageAtScale]
+    exact aux_complexTwistedAverage_congr_ae
+      (scaleKernel (t k) unitIntervalKernel)
+      (aux_scaleKernel_unitInterval_integrable (htpos k))
+      (aux_scaleKernel_unitInterval_nonneg (htpos k))
+      (fun i x ↦ f i x) (fun i x ↦ g i x) hfg
+  have hdiff :
+      (fun z : Fin J × RealVector n ↦ R z.1.succ z.2 - R z.1.castSucc z.2) =ᵐ[
+        (Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))]
+      fun z ↦ S z.1.succ z.2 - S z.1.castSucc z.2 :=
+    Codex.MultilinearInterpolation.aux_packed_ae_eq_of_forall' (fun j ↦
+      (hR j.succ).sub (hR j.castSucc))
+  calc
+    ((aux_endpointLpCMLM p hp_top hpsum t htpos f :
+      Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) =ᵐ[
+        (Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))]
+        (fun z ↦ R z.1.succ z.2 - R z.1.castSucc z.2) := by
+      simpa [R] using aux_endpointLpCMLM_raw_ae p hp_top hpsum t htpos f
+    _ =ᵐ[(Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))]
+        (fun z ↦ S z.1.succ z.2 - S z.1.castSucc z.2) := hdiff
+    _ =ᵐ[(Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))]
+        ((aux_endpointLpCMLM q hq_top hqsum t htpos g :
+          Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+            (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) := by
+      simpa [S] using (aux_endpointLpCMLM_raw_ae q hq_top hqsum t htpos g).symm
+
+/-- The literal complex endpoint energy is insensitive to almost-everywhere changes
+of any of its input components. -/
+theorem aux_complexEndpointEnergy_congr_ae
+    {n J : ℕ} (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k)
+    (f g : Fin n → RealVector n → ℂ)
+    (hfg : ∀ i, f i =ᵐ[volume] g i) :
+    complexEndpointEnergy J t unitIntervalKernel f =
+      complexEndpointEnergy J t unitIntervalKernel g := by
+  unfold complexEndpointEnergy
+  apply Finset.sum_congr rfl
+  intro j _
+  apply congrArg (fun u : ℝ≥0∞ ↦ u ^ 2)
+  apply eLpNorm_congr_ae
+  have hsucc := aux_complexTwistedAverage_congr_ae
+    (scaleKernel (t j.succ) unitIntervalKernel)
+    (aux_scaleKernel_unitInterval_integrable (htpos j.succ))
+    (aux_scaleKernel_unitInterval_nonneg (htpos j.succ)) f g hfg
+  have hpred := aux_complexTwistedAverage_congr_ae
+    (scaleKernel (t j.castSucc) unitIntervalKernel)
+    (aux_scaleKernel_unitInterval_integrable (htpos j.castSucc))
+    (aux_scaleKernel_unitInterval_nonneg (htpos j.castSucc)) f g hfg
+  filter_upwards [hsucc, hpred] with x hs hp
+  simpa [complexTwistedAverageAtScale] using congrArg₂ (· - ·) hs hp
+
+/-- If one input representative vanishes almost everywhere, then the packed
+finite-jump endpoint output vanishes almost everywhere as well. -/
+theorem aux_endpointLpCMLM_ae_eq_zero_of_component_ae_eq_zero
+    {n J : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k)
+    (m : ∀ i, Lp ℂ (p i) (volume : Measure (RealVector n)))
+    (i : Fin n) (hmi : (m i : RealVector n → ℂ) =ᵐ[volume] 0) :
+    ((aux_endpointLpCMLM p hp_top hsum t htpos m :
+      Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) =ᵐ[
+        (Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))] 0 := by
+  let R : Fin (J + 1) → RealVector n → ℂ := fun k x ↦
+    complexTwistedAverageAtScale (t k) unitIntervalKernel (fun j y ↦ m j y) x
+  have hRzero (k : Fin (J + 1)) : R k =ᵐ[volume] 0 := by
+    dsimp [R, complexTwistedAverageAtScale]
+    exact aux_complexTwistedAverage_ae_eq_zero_of_component_ae_eq_zero
+      (scaleKernel (t k) unitIntervalKernel)
+      (aux_scaleKernel_unitInterval_integrable (htpos k))
+      (aux_scaleKernel_unitInterval_nonneg (htpos k))
+      (fun j y ↦ m j y) i hmi
+  have hdiffzero :
+      (fun z : Fin J × RealVector n ↦ R z.1.succ z.2 - R z.1.castSucc z.2) =ᵐ[
+        (Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))]
+        (0 : Fin J × RealVector n → ℂ) := by
+    refine Codex.MultilinearInterpolation.aux_packed_ae_eq_of_forall'
+      (f := fun j x ↦ R j.succ x - R j.castSucc x)
+      (g := fun _ _ ↦ 0) ?_
+    intro j
+    filter_upwards [hRzero j.succ, hRzero j.castSucc] with x hsucc hpred
+    simp [hsucc, hpred]
+  calc
+    ((aux_endpointLpCMLM p hp_top hsum t htpos m :
+      Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) =ᵐ[
+        (Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))]
+        (fun z ↦ R z.1.succ z.2 - R z.1.castSucc z.2) := by
+      simpa [R] using aux_endpointLpCMLM_raw_ae p hp_top hsum t htpos m
+    _ =ᵐ[(Measure.count : Measure (Fin J)).prod (volume : Measure (RealVector n))] 0 :=
+      hdiffzero
+
+end RawStability
+
+private def aux_rv_complexComponentPhase {n : ℕ} (ε : Fin n → Fin 2) : ℂ :=
+  ∏ i, if ε i = 0 then 1 else Complex.I
+
+private theorem aux_rv_complex_product_expand {n : ℕ} {X : Type*}
+    (f : Fin n → X → ℂ) (x : X) :
+    ∏ i, f i x =
+      ∑ ε : Fin n → Fin 2, aux_rv_complexComponentPhase ε *
+        (∏ i, (complexComponent ε f i x : ℂ)) := by
+  calc
+    ∏ i, f i x = ∏ i, ∑ b : Fin 2,
+        (if b = 0 then (1 : ℂ) else Complex.I) *
+          (if b = 0 then (f i x).re else (f i x).im : ℂ) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      rw [Fin.sum_univ_two]
+      simp only [Fin.isValue, ↓reduceIte, one_mul]
+      symm
+      calc
+        (f i x).re + Complex.I * (f i x).im =
+            (f i x).re + (f i x).im * Complex.I := by ring
+        _ = f i x := Complex.re_add_im _
+    _ = ∑ ε : Fin n → Fin 2, ∏ i,
+        (if ε i = 0 then (1 : ℂ) else Complex.I) *
+          (if ε i = 0 then (f i x).re else (f i x).im : ℂ) := by
+      rw [Fintype.prod_sum]
+    _ = ∑ ε : Fin n → Fin 2, aux_rv_complexComponentPhase ε *
+        (∏ i, (complexComponent ε f i x : ℂ)) := by
+      apply Finset.sum_congr rfl
+      intro ε _
+      rw [Finset.prod_mul_distrib]
+      simp only [aux_rv_complexComponentPhase, complexComponent]
+      congr 1
+      apply Finset.prod_congr rfl
+      intro i _
+      split_ifs <;> rfl
+
+private theorem aux_rv_complex_product_expand_vec {n : ℕ} (g : Fin n → ℂ) :
+    ∏ i, g i =
+      ∑ ε : Fin n → Fin 2, aux_rv_complexComponentPhase ε *
+        ∏ i, (if ε i = 0 then (g i).re else (g i).im : ℂ) := by
+  calc
+    ∏ i, g i = ∏ i, ∑ b : Fin 2,
+        (if b = 0 then (1 : ℂ) else Complex.I) *
+          (if b = 0 then (g i).re else (g i).im : ℂ) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      rw [Fin.sum_univ_two]
+      simp only [Fin.isValue, ↓reduceIte, one_mul]
+      symm
+      calc
+        (g i).re + Complex.I * (g i).im =
+            (g i).re + (g i).im * Complex.I := by ring
+        _ = g i := Complex.re_add_im _
+    _ = ∑ ε : Fin n → Fin 2, ∏ i,
+        (if ε i = 0 then (1 : ℂ) else Complex.I) *
+          (if ε i = 0 then (g i).re else (g i).im : ℂ) := by
+      rw [Fintype.prod_sum]
+    _ = ∑ ε : Fin n → Fin 2, aux_rv_complexComponentPhase ε *
+        ∏ i, (if ε i = 0 then (g i).re else (g i).im : ℂ) := by
+      apply Finset.sum_congr rfl
+      intro ε _
+      rw [Finset.prod_mul_distrib]
+      simp only [aux_rv_complexComponentPhase]
+
+private theorem aux_rv_complexTwistedAverage_expand {n : ℕ} (χ : ℝ → ℝ)
+    (f : Fin n → RealVector n → ℂ) (x : RealVector n)
+    (hint : ∀ ε : Fin n → Fin 2, Integrable (fun s : ℝ ↦
+      (χ s : ℂ) * ∏ i, (complexComponent ε f i (x + s • coordinateAxis i) : ℂ))) :
+    complexTwistedAverage χ f x =
+      ∑ ε : Fin n → Fin 2, aux_rv_complexComponentPhase ε *
+        (Codex.Introduction.twistedAverage χ (complexComponent ε f) x : ℂ) := by
+  unfold complexTwistedAverage
+  have hfun : (fun s : ℝ ↦ (χ s : ℂ) * ∏ i, f i (x + s • coordinateAxis i)) =
+      fun s ↦ ∑ ε : Fin n → Fin 2, aux_rv_complexComponentPhase ε *
+        ((χ s : ℂ) * ∏ i, (complexComponent ε f i (x + s • coordinateAxis i) : ℂ)) := by
+    funext s
+    have hprod := aux_rv_complex_product_expand_vec
+      (fun i ↦ f i (x + s • coordinateAxis i))
+    change (χ s : ℂ) * ∏ i, f i (x + s • coordinateAxis i) = _
+    rw [hprod]
+    rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro ε _
+    have hcomp : ∏ i, (if ε i = 0 then
+        (f i (x + s • coordinateAxis i)).re else
+        (f i (x + s • coordinateAxis i)).im : ℂ) =
+        ∏ i, (complexComponent ε f i (x + s • coordinateAxis i) : ℂ) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      by_cases hε : ε i = 0 <;> simp [complexComponent, hε]
+    rw [hcomp]
+    ring
+  rw [hfun, integral_finset_sum Finset.univ (fun ε _ ↦ by
+    change Integrable (aux_rv_complexComponentPhase ε • fun s : ℝ ↦
+      (χ s : ℂ) * ∏ i, (complexComponent ε f i (x + s • coordinateAxis i) : ℂ)) volume
+    exact Integrable.smul (aux_rv_complexComponentPhase ε) (hint ε))]
+  apply Finset.sum_congr rfl
+  intro ε _
+  rw [integral_const_mul]
+  congr 1
+  calc
+    (∫ s : ℝ, (χ s : ℂ) * ∏ i,
+        (complexComponent ε f i (x + s • coordinateAxis i) : ℂ)) =
+        ∫ s : ℝ, ((χ s * ∏ i,
+          complexComponent ε f i (x + s • coordinateAxis i) : ℝ) : ℂ) := by
+      apply integral_congr_ae
+      filter_upwards [] with s
+      push_cast
+      rfl
+    _ = (∫ s : ℝ, χ s * ∏ i,
+          complexComponent ε f i (x + s • coordinateAxis i) : ℝ) := by
+      exact integral_ofReal
+    _ = (Codex.Introduction.twistedAverage χ (complexComponent ε f) x : ℂ) := by
+      rfl
+
+private theorem aux_rv_norm_complexComponentPhase {n : ℕ} (ε : Fin n → Fin 2) :
+    ‖aux_rv_complexComponentPhase ε‖ = 1 := by
+  unfold aux_rv_complexComponentPhase
+  rw [norm_prod]
+  apply Finset.prod_eq_one
+  intro i _
+  split_ifs <;> simp
+
+private theorem aux_rv_complexTwistedAverageAtScale_sub_expand {n : ℕ}
+    (a b : ℝ) (χ : ℝ → ℝ) (f : Fin n → RealVector n → ℂ) (x : RealVector n)
+    (hinta : ∀ ε : Fin n → Fin 2, Integrable (fun s : ℝ ↦
+      (scaleKernel a χ s : ℂ) * ∏ i,
+        (complexComponent ε f i (x + s • coordinateAxis i) : ℂ)))
+    (hintb : ∀ ε : Fin n → Fin 2, Integrable (fun s : ℝ ↦
+      (scaleKernel b χ s : ℂ) * ∏ i,
+        (complexComponent ε f i (x + s • coordinateAxis i) : ℂ))) :
+    complexTwistedAverageAtScale a χ f x - complexTwistedAverageAtScale b χ f x =
+      ∑ ε : Fin n → Fin 2, aux_rv_complexComponentPhase ε *
+        ((Codex.Introduction.twistedAverageAtScale a χ (complexComponent ε f) x -
+          Codex.Introduction.twistedAverageAtScale b χ (complexComponent ε f) x : ℝ) : ℂ) := by
+  unfold complexTwistedAverageAtScale
+  rw [aux_rv_complexTwistedAverage_expand (scaleKernel a χ) f x hinta,
+    aux_rv_complexTwistedAverage_expand (scaleKernel b χ) f x hintb]
+  rw [← Finset.sum_sub_distrib]
+  apply Finset.sum_congr rfl
+  intro ε _
+  simp only [Codex.Introduction.twistedAverage,
+    Codex.Introduction.twistedAverageAtScale,
+    Codex.Reduction.TwistedAverages.twistedAverageAtScale]
+  rw [show scaleKernel a χ = fun s ↦ a⁻¹ * χ (a⁻¹ * s) by rfl,
+    show scaleKernel b χ = fun s ↦ b⁻¹ * χ (b⁻¹ * s) by rfl]
+  push_cast
+  ring
+
+private theorem aux_rv_eLpNorm_complexTwistedAverageAtScale_sub_le_sum {n : ℕ}
+    (a b : ℝ) (χ : ℝ → ℝ) (f : Fin n → RealVector n → ℂ)
+    (hint : ∀ ε : Fin n → Fin 2, ∀ x : RealVector n, ∀ r : Fin 2,
+      Integrable (fun s : ℝ ↦
+        (scaleKernel (if r = 0 then a else b) χ s : ℂ) * ∏ i,
+          (complexComponent ε f i (x + s • coordinateAxis i) : ℂ)))
+    (hmem : ∀ ε : Fin n → Fin 2,
+      MemLp (fun x ↦ Codex.Introduction.twistedAverageAtScale a χ
+          (complexComponent ε f) x -
+        Codex.Introduction.twistedAverageAtScale b χ (complexComponent ε f) x) 2 volume) :
+    eLpNorm (fun x ↦ complexTwistedAverageAtScale a χ f x -
+      complexTwistedAverageAtScale b χ f x) 2 volume ≤
+      ∑ ε : Fin n → Fin 2, eLpNorm
+        (fun x ↦ Codex.Introduction.twistedAverageAtScale a χ
+            (complexComponent ε f) x -
+          Codex.Introduction.twistedAverageAtScale b χ
+            (complexComponent ε f) x) 2 volume := by
+  let g : (Fin n → Fin 2) → RealVector n → ℂ := fun ε ↦
+    aux_rv_complexComponentPhase ε • fun x ↦
+      ((Codex.Introduction.twistedAverageAtScale a χ (complexComponent ε f) x -
+        Codex.Introduction.twistedAverageAtScale b χ (complexComponent ε f) x : ℝ) : ℂ)
+  have hsum : eLpNorm (∑ ε, g ε) 2 volume ≤ ∑ ε, eLpNorm (g ε) 2 volume := by
+    refine eLpNorm_sum_le ?_ (by norm_num)
+    intro ε _
+    have hcast : MemLp (fun x ↦
+        ((Codex.Introduction.twistedAverageAtScale a χ (complexComponent ε f) x -
+          Codex.Introduction.twistedAverageAtScale b χ (complexComponent ε f) x : ℝ) : ℂ)) 2 volume := by
+      simpa using (hmem ε).continuousLinearMap_comp Complex.ofRealCLM
+    dsimp [g]
+    exact (hcast.const_smul (aux_rv_complexComponentPhase ε)).aestronglyMeasurable
+  calc
+    eLpNorm (fun x ↦ complexTwistedAverageAtScale a χ f x -
+        complexTwistedAverageAtScale b χ f x) 2 volume =
+        eLpNorm (∑ ε, g ε) 2 volume := by
+      apply eLpNorm_congr_ae
+      filter_upwards [] with x
+      simpa [g, smul_eq_mul] using
+        aux_rv_complexTwistedAverageAtScale_sub_expand a b χ f x
+          (fun ε ↦ hint ε x 0) (fun ε ↦ hint ε x 1)
+    _ ≤ ∑ ε, eLpNorm (g ε) 2 volume := hsum
+    _ = ∑ ε : Fin n → Fin 2, eLpNorm
+        (fun x ↦ Codex.Introduction.twistedAverageAtScale a χ
+            (complexComponent ε f) x -
+          Codex.Introduction.twistedAverageAtScale b χ
+            (complexComponent ε f) x) 2 volume := by
+      apply Finset.sum_congr rfl
+      intro ε _
+      dsimp [g]
+      rw [eLpNorm_const_smul]
+      have hphase : ‖aux_rv_complexComponentPhase ε‖ₑ = 1 := by
+        have hnn : ‖aux_rv_complexComponentPhase ε‖₊ = 1 :=
+          NNReal.eq (aux_rv_norm_complexComponentPhase ε)
+        simpa [enorm_eq_nnnorm] using
+          congrArg (fun r : NNReal ↦ (r : ENNReal)) hnn
+      rw [hphase, one_mul]
+      apply eLpNorm_congr_norm_ae
+      filter_upwards [] with x
+      exact Complex.norm_real _
+
+private theorem aux_rv_ennreal_sq_sum_le_card_mul_sum_sq {ι : Type*} [Fintype ι]
+    (a : ι → ℝ≥0∞) (ha : ∀ i, a i ≠ ∞) :
+    (∑ i, a i) ^ 2 ≤ (Fintype.card ι : ℝ≥0∞) * ∑ i, a i ^ 2 := by
+  have hsum : (∑ i, a i) ≠ ∞ := ENNReal.sum_ne_top.mpr fun i _ ↦ ha i
+  have hsq : ∀ i, a i ^ 2 ≠ ∞ := fun i ↦ ENNReal.pow_ne_top (ha i)
+  have hsumSq : (∑ i, a i ^ 2) ≠ ∞ := ENNReal.sum_ne_top.mpr fun i _ ↦ hsq i
+  have hright : (Fintype.card ι : ℝ≥0∞) * ∑ i, a i ^ 2 ≠ ∞ :=
+    ENNReal.mul_ne_top (ENNReal.natCast_ne_top _) hsumSq
+  apply (ENNReal.toReal_le_toReal (ENNReal.pow_ne_top hsum) hright).mp
+  rw [ENNReal.toReal_pow, ENNReal.toReal_mul,
+    ENNReal.toReal_sum (fun i _ ↦ hsq i)]
+  simpa only [ENNReal.toReal_natCast, ENNReal.toReal_sum (fun i _ ↦ ha i),
+    ENNReal.toReal_pow, Finset.card_univ] using
+    (sq_sum_le_card_mul_sum_sq (s := (Finset.univ : Finset ι))
+      (f := fun i ↦ (a i).toReal))
+
+private theorem aux_rv_complexEndpointEnergy_complexification_le {n J : ℕ}
+    (t : Fin (J + 1) → ℝ) (χ : ℝ → ℝ) (f : Fin n → RealVector n → ℂ)
+    (hint : ∀ ε : Fin n → Fin 2, ∀ j : Fin J, ∀ x : RealVector n, ∀ r : Fin 2,
+      Integrable (fun s : ℝ ↦
+        (scaleKernel (if r = 0 then t j.succ else t j.castSucc) χ s : ℂ) * ∏ i,
+          (complexComponent ε f i (x + s • coordinateAxis i) : ℂ)))
+    (hmem : ∀ ε : Fin n → Fin 2, ∀ j : Fin J,
+      MemLp (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ
+          (complexComponent ε f) x -
+        Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ
+          (complexComponent ε f) x) 2 volume) :
+    complexEndpointEnergy J t χ f ≤
+      (Fintype.card (Fin n → Fin 2) : ℝ≥0∞) *
+        ∑ ε : Fin n → Fin 2, endpointEnergy J t χ (complexComponent ε f) := by
+  unfold complexEndpointEnergy endpointEnergy
+  calc
+    ∑ j : Fin J, eLpNorm
+        (fun x ↦ complexTwistedAverageAtScale (t j.succ) χ f x -
+          complexTwistedAverageAtScale (t j.castSucc) χ f x) 2 volume ^ 2 ≤
+        ∑ j : Fin J, (∑ ε : Fin n → Fin 2, eLpNorm
+          (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ
+              (complexComponent ε f) x -
+            Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ
+              (complexComponent ε f) x) 2 volume) ^ 2 := by
+      apply Finset.sum_le_sum
+      intro j _
+      exact pow_le_pow_left'
+        (aux_rv_eLpNorm_complexTwistedAverageAtScale_sub_le_sum
+          (t j.succ) (t j.castSucc) χ f (fun ε x r ↦ hint ε j x r)
+          (fun ε ↦ hmem ε j)) _
+    _ ≤ ∑ j : Fin J, (Fintype.card (Fin n → Fin 2) : ℝ≥0∞) *
+        ∑ ε : Fin n → Fin 2, eLpNorm
+          (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ
+              (complexComponent ε f) x -
+            Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ
+              (complexComponent ε f) x) 2 volume ^ 2 := by
+      apply Finset.sum_le_sum
+      intro j _
+      exact aux_rv_ennreal_sq_sum_le_card_mul_sum_sq _
+        (fun ε ↦ (hmem ε j).eLpNorm_ne_top)
+    _ = (Fintype.card (Fin n → Fin 2) : ℝ≥0∞) *
+        ∑ ε : Fin n → Fin 2, ∑ j : Fin J, eLpNorm
+          (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ
+              (complexComponent ε f) x -
+            Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ
+              (complexComponent ε f) x) 2 volume ^ 2 := by
+      simp_rw [Finset.mul_sum]
+      rw [Finset.sum_comm]
+
+theorem aux_rv_complexEndpointEnergy_complexification_bound {n J : ℕ}
+    (t : Fin (J + 1) → ℝ) (χ : ℝ → ℝ) (f : Fin n → RealVector n → ℂ)
+    (B : ℝ≥0∞)
+    (hint : ∀ ε : Fin n → Fin 2, ∀ j : Fin J, ∀ x : RealVector n, ∀ r : Fin 2,
+      Integrable (fun s : ℝ ↦
+        (scaleKernel (if r = 0 then t j.succ else t j.castSucc) χ s : ℂ) * ∏ i,
+          (complexComponent ε f i (x + s • coordinateAxis i) : ℂ)))
+    (hmem : ∀ ε : Fin n → Fin 2, ∀ j : Fin J,
+      MemLp (fun x ↦ Codex.Introduction.twistedAverageAtScale (t j.succ) χ
+          (complexComponent ε f) x -
+        Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ
+          (complexComponent ε f) x) 2 volume)
+    (hreal : ∀ ε : Fin n → Fin 2,
+      endpointEnergy J t χ (complexComponent ε f) ≤ B) :
+    complexEndpointEnergy J t χ f ≤ (2 : ℝ≥0∞) ^ (2 * n) * B := by
+  let K : ℝ≥0∞ := Fintype.card (Fin n → Fin 2)
+  calc
+    complexEndpointEnergy J t χ f ≤ K *
+        ∑ ε : Fin n → Fin 2, endpointEnergy J t χ (complexComponent ε f) := by
+      exact aux_rv_complexEndpointEnergy_complexification_le t χ f hint hmem
+    _ ≤ K * ∑ _ε : Fin n → Fin 2, B := by
+      gcongr with ε
+      exact hreal ε
+    _ = K * (K * B) := by
+      simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+      rfl
+    _ = (2 : ℝ≥0∞) ^ (2 * n) * B := by
+      have hK : K = (2 : ℝ≥0∞) ^ n := by
+        simp [K]
+      rw [hK, ← mul_assoc, ← pow_add]
+      congr 2
+      omega
+
+private theorem aux_rv_unitIntervalKernel_integrable : Integrable unitIntervalKernel volume := by
+  apply memLp_one_iff_integrable.mp
+  exact memLp_indicator_const 1 measurableSet_Icc (1 : ℝ)
+    (Or.inr measure_Icc_lt_top.ne)
+
+private theorem aux_rv_scaleKernel_integrable {t : ℝ} (ht : 0 < t) :
+    Integrable (scaleKernel t unitIntervalKernel) volume := by
+  have hcomp : Integrable (fun s : ℝ ↦ unitIntervalKernel (t⁻¹ * s)) volume :=
+    aux_rv_unitIntervalKernel_integrable.comp_mul_left' (inv_ne_zero ht.ne')
+  have hmul := hcomp.const_mul t⁻¹
+  convert hmul using 1
+  funext s
+  simp only [scaleKernel]
+
+private noncomputable def aux_rv_complexComponentSchwartz {n : ℕ}
+    (ε : Fin n → Fin 2) (f : Fin n → SchwartzMap (RealVector n) ℂ) :
+    Fin n → SchwartzMap (RealVector n) ℝ :=
+  fun i ↦ if ε i = 0 then
+    SchwartzMap.postcompCLM Complex.reCLM (f i)
+  else SchwartzMap.postcompCLM Complex.imCLM (f i)
+
+private theorem aux_rv_complexComponentSchwartz_apply {n : ℕ}
+    (ε : Fin n → Fin 2) (f : Fin n → SchwartzMap (RealVector n) ℂ)
+    (i : Fin n) (x : RealVector n) :
+    aux_rv_complexComponentSchwartz ε f i x =
+      complexComponent ε (fun i x ↦ f i x) i x := by
+  unfold aux_rv_complexComponentSchwartz complexComponent
+  split_ifs <;> rfl
+
+private theorem aux_rv_complex_line_integrable_schwartz {n : ℕ}
+    (ε : Fin n → Fin 2) (f : Fin n → SchwartzMap (RealVector n) ℂ)
+    (x : RealVector n) {t : ℝ} (ht : 0 < t) :
+    Integrable (fun s : ℝ ↦
+      (scaleKernel t unitIntervalKernel s : ℂ) * ∏ i,
+        (complexComponent ε (fun i x ↦ f i x) i (x + s • coordinateAxis i) : ℂ)) := by
+  let h : ℝ → ℂ := fun s ↦ ∏ i,
+    (complexComponent ε (fun i x ↦ f i x) i (x + s • coordinateAxis i) : ℂ)
+  have hh_meas : AEStronglyMeasurable h volume := by
+    apply Continuous.aestronglyMeasurable
+    dsimp [h]
+    apply continuous_finset_prod
+    intro i _
+    unfold complexComponent
+    split_ifs <;> fun_prop
+  let C : ℝ := ∏ i, SchwartzMap.seminorm ℂ 0 0 (f i)
+  have hh_bound : ∀ s : ℝ, ‖h s‖ ≤ C := by
+    intro s
+    dsimp [h, C]
+    rw [norm_prod]
+    refine Finset.prod_le_prod (fun i _ ↦ norm_nonneg _) ?_
+    intro i _
+    calc
+      ‖(complexComponent ε (fun i x ↦ f i x) i
+          (x + s • coordinateAxis i) : ℂ)‖ =
+          |complexComponent ε (fun i x ↦ f i x) i
+            (x + s • coordinateAxis i)| := Complex.norm_real _
+      _ ≤ ‖f i (x + s • coordinateAxis i)‖ := by
+        unfold complexComponent
+        split_ifs <;> simp [Complex.abs_re_le_norm, Complex.abs_im_le_norm]
+      _ ≤ SchwartzMap.seminorm ℂ 0 0 (f i) :=
+        SchwartzMap.norm_le_seminorm ℂ (f i) _
+  have hkernel : Integrable (fun s : ℝ ↦ (scaleKernel t unitIntervalKernel s : ℂ)) :=
+    Complex.ofRealCLM.integrable_comp (aux_rv_scaleKernel_integrable ht)
+  have hmul := hkernel.smul_bdd C hh_meas (ae_of_all _ hh_bound)
+  change Integrable ((fun s : ℝ ↦ (scaleKernel t unitIntervalKernel s : ℂ)) * h) volume
+  exact hmul
+
+theorem aux_rv_complexEndpointEnergy_complexification_schwartz {n J : ℕ}
+    (hn : 2 ≤ n) (p : Fin n → ℝ≥0∞) (t : Fin (J + 1) → ℝ)
+    (htpos : ∀ j, 0 < t j)
+    (f : Fin n → SchwartzMap (RealVector n) ℂ) (B : ℝ≥0∞)
+    (hreal : ∀ g : Fin n → SchwartzMap (RealVector n) ℝ,
+      endpointEnergy J t unitIntervalKernel (fun i x ↦ g i x) ≤
+        B * ∏ i, eLpNorm (g i) (p i) volume ^ 2) :
+    complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ f i x) ≤
+      (2 : ℝ≥0∞) ^ (2 * n) *
+        (B * ∏ i, eLpNorm (f i) (p i) volume ^ 2) := by
+  apply aux_rv_complexEndpointEnergy_complexification_bound t unitIntervalKernel
+    (fun i x ↦ f i x) (B * ∏ i, eLpNorm (f i) (p i) volume ^ 2)
+  · intro ε j x r
+    apply aux_rv_complex_line_integrable_schwartz ε f x
+    by_cases hr : r = 0
+    · simpa [hr] using htpos j.succ
+    · simpa [hr] using htpos j.castSucc
+  · intro ε j
+    let g : Fin n → SchwartzMap (RealVector n) ℝ :=
+      aux_rv_complexComponentSchwartz ε f
+    have hcomp : (fun i x ↦ g i x) = complexComponent ε (fun i x ↦ f i x) := by
+      funext i x
+      exact aux_rv_complexComponentSchwartz_apply ε f i x
+    have hmem := twistedAverageAtScale_sub_memLp hn g
+      (htpos j.succ) (htpos j.castSucc)
+    rw [hcomp] at hmem
+    exact hmem
+  · intro ε
+    let g : Fin n → SchwartzMap (RealVector n) ℝ :=
+      aux_rv_complexComponentSchwartz ε f
+    have hcomp : (fun i x ↦ g i x) = complexComponent ε (fun i x ↦ f i x) := by
+      funext i x
+      exact aux_rv_complexComponentSchwartz_apply ε f i x
+    have hcomponentNorm :
+        (∏ i, eLpNorm (complexComponent ε (fun i x ↦ f i x) i)
+          (p i) volume ^ 2) ≤ ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+      apply Finset.prod_le_prod'
+      intro i _
+      exact ENNReal.pow_le_pow_left
+        (eLpNorm_complexComponent_le ε (fun i x ↦ f i x) (p i) i)
+    calc
+      endpointEnergy J t unitIntervalKernel (complexComponent ε (fun i x ↦ f i x)) =
+          endpointEnergy J t unitIntervalKernel (fun i x ↦ g i x) := by rw [hcomp]
+      _ ≤ B * ∏ i, eLpNorm (g i) (p i) volume ^ 2 := hreal g
+      _ = B * ∏ i, eLpNorm (complexComponent ε (fun i x ↦ f i x) i)
+          (p i) volume ^ 2 := by
+        congr 1
+        apply Finset.prod_congr rfl
+        intro i _
+        exact congrArg (fun u : RealVector n → ℝ ↦ eLpNorm u (p i) volume ^ 2)
+          (congrFun hcomp i)
+      _ ≤ B * ∏ i, eLpNorm (f i) (p i) volume ^ 2 :=
+        mul_le_mul_of_nonneg_left hcomponentNorm bot_le
+
+theorem aux_rv_complexTwistedAverage_ofReal {n : ℕ} (χ : ℝ → ℝ)
+    (f : Fin n → RealVector n → ℝ) (x : RealVector n) :
+    complexTwistedAverage χ (fun i y ↦ (f i y : ℂ)) x =
+      (Codex.Introduction.twistedAverage χ f x : ℂ) := by
+  unfold complexTwistedAverage Codex.Introduction.twistedAverage
+    Codex.Reduction.TwistedAverages.twistedAverage
+  calc
+    (∫ s : ℝ, (χ s : ℂ) * ∏ i, (f i (x + s • coordinateAxis i) : ℂ)) =
+        ∫ s : ℝ, ((χ s * ∏ i, f i (x + s • coordinateAxis i) : ℝ) : ℂ) := by
+      apply integral_congr_ae
+      filter_upwards [] with s
+      push_cast
+      rfl
+    _ = (∫ s : ℝ, χ s * ∏ i, f i (x + s • coordinateAxis i)) := by
+      exact integral_ofReal
+
+/-- The same real-to-complex identification after scaling the kernel. -/
+theorem aux_rv_complexTwistedAverageAtScale_ofReal {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
+    (f : Fin n → RealVector n → ℝ) (x : RealVector n) :
+    complexTwistedAverageAtScale t χ (fun i y ↦ (f i y : ℂ)) x =
+      (Codex.Introduction.twistedAverageAtScale t χ f x : ℂ) := by
+  unfold complexTwistedAverageAtScale Codex.Introduction.twistedAverageAtScale
+    Codex.Reduction.TwistedAverages.twistedAverageAtScale
+  exact aux_rv_complexTwistedAverage_ofReal (scaleKernel t χ) f x
+
+/-- On real inputs the complex raw jump energy is exactly the original real jump energy. -/
+theorem aux_rv_complexEndpointEnergy_ofReal {n J : ℕ} (t : Fin (J + 1) → ℝ)
+    (χ : ℝ → ℝ) (f : Fin n → RealVector n → ℝ) :
+    complexEndpointEnergy J t χ (fun i x ↦ (f i x : ℂ)) =
+      endpointEnergy J t χ f := by
+  unfold complexEndpointEnergy endpointEnergy
+  apply Finset.sum_congr rfl
+  intro j _
+  have hsub :
+      (fun x ↦ complexTwistedAverageAtScale (t j.succ) χ
+          (fun i y ↦ (f i y : ℂ)) x -
+        complexTwistedAverageAtScale (t j.castSucc) χ
+          (fun i y ↦ (f i y : ℂ)) x) =
+        fun x ↦ ((Codex.Introduction.twistedAverageAtScale (t j.succ) χ f x -
+          Codex.Introduction.twistedAverageAtScale (t j.castSucc) χ f x : ℝ) : ℂ) := by
+    funext x
+    rw [aux_rv_complexTwistedAverageAtScale_ofReal,
+      aux_rv_complexTwistedAverageAtScale_ofReal]
+    push_cast
+    rfl
+  rw [hsub]
+  congr 1
+  apply eLpNorm_congr_norm_ae
+  filter_upwards [] with x
+  exact Complex.norm_real _
+
+/-- Passing a real-valued function through the canonical inclusion into `ℂ` preserves
+every extended `Lᵖ` norm. -/
+theorem aux_rv_eLpNorm_ofReal {X : Type*} [MeasurableSpace X] (μ : Measure X)
+    (q : ℝ≥0∞) (f : X → ℝ) :
+    eLpNorm (fun x ↦ (f x : ℂ)) q μ = eLpNorm f q μ := by
+  apply eLpNorm_congr_norm_ae
+  filter_upwards [] with x
+  exact Complex.norm_real _
+
+/-- The product of input norms is likewise unchanged by real-to-complex inclusion. -/
+theorem aux_rv_eLpNorm_ofReal_prod {n : ℕ} (p : Fin n → ℝ≥0∞)
+    (f : Fin n → RealVector n → ℝ) :
+    (∏ i, eLpNorm (fun x ↦ (f i x : ℂ)) (p i) volume ^ 2) =
+      ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+  apply Finset.prod_congr rfl
+  intro i _
+  rw [aux_rv_eLpNorm_ofReal]
+
+/-- Complexifying a real Schwartz endpoint bound costs exactly `2^(2n)` in the
+squared jump energy. -/
+theorem aux_rv_complexEndpointEnergy_complexification_schwartz_endpoint
+    {n J : ℕ} (hn : 2 ≤ n) (t : Fin (J + 1) → ℝ) (htpos : ∀ j, 0 < t j)
+    (π : Equiv.Perm (Fin n)) (f : Fin n → SchwartzMap (RealVector n) ℂ)
+    (hreal : ∀ g : Fin n → SchwartzMap (RealVector n) ℝ,
+      endpointEnergy J t unitIntervalKernel (fun i x ↦ g i x) ≤
+        ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (g i) (mainEndpointExponent n (π i)) volume ^ 2) :
+    complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ f i x) ≤
+      ENNReal.ofReal (C_interpolated_real_variable_estimate n) *
+        ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (mainEndpointExponent n (π i)) volume ^ 2 := by
+  have hcomplex := aux_rv_complexEndpointEnergy_complexification_schwartz hn
+    (fun i ↦ mainEndpointExponent n (π i)) t htpos f
+    (ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal (jumpGrowth n J)) hreal
+  simpa [C_interpolated_real_variable_estimate, ENNReal.ofReal_mul, mul_assoc] using hcomplex
+
+
+/-- Converts the sharp complex-Schwartz endpoint energy estimate into a real squared-norm
+bound for any packed `L²` CMLM whose Schwartz values represent that raw energy. -/
+private theorem aux_packed_endpoint_schwartz_sq_bound
+    {n J : ℕ} (hn : 2 ≤ n) (hJ : 0 < J)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ j, 0 < t j)
+    (π : Equiv.Perm (Fin n))
+    [∀ i, Fact (1 ≤ mainEndpointExponent n (π i))]
+    (B : ContinuousMultilinearMap ℂ
+      (fun i ↦ Lp ℂ (mainEndpointExponent n (π i))
+        (volume : Measure (RealVector n)))
+      (Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))))
+    (hpacked : ∀ f : Fin n → SchwartzMap (RealVector n) ℂ,
+      eLpNorm ((B (fun i ↦ (f i).toLp (mainEndpointExponent n (π i)) volume) :
+        Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+          (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) 2
+          ((Measure.count : Measure (Fin J)).prod volume) ^ 2 =
+        complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ f i x))
+    (hreal : ∀ g : Fin n → SchwartzMap (RealVector n) ℝ,
+      endpointEnergy J t unitIntervalKernel (fun i x ↦ g i x) ≤
+        ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (g i) (mainEndpointExponent n (π i)) volume ^ 2) :
+    ∀ f : Fin n → SchwartzMap (RealVector n) ℂ,
+      ‖B (fun i ↦ (f i).toLp (mainEndpointExponent n (π i)) volume)‖ ^ 2 ≤
+        (C_interpolated_real_variable_estimate n * jumpGrowth n J) *
+          ∏ i, ‖(f i).toLp (mainEndpointExponent n (π i)) volume‖ ^ 2 := by
+  have hC : 0 < C_interpolated_real_variable_estimate n := by
+    unfold C_interpolated_real_variable_estimate
+    positivity
+  have hG : 0 < jumpGrowth n J := by
+    unfold jumpGrowth
+    apply Real.rpow_pos_of_pos
+    exact_mod_cast hJ
+  intro f
+  have henergy := aux_rv_complexEndpointEnergy_complexification_schwartz_endpoint
+    hn t htpos π f hreal
+  have hprod_top : ∏ i, eLpNorm (f i) (mainEndpointExponent n (π i)) volume ^ 2 ≠ ∞ := by
+    apply ENNReal.prod_ne_top
+    intro i _
+    exact ENNReal.pow_ne_top ((f i).memLp _ volume).eLpNorm_ne_top
+  have hrhs_top :
+      ENNReal.ofReal (C_interpolated_real_variable_estimate n) *
+          ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (mainEndpointExponent n (π i)) volume ^ 2 ≠ ∞ := by
+    apply ENNReal.mul_ne_top
+    · apply ENNReal.mul_ne_top <;> exact ENNReal.ofReal_ne_top
+    · exact hprod_top
+  have hto := ENNReal.toReal_mono hrhs_top henergy
+  have hleft :
+      ‖B (fun i ↦ (f i).toLp (mainEndpointExponent n (π i)) volume)‖ ^ 2 =
+        (complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ f i x)).toReal := by
+    have h := congrArg ENNReal.toReal (hpacked f)
+    simpa only [ENNReal.toReal_pow, Lp.norm_def] using h
+  have hright :
+      (ENNReal.ofReal (C_interpolated_real_variable_estimate n) *
+          ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (mainEndpointExponent n (π i)) volume ^ 2).toReal =
+        (C_interpolated_real_variable_estimate n * jumpGrowth n J) *
+          ∏ i, ‖(f i).toLp (mainEndpointExponent n (π i)) volume‖ ^ 2 := by
+    rw [ENNReal.toReal_mul, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal hC.le, ENNReal.toReal_ofReal hG.le,
+      ENNReal.toReal_prod]
+    simp_rw [ENNReal.toReal_pow, ← SchwartzMap.norm_toLp]
+  calc
+    ‖B (fun i ↦ (f i).toLp (mainEndpointExponent n (π i)) volume)‖ ^ 2 =
+        (complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ f i x)).toReal := hleft
+    _ ≤ _ := hto
+    _ = _ := hright
+
+/-- A sharp endpoint estimate transfers from a packed CMLM's raw-energy equality on Schwartz
+tuples to arbitrary endpoint `Lp` inputs.  It is applied to
+`RawStability.aux_endpointLpCMLM` using its exact raw-energy theorem. -/
+theorem aux_packedCMLM_sharp_endpoint_sq_bound
+    {n J : ℕ} (hn : 2 ≤ n) (hJ : 0 < J)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ j, 0 < t j)
+    (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (π : Equiv.Perm (Fin n))
+    (hp : p = fun i ↦ mainEndpointExponent n (π i))
+    (B : ContinuousMultilinearMap ℂ
+      (fun i ↦ Lp ℂ (p i) (volume : Measure (RealVector n)))
+      (Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))))
+    (hpacked : ∀ f : Fin n → SchwartzMap (RealVector n) ℂ,
+      eLpNorm ((B (fun i ↦ (f i).toLp (p i) volume) :
+        Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+          (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) 2
+          ((Measure.count : Measure (Fin J)).prod volume) ^ 2 =
+        complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ f i x))
+    (hreal : ∀ g : Fin n → SchwartzMap (RealVector n) ℝ,
+      endpointEnergy J t unitIntervalKernel (fun i x ↦ g i x) ≤
+        ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (g i) (mainEndpointExponent n (π i)) volume ^ 2) :
+    ∀ g : (i : Fin n) → Lp ℂ (p i) (volume : Measure (RealVector n)),
+      ‖B g‖ ^ 2 ≤
+        (C_interpolated_real_variable_estimate n * jumpGrowth n J) *
+          ∏ i, ‖g i‖ ^ 2 := by
+  subst p
+  apply Codex.MultilinearInterpolation.aux_schwartz_sq_bound
+    (fun i ↦ mainEndpointExponent n (π i)) hp_top B
+    (C_interpolated_real_variable_estimate n * jumpGrowth n J)
+  intro f
+  exact aux_packed_endpoint_schwartz_sq_bound hn hJ t htpos π B hpacked hreal f
+
+
+/-- Transfers an endpoint CMLM squared norm estimate across two exponent tuples on an
+integrable simple-function tuple, using the common literal raw representative. -/
+private theorem aux_generic_core_endpoint_bound
+    {n J : ℕ} (p q : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)] [∀ i, Fact (1 ≤ q i)]
+    (hp_top : ∀ i, p i ≠ ∞) (hq_top : ∀ i, q i ≠ ∞)
+    (hpsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (hqsum : ∑ i, (q i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k)
+    (K : ℝ) (hK : 0 ≤ K)
+    (g : Fin n → SimpleFunc (RealVector n) ℂ)
+    (hg : ∀ i, Integrable (g i : RealVector n → ℂ) volume)
+    (hsharp : ∀ r : (i : Fin n) → Lp ℂ (q i) (volume : Measure (RealVector n)),
+      ‖RawStability.aux_endpointLpCMLM q hq_top hqsum t htpos r‖ ^ 2 ≤
+        K * ∏ i, ‖r i‖ ^ 2) :
+    ‖RawStability.aux_endpointLpCMLM p hp_top hpsum t htpos
+        (fun i ↦ ((SimpleFunc.memLp_iff_integrable
+          (ne_of_gt (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p i))) (hp_top i)).mpr
+            (hg i)).toLp (g i))‖ₑ ^ 2 ≤
+      ENNReal.ofReal K * ∏ i, eLpNorm (g i : RealVector n → ℂ) (q i) volume ^ 2 := by
+  let gp : (i : Fin n) → Lp ℂ (p i) (volume : Measure (RealVector n)) := fun i ↦
+    ((SimpleFunc.memLp_iff_integrable
+      (ne_of_gt (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p i))) (hp_top i)).mpr
+        (hg i)).toLp (g i)
+  let gq : (i : Fin n) → Lp ℂ (q i) (volume : Measure (RealVector n)) := fun i ↦
+    ((SimpleFunc.memLp_iff_integrable
+      (ne_of_gt (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ q i))) (hq_top i)).mpr
+        (hg i)).toLp (g i)
+  have hgp (i : Fin n) : MemLp (g i : RealVector n → ℂ) (p i) volume := by
+    exact (SimpleFunc.memLp_iff_integrable
+      (ne_of_gt (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p i))) (hp_top i)).mpr (hg i)
+  have hgq (i : Fin n) : MemLp (g i : RealVector n → ℂ) (q i) volume := by
+    exact (SimpleFunc.memLp_iff_integrable
+      (ne_of_gt (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ q i))) (hq_top i)).mpr (hg i)
+  have hcmp := RawStability.aux_endpointLpCMLM_congr_ae p q hp_top hq_top hpsum hqsum
+    t htpos gp gq
+    (fun i ↦ (MemLp.coeFn_toLp (hgp i)).trans (MemLp.coeFn_toLp (hgq i)).symm)
+  have heq : RawStability.aux_endpointLpCMLM p hp_top hpsum t htpos gp =
+      RawStability.aux_endpointLpCMLM q hq_top hqsum t htpos gq := Lp.ext hcmp
+  have hqbound := hsharp gq
+  have hbound := Codex.MultilinearInterpolation.aux_enorm_sq_le_of_norm_sq_le
+    K hK (RawStability.aux_endpointLpCMLM q hq_top hqsum t htpos gq) gq hqbound
+  have hnormq (i : Fin n) : ‖gq i‖ₑ =
+      eLpNorm (g i : RealVector n → ℂ) (q i) volume := by
+    rw [Lp.enorm_def]
+    exact eLpNorm_congr_ae (MemLp.coeFn_toLp (hgq i))
+  change ‖RawStability.aux_endpointLpCMLM p hp_top hpsum t htpos gp‖ₑ ^ 2 ≤ _
+  rw [heq]
+  simpa only [hnormq] using hbound
+
+/-- The sharp real Schwartz endpoint estimate supplies the simple-function endpoint
+premise needed for the common-integrable interpolation totalization. -/
+theorem aux_endpoint_core_bound_from_schwartz
+    {n J : ℕ} (hn : 2 ≤ n) (hJ : 0 < J)
+    (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hpsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k)
+    (π : Equiv.Perm (Fin n))
+    (hqsum : ∑ i, (mainEndpointExponent n (π i))⁻¹ = (2 : ENNReal)⁻¹)
+    (hreal : ∀ f : Fin n → SchwartzMap (RealVector n) ℝ,
+      endpointEnergy J t unitIntervalKernel (fun i x ↦ f i x) ≤
+        ENNReal.ofReal ((2 : ℝ) ^ 666) * ENNReal.ofReal (jumpGrowth n J) *
+          ∏ i, eLpNorm (f i) (mainEndpointExponent n (π i)) volume ^ 2)
+    (g : Fin n → SimpleFunc (RealVector n) ℂ)
+    (hg : ∀ i, Integrable (g i : RealVector n → ℂ) volume) :
+    ‖RawStability.aux_endpointLpCMLM p hp_top hpsum t htpos
+        (fun i ↦ ((SimpleFunc.memLp_iff_integrable
+          (ne_of_gt (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p i))) (hp_top i)).mpr
+            (hg i)).toLp (g i))‖ₑ ^ 2 ≤
+      ENNReal.ofReal (C_interpolated_real_variable_estimate n * jumpGrowth n J) *
+        ∏ i, eLpNorm (g i : RealVector n → ℂ)
+          (mainEndpointExponent n (π i)) volume ^ 2 := by
+  let q : Fin n → ENNReal := fun i ↦ mainEndpointExponent n (π i)
+  letI : ∀ i, Fact (1 ≤ q i) := fun i ↦ ⟨by
+    dsimp [q, mainEndpointExponent]
+    exact one_le_pow₀ (by norm_num)⟩
+  have hq_top : ∀ i, q i ≠ ∞ := by
+    intro i
+    dsimp [q, mainEndpointExponent]
+    exact ENNReal.pow_ne_top ENNReal.coe_ne_top
+  have hqsum' : ∑ i, (q i)⁻¹ = (2 : ENNReal)⁻¹ := by
+    simpa only [q] using hqsum
+  have hC : 0 < C_interpolated_real_variable_estimate n := by
+    unfold C_interpolated_real_variable_estimate
+    positivity
+  have hG : 0 < jumpGrowth n J := by
+    unfold jumpGrowth
+    apply Real.rpow_pos_of_pos
+    exact_mod_cast hJ
+  have hK : 0 ≤ C_interpolated_real_variable_estimate n * jumpGrowth n J :=
+    (mul_pos hC hG).le
+  have hpacked : ∀ f : Fin n → SchwartzMap (RealVector n) ℂ,
+      eLpNorm ((RawStability.aux_endpointLpCMLM q hq_top hqsum' t htpos
+        (fun i ↦ (f i).toLp (q i) volume) :
+        Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+          (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) 2
+          ((Measure.count : Measure (Fin J)).prod volume) ^ 2 =
+        complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ f i x) := by
+    intro f
+    calc
+      eLpNorm ((RawStability.aux_endpointLpCMLM q hq_top hqsum' t htpos
+          (fun i ↦ (f i).toLp (q i) volume) :
+          Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+            (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) 2
+            ((Measure.count : Measure (Fin J)).prod volume) ^ 2 =
+          complexEndpointEnergy J t unitIntervalKernel
+            (fun i x ↦ ((f i).toLp (q i) volume : RealVector n → ℂ) x) :=
+        RawStability.aux_eLpNorm_sq_endpointLpCMLM_eq_complexEndpointEnergy q hq_top hqsum'
+          t htpos (fun i ↦ (f i).toLp (q i) volume)
+      _ = complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ f i x) :=
+        RawStability.aux_complexEndpointEnergy_congr_ae t htpos _ _
+          (fun i ↦ MemLp.coeFn_toLp ((f i).memLp (q i) volume))
+  have hsharp : ∀ r : (i : Fin n) → Lp ℂ (q i) (volume : Measure (RealVector n)),
+      ‖RawStability.aux_endpointLpCMLM q hq_top hqsum' t htpos r‖ ^ 2 ≤
+        (C_interpolated_real_variable_estimate n * jumpGrowth n J) *
+          ∏ i, ‖r i‖ ^ 2 := by
+    simpa only [q] using aux_packedCMLM_sharp_endpoint_sq_bound hn hJ t htpos q hq_top
+      π (by rfl) (RawStability.aux_endpointLpCMLM q hq_top hqsum' t htpos) hpacked hreal
+  simpa only [q] using aux_generic_core_endpoint_bound p q hp_top hq_top hpsum hqsum'
+    t htpos (C_interpolated_real_variable_estimate n * jumpGrowth n J) hK g hg hsharp
+
+
+private theorem aux_targetExponent_eq
+    {m : ℕ} (p : Fin (m + 1) → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hptop : ∀ i, p i ≠ ∞) (i : Fin (m + 1)) :
+    Codex.multilinearExponentOfReciprocal (fun j ↦ ((p j)⁻¹).toReal) i = p i := by
+  rw [Codex.multilinearExponentOfReciprocal]
+  rw [ENNReal.ofReal_inv_of_pos]
+  · rw [ENNReal.ofReal_toReal]
+    · exact inv_inv _
+    · rw [ENNReal.inv_ne_top]
+      exact ne_of_gt (lt_of_lt_of_le zero_lt_one (hp i))
+  · exact ENNReal.toReal_pos
+      (ENNReal.inv_ne_zero.mpr (hptop i))
+      (ENNReal.inv_ne_top.mpr (ne_of_gt (lt_of_lt_of_le zero_lt_one (hp i))))
+
+private theorem aux_endpointExponent_eq_of_reciprocal
+    {m : ℕ}
+    (hreciprocal : ∀ i : Fin (m + 1),
+      ((mainEndpointExponent (m + 1) i)⁻¹).toReal =
+        endpointReciprocalVector (m + 1) i)
+    (π : Equiv.Perm (Fin (m + 1))) (i : Fin (m + 1)) :
+    Codex.multilinearExponentOfReciprocal
+        (fun j ↦ endpointReciprocalVector (m + 1) (π j)) i =
+      mainEndpointExponent (m + 1) (π i) := by
+  let q : Fin (m + 1) → ℝ≥0∞ := fun j ↦ mainEndpointExponent (m + 1) (π j)
+  have hq : ∀ j, 1 ≤ q j := by
+    intro j
+    unfold q mainEndpointExponent
+    exact one_le_pow₀ (by norm_num)
+  have hqtop : ∀ j, q j ≠ ∞ := by
+    intro j
+    unfold q mainEndpointExponent
+    exact ENNReal.pow_ne_top ENNReal.coe_ne_top
+  have hqrec : (fun j ↦ endpointReciprocalVector (m + 1) (π j)) =
+      fun j ↦ ((q j)⁻¹).toReal := by
+    funext j
+    exact (hreciprocal (π j)).symm
+  rw [hqrec]
+  exact aux_targetExponent_eq q hq hqtop i
+
+private theorem aux_endpointReciprocal_box_of_reciprocal
+    {m : ℕ}
+    (hreciprocal : ∀ i : Fin (m + 1),
+      ((mainEndpointExponent (m + 1) i)⁻¹).toReal =
+        endpointReciprocalVector (m + 1) i) :
+    ∀ i : Fin (m + 1),
+      0 < endpointReciprocalVector (m + 1) i ∧
+        endpointReciprocalVector (m + 1) i ≤ 1 := by
+  intro i
+  rw [← hreciprocal i]
+  let q : ℝ≥0∞ := mainEndpointExponent (m + 1) i
+  have hq : 1 ≤ q := by
+    unfold q mainEndpointExponent
+    exact one_le_pow₀ (by norm_num)
+  have hqtop : q ≠ ∞ := by
+    unfold q mainEndpointExponent
+    exact ENNReal.pow_ne_top ENNReal.coe_ne_top
+  have hqzero : q ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hq)
+  constructor
+  · exact ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hqtop)
+      (ENNReal.inv_ne_top.mpr hqzero)
+  · have hinvle : q⁻¹ ≤ 1 := ENNReal.inv_le_one.mpr hq
+    have hreal := (ENNReal.toReal_le_toReal
+      (ENNReal.inv_ne_top.mpr hqzero) (by norm_num : (1 : ℝ≥0∞) ≠ ∞)).mpr hinvle
+    simpa using hreal
+
+/-- Applies the finite-endpoint squared interpolation theorem to the permutation polytope
+used by the real-variable estimate.  The packed map and its null-input compatibility are
+kept abstract so that the analytic extension and the raw-energy representative can be
+constructed independently. -/
+theorem aux_multilinear_interpolation_endpointPolytope_sq_of_packed
+    {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+    {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
+    (p : Fin (m + 1) → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hptop : ∀ i, p i ≠ ∞)
+    (hpoly : (fun i ↦ ((p i)⁻¹).toReal) ∈ endpointPolytope (m + 1))
+    (B : MultilinearMap ℂ (fun _ : Fin (m + 1) ↦ SimpleFunc X ℂ) (Lp ℂ 2 ν))
+    (D : ℝ) (hD : 0 < D)
+    (hendpointBox : ∀ i : Fin (m + 1),
+      0 < endpointReciprocalVector (m + 1) i ∧
+        endpointReciprocalVector (m + 1) i ≤ 1)
+    (hendpointExponent : ∀ (π : Equiv.Perm (Fin (m + 1))) (i : Fin (m + 1)),
+      Codex.multilinearExponentOfReciprocal
+          (fun j ↦ endpointReciprocalVector (m + 1) (π j)) i =
+        mainEndpointExponent (m + 1) (π i))
+    (hendpoint : ∀ (π : Equiv.Perm (Fin (m + 1)))
+        (g : Fin (m + 1) → SimpleFunc X ℂ),
+      (∀ i, Integrable (g i : X → ℂ) μ) →
+        ‖B g‖ₑ ^ 2 ≤ ENNReal.ofReal D * ∏ i,
+          eLpNorm (g i : X → ℂ) (mainEndpointExponent (m + 1) (π i)) μ ^ 2)
+    (hzero : ∀ (u : Fin (m + 1) → ℝ), (∀ i, 0 < u i ∧ u i ≤ 1) →
+      ∀ (g : Fin (m + 1) → SimpleFunc X ℂ) (i : Fin (m + 1)),
+        eLpNorm (g i : X → ℂ) (Codex.multilinearExponentOfReciprocal u i) μ = 0 →
+          ‖B g‖ₑ = 0)
+    (g : Fin (m + 1) → SimpleFunc X ℂ)
+    (hg : ∀ i, Integrable (g i : X → ℂ) μ) :
+    ‖B g‖ₑ ^ 2 ≤ ENNReal.ofReal D * ∏ i,
+      eLpNorm (g i : X → ℂ) (p i) μ ^ 2 := by
+  let S : Set (Fin (m + 1) → ℝ) :=
+    Set.range fun π : Equiv.Perm (Fin (m + 1)) ↦
+      fun i ↦ endpointReciprocalVector (m + 1) (π i)
+  have hSbox : ∀ u ∈ S, ∀ i, 0 < u i ∧ u i ≤ 1 := by
+    rintro _ ⟨π, rfl⟩ i
+    exact hendpointBox (π i)
+  have hendpoint' : ∀ u ∈ S, ∀ r : Fin (m + 1) → SimpleFunc X ℂ,
+      (∀ i, Integrable (r i : X → ℂ) μ) →
+        ‖B r‖ₑ ^ 2 ≤ ENNReal.ofReal D * ∏ i,
+          eLpNorm (r i : X → ℂ) (Codex.multilinearExponentOfReciprocal u i) μ ^ 2 := by
+    rintro _ ⟨π, rfl⟩ r hr
+    simpa only [hendpointExponent π] using hendpoint π r hr
+  have hu : (fun i ↦ ((p i)⁻¹).toReal) ∈ convexHull ℝ S := by
+    simpa only [S, endpointPolytope] using hpoly
+  have hinterpolated :=
+    Codex.MultilinearInterpolation.multilinear_interpolation_convexHull_Lp_sq
+      B D hD S hSbox hendpoint' hzero (fun i ↦ ((p i)⁻¹).toReal) hu g hg
+  simpa only [aux_targetExponent_eq p hp hptop] using hinterpolated
+
+/-- A convenience form of the packed endpoint-polytope bridge.  The explicit reciprocal
+identity for the endpoint exponents supplies both the box condition and the exponent rewrite
+required by `multilinear_interpolation_convexHull_Lp_sq`. -/
+theorem aux_multilinear_interpolation_endpointPolytope_sq_of_packed_of_reciprocal
+    {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+    {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
+    (p : Fin (m + 1) → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
+    (hptop : ∀ i, p i ≠ ∞)
+    (hpoly : (fun i ↦ ((p i)⁻¹).toReal) ∈ endpointPolytope (m + 1))
+    (B : MultilinearMap ℂ (fun _ : Fin (m + 1) ↦ SimpleFunc X ℂ) (Lp ℂ 2 ν))
+    (D : ℝ) (hD : 0 < D)
+    (hreciprocal : ∀ i : Fin (m + 1),
+      ((mainEndpointExponent (m + 1) i)⁻¹).toReal =
+        endpointReciprocalVector (m + 1) i)
+    (hendpoint : ∀ (π : Equiv.Perm (Fin (m + 1)))
+        (g : Fin (m + 1) → SimpleFunc X ℂ),
+      (∀ i, Integrable (g i : X → ℂ) μ) →
+        ‖B g‖ₑ ^ 2 ≤ ENNReal.ofReal D * ∏ i,
+          eLpNorm (g i : X → ℂ) (mainEndpointExponent (m + 1) (π i)) μ ^ 2)
+    (hzero : ∀ (u : Fin (m + 1) → ℝ), (∀ i, 0 < u i ∧ u i ≤ 1) →
+      ∀ (g : Fin (m + 1) → SimpleFunc X ℂ) (i : Fin (m + 1)),
+        eLpNorm (g i : X → ℂ) (Codex.multilinearExponentOfReciprocal u i) μ = 0 →
+          ‖B g‖ₑ = 0)
+    (g : Fin (m + 1) → SimpleFunc X ℂ)
+    (hg : ∀ i, Integrable (g i : X → ℂ) μ) :
+    ‖B g‖ₑ ^ 2 ≤ ENNReal.ofReal D * ∏ i,
+      eLpNorm (g i : X → ℂ) (p i) μ ^ 2 := by
+  exact aux_multilinear_interpolation_endpointPolytope_sq_of_packed
+    p hp hptop hpoly B D hD
+    (aux_endpointReciprocal_box_of_reciprocal hreciprocal)
+    (aux_endpointExponent_eq_of_reciprocal hreciprocal)
+    hendpoint hzero g hg
+
+/-- Rephrases the interpolation estimate on literal integrable simple functions as the
+common-core estimate used by the final dense-range propagation. -/
+private theorem aux_target_packed_core_bound_of_totalized
+    {n J : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k)
+    (D : ℝ)
+    (hsimple : ∀ g : Fin n → SimpleFunc (RealVector n) ℂ,
+      (∀ i, Integrable (g i : RealVector n → ℂ) volume) →
+        ‖Codex.MultilinearInterpolation.aux_extendLpCMLMToSimpleFuncIntegrable
+          p volume hp_top (RawStability.aux_endpointLpCMLM p hp_top hsum t htpos) g‖ₑ ^ 2 ≤
+          ENNReal.ofReal D * ∏ i, eLpNorm (g i : RealVector n → ℂ) (p i) volume ^ 2) :
+    ∀ x : ∀ i,
+      Codex.MultilinearInterpolation.aux_integrableSimpleFuncSubmodule
+        (volume : Measure (RealVector n)),
+      ‖RawStability.aux_endpointLpCMLM p hp_top hsum t htpos
+          (fun i ↦ Codex.MultilinearInterpolation.aux_integrableSimpleFuncToLp
+            (p i) volume (hp_top i) (x i))‖ₑ ^ 2 ≤
+        ENNReal.ofReal D * ∏ i,
+          ‖Codex.MultilinearInterpolation.aux_integrableSimpleFuncToLp
+            (p i) volume (hp_top i) (x i)‖ₑ ^ 2 := by
+  intro x
+  let g : Fin n → SimpleFunc (RealVector n) ℂ := fun i ↦ x i
+  have hg (i : Fin n) : Integrable (g i : RealVector n → ℂ) volume := by
+    exact memLp_one_iff_integrable.mp (x i).property
+  have hmap :
+      Codex.MultilinearInterpolation.aux_extendLpCMLMToSimpleFuncIntegrable
+        p volume hp_top (RawStability.aux_endpointLpCMLM p hp_top hsum t htpos) g =
+      RawStability.aux_endpointLpCMLM p hp_top hsum t htpos
+        (fun i ↦ Codex.MultilinearInterpolation.aux_integrableSimpleFuncToLp
+          (p i) volume (hp_top i) (x i)) := by
+    rw [Codex.MultilinearInterpolation.aux_extendLpCMLMToSimpleFuncIntegrable_apply_of_integrable
+      p volume hp_top (RawStability.aux_endpointLpCMLM p hp_top hsum t htpos) g hg]
+    rfl
+  have hnorm (i : Fin n) :
+      ‖Codex.MultilinearInterpolation.aux_integrableSimpleFuncToLp
+        (p i) volume (hp_top i) (x i)‖ₑ =
+        eLpNorm (g i : RealVector n → ℂ) (p i) volume := by
+    rw [Lp.enorm_def]
+    exact eLpNorm_congr_ae (MemLp.coeFn_toLp
+      ((SimpleFunc.memLp_iff_integrable
+        (Codex.MultilinearInterpolation.aux_simpleFuncExponent_ne_zero (p := p i))
+        (hp_top i)).mpr (hg i)))
+  calc
+    ‖RawStability.aux_endpointLpCMLM p hp_top hsum t htpos
+        (fun i ↦ Codex.MultilinearInterpolation.aux_integrableSimpleFuncToLp
+          (p i) volume (hp_top i) (x i))‖ₑ ^ 2 =
+        ‖Codex.MultilinearInterpolation.aux_extendLpCMLMToSimpleFuncIntegrable
+          p volume hp_top (RawStability.aux_endpointLpCMLM p hp_top hsum t htpos) g‖ₑ ^ 2 := by
+      rw [hmap]
+    _ ≤ ENNReal.ofReal D * ∏ i,
+        eLpNorm (g i : RealVector n → ℂ) (p i) volume ^ 2 := hsimple g hg
+    _ = ENNReal.ofReal D * ∏ i,
+        ‖Codex.MultilinearInterpolation.aux_integrableSimpleFuncToLp
+          (p i) volume (hp_top i) (x i)‖ₑ ^ 2 := by
+      congr 1
+      apply Finset.prod_congr rfl
+      intro i _
+      rw [hnorm i]
+
+/-- The final density and quotient-representative stage of the target interpolation
+argument.  A sharp squared estimate on the common integrable simple-function core extends
+to all `Lp` inputs, and the packed `L²` norm is then returned to the literal raw jump energy. -/
+theorem aux_target_packed_core_bound
+    {n J : ℕ} (p : Fin n → ENNReal) [∀ i, Fact (1 ≤ p i)]
+    (hp_top : ∀ i, p i ≠ ∞)
+    (hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹)
+    (t : Fin (J + 1) → ℝ) (htpos : ∀ k, 0 < t k)
+    (D : ℝ) (hD : 0 ≤ D)
+    (hcore : ∀ x : ∀ i,
+      Codex.MultilinearInterpolation.aux_integrableSimpleFuncSubmodule
+        (volume : Measure (RealVector n)),
+      ‖RawStability.aux_endpointLpCMLM p hp_top hsum t htpos
+          (fun i ↦ Codex.MultilinearInterpolation.aux_integrableSimpleFuncToLp
+            (p i) volume (hp_top i) (x i))‖ₑ ^ 2 ≤
+        ENNReal.ofReal D * ∏ i,
+          ‖Codex.MultilinearInterpolation.aux_integrableSimpleFuncToLp
+            (p i) volume (hp_top i) (x i)‖ₑ ^ 2)
+    (f : Fin n → RealVector n → ℂ) (hf : ∀ i, MemLp (f i) (p i) volume) :
+    complexEndpointEnergy J t unitIntervalKernel f ≤
+      ENNReal.ofReal D * ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+  let B := RawStability.aux_endpointLpCMLM p hp_top hsum t htpos
+  let e : ∀ i,
+      Codex.MultilinearInterpolation.aux_integrableSimpleFuncSubmodule
+        (volume : Measure (RealVector n)) → Lp ℂ (p i) volume :=
+    fun i ↦ Codex.MultilinearInterpolation.aux_integrableSimpleFuncToLp
+      (p i) volume (hp_top i)
+  have hdense : ∀ i, DenseRange (e i) := by
+    intro i
+    exact Codex.MultilinearInterpolation.aux_denseRange_integrableSimpleFuncToLp
+      (p i) volume (hp_top i)
+  have hbound : ∀ x : ∀ i, Lp ℂ (p i) volume,
+      ‖B x‖ ^ 2 ≤ D * ∏ i, ‖x i‖ ^ 2 := by
+    apply Codex.MultilinearInterpolation.aux_ContinuousMultilinearMap_norm_sq_le_of_denseRange_functions
+      (B := B) (e := e) hdense D
+    intro x
+    exact Codex.MultilinearInterpolation.aux_norm_sq_le_of_enorm_sq_le
+      D hD (B (fun i ↦ e i (x i))) (fun i ↦ e i (x i)) (hcore x)
+  let fp : ∀ i, Lp ℂ (p i) volume := fun i ↦ (hf i).toLp (f i)
+  have hfp (i : Fin n) : (fp i : RealVector n → ℂ) =ᵐ[volume] f i := by
+    exact MemLp.coeFn_toLp (hf i)
+  have hinput (i : Fin n) : ‖fp i‖ₑ = eLpNorm (f i) (p i) volume := by
+    rw [Lp.enorm_def]
+    exact eLpNorm_congr_ae (hfp i)
+  have hbound' : ‖B fp‖ₑ ^ 2 ≤ ENNReal.ofReal D * ∏ i, ‖fp i‖ₑ ^ 2 :=
+    Codex.MultilinearInterpolation.aux_enorm_sq_le_of_norm_sq_le
+      D hD (B fp) fp (hbound fp)
+  calc
+    complexEndpointEnergy J t unitIntervalKernel f =
+        complexEndpointEnergy J t unitIntervalKernel (fun i x ↦ fp i x) :=
+      RawStability.aux_complexEndpointEnergy_congr_ae t htpos f (fun i x ↦ fp i x)
+        (fun i ↦ (hfp i).symm)
+    _ = eLpNorm ((B fp : Lp ℂ 2 ((Measure.count : Measure (Fin J)).prod
+        (volume : Measure (RealVector n)))) : Fin J × RealVector n → ℂ) 2
+          ((Measure.count : Measure (Fin J)).prod volume) ^ 2 := by
+      exact (RawStability.aux_eLpNorm_sq_endpointLpCMLM_eq_complexEndpointEnergy
+        p hp_top hsum t htpos fp).symm
+    _ = ‖B fp‖ₑ ^ 2 := by
+      rw [Lp.enorm_def]
+    _ ≤ ENNReal.ofReal D * ∏ i, ‖fp i‖ₑ ^ 2 := hbound'
+    _ = ENNReal.ofReal D * ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+      congr 1
+      apply Finset.prod_congr rfl
+      intro i _
+      rw [hinput i]
+
 /--
 \begin{exttheorem}[Multilinear interpolation]
 \label{multilinear interpolation external}
@@ -2498,7 +4909,98 @@ theorem multilinear_interpolation_external {n : ℕ} (hn : 2 ≤ n)
         ENNReal.ofReal (C_interpolated_real_variable_estimate n) *
           ENNReal.ofReal (jumpGrowth n J) *
             ∏ i, eLpNorm (f i) (p i) volume ^ 2) := by
-  sorry
+  cases n with
+  | zero => omega
+  | succ n =>
+    letI : ∀ i, Fact (1 ≤ p i) := fun i => ⟨hp i⟩
+    have hp_top : ∀ i, p i ≠ ∞ :=
+      aux_interpolatedExponent_ne_top hn p hp hpoly
+    have hsum : ∑ i, (p i)⁻¹ = (2 : ENNReal)⁻¹ :=
+      aux_interpolatedExponent_reciprocal_sum hn p hp hpoly
+    let D : ℝ := C_interpolated_real_variable_estimate (n + 1) *
+      jumpGrowth (n + 1) J
+    have hD : 0 < D := by
+      dsimp [D]
+      apply _root_.mul_pos
+      · unfold C_interpolated_real_variable_estimate
+        positivity
+      · unfold jumpGrowth
+        apply Real.rpow_pos_of_pos
+        exact_mod_cast hJ
+    let B := Codex.MultilinearInterpolation.aux_extendLpCMLMToSimpleFuncIntegrable
+      p volume hp_top (RawStability.aux_endpointLpCMLM p hp_top hsum t htpos)
+    have hsimple : ∀ g : Fin (n + 1) → SimpleFunc (RealVector (n + 1)) ℂ,
+        (∀ i, Integrable (g i : RealVector (n + 1) → ℂ) volume) →
+          ‖B g‖ₑ ^ 2 ≤ ENNReal.ofReal D * ∏ i,
+            eLpNorm (g i : RealVector (n + 1) → ℂ) (p i) volume ^ 2 := by
+      intro g hg
+      have hendpoint' : ∀ (π : Equiv.Perm (Fin (n + 1)))
+          (r : Fin (n + 1) → SimpleFunc (RealVector (n + 1)) ℂ),
+          (∀ i, Integrable (r i : RealVector (n + 1) → ℂ) volume) →
+            ‖B r‖ₑ ^ 2 ≤ ENNReal.ofReal D * ∏ i,
+              eLpNorm (r i : RealVector (n + 1) → ℂ)
+                (mainEndpointExponent (n + 1) (π i)) volume ^ 2 := by
+        intro π r hr
+        have hB : B r =
+            RawStability.aux_endpointLpCMLM p hp_top hsum t htpos
+              (fun i ↦ ((SimpleFunc.memLp_iff_integrable
+                (Codex.MultilinearInterpolation.aux_simpleFuncExponent_ne_zero
+                  (p := p i)) (hp_top i)).mpr (hr i)).toLp (r i)) := by
+          dsimp [B]
+          rw [Codex.MultilinearInterpolation.aux_extendLpCMLMToSimpleFuncIntegrable_apply_of_integrable
+              p volume hp_top (RawStability.aux_endpointLpCMLM p hp_top hsum t htpos)
+              r hr]
+        rw [hB]
+        exact aux_endpoint_core_bound_from_schwartz hn hJ p hp_top hsum t htpos π
+          (aux_mainEndpointExponent_reciprocal_sum hn π) (hendpoint π) r hr
+      have hzero : ∀ (u : Fin (n + 1) → ℝ),
+          (∀ i, 0 < u i ∧ u i ≤ 1) →
+            ∀ (r : Fin (n + 1) → SimpleFunc (RealVector (n + 1)) ℂ)
+              (i : Fin (n + 1)),
+              eLpNorm (r i : RealVector (n + 1) → ℂ)
+                (Codex.multilinearExponentOfReciprocal u i) volume = 0 →
+                ‖B r‖ₑ = 0 := by
+        intro u hu r i hzero
+        dsimp [B]
+        exact Codex.MultilinearInterpolation.aux_extendLpCMLMToSimpleFuncIntegrable_enorm_eq_zero_of_eLpNorm_eq_zero
+            p volume hp_top (RawStability.aux_endpointLpCMLM p hp_top hsum t htpos)
+            u hu r i hzero
+      exact aux_multilinear_interpolation_endpointPolytope_sq_of_packed_of_reciprocal
+        p hp hp_top hpoly B D hD
+        (fun i ↦ aux_mainEndpointExponent_reciprocal_eq_endpointReciprocalVector hn i)
+        hendpoint' hzero g hg
+    have hcore := aux_target_packed_core_bound_of_totalized p hp_top hsum t htpos D hsimple
+    have hcomplex : ∀ f : Fin (n + 1) → RealVector (n + 1) → ℂ,
+        (∀ i, MemLp (f i) (p i) volume) →
+          complexEndpointEnergy J t unitIntervalKernel f ≤
+            ENNReal.ofReal (C_interpolated_real_variable_estimate (n + 1)) *
+              ENNReal.ofReal (jumpGrowth (n + 1) J) *
+                ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+      intro f hf
+      have h := aux_target_packed_core_bound p hp_top hsum t htpos D hD.le hcore f hf
+      have hC : 0 ≤ C_interpolated_real_variable_estimate (n + 1) := by
+        unfold C_interpolated_real_variable_estimate
+        positivity
+      simpa only [D, ENNReal.ofReal_mul hC] using h
+    constructor
+    · exact hcomplex
+    · intro f hf
+      have hfC (i : Fin (n + 1)) :
+          MemLp (fun x ↦ (f i x : ℂ)) (p i) volume := by
+        simpa using (hf i).continuousLinearMap_comp Complex.ofRealCLM
+      calc
+        endpointEnergy J t unitIntervalKernel f =
+            complexEndpointEnergy J t unitIntervalKernel
+              (fun i x ↦ (f i x : ℂ)) :=
+          (aux_rv_complexEndpointEnergy_ofReal t unitIntervalKernel f).symm
+        _ ≤ ENNReal.ofReal (C_interpolated_real_variable_estimate (n + 1)) *
+            ENNReal.ofReal (jumpGrowth (n + 1) J) *
+              ∏ i, eLpNorm (fun x ↦ (f i x : ℂ)) (p i) volume ^ 2 :=
+          hcomplex (fun i x ↦ (f i x : ℂ)) hfC
+        _ = ENNReal.ofReal (C_interpolated_real_variable_estimate (n + 1)) *
+            ENNReal.ofReal (jumpGrowth (n + 1) J) *
+              ∏ i, eLpNorm (f i) (p i) volume ^ 2 := by
+          rw [aux_rv_eLpNorm_ofReal_prod p f]
 
 /--
 \begin{proposition}[Interpolated real-variable estimate]
