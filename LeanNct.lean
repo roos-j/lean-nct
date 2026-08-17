@@ -21,3 +21,7 @@ import LeanNct.Reduction.OnDiagonalMainArgument
 import LeanNct.Reduction.OnDiagonalOffDiagonal
 import LeanNct.Reduction.TwistedAverages
 import LeanNct.Reduction.FinalReduction
+
+#check Codex.Introduction.mainTwistedTheorem
+
+#print axioms Codex.Introduction.mainTwistedTheorem
