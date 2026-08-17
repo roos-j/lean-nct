@@ -4,7 +4,7 @@ Definitions use `Todo` or `Completed`. Theorems use `Todo`, `Statement completed
 
 ## Introduction
 
-Lean file: Introduction.lean
+Lean file: RealToErgodic.lean
 
 ### Ergodic averages
 
@@ -24,7 +24,7 @@ Lean file: RealToErgodic.lean
 
 ### Twisted averages
 
-Lean file: Introduction.lean
+Lean file: RealToErgodic.lean
 
 #### Definitions
 
@@ -66,7 +66,6 @@ Lean file: Preliminaries/Notation.lean
 
 #### Definitions
 
-\label{closed ball}: [Completed] (Lean: Metric.closedBall) (2026-08-09 10:00:00 EDT)
 \label{gaussian}: [Completed] (Lean: Notation.gaussian) (2026-08-09 10:00:00 EDT)
 \label{bracket bump}: [Completed] (Lean: Notation.bracketBump, Notation.scaledBracketBump, Notation.scaledBracketBumpReal) (2026-08-09 10:00:00 EDT)
 
@@ -77,7 +76,6 @@ Lean file: WienerSpace.lean
 #### Definitions
 
 \label{auto:Wiener-space-definition}: [Completed] (Lean: wienerEnvelope, MemW0, wienerNorm, wienerNormOne) (2026-08-09 10:00:00 EDT)
-\label{auto:convolution-along-vector-definition}: [Completed] (Lean: convolutionAlongVector) (2026-08-09 10:00:00 EDT)
 
 #### Theorems
 
@@ -88,6 +86,17 @@ Lean file: WienerSpace.lean
 \label{tensor Wiener}: [Proof completed] (Lean: MemW0.fintype_tensor, fintype_tensor_wienerNorm_le) (2026-08-09 10:00:00 EDT)
 \label{W_0 Brascamp Lieb}: [Proof completed] (Lean: exists_brascamp_lieb_memW0) (2026-08-09 10:00:00 EDT)
 \label{P:schwartz-into-wiener}: [Proof completed] (Lean: SchwartzMap.memW0) (2026-08-09 10:00:00 EDT)
+
+### Convolution along a vector
+
+Lean file: Preliminaries/ConvolutionAlongVector.lean
+
+#### Definitions
+
+\label{auto:convolution-along-vector-definition}: [Completed] (Lean: convolutionAlongVector) (2026-08-09 10:00:00 EDT)
+
+#### Theorems
+
 \label{convolution vector}: [Proof completed] (Lean: memW0_convolutionAlongVector, fourier_convolutionAlongVector) (2026-08-09 10:00:00 EDT)
 
 ### K kernels

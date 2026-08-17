@@ -124,7 +124,7 @@ mathx10
 
 \begin{center}
     {\color{red}{This document is currently undergoing automated editing through multiple passes with human feedback.
-    This is the document of PASS 8.}}
+    This is the document of PASS 9.}}
 \end{center}
 
 \begin{abstract}
@@ -132,16 +132,6 @@ Norm-variation estimates are proved for multiple ergodic averages associated wit
 \end{abstract}
 
 \maketitle
-
-Conventions (will remove this in the end):
-\begin{itemize}
-\item All constants will be explicit and given names indexed by lemma number (as already done in Section \ref{sec:pfmainthm}). Constant definitions should generally be recursive in terms of previously defined constants. This ensures that typos in constants stay local, simplifies formalization and helps clarify dependencies. Dependencies of constants on parameters must explicitly appear in notation, write e.g. $C_{a,b,c}$ if $C$ depends on parameters $a,b,c$. This does not include dependence on previously defined constants.
-When the constant is invoked, parameters should be explicitly instantiated as needed.
-\item After the introduction and overview sections we use strict forward reasoning: no statement can be used before it is proved and all proofs immediately follow statements.
-\item All theorems used must be referenced explicitly using {\texttt{ref}}. This will simplify automating creation of the metadata for the dependency graph.
-\item Machine-generated content is marked by \auto.
-\end{itemize}
-
 
 \section{Introduction}
 
@@ -3769,7 +3759,8 @@ The Gaussian factors have finite $L^1$ norms independent of $N$. The assumed $L^
 \uses{prism BL inequality,M to K}\usesdefs{auto:Wiener-space-definition,normalized function tuples,auto:prism-form-definition,geometric parameters,L multiplier,summation-definition}
 Let $\gamma=(k,u,a)\in \Gamma$.
 If $M=\sum_{\iota\in \mathcal{I}_\gamma} M_\iota$ holds in $L^1$ for $M,M_\iota\in W_0((\R^2)^k)$, then for every $\mathbf{F}\in\mathfrak{F}$,
-\begin{equation}\label{auto:prism-form-series-bound} |\Lambda_k(M)(\mathbf{F})| \le \sum_{\iota\in \mathcal{I}_\gamma} |\Lambda_k(M_\iota)(\mathbf{F})|. \end{equation}
+\begin{equation}\label{auto:prism-form-series-bound} |\Lambda_k(M)(\mathbf{F})| \le \sup_{N\in\mathbb N}\sum_{\substack{\iota\in \mathcal{I}_\gamma\\|\iota|\le N}} |\Lambda_k(M_\iota)(\mathbf{F})|. \end{equation}
+Here the supremum is taken in the extended half-line $[0,\infty]$.
 \end{lemma}
 
 
@@ -4062,7 +4053,7 @@ Using $\sqrt2<3/2$, the defining sum in Proposition \ref{H kernel derivative est
 \leanok
 Set
 \begin{equation}\label{Gaussian domination combined constants}
-C_{\ref{Gaussian domination combined},0}=28,\qquad
+C_{\ref{Gaussian domination combined},0}=36,\qquad
 C_{\ref{Gaussian domination combined},1}=2,\qquad
 C_{\ref{Gaussian domination combined},2}=2^{153}.
 \end{equation}\label{auto:Gaussian-domination-combined-distance-constant}\label{auto:Gaussian-domination-combined-majorant-constant}
@@ -4093,7 +4084,7 @@ The proof of this proposition is split into three cases: Propositions \ref{Gauss
 The conclusion of Proposition \ref{Gaussian domination combined} holds in the case $\iota=(h,0)$, $h>0$, with the constant in \eqref{Gaussian domination main estimate} equal to
 \begin{equation}\label{auto:Gaussian-domination-case-one-constant}
 C_{\ref{Gauss domination case 1}}
-=2^7\pi e^{2\pi}
+=2^8\pi e^{2\pi}
 \tilde C_{\ref{standard bump properties},0,2}
 C_{\ref{mean four scale Gaussian kernel},2}
 C_{\ref{H kernel estimate Gaussian domination}}
@@ -4107,7 +4098,7 @@ C_{\ref{two bump estimate},\tfrac32,\tfrac32}
 
 \begin{proof}[Proof \auto]
 \[ C = C_{\ref{Gauss domination case 1}} =
-2^7\pi e^{2\pi}
+2^8\pi e^{2\pi}
 \tilde{C}_{\ref{standard bump properties},0,2}
 C_{\ref{mean four scale Gaussian kernel},2}
 C_{\ref{H kernel estimate Gaussian domination}}
@@ -4217,7 +4208,7 @@ For $b\in\mathcal B$ and $m\in\N^2$, set
 \[
 p_{b,m}=(2^{m_0}p_{b,0},2^{m_1}p_{b,1}).
 \]
-The explicit multisets $\mathcal M_1$ and $\mathcal M_2$ contain at most $6$ and $16$ elements, respectively, so $\#\mathcal B\le22$. Propositions \ref{Operations on spaced sequences} and \ref{Properties of distance of sequences} give
+The explicit multisets $\mathcal M_1$ and $\mathcal M_2$ contain at most $6$ and $24$ elements, respectively, so $\#\mathcal B\le30$. Propositions \ref{Operations on spaced sequences} and \ref{Properties of distance of sequences} give
 \[
 \Delta(p_{b,m})\le2(\Delta_\gamma+h+|m|).
 \]
@@ -4313,7 +4304,7 @@ $v_0=w_0-w_1$ and $v_1=w_0+w_1$, Propositions
 \]
 by
 \[
-8C_{\ref{bump triangle},1,1,2,2}
+9C_{\ref{bump triangle},1,1,2,2}
 C_{\ref{two bump estimate},2,2}
 \Bigl(
 \langle v_0\rangle_{(t_0)}^2
@@ -4343,11 +4334,11 @@ Thus
 \]
 Let $\mathcal B$ index the bracket products displayed above, after collecting repetitions, and let $u_b$ and $p_b$ denote their orientations and sequence pairs. Using the explicit multiset $\mathcal P$ constructed in the proof of Proposition
 \ref{H kernel estimate Gaussian domination}, we have
-$\#\mathcal B\le14$. We obtain
+$\#\mathcal B\le30$. We obtain
 \[
 |F(v)|
 \le
-24
+27
 \tilde{C}_{\ref{standard bump properties},0,3}
 C_{\ref{four scale Gaussian kernel},3}
 C_{\ref{H kernel derivative estimate Gaussian domination}}
@@ -4458,7 +4449,7 @@ $(t_0,t_1,0)\in\mathcal P$, Propositions
 \]
 by
 \[
-8C_{\ref{bump triangle},1,1,2,2}
+9C_{\ref{bump triangle},1,1,2,2}
 C_{\ref{two bump estimate},2,2}
 \Bigl(
 \langle v_0\rangle_{(t_0)}^2
@@ -4479,15 +4470,15 @@ For $(t_0,t_1,1)\in\mathcal P$, the corresponding integral is bounded by
 \]
 
 Let $\mathcal B$ index the resulting bracket products after collecting repetitions, and let $u_b$ and $p_b$ denote their orientations and sequence pairs. From the explicit form of $\mathcal P$ in the proof of Proposition
-\ref{H kernel estimate Gaussian domination}, for each fixed $\lambda$ the first four terms of $\mathcal P$ produce at most eight elements of $\mathcal B$. The remaining two terms produce at most six elements if $u(i)=0$ and at most two elements if $u(i)=1$. Hence
+\ref{H kernel estimate Gaussian domination}, the resulting multiset has at most $36$ elements. Hence
 \[
-\#\mathcal B\le28.
+\#\mathcal B\le36.
 \]
 We obtain
 \[
 |F(v)|
 \le
-8
+9
 \tilde{C}_{\ref{standard bump properties},0,2}
 C_{\ref{four scale Gaussian kernel},2}
 C_{\ref{H kernel estimate Gaussian domination}}
@@ -4582,10 +4573,10 @@ and
 \begin{equation}\label{auto:two-bump-small-constant-two-for-Gaussian-domination}
 C_{\ref{two bump estimate},2,2}=16.
 \end{equation}
-By Proposition \ref{bump triangle}, the bump triangle constants in Propositions \ref{Gauss domination case 1}, \ref{Gauss domination case 2}, and \ref{Gauss domination case 3} are respectively $1,4,4$. Thus the maximum in \eqref{auto:Gaussian-domination-case-one-constant} is smaller than $68$. Since $\pi<4$ and $e^{2\pi}<e^8<3^8=6561<\frac{13}{16}2^{13}$, substitution gives
+By Proposition \ref{bump triangle}, the bump triangle constants in Propositions \ref{Gauss domination case 1}, \ref{Gauss domination case 2}, and \ref{Gauss domination case 3} are respectively $1,4,4$. Thus the maximum in \eqref{auto:Gaussian-domination-case-one-constant} is smaller than $68$. Since $\pi<4$ and $e^{2\pi}<3025$, substitution gives
 \[
 C_{\ref{Gauss domination case 1}}
-<2^7\cdot4\cdot\tfrac{13}{16}2^{13}\cdot2^{18}
+<2\cdot2^7\cdot4\cdot3025\cdot2^{18}
 \cdot\tfrac35 2^{45}\cdot\tfrac{41}{64}2^{27}\cdot\tfrac{17}{32}2^7
 <2^{117},
 \]
@@ -4711,7 +4702,7 @@ If $\DiagonalBand{k,C}$ holds, then $\VanishingDiagonal{k,C}$ holds.
 
 \begin{proof}
 By Proposition \ref{sum L multiplier convergence-L1},
-\[ \|\M(\gamma,H_\gamma,i)\|_{{\rm M}(k)} \le \sum_{\iota \in \mathcal{I}_{\gamma}} \|\M(\gamma,L_{\gamma,\iota},i)\|_{{\rm M}(k)}, \]
+\[ \|\M(\gamma,H_\gamma,i)\|_{{\rm M}(k)} \le \sup_{N\in\mathbb N}\sum_{\substack{\iota \in \mathcal{I}_{\gamma}\\|\iota|\le N}} \|\M(\gamma,L_{\gamma,\iota},i)\|_{{\rm M}(k)}, \]
 where we used Lemma \ref{prism sum le sum prism-L1}, Lemma \ref{sandwich sums L1} and that $H_\gamma=\sum_{\iota\in \mathcal{I}_{\gamma}} L_{\gamma,\iota}$ converges in $L^1$.
 The claim follows from $\DiagonalBand{k,C}$.
 \end{proof}
@@ -4905,14 +4896,14 @@ and $\sum_{m\in\N^2} 2^{-\frac{|m|}{2}} (1+|m|)^2\le 2^{10}$.
 \lean{constantInductPositiveTermsImplyIncreaseData}
 \leanok
 \begin{equation}\label{constant induct positive terms imply increase data bound}
-C_{\ref{induct positive terms imply increase data}}<2^{171}.
+C_{\ref{induct positive terms imply increase data}}<2^{172}.
 \end{equation}
 \end{lemma}
 \begin{proof}[Proof \auto]
 Using the defining product in Proposition \ref{induct positive terms imply increase data} and Proposition \ref{Gaussian domination combined}, in particular \eqref{Gaussian domination combined constants}, we obtain
 \[
-2^{10}\cdot28\cdot9\cdot2^{153}
-=252\cdot2^{163}<2^{171}.
+2^{10}\cdot36\cdot9\cdot2^{153}
+=324\cdot2^{163}<2^{172}.
 \]
 \end{proof}
 
@@ -4950,7 +4941,7 @@ follows by applying Proposition \ref{induct positive terms imply increase data},
 For every $k\in\N$ with $1\le k\le n-1$,
 \begin{equation}\label{auto:positive-induction-local-bound}
 \InductPositiveTerms{k,
-(2^{173}\sqrt{252}(k+2)+2^{1/2})^2}
+(18\cdot2^{173}(k+2)+2^{1/2})^2}
 \end{equation}
 holds.
 \end{lemma}
@@ -4958,7 +4949,7 @@ holds.
 Let $C_k$ be the constant from Proposition \ref{P:C_k-induction}. It suffices to prove
 \begin{equation}\label{E:induction-statement}
 C_k\le
-\bigl(2^{173}\sqrt{252}(k+2)+2^{1/2}\bigr)^2.
+\bigl(18\cdot2^{173}(k+2)+2^{1/2}\bigr)^2.
 \end{equation}
 We argue by reverse induction. For $k=n-1$, Proposition \ref{P:C_k-induction} and $C_n=n+2$ give
 \[
@@ -4970,14 +4961,14 @@ which is bounded by the right-hand side of \eqref{E:induction-statement}.
 Assume $1\le k\le n-2$ and that \eqref{E:induction-statement} holds with $k+1$ in place of $k$. Since
 \[
 2^{15}(C_{\ref{Gaussian domination combined},2}C_{\ref{induct positive terms imply increase data}})^{1/2}
-=2^{173}\sqrt{252},
+=18\cdot2^{173},
 \]
 Proposition \ref{P:C_k-induction} gives
 \[
 C_k
 \le
-2+k\cdot2^{173}\sqrt{252}
-\bigl(2^{173}\sqrt{252}(k+3)+2^{1/2}\bigr).
+2+k\cdot18\cdot2^{173}
+\bigl(18\cdot2^{173}(k+3)+2^{1/2}\bigr).
 \]
 This is bounded by the right-hand side of \eqref{E:induction-statement}, which proves the claim.
 \end{proof}
@@ -5005,23 +4996,23 @@ This follows from Proposition~\ref{P:better-induction} if $n\ge 3$ and from Prop
 \lean{constantInductPositiveTermsTheorem}
 \leanok
 \begin{equation}\label{constant induct positive terms theorem bound}
-C_{\ref{induct positive terms theorem}}<\tfrac{253}{256}2^{358}<2^{358}.
+C_{\ref{induct positive terms theorem}}<2^{359}.
 \end{equation}
 \end{lemma}
 \begin{proof}[Proof \auto]
 Since
 \[
 C_{\ref{induct positive terms imply increase data}}
-=252\cdot2^{163}
+=324\cdot2^{163}
 \]
 and $C_{\ref{Gaussian domination combined},2}=2^{153}$, the first summand in \eqref{auto:positive-induction-constant-definition} is
 \[
-2^{175}\sqrt{252}.
+18\cdot2^{175}.
 \]
-Its square is $\frac{252}{256}2^{358}$. The remaining two terms in the expanded square are smaller than $2^{182}$, and hence smaller than $\frac1{256}2^{358}$. Therefore
+Its square is $324\cdot2^{350}$. The remaining two terms in the expanded square are smaller than $2^{182}$. Therefore
 \[
 C_{\ref{induct positive terms theorem}}
-<\tfrac{253}{256}2^{358}<2^{358}.
+<2^{359}.
 \]
 \end{proof}
 
@@ -7569,7 +7560,7 @@ C_{\ref{P:increase-data-reduction}}2^{-h/4},
 as desired.
 \end{proof}
 
-\begin{lemma}[constant $C_{\ref{P:increase-data-reduction}}$ \auto]\label{constant increase data reduction}\uses{constant induct positive terms theorem,constant increase data Gaussian expansion,lem:increase-data-bracket-domination,P:increase-data-reduction}\usesdefs{}
+\begin{lemma}[constant $C_{\ref{P:increase-data-reduction}}$ \auto]\label{constant increase data reduction}\uses{constant induct positive terms theorem,constant increase data Gaussian expansion,constant rho kernels reduction,lem:increase-data-bracket-domination,P:increase-data-reduction}\usesdefs{}
 \lean{constantIncreaseDataReduction}
 \leanok
 \begin{equation}\label{constant increase data reduction bound}
@@ -7578,10 +7569,10 @@ C_{\ref{P:increase-data-reduction}}
 \end{equation}
 \end{lemma}
 \begin{proof}[Proof \auto]
-Use Lemmas \ref{constant induct positive terms theorem} and \ref{constant increase data Gaussian expansion} in the defining product, together with $C_{\ref{lem:increase-data-bracket-domination},0}=2^6$. This gives
+Use Lemmas \ref{constant induct positive terms theorem}, \ref{constant increase data Gaussian expansion}, and \ref{constant rho kernels reduction} in the defining product, together with $C_{\ref{lem:increase-data-bracket-domination},0}=2^6$ and $e^\pi<56$. This gives
 \[
 C_{\ref{P:increase-data-reduction}}
-<\tfrac{253}{256}\tfrac{123}{128}2^{22+358+91+6}
+<2^{22}\cdot2^{359}\cdot\bigl(2^3\cdot56^2\cdot(2^{10}\cdot44114430494276321280)\bigr)\cdot2^6
 <\tfrac{31}{32}2^{477}.
 \]
 \end{proof}
