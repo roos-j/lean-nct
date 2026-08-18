@@ -135,30 +135,40 @@ Norm-variation estimates are proved for multiple ergodic averages associated wit
 
 \section{Introduction}
 
-\begin{definition}[Ergodic averages]\label{ergodic averages}\lean{ergodicAverage}\uses{}\usesdefs{}
-Let $(X,\Sigma,\mu)$ be a $\sigma$-finite measure space. We say that $T: X \to X$ is a measure preserving transformation if for every measurable $A\subset X$ the set $T^{-1}(A)$ is measurable and has the
+Let $n$ be a natural number, $X$ a measurable space and $\mu$ a measure on $X$. 
+Recall that that $T: X \to X$ is a {\em measure preserving transformation} if for every measurable $A\subset X$ the set $T^{-1}(A)$ is measurable and has the
 same measure as $A$.
 
-Let $n\geq 1$ be an integer. Let $\mathbf{f}=(f_l)_{l\in [n)}$ be an $n$-tuple of complex-valued measurable functions  and let $(T_l)_{l\in [n)}$ be an $n$-tuple of measure preserving transformations on $X$. For an integer $N\geq 1$ and every $x\in X$, define the multiple ergodic averages
+\begin{definition}[Multiple ergodic average]\label{ergodic averages}\lean{nCT.multipleErgodicAverage}\uses{}\usesdefs{}
+Let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $n$-tuple of complex-valued functions on $X$ and let $(T_j)_{j\in [n)}$ be an $n$-tuple of maps $X\to X$. For every positive integer $N$ and every $x\in X$, define the multiple ergodic average
 \begin{equation}\label{eq:averages-multiple}
-M_{N}(\mathbf{f})(x) := \tfrac{1}{N}\sum_{i=0}^{N-1} \prod_{l=0}^{n-1} f_l(T_l^i x).
+M_{N}(\mathbf{f})(x) = N^{-1} \sum_{0\le i<N} \prod_{0\le j<n} f_j(T_j^i x).
 \end{equation}
 \end{definition}
 
-
-The averages \eqref{eq:averages-multiple} are then also measurable functions $X\to \C$.
-
-\begin{theorem}[Main ergodic theorem]\label{thm:ergodicthm}\lean{main_ergodic_theorem}\leanok\uses{thm:ergodicthmJ,jump estimates imply variation}\usesdefs{ergodic averages}
-Let $n\ge 2$ be an integer and let $r>2^{n-1}$, or $r\ge 2$ if $n=2$. Let $(X,\Sigma,\mu)$ be a $\sigma$-finite measure space, let $(T_l)_{l\in [n)}$ be an $n$-tuple of mutually commuting measure preserving transformations on $X$, and let $\mathbf{f}=(f_l)_{l\in [n)}$ be an $n$-tuple of complex-valued measurable functions on $X$ such that $\|f_l\|_{L^{2n}(X)}<\infty$ for all $l\in[n)$. Then
+\begin{theorem}[Main ergodic theorem]\label{thm:ergodicthm}\lean{nCT.main_ergodic_theorem}\leanok\uses{thm:ergodicthmJ,jump estimates imply variation}\usesdefs{ergodic averages}
+Let $n\ge 2$ be an integer and let $r>2^{n-1}$, or $r\ge 2$ if $n=2$. 
+Let $(X,\Sigma,\mu)$ be a $\sigma$-finite measure space, 
+let $(T_j)_{j\in [n)}$ be an $n$-tuple of mutually commuting measure 
+preserving transformations on $X$, 
+and let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $n$-tuple 
+of complex-valued measurable functions on $X$
+such that $\|f_j\|_{L^{2n}(X)}<\infty$ for all $j\in[n)$. 
+Then $M_N(\mathbf{f})$ is measurable with 
+finite $L^2(X)$ norm for every
+positive integer $N$ and
 \begin{equation}\label{main ergodic variation estimate}
  \| M_{N} (\mathbf{f}) \|_{V_{r}(N\in\N,\ N\ge1; L^2(X))}
 \le C_{\ref{thm:ergodicthm},n,r}
- \prod_{l=0}^{n-1} \|f_l\|_{2n},
+ \prod_{j=0}^{n-1} \|f_j\|_{2n},
 \end{equation}
 where for $n=2$,
-$C_{\ref{thm:ergodicthm},2,r}=C_{\ref{thm:ergodicthmJ},2}^{1/2}$,\label{main ergodic theorem constant}
+$C_{\ref{thm:ergodicthm},2,r}=2^{344}$,
 and, for $n\ge3$,
-$C_{\ref{thm:ergodicthm},n,r}=2^{1-2^{1-n}}\left(\tfrac{r}{r-2^{n-1}}\right)^{1/r}C_{\ref{thm:ergodicthmJ},n}^{1/2}$.\label{auto:main-ergodic-theorem-constant-higher-rank}
+$C_{\ref{thm:ergodicthm},n,r}
+=
+2^{4n+337}
+\Big(\frac{r}{r-2^{n-1}}\Big)^{1/r}.$
 \end{theorem}
 (See \S \ref{sec:variation-norm} for the definition of the $r$-variation norm.)
 
@@ -167,23 +177,25 @@ Since finite variation of a sequence implies convergence of the sequence and sin
 
 The proof of this theorem can be reduced to the following {\em a priori} estimate over the real numbers. The proof of this latter estimate is the heart of the matter of this paper.
 
-\begin{definition}[Twisted averages]
-Let $n\geq 1$. For an $n$-tuple of real-valued Schwartz functions $\mathbf f = (f_0,f_1,\dots,f_{n-1})$ on $\R^n$, a bounded measurable function $\chi$ and $x\in\mathbb{R}^n$ denote
+\begin{definition}[Twisted average]\lean{nCT.twistedAverage}
+Let $n\in\mathbb{N}$. For an $n$-tuple of real-valued functions $\mathbf f = (f_i)_{i\in \mathbb{N}, i<n}$ on $\R^n$, a function $\chi:\R\to\R$ and $x\in\mathbb{R}^n$ denote
 \begin{equation}\label{A_def}\uses{}\usesdefs{}
-\lean{twistedAverage,twistedAverageAtScale}
-A(\chi,\mathbf f)(x) = \int_{\mathbb{R}} \chi(s)\Big(\prod_{i\in [n)} f_i(x+se_i)\Big)\,ds.
+A(\chi,\mathbf f)(x) = \int_{\mathbb{R}} \chi(s)\Big(\prod_{i\in [n)} f_i(x+se_i)\Big)\,ds,
 \end{equation}
-Also, $A_t(\chi,\mathbf{f})=A(\chi_{(t)},\mathbf{f})$, where $\chi_{(t)}(x)=t^{-1}\chi(t^{-1}x)$.
+whenever the integrand is measurable and integrable.
+Also set $A_t(\chi,\mathbf{f})=A(\chi_{(t)},\mathbf{f})$, where $\chi_{(t)}(x)=t^{-1}\chi(t^{-1}x)$ for $t>0$.
 \end{definition}
 
 \begin{theorem}[Main twisted theorem]\label{thm:nct main real}\uses{lem:smoothingdecomp,lem:norm_A_sum_le_sum,lem:mainbump1,lem:mainbump2,lem:leftbump,lem:leftbump1,constant main bump one,constant main bump two,constant left bump,constant left bump one}\usesdefs{A_def,defn:window based bump functions}
-\lean{mainTwistedTheorem}
+\lean{nCT.main_twisted_theorem}
 \leanok
-Let $n\ge 2$ be an integer. For every positive integer $J$, positive real numbers $t_0<t_1<\cdots<t_J$, and every $n$-tuple of real-valued Schwartz functions ${\mathbf f}=(f_i)_{i\in[n)}$ satisfying
+Let $n\ge 2$ be an integer. For every $J\in\mathbb{N}$, positive real numbers $t_0<t_1<\cdots<t_J$, and every $n$-tuple of real-valued Schwartz functions ${\mathbf f}=(f_i)_{i\in[n)}$ satisfying
 \begin{equation}\label{main twisted normalization}
 \|f_i\|_{2^{i+\min(n-i,2)}}=1
 \end{equation}
-for $i\in[n)$, we have
+for $i\in[n)$, we have 
+% that the function $A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f) -
+%   A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)$ is measurable with finite $L^2(\R^n)$ norm for every $j\in [J)$, and
 \begin{equation}\label{e:ncommuting_real}
 \sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_{L^2(\R^n)}^2
 \le C_{\ref{thm:nct main real}}J^{1-2^{-n+2}},
@@ -302,15 +314,20 @@ Let $n\ge2$, let $p_i\in(1,\infty)$ satisfy $\sum_{i\in[n)}p_i^{-1}=1/2$, and le
 \sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
 \le Cg(J)\prod_{i\in[n)}\|f_i\|_{p_i}^2.
 \end{equation}
-Then there is a finite constant $C_{\ref{Calderon transference external},n,(p_i)_{i\in[n)},C}$ such that, for every measure space $(X,\Sigma,\mu)$, every family of mutually commuting measure preserving transformations $(T_i)_{i\in[n)}$, every real-valued $f_i\in L^{p_i}(X)$, every $J\ge1$, and every positive integers $N_0<\cdots<N_J$,
+Then, for every measure space $(X,\Sigma,\mu)$, every family of mutually commuting measure preserving transformations $(T_i)_{i\in[n)}$, every real-valued $f_i\in L^{p_i}(X)$, every $J\ge1$, and every positive integers $N_0<\cdots<N_J$,
 \begin{equation}\label{Calderon transference conclusion}
 \sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
-\le C_{\ref{Calderon transference external},n,(p_i)_{i\in[n)},C}g(J)
-\prod_{i\in[n)}\|f_i\|_{p_i}^2.
+\le C\,C_{\ref{Calderon transference external},n}\,g(J)
+\prod_{i\in[n)}\|f_i\|_{p_i}^2,
+\end{equation}
+where
+\begin{equation}\label{Calderon transference constant}
+C_{\ref{Calderon transference external},n}
+=
+2^{4n+6}.
 \end{equation}
 \end{exttheorem}
 This is a standard result and can be found e.g. as Theorem 2.5 of \cite{Pernegger2025}, up to slight restatement with the real-variable averages and ergodic averages used here.
-
 \begin{theorem}[Ergodic jump estimate with general exponents]\label{thm:ergodicthm-interpolation}\lean{ergodic_jump_estimate_interpolation}\leanok\uses{interpolated real variable estimate,Calderon transference external}\usesdefs{ergodic averages}
 Let $n\ge2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be complex-valued functions with $f_i\in L^{p_i}(X)$. For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
 \begin{equation}\label{ergodic jump general exponents}
@@ -321,12 +338,14 @@ Let $n\ge2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and
 where
 \begin{equation}\label{ergodic interpolation constant}
 C_{\ref{thm:ergodicthm-interpolation},n,(p_i)_{i\in[n)}}
-=2^{2n}C_{\ref{Calderon transference external},n,(p_i)_{i\in[n)},2^{2n}C_{\ref{thm:nct main real}}}.
+=2^{2n}C_{\ref{Calderon transference external},n}
+\bigl(2^{2n}C_{\ref{thm:nct main real}}\bigr)
+=2^{8n+672}.
 \end{equation}
 \end{theorem}
 
 \begin{proof}[Proof \auto]
-Apply Proposition \ref{interpolated real variable estimate} to real-valued inputs and then Theorem \ref{Calderon transference external} with $g(J)=J^{1-2^{2-n}}$. For complex inputs, expand every $f_i$ into real and imaginary parts. The triangle inequality in $L^2(X;\ell^2([J)))$ contributes at most another factor $2^n$ to the operator norm. Squaring gives the factor $2^{2n}$ in \eqref{ergodic interpolation constant}.
+Apply Proposition \ref{interpolated real variable estimate} to real-valued inputs and then Theorem \ref{Calderon transference external} with $g(J)=J^{1-2^{2-n}}$. This gives the factor $C_{\ref{Calderon transference external},n}$ in addition to the constant $2^{2n}C_{\ref{thm:nct main real}}$ from Proposition \ref{interpolated real variable estimate}. For complex inputs, expand every $f_i$ into real and imaginary parts. The triangle inequality in $L^2(X;\ell^2([J)))$ contributes at most another factor $2^n$ to the operator norm. Squaring gives the factor $2^{2n}$ in \eqref{ergodic interpolation constant}.
 \end{proof}
 
 \begin{theorem}[Symmetric ergodic jump estimate]\label{thm:ergodicthmJ}\lean{symmetric_ergodic_jump_estimate}\leanok\uses{thm:ergodicthm-interpolation}\usesdefs{ergodic averages}
@@ -339,7 +358,7 @@ Let $n\ge2$. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be m
 where
 \begin{equation}\label{symmetric ergodic jump constant}
 C_{\ref{thm:ergodicthmJ},n}
-=2^{2n}C_{\ref{Calderon transference external},n,(2n)_{i\in[n)},2^{2n}C_{\ref{thm:nct main real}}}.
+=2^{8n+672}.
 \end{equation}
 \end{theorem}
 
@@ -402,8 +421,6 @@ C_{\ref{thm:ergodicthmJ},n}^{1/2}
 \prod_{i\in[n)}\|f_i\|_{2n}.
 \]
 \end{proof}
-
-\section{Overview}
 
 \section{Preliminaries}\label{sec:prelim}
 
@@ -494,13 +511,13 @@ $\omega+1$. \cgpt Regenerate automatic section where needed (e.g. Gaussian domin
 
 $\omega+2$. \cgpt Validation: proof correctness check and check for blueprint convention compliance
 
-$\omega+3$. Decide on Lean metadata formatting and generate metadata for dependency graph.
+$\omega+3$. \cjr \cgpt Decide on Lean metadata formatting and generate metadata for dependency graph.
 }
 
 \newcommand{\g}{\mathfrak{g}}
 
 \subsection{Notation}
-We use indexing starting at zero rather than starting at one. For example, if $x$ is a vector in $\R^n$ we write $x=(x_0,\dots,x_{n-1})$. By $\N$ we denote the natural numbers including zero.
+We use indexing starting at zero rather than starting at one. For example, if $x$ is a vector in $\R^n$ we write $x=(x_0,\dots,x_{n-1})$. By $\N$ we always denote the natural numbers including zero.
 For $n\in\N$ let
 \begin{equation}\label{auto:index-set-definition} [n)=\{0,\dots,n-1\}. \end{equation}
 For a vector $x\in\R^n$ we denote by $|x|$ its standard Euclidean norm. For a multiindex $m\in\N^n$ we denote
@@ -541,8 +558,8 @@ where we have identified $\R^{n+m}$ with $\R^n\times \R^m$. For $d\in\N$ also de
 \begin{definition}\label{closed ball}\uses{}\usesdefs{}
 \lean{Metric.closedBall}
     For $n\in\N$ and $r>0$ and $x\in \R^n$ denote
-\begin{equation}\label{auto:closed-ball-definition} B_n(x,r) := \{ \xi\in\mathbb{R}^n\,:\, |\xi-x|\le r \} \end{equation}
-\begin{equation}\label{auto:centered-closed-ball-definition} B_n(r) := B_n(0,r) \end{equation}
+\begin{equation}\label{auto:closed-ball-definition} B_n(x,r) = \{ \xi\in\mathbb{R}^n\,:\, |\xi-x|\le r \} \end{equation}
+\begin{equation}\label{auto:centered-closed-ball-definition} B_n(r) = B_n(0,r) \end{equation}
 
 \end{definition}
 
@@ -574,11 +591,11 @@ We shall use freely the fact that if a function, or distribution $f$ on $\R^n$ i
 \lean{Notation.bracketBump,Notation.scaledBracketBump,Notation.scaledBracketBumpReal}
 Define
 \begin{equation}\label{auto:bracket-weight-definition}
-    \left<x\right>:=(1+|x|)^{-1}\, .
+    \left<x\right>=(1+|x|)^{-1}\, .
 \end{equation}
 We agree on the following parsing, which interprets the power first:
 \begin{equation}\label{auto:scaled-bracket-weight}
-    \left<x\right>^N_{(s)}:=(\left< .\right>^N)_{(s)}(x)=s^{-1}(1+|s^{-1}x|)^{-N}\, .
+    \left<x\right>^N_{(s)}=(\left< .\right>^N)_{(s)}(x)=s^{-1}(1+|s^{-1}x|)^{-N}\, .
 \end{equation}
 \end{definition}
 
@@ -619,13 +636,13 @@ is finite and upper semi continuous and measurable.
 \lean{wienerEnvelope,MemW0,wienerNorm,wienerNormOne}
 Let $d\in \N$.  By Proposition \ref{auto:local-supremum-measurability}, the integrand in the following definition is finite and measurable. Define
 \begin{equation}\label{auto:Wiener-local-norm}
-\|f\|_{W_0,d,r}:=    \int_{\R^d} \sup_{|x-y|\le r} |f(y)|\,dx.
+\|f\|_{W_0,d,r}=    \int_{\R^d} \sup_{|x-y|\le r} |f(y)|\,dx.
 \end{equation}
 As $d$ can be inferred from the type of $f$, we
 will omit it from the notation.
 We also set
 \begin{equation}\label{auto:Wiener-norm}
-    \|f\|_{W_0}:=\|f\|_{W_0,1}\, .
+    \|f\|_{W_0}=\|f\|_{W_0,1}\, .
 \end{equation}
 Write $W_0(\R^d)$ or $W_0(d)$ for the set of continuous functions $f:\R^d\to\mathbb{K}$ so that
 \begin{equation}\label{auto:Wiener-space-finiteness}  \|f\|_{W_0}< \infty\, . \end{equation}
@@ -640,7 +657,7 @@ determines $d$.
 Let $d\in \N$.
 Let $0<r,s<\infty$ and set
 \begin{equation}\label{auto:Wiener-radius-comparison-constant}
-    C_{\ref{W_0 radius independence},d,r,s}:=\max(1,(3s/r)^d)\, .
+    C_{\ref{W_0 radius independence},d,r,s}=\max(1,(3s/r)^d)\, .
 \end{equation}
 
 Then for all continuous
@@ -684,7 +701,7 @@ The characterization of $W_0(X)$ by arbitrary $r$ follows.
 \leanok
 Let $d\in \N$ be given and set
 \begin{equation}\label{auto:Wiener-Lp-embedding-constant}
-    C_{\ref{P:lp-embedding},d}:=\pi^{d/2}\Gamma(d/2+1)^{-1}\, .
+    C_{\ref{P:lp-embedding},d}=\pi^{d/2}\Gamma(d/2+1)^{-1}\, .
 \end{equation}
 If $f\in W_0(d)$ and $1\le p\le \infty$, then
 \begin{equation}\label{Lp W_0}
@@ -728,7 +745,7 @@ is in $W_0(l)$ with
     \|h_u\|_{W_0}\le C_{\ref{W_0 fiber integrals},\pi,1} \|f\|_{W_0}\, .
 \end{equation}
 The function $g:\Rm\to \C$ defined by
-\begin{equation}\label{auto:Wiener-fiber-integral} g(u) := \int_{\R^l} f(\pi(u,v)) \,dv= \int_{\R^l} h_u(v) \,dv \end{equation}
+\begin{equation}\label{auto:Wiener-fiber-integral} g(u) = \int_{\R^l} f(\pi(u,v)) \,dv= \int_{\R^l} h_u(v) \,dv \end{equation}
 is in $W_0(m)$ with
 \begin{equation}\label{W_0 across fibers}
     \|g\|_{W_0}\le C_{\ref{W_0 fiber integrals},\pi,2}  \|f\|_{W_0}\, .
@@ -787,7 +804,7 @@ C_{\ref{W_0 radius independence},n,1,R}.
 \lean{MemW0.fintype_tensor,fintype_tensor_wienerNorm_le}
 \leanok
     Let $J\in \N$ with $J\ge 1$. For $j\in [J)$, let $I_j\subset \N$ and assume the $I_j$ are pairwise disjoint.
-    Set $I:=\bigcup_{j\in [J)}I_j$. Let $f_j:\R^{|I_j|}\to \mathbb{K}$ in $W_0(|I_j|)$ and define
+    Set $I=\bigcup_{j\in [J)}I_j$. Let $f_j:\R^{|I_j|}\to \mathbb{K}$ in $W_0(|I_j|)$ and define
     \begin{equation}\label{auto:Wiener-product-function}
         f(x_I)=\prod_{j\in [J)}f_j(x_{I_j})\, .
     \end{equation}
@@ -797,7 +814,7 @@ C_{\ref{W_0 radius independence},n,1,R}.
     \end{equation}
 \end{proposition}
 \begin{proof}
-    Define $g_j(x_I):=f_j(x_{I_j})$. Then $g_j$ is continuous as composition of the continuous
+    Define $g_j(x_I)=f_j(x_{I_j})$. Then $g_j$ is continuous as composition of the continuous
     projection $x_I\to x_{I_j}$ and the continuous map $f_j$. The function $f$ as product of
     continuous functions is also continuous.
 We have
@@ -834,7 +851,7 @@ For $j\in [J)$, let $f_j\in W_0(\R^{l_j})$. Then for each
  \end{equation}
  is in $W_0(\R^l)$ and with $f$ defined by
     \begin{equation}\label{auto:Wiener-Brascamp-Lieb-integral}
-        f(u):=\int_{\R^l}\prod_{j\in [J)}f_j(\Pi_{j}(u,v))\, dv \, ,
+        f(u)=\int_{\R^l}\prod_{j\in [J)}f_j(\Pi_{j}(u,v))\, dv \, ,
     \end{equation}
     we have $f\in W_0(\R^{m})$ and
     \begin{equation}\label{auto:Wiener-Brascamp-Lieb-bound}
@@ -1079,13 +1096,13 @@ Let $J\ge 1$ and $1\le k<n$ be integers. For
 $(\rho_j)_{j\in [J)}\subset W_0(\R^{k+1})$, and
 $(\phi_j)_{j\in [J)}\subset W_0(\R)$, define, for $u\in \R^{k+1}$,
 \begin{equation}\label{auto:Cauchy-Schwarz-kernel-K}
-    K(u):=\sum_{j\in[J)}\int_\R \rho_j(u_{[k)},u_k-q)\phi_j(q)\,dq\,.
+    K(u)=\sum_{j\in[J)}\int_\R \rho_j(u_{[k)},u_k-q)\phi_j(q)\,dq\,.
 \end{equation}
 
 Then $K\in W_0(\R^{k+1})$ by Proposition \ref{W_0 Brascamp Lieb}.
 For $u\in \R^{k+2}$, define
 \begin{equation}\label{auto:Cauchy-Schwarz-kernel-tilde-K}
-    \tilde{K}(u):=\sum_{j\in[J)}\int_\R
+    \tilde{K}(u)=\sum_{j\in[J)}\int_\R
     |\rho_j|(u_{[k)},u_{k+1}-q)\phi_j(u_k+q)\phi_j(q)\,dq\, .
 \end{equation}
 Then $\tilde{K}\in W_0(\R^{k+2})$.
@@ -1169,7 +1186,7 @@ is identified as
 \end{equation}
 with
 \begin{equation}
-    L_j(u):=\int_\R |\rho_j(u,q)|\,dq
+    L_j(u)=\int_\R |\rho_j(u,q)|\,dq
 \end{equation}
 and estimated by Proposition \ref{cube BL inequality}.
 \end{proof}
@@ -1184,12 +1201,12 @@ If $k=n-1$, one may do an even more careful Cauchy-Schwarz, preserving cancellat
 Let $J\ge 1$ be an integer. For $(\rho_j)_{j\in[J)}\subset W_0(\R^n)$ and
 $(\phi_j)_{j\in [J)}\subset W_0(\R)$ define for $u\in \R^n$,
 \begin{equation}\label{auto:Cauchy-Schwarz-terminal-kernel-K}
-    K(u):=\sum_{j\in [J)}\int_{\R^2} \rho_j(u_{[n-1)}, u_{n-1}-r-s) \phi_j(r) \phi_j(s) \, ds dr\, .
+    K(u)=\sum_{j\in [J)}\int_{\R^2} \rho_j(u_{[n-1)}, u_{n-1}-r-s) \phi_j(r) \phi_j(s) \, ds dr\, .
 \end{equation}
 Then $K\in W_0(\R^n)$.
 For $u\in\R^{n+1}$ let
 \begin{equation}\label{auto:Cauchy-Schwarz-terminal-kernel-tilde-K}
-    \tilde{K}(u):=\sum_{j\in [J)}\int_\R |\rho_j|(u_{[n-1)}, u_{n}-q) \phi_j(u_{n-1}+q) \phi_j(q) \, dq\, .
+    \tilde{K}(u)=\sum_{j\in [J)}\int_\R |\rho_j|(u_{[n-1)}, u_{n}-q) \phi_j(u_{n-1}+q) \phi_j(q) \, dq\, .
 \end{equation}
 Then $\tilde{K}\in W_0(\R^{n+1})$ and for all $\F\in\mathfrak{F}$,
 \begin{equation}\label{auto:Cauchy-Schwarz-at-n-minus-one-bound}
@@ -1288,7 +1305,7 @@ stated independently in the following proposition.
  Let $1\le k\le n-1$. Let $\rho\in W_0(\R^{k+1})$ be non-negative and
 $\phi\in W_0(\R)$. Set for $u\in\R^{k+2}$ and $i\in [k+1)$
 \begin{equation}\label{auto:positive-kernel-K}
-    K(u):=\int_\R \rho(u_{[k+1)\setminus i}, u_{k+1}-q) \phi(u_{i}+q) \phi(q) \, dq\, .
+    K(u)=\int_\R \rho(u_{[k+1)\setminus i}, u_{k+1}-q) \phi(u_{i}+q) \phi(q) \, dq\, .
 \end{equation}
 Then $K\in W_0(\R^{k+2})$ and for all $\mathbf{F}\in\mathfrak{F}$
 \begin{equation}\label{auto:positive-K-form}
@@ -1337,7 +1354,7 @@ which is non-negative.
 \lean{monotonicityK}
 \leanok
 in particular, if $\rho\le \tilde{\rho}$ and
-\begin{equation}\label{auto:kernel-monotonicity-K-rho} K_\rho(u):=\int_\R \rho(u_{[k)}, u_{k+1}-q) \phi(u_{k}+q) \phi(q) \, dq\end{equation}
+\begin{equation}\label{auto:kernel-monotonicity-K-rho} K_\rho(u)=\int_\R \rho(u_{[k)}, u_{k+1}-q) \phi(u_{k}+q) \phi(q) \, dq\end{equation}
 then
 \begin{equation}\label{auto:kernel-monotonicity-bound} \Theta_{k+1}(K_\rho)(\F) \le \Theta_{k+1}(K_{\tilde{\rho}})(\F) \end{equation}
 \end{proposition}
@@ -1382,7 +1399,7 @@ Note that $K_k(M)$ can also be written as
 \begin{definition}[prism form]\label{auto:prism-form-definition}\uses{M to K}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb}
 \lean{prismForm}
 Let $1\le k\le n$. By Proposition \ref{M to K}, $K_k(M)\in W_0(\R^{k+1})$ for every $M\in W_0((\R^2)^k)$. We define for such $M$ and $\mathbf{F}\in\mathfrak{F}$,
-\begin{equation}\label{auto:prism-form-formula}\Lambda_k(M)(\mathbf{F}) := \Theta_k(K_k(M))(\mathbf{F}).\end{equation}
+\begin{equation}\label{auto:prism-form-formula}\Lambda_k(M)(\mathbf{F}) = \Theta_k(K_k(M))(\mathbf{F}).\end{equation}
 \end{definition}
 
 \begin{proposition}[Positivity]\label{Positivity M}\uses{tensor Wiener,Positivity K}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb,auto:prism-form-definition}
@@ -1957,9 +1974,9 @@ Then
 \begin{proof}[Proof of Proposition \ref{poisson to abel}]
 For \(a\in\R\), set
 \[
-    I(a):=\int_0^\infty e^{-t}\cos(at)\,dt,
+    I(a)=\int_0^\infty e^{-t}\cos(at)\,dt,
     \qquad
-    J(a):=\int_0^\infty e^{-t}\sin(at)\,dt.
+    J(a)=\int_0^\infty e^{-t}\sin(at)\,dt.
 \]
 Integration by parts, differentiating the trigonometric functions and integrating the exponential function gives
 \[
@@ -1986,7 +2003,7 @@ Using this for $a=2\pi x$ for \(x\in\R\)
 \leanok
     With $p$ as in Proposition \ref{poisson to abel}, define $B:\R\to \R$ by
 \begin{equation}\label{auto:Gaussian-square-root-remainder}
-    B(\xi):=1-\sqrt{1-\g(\xi)}-\widehat{p}(\sqrt{\pi}\xi)\, .
+    B(\xi)=1-\sqrt{1-\g(\xi)}-\widehat{p}(\sqrt{\pi}\xi)\, .
 \end{equation}
 Then $B$ is smooth on $\R\setminus \{0\}$ and continuous on $\R$. The function $B'$
 has a continuous extension to $\R$ which is integrable and the
@@ -2001,9 +2018,9 @@ Moreover,
 \begin{proof}[Proof \auto]
 Set
 \[
-    \alpha:=\sqrt{\pi},\qquad
-    E(\xi):=e^{-\alpha|\xi|},\qquad
-    s(\xi):=\sqrt{1-\g(\xi)}.
+    \alpha=\sqrt{\pi},\qquad
+    E(\xi)=e^{-\alpha|\xi|},\qquad
+    s(\xi)=\sqrt{1-\g(\xi)}.
 \]
 Then \(B=1-s-E\). By Proposition \ref{square root one minus Gaussian}, the function $s$ is continuous. Hence \(B\) is smooth on \(\R\setminus\{0\}\), even, and continuous on \(\R\), since \(s(0)=0\) and \(E(0)=1\).
 
@@ -2014,7 +2031,7 @@ We first control the origin. For \(\xi\ge0\), put \(u=\alpha \xi\). Since
 we can write
 \[
     s(\xi)=uR(u),\qquad
-    R(u):=\left(\int_0^1 e^{-tu^2}\,dt\right)^{1/2}.
+    R(u)=\left(\int_0^1 e^{-tu^2}\,dt\right)^{1/2}.
 \]
 For \(0\le u\le1\), elementary differentiation under the integral sign gives
 \[
@@ -2022,7 +2039,7 @@ For \(0\le u\le1\), elementary differentiation under the integral sign gives
 \]
 Thus, with
 \[
-    F(u):=1-uR(u)-e^{-u},
+    F(u)=1-uR(u)-e^{-u},
 \]
 we have \(B(\xi)=F(\alpha\xi)\) for \(\xi\ge0\), \(F(0)=F'(0)=0\), and
 \[
@@ -2125,7 +2142,7 @@ where $C_{\ref{square root of Gaussian decay}}=17$.
 \begin{proof}[Proof \auto]
 Set
 \[
-    m(\xi):=1-\sqrt{1-\g(\xi)}.
+    m(\xi)=1-\sqrt{1-\g(\xi)}.
 \]
 We first construct \(\rho\). By Proposition \ref{auxiliary function B},
 \[
@@ -2133,7 +2150,7 @@ We first construct \(\rho\). By Proposition \ref{auxiliary function B},
 \]
 Both terms on the right-hand side are integrable, so \(m\in L^1(\R)\). Define
 \[
-    \rho:=\widecheck m.
+    \rho=\widecheck m.
 \]
 We will prove that \(\rho\in W_0(\R)\), that it satisfies the claimed decay estimate, and that
 \(\widehat\rho=m\).
@@ -2211,7 +2228,7 @@ It remains to prove non-negativity. For \(0\le t\le 1\), the binomial series giv
     =
     \sum_{k=1}^\infty a_k t^k,
     \qquad
-    a_k:=(-1)^{k+1}\binom{1/2}{k}>0.
+    a_k=(-1)^{k+1}\binom{1/2}{k}>0.
 \]
 Moreover \(\sum_{k=1}^\infty a_k=1\). Hence, for every \(\xi\in\R\),
 \[
@@ -2511,7 +2528,7 @@ Pulling out the factors $\mu$ and $\lambda$ proves the proposition.
 \leanok
     Consider real numbers $x_i$ and  $s_i>0$ and $n_i>1$ for $i=0,1$.  Assume $s_0\ge s_1$ and define
 \begin{equation}\label{tb0}
-     C_{\ref{two bump estimate},n_0,n_1}:=2^{1+\min(n_0,n_1)} [1+(\min(n_0,n_1)-1)^{-1}]
+     C_{\ref{two bump estimate},n_0,n_1}=2^{1+\min(n_0,n_1)} [1+(\min(n_0,n_1)-1)^{-1}]
 \end{equation}
   Then
 \begin{equation}\label{two decays}
@@ -2584,7 +2601,7 @@ Thus the second asserted inequality holds.
 \leanok
 Let $\alpha_0,\alpha_1\in\mathbb{R}^2$ be linearly independent unit vectors.
 Let $\alpha_{m}^\perp$ be unit vectors orthogonal to $\alpha_m$ and note that $\alpha_0\cdot \alpha_1^\perp\neq 0$. Setting \begin{equation}\label{auto:orthogonal-decay-constant}
-    C_{\ref{orthogonal decay}, \alpha_0,\alpha_1,n_0,n_1}:=\max( (2 |\alpha_0\cdot \alpha_1^\perp|^{-1})^{n_0},(2 |\alpha_0\cdot \alpha_1^\perp|^{-1})^{n_1}) \, ,
+    C_{\ref{orthogonal decay}, \alpha_0,\alpha_1,n_0,n_1}=\max( (2 |\alpha_0\cdot \alpha_1^\perp|^{-1})^{n_0},(2 |\alpha_0\cdot \alpha_1^\perp|^{-1})^{n_1}) \, ,
 \end{equation}
 then for all $n_0,n_1,s_0,s_1>0$ and $x\in\mathbb{R}^2$,
 \begin{equation}\label{eq:two bump}
@@ -3146,7 +3163,7 @@ where $C_{\ref{L:second-gaussian-estimate},N}=8\sum_{l=0}^N \binom{N}{l} (2\pi)^
 \begin{proof}
 Let
 \[
-\widetilde{Q}(\xi):=(\g(\mu\xi))^{-1}\left(\widehat{\phi}(\lambda\xi)-\widehat{\phi}(\xi)\right).
+\widetilde{Q}(\xi)=(\g(\mu\xi))^{-1}\left(\widehat{\phi}(\lambda\xi)-\widehat{\phi}(\xi)\right).
 \]
 
 
@@ -3337,7 +3354,7 @@ Similarly, applying Proposition~\ref{mean value bump estimate 2} and Lemma~\ref{
 \langle x\rangle^N).
 \end{equation*}
 
-To estimate $\varrho_2$, we first consider its rescaled version $\widetilde{\varrho_2}:=\varrho_2(2\cdot)$, which is supported in $[-1,1]$. By Lemma~\ref{L:second-gaussian-estimate}, we have for $l\in \mathbb N$, $l\leq N$,
+To estimate $\varrho_2$, we first consider its rescaled version $\widetilde{\varrho_2}=\varrho_2(2\cdot)$, which is supported in $[-1,1]$. By Lemma~\ref{L:second-gaussian-estimate}, we have for $l\in \mathbb N$, $l\leq N$,
 \[
 \|(2\pi)^{-l}\widetilde{\varrho_2}^{(l)}\|_{\infty}
 =2^l\|(2\pi)^{-l}\varrho_2^{(l)}\|_{\infty}
@@ -3417,7 +3434,7 @@ We introduce this concept of kernel sequences.
 Let $k\in\N$ with $1\le k\le n$. Let ${\rm M}(k)$ be the space of sequences $\M=(M_j)_{j\in \Z}$ such that for $j\in \Z$ we have
 $M_j\in W_0((\R^2)^k)$. Define
 \begin{equation}\label{auto:M-k-norm-definition}
-\|\M\|_{{\rm M}(k)}:=\sup_{J\in\N,\,J\ge1,\,\F\in\mathfrak F}\min(1,J^{-1+2^{k-n+1}}) |\Lambda_k(\sum_{j\in [J)} M_j)(\F)| \, .
+\|\M\|_{{\rm M}(k)}=\sup_{J\in\N,\,J\ge1,\,\F\in\mathfrak F}\min(1,J^{-1+2^{k-n+1}}) |\Lambda_k(\sum_{j\in [J)} M_j)(\F)| \, .
 \end{equation}
 \end{definition}
 
@@ -3540,7 +3557,7 @@ Note that $\widehat{s(a,j)}$ is not smooth at the origin, due to the square root
 Let $\gamma=(k,u,a)\in \Gamma$. Define
     $H_{\gamma}=(H_\gamma)_{i\in [k),j\in \Z}$ by
 \begin{equation}\label{auto:H-kernel-definition}
-(H_{\gamma})_{i,j}:=(s_{\gamma})_{i,j}\otimes (s_{\gamma})_{i,j}
+(H_{\gamma})_{i,j}=(s_{\gamma})_{i,j}\otimes (s_{\gamma})_{i,j}
   -(Y_{\gamma})_{i,j}
 \end{equation}
 for every $i\in [k), j\in\mathbb{Z}$.
@@ -3671,16 +3688,16 @@ Define the index set
 For every $\iota \in\mathcal{I}_{\gamma}$, we define  $L_{\gamma,\iota}=(L_{\gamma,\iota})_{i\in [k),j\in \Z}$
 such that for $|l|\le \Delta_{\gamma}$,
 \begin{equation}\label{auto:L-kernel-central-band}
-  (L_{\gamma,(0,l)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)} (\Phi_{(a_i^1(j+l-1))}-\Phi_{(a_i^1(j+l))})\, ,
+  (L_{\gamma,(0,l)})_{i,j}= (H_{\gamma})_{i,j} \ast_{(1,1)} (\Phi_{(a_i^1(j+l-1))}-\Phi_{(a_i^1(j+l))})\, ,
  \end{equation}
 
 if $h>0$, then
 \begin{equation}\label{auto:L-kernel-positive-band}
-(L_{\gamma,(h,0)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)} (\Phi_{(2^{h-1}a_i^1(j+\Delta_{\gamma}))}-\Phi_{(2^{h}a_i^1(j+\Delta_{\gamma}))})\, ,
+(L_{\gamma,(h,0)})_{i,j}= (H_{\gamma})_{i,j} \ast_{(1,1)} (\Phi_{(2^{h-1}a_i^1(j+\Delta_{\gamma}))}-\Phi_{(2^{h}a_i^1(j+\Delta_{\gamma}))})\, ,
 \end{equation}
 and if $h<0$, then
 \begin{equation}\label{auto:L-kernel-negative-band}
- (L_{\gamma,(h,0)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)} (\Phi_{(2^{h}a_i^1(j-\Delta_{\gamma}-1))}-\Phi_{(2^{h+1}a_i^1(j-\Delta_{\gamma}-1))})\, .
+ (L_{\gamma,(h,0)})_{i,j}= (H_{\gamma})_{i,j} \ast_{(1,1)} (\Phi_{(2^{h}a_i^1(j-\Delta_{\gamma}-1))}-\Phi_{(2^{h+1}a_i^1(j-\Delta_{\gamma}-1))})\, .
 \end{equation}
 \end{definition}
 
@@ -3694,7 +3711,7 @@ Note that we could have equivalently used $a_{i}^0$ in place of $a_i^1$.
 Let $X$ be a normed $\R$-vector space.
 Let $\gamma=(k,u,a)\in \Gamma$ and let $D_\iota \in X$ for $\iota \in \mathcal{I}_{\gamma}$. We define
 \begin{equation}\label{auto:symmetric-series-definition}
-\sum_{\iota \in \mathcal{I}_{\gamma}} D_{\iota}:=\lim_{N\to \infty} \sum_{\iota \in\mathcal{I}_{\gamma}, ~|\iota| \leq N} D_{\iota},
+\sum_{\iota \in \mathcal{I}_{\gamma}} D_{\iota}=\lim_{N\to \infty} \sum_{\iota \in\mathcal{I}_{\gamma}, ~|\iota| \leq N} D_{\iota},
 \end{equation}
 where the limit is taken in $X$.
 \end{definition}
@@ -4078,7 +4095,7 @@ The nonnegative series on the right converges for every $v\in\R^2$ and has finit
 
 The proof of this proposition is split into three cases: Propositions \ref{Gauss domination case 1}, \ref{Gauss domination case 2}, and \ref{Gauss domination case 3}, below. Their common constant is verified in Lemma \ref{Gauss domination constant}.
 
-\begin{proposition}\label{Gauss domination case 1}\uses{standard bump properties,mean four scale Gaussian kernel,H kernel estimate Gaussian domination,two bump estimate,bump triangle,Operations on spaced sequences,H vanishing integral,Properties of distance of sequences,orthogonal decay,Gaussian domination}\usesdefs{gaussian,bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,standard bump,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,square root Gaussian difference,H multiplier,L multiplier,N multiplier}
+\begin{proposition}[Gaussian domination, near case]\label{Gauss domination case 1}\uses{standard bump properties,mean four scale Gaussian kernel,H kernel estimate Gaussian domination,two bump estimate,bump triangle,Operations on spaced sequences,H vanishing integral,Properties of distance of sequences,orthogonal decay,Gaussian domination}\usesdefs{gaussian,bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,standard bump,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,square root Gaussian difference,H multiplier,L multiplier,N multiplier}
 \lean{gaussDominationCase1}
 \leanok
 The conclusion of Proposition \ref{Gaussian domination combined} holds in the case $\iota=(h,0)$, $h>0$, with the constant in \eqref{Gaussian domination main estimate} equal to
@@ -4096,7 +4113,7 @@ C_{\ref{two bump estimate},\tfrac32,\tfrac32}
 \end{equation}
 \end{proposition}
 
-\begin{proof}[Proof \auto]
+\begin{proof}[Proof]
 \[ C = C_{\ref{Gauss domination case 1}} =
 2^8\pi e^{2\pi}
 \tilde{C}_{\ref{standard bump properties},0,2}
@@ -4649,7 +4666,7 @@ Let $\gamma=(k,u,a)\in \Gamma$, let $i\in [k)$, and let
 $\iota\in\mathcal{I}_{\gamma}$.
 For $j\in\mathbb Z$ and $y\in(\mathbb R^2)^{k+1}$ define
 \begin{equation}\label{auto:increased-data-kernel}
-    (\M_{i,\iota})_j(y):=
+    (\M_{i,\iota})_j(y)=
     \Big(\prod_{m\in [i)} (G_\gamma)_{m,j}(y_m)\Big)
     |(N_{\gamma,\iota})_{i,j}(y_i)|
     \Big(\prod_{m=i+1}^{k-1} (G_\gamma)_{m,j-1}(y_m)\Big)
@@ -5087,7 +5104,7 @@ which is $\Lambda_1(\phi^{\otimes 2})(\mathbf{F})$.
 
 \subsubsection{Variation seminorms}\label{sec:variation-norm}
 
-Let $B$ be a seminormed space, $I\subset\mathbb{R}$ a subset and $a:I\to B$ and $J,k\in\mathbb{N}$, $r\ge 1$. The \emph{$r$-variation seminorm} (with at most $J$ jumps) is
+Let $B$ be a seminormed space, $I\subset\mathbb{R}$ a subset and $a:I\to B$ and $J\in\mathbb{N}$, $r\ge 1$. The \emph{$r$-variation seminorm} (with at most $J$ jumps) is
 \begin{equation}\label{auto:finite-variation-seminorm} \|a\|_{V_{r,J}(I; B)} = \sup_{0\le M\le J}\ \sup_{\substack{t_0<\cdots<t_M,\\t_j\in I\;\text{for all}\;j\in [M+1)}} \Big(\sum_{j\in[M)} \|a(t_{j+1})- a(t_{j})\|^r\Big)^{1/r}. \end{equation}
 
 One usually considers $V_r(a)=\sup_{J\ge 1} V_{r,J}(a)$.
@@ -5542,7 +5559,7 @@ and the series converges uniformly.
 \begin{proof}
 (i) This is immediate from the support of windows.
 (ii) For  $N\ge m$ and write
-\[ S_N := \sum_{\ell=m}^N \theta_{(2^\ell)} =  \sum_{\ell=m}^N (\phi_0)_{(2^\ell)} - (\phi_0)_{(2^{\ell+1})} = (\phi_0)_{(2^m)} - (\phi_0)_{(2^{N+1})} \]
+\[ S_N = \sum_{\ell=m}^N \theta_{(2^\ell)} =  \sum_{\ell=m}^N (\phi_0)_{(2^\ell)} - (\phi_0)_{(2^{\ell+1})} = (\phi_0)_{(2^m)} - (\phi_0)_{(2^{N+1})} \]
 For any $x\in \R$ we  bound
 \[|S_N(x)-(\phi_0)_{(2^m)}(x)| = |(\phi_0)_{(2^{N+1})}(x)|  \le 2^{-N-1}\|\phi_0\|_\infty \le 2^{-N} \]
 Since $2^{-N}$ converges   to $0$ as $N\to \infty$, the conclusion follows.
