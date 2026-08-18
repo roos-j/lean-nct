@@ -7,7 +7,7 @@ Authors: Joris Roos
 module
 
 public import LeanNct.Defs
-public import LeanNct.Codex.RealToErgodic
+import LeanNct.Codex.RealToErgodic
 
 /-!
 # Main theorems
