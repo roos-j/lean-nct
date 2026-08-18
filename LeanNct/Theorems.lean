@@ -18,7 +18,7 @@ In this file we formulate the main theorems
 * `nCT.main_twisted_theorem` -- the main real-variable harmonic analysis theorem
 
 The formulations use the definitions and notations in `Defs.lean`.
-Notations have been chosen to increase readability for readers less familiar with Lean and
+Some notational shorthands have been introduced to increase readability and
 simplify comparison with the on-paper formulations.
 
 This file was entirely human-written. The proofs are contained in the `Codex` directory.
@@ -35,7 +35,7 @@ variable {n : ℕ}
 
 variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
 
-/- The constant appearing in the main ergodic theorem. -/
+/-- The constant appearing in the main ergodic theorem, `nCT.main_ergodic_theorem`. -/
 def C_main_ergodic_theorem (n : ℕ) (r : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal <| if n = 2 then 2 ^ 344
   else 2 ^ (4 * n + 337) * ((r / (r - (2 : ℝ) ^ ((n : ℝ) - 1))) ^ r⁻¹)
@@ -84,7 +84,6 @@ for $i\in[n)$, we have
   A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_{L^2(\R^n)}^2
 \le 2^{666} J^{1-2^{-n+2}}.
 $$
-
 
 *Implementation notes:* 1. The Lean formulation of $L^p$ norms here (`MeasureTheory.eLpNorm`) uses
 the lower Lebesgue integral, which exists regardless of measurability of the integrated function.
