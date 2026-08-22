@@ -130,7 +130,7 @@ mathx10
 \begin{abstract}
 This blueprint serves as a companion to a forthcoming, shorter traditional mathematical paper. The purpose of this blueprint is two-fold: first, it has served as the foundation for a formalization in Lean 4 of these results. This formalization has been completed largely automatically, making essential use of current frontier large language models. Second, it will serve as a resource to readers of the main paper who are interested in further technical details of the proofs.
 
-The main result concerns norm-variation estimates for multiple ergodic averages associated with $n\ge 2$ commuting measure preserving transformations, providing a quantitative refinement of Tao's norm-convergence theorem. At the core of the analysis lies an explicit real-variable estimate for twisted multilinear averages that is closely related to certain singular Brascamp--Lieb inequalities. \end{abstract}
+The main result concerns norm-variation estimates for multiple ergodic averages associated with $n\ge 2$ commuting measure preserving transformations, providing a quantitative strengthening of Tao's norm-convergence theorem. At the core of the analysis lies an explicit real-variable estimate for twisted multilinear averages that is closely related to certain singular Brascamp--Lieb inequalities. \end{abstract}
 
 \maketitle
 
@@ -230,14 +230,31 @@ After this blueprint was completed, its contents were formally verified using th
 \begin{center}
 \href{https://github.com/roos-j/lean-nct}{https://github.com/roos-j/lean-nct}
 \end{center}
-The formalization made heavy use of emerging autoformalization capabilities of current frontier models, specifically OpenAI's \texttt{Codex/5.6-terra-ultra}. While the statements of Theorem \ref{thm:ergodicthm} and Theorem \ref{thm:nct main real} and its associated definitions have been carefully formalized by hand, virtually all of the remaining formalization was machine-generated across many extended sessions during a one-week period, with a custom instruction set and careful human supervision. The timeline and required amount of human effort are in striking contrast to those of previous large formalization projects in analysis such as the Carleson project \cite{CarlesonBlueprint}, \cite{CarlesonPaper}, which was predominantly human-generated and concluded its main objectives before the current set of highly formalization-capable models was made publicly available.
+The formalization made heavy use of emerging autoformalization capabilities of current frontier models, specifically OpenAI's \texttt{Codex/5.6-terra-ultra}. While the statements of Theorem \ref{thm:ergodicthm} and Theorem \ref{thm:nct main real} and its associated definitions have been carefully formalized by hand, virtually all of the remaining formalization was machine-generated across many extended sessions during a one-week period, with a custom instruction set and careful human supervision. The timeline and required amount of human effort are in striking contrast to those of previous large formalization projects in analysis such as the Carleson project \cite{CarlesonBlueprint}, \cite{CarlesonPaper}, which was predominantly human-generated and concluded its main objectives \pd{maybe remove "its main objectives"?} before the current set of highly formalization-capable models was made publicly available.
+Both the instruction set and the structure of the blueprint were designed with autoformalization in mind and to mitigate some of the problems with current Codex models during long formalization tasks, such as drifting away from target, avoiding the actual task in favor of creating more and more trivial wrappers, and creating an opaque zoo of auxiliary statements and files.
 
+\subsection{Blueprint conventions}
+Several convention choices were crucial in guiding both the structure and the content of this blueprint.
+
+\begin{itemize}
+\item Strict forward reasoning: after the introduction, all theorems and definitions must exclusively use theorems that were either previously stated and proved, or are standard theorems. The proof of a theorem must directly follow the corresponding statement (with the exception of the theorems in the introduction).
+This naturally aligns the blueprint with the structure of the formalization.
+\item Mathlib awareness: Generally, only facts that are currently available in mathlib in some shape or form could pass as `standard theorems` that require no proof. %As a consequence, this blueprint proves various facts, that could otherwise be considered `standard`, such as elementary properties of Wiener spaces and various properties of bump functions.
+We made two exceptions to this rule: an instance of the Calder\'on transference principle (Theorem \ref{Calderon transference external}, and a multilinear complex interpolation theorem (Theorem \ref{multilinear interpolation external}). These were essentially already formalized prior to this formalization project (the Calder\'on transference principle was hand-formalized by Pernegger \cite{Pernegger2025}; complex interpolation was autoformalized by one of the authors).
+\item Treatment of constants:  h \jr{to be contineud}
+\end{itemize}
 
 \subsection*{Acknowledgments}
 
-\jr{TODO: add grants, other acknowledgments}
-%PD is partially supported by NSF grant DMS-2554859 and a grant from the Simons
-%Foundation
+FvD and CT were supported by
+ERC Synergy Grant 101224275 and Germany's
+Excellence Strategy grant
+ EXC-2047/1 - 390685813.
+PD, JR, and LS acknowledge support by 
+the ERC Synergy Grant 101224275 during research stays at Bonn. PD was supported in part by NSF grant DMS-2554859 and a grant from the Simons Foundation. JR was supported in part by NSF grants DMS-2555784 and DMS-2154835 and a grant from the Simons Foundation.
+LS was partially supported by the grant no.\ 26-21107S of the Czech Science Foundation.
+
+
 
 \section{Preliminaries}\label{sec:prelim}
 
