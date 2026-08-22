@@ -117,7 +117,7 @@ mathx10
 
 
 \date{\today}
-
+\subjclass[2020]{Primary 42B20, 68V20; Secondary 42B15, 37A30.}
 
 \begin{document}
 \tdplotsetmaincoords{70}{110}
@@ -128,8 +128,9 @@ mathx10
 \end{center}
 
 \begin{abstract}
-Norm-variation estimates are proved for multiple ergodic averages associated with $n\ge 2$ commuting measure preserving transformations. This forms a quantitative refinement of Tao's norm-convergence theorem. The heart of the matter is an explicit real-variable estimate for twisted multilinear averages closely related to certain singular Brascamp--Lieb inequalities.
-\end{abstract}
+This blueprint serves as a companion to a forthcoming, shorter traditional mathematical paper. The purpose of this blueprint is two-fold: first, it has served as the foundation for a formalization in Lean 4 of these results. This formalization has been completed largely automatically, making essential use of current frontier large language models. Second, it will serve as a resource to readers of the main paper who are interested in further technical details of the proofs.
+
+The main result concerns norm-variation estimates for multiple ergodic averages associated with $n\ge 2$ commuting measure preserving transformations, providing a quantitative refinement of Tao's norm-convergence theorem. At the core of the analysis lies an explicit real-variable estimate for twisted multilinear averages that is closely related to certain singular Brascamp--Lieb inequalities. \end{abstract}
 
 \maketitle
 
@@ -172,10 +173,12 @@ $C_{\ref{thm:ergodicthm},n,r}
 \end{theorem}
 (See \S \ref{sec:variation-norm} for the definition of the $r$-variation norm.)
 
-Since finite variation of a sequence implies convergence of the sequence and since $L^\infty(X)\subset L^{2n}(X)$ if $X$ is a probability space, Theorem \ref{thm:ergodicthm} immediately recovers Tao's theorem  \cite[Theorem 1.1]{Tao07} for $n\ge 2$.
+Since finite variation of a sequence implies convergence of the sequence and since $L^\infty(X)\subset L^{2n}(X)$ if $X$ is a probability space, Theorem \ref{thm:ergodicthm} immediately recovers Tao's theorem  \cite[Theorem 1.1]{Tao07} for $n\ge 2$, which concerned {\em qualitative} norm convergence. Ergodic-theoretic proofs of Tao's theorem were also given by Austin \cite{Austin10}, Host \cite{Host09}, and a generalization to nilpotent groups was proved in \cite{Walsh12}.
+Norm-convergence for a single ergodic average ($n=1$) for $r\ge 2$ was proved by Jones--Ostrovskii--Rosenblatt \cite{JonesOstrovskiiRosenblatt96}. 
+Theorem \ref{thm:ergodicthm} resolves an open problem that was stated in the closing section of \cite{AvigadRute15} (Avigad--Rute).
+Versions of Theorem \ref{thm:ergodicthm} were proved for $n=2$ in \cite{DurcikKovacSkrebThiele19,Kovac16}, and for $n=3$ in \cite{DurcikSlavikovaThiele26}.
 
-
-The proof of this theorem can be reduced to the following {\em a priori} estimate over the real numbers. The proof of this latter estimate is the heart of the matter of this paper.
+The proof of this theorem will be reduced to the following {\em a priori} estimate over the real numbers. The proof of this latter estimate is the heart of the matter of this paper. It is closely related to the study of certain singular Brascamp--Lieb ineqalities in real harmonic analysis, which can be viewed as generalizations of Kova\v{c}'s twisted paraproduct \cite{Kovac12}. Also see the survey \cite{DurcikThiele21survey} and \cite{DurcikKovacThiele19,DurcikThiele20, DurcikSlavikovaThiele22}.
 
 \begin{definition}[Twisted average]\lean{nCT.twistedAverage}
 Let $n\in\mathbb{N}$. For an $n$-tuple of real-valued functions $\mathbf f = (f_i)_{i\in \mathbb{N}, i<n}$ on $\R^n$, a function $\chi:\R\to\R$ and $x\in\mathbb{R}^n$ denote
@@ -218,301 +221,25 @@ Consider for example Gaussian domination, Proposition \ref{Gaussian domination c
 
 For transparency, every machine-generated piece of content is tagged with \auto\; throughout the manuscript. Everything not tagged with \auto\; is entirely human-generated, up to automatic fixing of typos and minor inaccuracies, tweaking of constants and other minor automated changes.\\
 
-Separate automation passes checked all arguments for local correctness. This of course does not replace mathematical expert review, but will hopefully decrease maintenance effort during the formalization stage.
+Separate automation passes checked all arguments for local correctness. This of course does not replace mathematical expert review, but has decreased friction during the formalization stage.
+Nevertheless, the formalization still surfaced some minor discrepancies in the values of explicit constants in some intermediate propositions, which have then been fixed.
 
-\section{From real to ergodic}\label{sec:realtoergodic}
-The purpose of this section is to prove Theorem \ref{thm:ergodicthm} from Theorem \ref{thm:nct main real}.
-This section is the only place in the blueprint where we invoke two external theorems, i.e. theorems that are not proved in this blueprint. These are Theorem \ref{multilinear interpolation external} (multilinear complex interpolation) and Theorem \ref{Calderon transference external} (Calder\'on transference principle).
-The latter was recently formalized in Lean by Pernegger \cite{Pernegger2025}.
+\subsection{Formalization in Lean}
 
-\begin{proposition}[Permutation of the endpoint estimate]\label{permutation of endpoint estimate}\lean{permutation_of_endpoint_estimate}\leanok\uses{thm:nct main real}\usesdefs{A_def}
-Let $n\ge 2$, let $\pi$ be a permutation of $[n)$, and let $J\ge 1$ and $0<t_0<\cdots<t_J$. For real-valued Schwartz functions $(f_i)_{i\in[n)}$,
-\begin{equation}\label{permuted endpoint estimate}
-\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_2^2
-\le C_{\ref{thm:nct main real}}J^{1-2^{2-n}}
-\prod_{i\in[n)}\|f_i\|_{2^{\pi(i)+\min(n-\pi(i),2)}}^2.
-\end{equation}
-\end{proposition}
+After this blueprint was completed, its contents were formally verified using the proof assistant Lean 4 \cite{LeanPaper} and its mathematical library \texttt{mathlib} \cite{Mathlib}. The formalization is available at 
+\begin{center}
+\href{https://github.com/roos-j/lean-nct}{https://github.com/roos-j/lean-nct}
+\end{center}
+The formalization made heavy use of emerging autoformalization capabilities of current frontier models, specifically OpenAI's \texttt{Codex/5.6-terra-ultra}. While the statements of Theorem \ref{thm:ergodicthm} and Theorem \ref{thm:nct main real} and its associated definitions have been carefully formalized by hand, virtually all of the remaining formalization was machine-generated across many extended sessions during a one-week period, with a custom instruction set and careful human supervision. The timeline and required amount of human effort are in striking contrast to those of previous large formalization projects in analysis such as the Carleson project \cite{CarlesonBlueprint}, \cite{CarlesonPaper}, which was predominantly human-generated and concluded its main objectives before the current set of highly formalization-capable models was made publicly available.
 
-\begin{proof}[Proof \auto]
-Apply Theorem \ref{thm:nct main real} after permuting the coordinate axes by $\pi$ and permuting the functions by the same permutation. Lebesgue measure, the $L^2$ norm, and the kernel $\mathbf 1_{[0,1]}$ are unchanged by this coordinate permutation. The normalization in Theorem \ref{thm:nct main real} becomes the product on the right-hand side of \eqref{permuted endpoint estimate}; homogeneity gives the stated form.
-\end{proof}
 
-\begin{exttheorem}[Multilinear interpolation]\label{multilinear interpolation external}\lean{multilinear_interpolation_external}\leanok\uses{}\usesdefs{}
-Let $m,n\ge 1$ be integers, let $(X_i,\mu_i)$ and $(Y,\nu)$ be measure spaces, let $p\in[1,\infty]$, and let $T$ be an $n$-linear map on $n$-tuples of complex-valued simple functions with values in $L^p(Y)$. For $a\in[m)$ and $i\in[n)$, let $q_{a,i}\in[1,\infty]$, and assume
-\begin{equation}\label{multilinear interpolation endpoint}
-\|T(f_0,\ldots,f_{n-1})\|_{L^p(Y)}\le A_a\prod_{i\in[n)}\|f_i\|_{L^{q_{a,i}}(X_i)}.
-\end{equation}
-Let $\theta_a\ge 0$ satisfy $\sum_{a\in[m)}\theta_a=1$, and define $p_i\in[1,\infty]$ by
-\begin{equation}\label{multilinear interpolation exponents}
-\tfrac1{p_i}=\sum_{a\in[m)}\tfrac{\theta_a}{q_{a,i}}.
-\end{equation}
-Then $T$ extends to an $n$-linear map from $\prod_{i\in[n)}L^{p_i}(X_i)$ to $L^p(Y)$ and
-\begin{equation}\label{multilinear interpolation conclusion}
-\|T(f_0,\ldots,f_{n-1})\|_{L^p(Y)}\le \prod_{a\in[m)}A_a^{\theta_a}\prod_{i\in[n)}\|f_i\|_{L^{p_i}(X_i)}.
-\end{equation}
-\end{exttheorem}
+\subsection*{Acknowledgments}
 
-This is a standard result in interpolation theory, see e.g. \cite{BerghLofstrom}.
-
-\begin{proposition}[Range of exponents]\label{exponent polytope}\lean{exponent_polytope,exponent_polytope_of_exponents}\leanok\uses{}\usesdefs{}
-Let $p_i\in[1,\infty]$ for $i\in[n)$. The vector $(p_i^{-1})_{i\in[n)}$ belongs to the convex hull of the permutations of
-\begin{equation}\label{endpoint reciprocal vector}
-(2^{-2},2^{-3},\ldots,2^{-n},2^{-n})
-\end{equation}
-if and only if
-\begin{equation}\label{exponent polytope sum}
-\sum_{i\in[n)}p_i^{-1}=\tfrac12
-\end{equation}
-and, for every nonempty $I\subset[n)$,
-\begin{equation}\label{exponent polytope inequalities}
-\sum_{i\in I}p_i^{-1}\ge 2^{|I|-n-1}.
-\end{equation}
-\end{proposition}
-
-\begin{proof}[Proof \auto]
-Every permutation of \eqref{endpoint reciprocal vector} satisfies \eqref{exponent polytope sum}. The sum of its $|I|$ smallest coordinates is $2^{|I|-n-1}$, so every convex combination satisfies \eqref{exponent polytope inequalities}.
-
-Conversely, put $x_i=p_i^{-1}$ and let $b_0\ge\cdots\ge b_{n-1}$ be the coordinates in \eqref{endpoint reciprocal vector} in decreasing order. Applying \eqref{exponent polytope inequalities} to complements gives, for every $I\subset[n)$,
-\begin{equation}\label{exponent polytope upper inequalities}
-\sum_{i\in I}x_i\le \sum_{i=0}^{|I|-1}b_i.
-\end{equation}
-Let $c\in\R^n$ and simultaneously relabel the coordinates of $c$ and $x$ so that $c_0\ge\cdots\ge c_{n-1}$. By summation by parts, \eqref{exponent polytope sum}, and \eqref{exponent polytope upper inequalities},
-\[
-\sum_{i\in[n)}c_ix_i
-=c_{n-1}\sum_{i\in[n)}x_i+
-\sum_{m\in[n-1)}(c_m-c_{m+1})\sum_{i=0}^m x_i
-\]
-\[
-\le c_{n-1}\sum_{i\in[n)}b_i+
-\sum_{m\in[n-1)}(c_m-c_{m+1})\sum_{i=0}^m b_i
-=\sum_{i\in[n)}c_ib_i.
-\]
-The last expression is the maximum of $\sum_i c_i y_i$ over the permutations $y$ of \eqref{endpoint reciprocal vector}. The finite-dimensional separation theorem therefore places $x$ in their convex hull.
-\end{proof}
-
-\begin{proposition}[Interpolated real-variable estimate]\label{interpolated real variable estimate}\lean{interpolated_real_variable_estimate}\leanok\uses{permutation of endpoint estimate,exponent polytope,multilinear interpolation external}\usesdefs{A_def}
-Let $n\ge 2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}. For every $J\ge1$, every $0<t_0<\cdots<t_J$, and every $n$-tuple of complex-valued measurable functions $f_i\in L^{p_i}(\R^n)$,
-\begin{equation}\label{interpolated real estimate}
-\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
-\le 2^{2n}C_{\ref{thm:nct main real}}J^{1-2^{2-n}}
-\prod_{i\in[n)}\|f_i\|_{p_i}^2.
-\end{equation}
-\end{proposition}
-
-\begin{proof}[Proof \auto]
-For fixed $J$ and $(t_j)_{j\in[J+1)}$, consider the $n$-linear map whose value is
-\[
-\big(A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\big)_{j\in[J)}
-\]
-in $L^2(\R^n;\ell^2([J)))$. Proposition \ref{permutation of endpoint estimate} gives its endpoint norm at every permutation of \eqref{endpoint reciprocal vector}. Since all endpoint exponents are finite, approximation by Schwartz functions and the endpoint estimate extend this map uniquely to the corresponding products of real $L^p$ spaces. For complex inputs, expand each $f_i$ into real and imaginary parts and use the triangle inequality. This multiplies every endpoint norm by at most $2^n$. Proposition \ref{exponent polytope} and Theorem \ref{multilinear interpolation external} give \eqref{interpolated real estimate} for complex-valued simple functions. Since \eqref{exponent polytope inequalities} for singleton sets gives $p_i<\infty$, approximation by simple functions and the interpolated estimate extend the map to all $f_i\in L^{p_i}(\R^n)$.
-\end{proof}
-
-\begin{exttheorem}[Calder\'on transference principle]\label{Calderon transference external}\lean{calderon_transference_external}\leanok\uses{}\usesdefs{ergodic averages,A_def}
-Let $n\ge2$, let $p_i\in(1,\infty)$ satisfy $\sum_{i\in[n)}p_i^{-1}=1/2$, and let $g:\N\to[1,\infty)$. Assume that for some $C>0$, every $J\ge1$, every $0<t_0<\cdots<t_J$, and every real-valued $f_i\in L^{p_i}(\R^n)$ satisfy
-\begin{equation}\label{Calderon transference assumption}
-\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
-\le Cg(J)\prod_{i\in[n)}\|f_i\|_{p_i}^2.
-\end{equation}
-Then, for every measure space $(X,\Sigma,\mu)$, every family of mutually commuting measure preserving transformations $(T_i)_{i\in[n)}$, every real-valued $f_i\in L^{p_i}(X)$, every $J\ge1$, and every positive integers $N_0<\cdots<N_J$,
-\begin{equation}\label{Calderon transference conclusion}
-\sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
-\le C\,C_{\ref{Calderon transference external},n}\,g(J)
-\prod_{i\in[n)}\|f_i\|_{p_i}^2,
-\end{equation}
-where
-\begin{equation}\label{Calderon transference constant}
-C_{\ref{Calderon transference external},n}
-=
-2^{4n+6}.
-\end{equation}
-\end{exttheorem}
-This is a standard result and can be found e.g. as Theorem 2.5 of \cite{Pernegger2025}, up to slight restatement with the real-variable averages and ergodic averages used here.
-\begin{theorem}[Ergodic jump estimate with general exponents]\label{thm:ergodicthm-interpolation}\lean{ergodic_jump_estimate_interpolation}\leanok\uses{interpolated real variable estimate,Calderon transference external}\usesdefs{ergodic averages}
-Let $n\ge2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be complex-valued functions with $f_i\in L^{p_i}(X)$. For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
-\begin{equation}\label{ergodic jump general exponents}
-\sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
-\le C_{\ref{thm:ergodicthm-interpolation},n,(p_i)_{i\in[n)}}J^{1-2^{2-n}}
-\prod_{i\in[n)}\|f_i\|_{p_i}^2,
-\end{equation}
-where
-\begin{equation}\label{ergodic interpolation constant}
-C_{\ref{thm:ergodicthm-interpolation},n,(p_i)_{i\in[n)}}
-=2^{2n}C_{\ref{Calderon transference external},n}
-\bigl(2^{2n}C_{\ref{thm:nct main real}}\bigr)
-=2^{8n+672}.
-\end{equation}
-\end{theorem}
-
-\begin{proof}[Proof \auto]
-Apply Proposition \ref{interpolated real variable estimate} to real-valued inputs and then Theorem \ref{Calderon transference external} with $g(J)=J^{1-2^{2-n}}$. This gives the factor $C_{\ref{Calderon transference external},n}$ in addition to the constant $2^{2n}C_{\ref{thm:nct main real}}$ from Proposition \ref{interpolated real variable estimate}. For complex inputs, expand every $f_i$ into real and imaginary parts. The triangle inequality in $L^2(X;\ell^2([J)))$ contributes at most another factor $2^n$ to the operator norm. Squaring gives the factor $2^{2n}$ in \eqref{ergodic interpolation constant}.
-\end{proof}
-
-\begin{theorem}[Symmetric ergodic jump estimate]\label{thm:ergodicthmJ}\lean{symmetric_ergodic_jump_estimate}\leanok\uses{thm:ergodicthm-interpolation}\usesdefs{ergodic averages}
-Let $n\ge2$. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be complex-valued functions in $L^{2n}(X)$. For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
-\begin{equation}\label{symmetric ergodic jump estimate}
-\sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
-\le C_{\ref{thm:ergodicthmJ},n}J^{1-2^{2-n}}
-\prod_{i\in[n)}\|f_i\|_{2n}^2,
-\end{equation}
-where
-\begin{equation}\label{symmetric ergodic jump constant}
-C_{\ref{thm:ergodicthmJ},n}
-=2^{8n+672}.
-\end{equation}
-\end{theorem}
-
-\begin{proof}[Proof \auto]
-We have $\sum_{i\in[n)}(2n)^{-1}=1/2$. If $I\subset[n)$ has $m\ge1$ elements, then
-\[
-\sum_{i\in I}(2n)^{-1}=\tfrac{m}{2n}\ge2^{m-n-1},
-\]
-because $m2^{n-m}\ge n$ for $1\le m\le n$. Thus Theorem \ref{thm:ergodicthm-interpolation} applies.
-\end{proof}
-
-\begin{lemma}[From jump estimates to variation]\label{jump estimates imply variation}\lean{jump_estimates_imply_variation_enorm,jump_estimates_imply_variation_endpoint_enorm}\leanok\uses{}\usesdefs{}
-Let $B$ be a seminormed space, let $a:\N\to B$, let $r_0\ge2$, and let $D>0$. Assume that, for every $J\ge1$ and every $0<N_0<\cdots<N_J$,
-\begin{equation}\label{abstract jump estimate}
-\sum_{j\in[J)}\|a(N_{j+1})-a(N_j)\|^2\le D J^{1-2/r_0}.
-\end{equation}
-If $r>r_0$, then
-\begin{equation}\label{abstract variation estimate}
-\|a\|_{V_r(N\in\N,\ N\ge1;B)}
-\le 2^{1-1/r_0}\left(\tfrac{r}{r-r_0}\right)^{1/r}D^{1/2}.
-\end{equation}
-If $r_0=2$, then
-\begin{equation}\label{abstract endpoint variation estimate}
-\|a\|_{V_2(N\in\N,\ N\ge1;B)}\le D^{1/2}.
-\end{equation}
-\end{lemma}
-
-\begin{proof}[Proof \auto]
-Fix $0<N_0<\cdots<N_J$ and write $d_j=\|a(N_{j+1})-a(N_j)\|$. Let $d_1^*\ge\cdots\ge d_J^*$ be the decreasing rearrangement. Choose the indices of the $m$ largest $d_j$ and split them according to the parity of $j$. Within either parity class the selected intervals $[N_j,N_{j+1}]$ are disjoint and nonadjacent. Listing their endpoints in increasing order and applying \eqref{abstract jump estimate} gives
-\[
-\sum_{j\in E}d_j^2\le D(2|E|)^{1-2/r_0}
-\]
-for either class $E$. Hence
-\[
-m(d_m^*)^2\le 2D(2m)^{1-2/r_0},
-\]
-so
-\[
-d_m^*\le2^{1-1/r_0}D^{1/2}m^{-1/r_0}.
-\]
-Therefore, when $r>r_0$,
-\[
-\sum_{j\in[J)}d_j^r
-\le2^{r(1-1/r_0)}D^{r/2}\sum_{m=1}^{\infty}m^{-r/r_0}
-\le2^{r(1-1/r_0)}D^{r/2}\tfrac{r}{r-r_0}.
-\]
-Taking the $r$th root and then the supremum gives \eqref{abstract variation estimate}. If $r_0=2$, \eqref{abstract jump estimate} itself is uniform in $J$ and gives \eqref{abstract endpoint variation estimate} directly.
-\end{proof}
-
-\begin{proof}[Proof of Theorem \ref{thm:ergodicthm} \auto]
-Put
-\[
-D=C_{\ref{thm:ergodicthmJ},n}\prod_{i\in[n)}\|f_i\|_{2n}^2.
-\]
-Theorem \ref{thm:ergodicthmJ} gives \eqref{abstract jump estimate} with $r_0=2^{n-1}$. If $n=2$, Lemma \ref{jump estimates imply variation} gives the result for $r=2$, and the monotonicity of finite $\ell^r$ norms gives it for every $r\ge2$. If $n\ge3$ and $r>2^{n-1}$, the same lemma gives
-\[
-\|M_N(\mathbf f)\|_{V_r(N\in\N,\ N\ge1;L^2(X))}
-\le 2^{1-2^{1-n}}\left(\tfrac{r}{r-2^{n-1}}\right)^{1/r}
-C_{\ref{thm:ergodicthmJ},n}^{1/2}
-\prod_{i\in[n)}\|f_i\|_{2n}.
-\]
-\end{proof}
+\jr{TODO: add grants, other acknowledgments}
+%PD is partially supported by NSF grant DMS-2554859 and a grant from the Simons
+%Foundation
 
 \section{Preliminaries}\label{sec:prelim}
-
-\jr{
-Todo:
-
-1. Print first part blue
-
-\cgpt 1.1 Make sure whenever a proposition is used, it is referred to explicitly by reference.
-
-\cgpt 1.2 Insert proofs where they are currently missing. Proofs should be blueprint-ready but err on the side of less details. If it is a self-contained "routine" fact, we can outsource it to AI. AI-written proofs must go in the supplements section at the end.
-
-\cgpt 1.3 Insert the explicit recursive constants everywhere. We want all constants to be explicit.
-
-\cjr 1.3.1. Constants in Section \ref{sec:prelim}
-
-\cpd \cls 1.3.2. Constants in Section \ref{bump section}.
-
-\cjr 1.3.3. Constants in Section \ref{sec:main argument}
-
-\cgpt 1.3.4. Constants in Section \ref{sec:reduction}. Careful here: this was written with the convention that $n$-dependence doesn't have to be explicit. We don't want that anymore, all $n$ dependencies have to be explicit, because there is some hope we can get a very nice $n$ dependence (Theorem \ref{induct positive terms theorem} has $O(n^2)$) (PD) \pd{I started working on that, but it only makes sense to continue once the Gaussian domination has been completed,  the  section on windows has been revised, and $N$ is fixed once and for all}
-
-\cgpt 1.3.5. Unfold the recursive constants to obtain an explicit constant depending on $n$ for Theorem \ref{thm:nct main real}
-
-\cgpt 1.4 Enforce forward reasoning (should just be rearranging lemmas here and there)
-
-\cgpt 2. Decide Gaussian domination refactor: unify? split? (JR)
-
- \cgpt - Add $L^2$ convergence lemma
-
-\cjr 3. Real vs complex valued
-
-\cpd 3.1. remove remaining complex conjugates from \S \ref{sec:prelim red} onwards (check it's fine to remove and remove, also say explicitly that functions are real-valued where unclear)
-
-
-\cgpt - Insert appropriate $\Lambda$ to $\Lambda_1$ / $A$ to $\Lambda$ references
-
-$\cpd$ 4. In Sections \ref{sec:pfmainthm}, \ref{sec:on-diag}, make appearance of functions $f$, $F$ explicit
-
-\cls 5. Add ergodic main theorem (statement only)
-
-\cls 6. Interpolation of final result?
-
- $\cpd$ 7. In reduction argument fix $n=2$ issues
-
-\cjr 8. Change notation for Gaussian $g$ to $\mathfrak{g}$ or similar
-
-\cpd 9. (obsolete)
-
-\cjr 10. explain the wlogs in proofs of Prop \ref{Cauchy-Schwarz at k}  and \ref{Cauchy-Schwarz at n-1}
-
-\cpd 11. address comment in proof of Prop \ref{diagonal square root}
-
-\cls 12. blueprint Prop. \ref{four scale Gaussian kernel}
-
-\cjr 13. explicit decay estimates for standard bump in Proposition \ref{standard bump properties}
-
-\cjr 14. Consistently change notation in main argument: standard bump is not $\psi$ anymore, now it is $\Phi$. $\psi$ is for generic mean zero bump function.
-
-\cls\cjr 15. Many definitions implicitly contain propositions relating to well-definedness (e.g. that something is integrable, measurable, or belonging to a space, or defined on the Fourier side). Here we split into Definition and proposition: the definition should not make any nontrivial mathematical claims (within reason). (LS) \ls{Done up to Section 5.}\jr{ok we consider it done}
-
-\cgpt 16. Finish From real to ergodic section
-
-\cjr 17. Two main theorems in introduction
-
-\cgpt 18. Change any remaining uses of formulation `there is unique function $f$ such that $\widehat{f}=$` into `define $f=\mathcal{F}^{-1}(..)$` and then state well-definedness/properties
-
-
-\cgpt 19. Check what from Sec \ref{sec:prelim red} should be moved to \ref{sec:prelim} (everything that's used before to satisfy forward reasoning convention)
-
-\cjr 20. compare Sec \ref{sec:bump red} with Sec \ref{bump section} and decide what to do about the redundancy. (LS) \jr{let us not do anything more}
-
-\cjr 21. Finalize section structure and section naming. Maybe it is okay as is? For now yes
-
-\cgpt 22. Add references, fill in discussion in introduction.
-
-23. Write overview section
-
-\cgpt 24. Clean up section on windows \S \ref{sec:windows} by addressing the comments
-
-\cjr 25. fix/unify Schwartz vs test functions in the reduction section
-
-\cgpt 26. Get rid of all occurrences of $\R_{>0}$ and similar subtypes of $\R$ (wirte out positivity assumption separately)
-
-$\omega$. Move to git
-
-$\omega+1$. \cgpt Regenerate automatic section where needed (e.g. Gaussian domination)
-
-$\omega+2$. \cgpt Validation: proof correctness check and check for blueprint convention compliance
-
-$\omega+3$. \cjr \cgpt Decide on Lean metadata formatting and generate metadata for dependency graph.
-}
 
 \newcommand{\g}{\mathfrak{g}}
 
@@ -606,7 +333,8 @@ Functions in this section are $\mathbb{K}$-valued.
 
 
 The  Wiener space $W$ is a space which locally behaves like $L^\infty$ and globally like $L^1$
-\cite{Wiener32,Groechenig}. In this paper we will only use the space $W_0$, which is the closed subspace of continuous functions in $W$.
+\cite{Wiener32,Groechenig}. 
+In this paper we will only use the space $W_0$, which is the closed subspace of continuous functions in $W$.
 The exact definition follows below.
 
 \begin{proposition}\label{auto:local-supremum-measurability}\uses{}\usesdefs{closed ball}
@@ -2306,10 +2034,8 @@ Combining \eqref{xleone} and \eqref{xgeone} gives that $\phi \in W_0(\R)$. By th
     \[\min(1, |x|^{-N})=\max(1, |x|)^{-N}\le (2^{-1}(1+|x|))^{-N}=2^N  \langle x\rangle^{N}\, .\]
 \end{proof}
 
-We will mainly \ct{decide whether it is mainly or only, and then (with the anticipated decision) write only} \ls{In Lemma~\ref{L:second-gaussian-estimate}, we have a function with compactly supported Fourier transform, but we don't have a good control on the measure of the support, and thus need to use Lemma~\ref{lem:smoothdecay}.} use these lemmas when we have control on the $L^\infty$ norm and compact support of   the Fourier transform, so we state this case separately.
+We will mainly use these lemmas when we have control on the $L^\infty$ norm and compact support of   the Fourier transform, so we state this case separately.
 
-
-\ct{I strengthened the following lemma by a factor $(2\pi)^N$ and improving the cosnatnt by a factor 2. The constant need no name, $2^N$ is shorter than the name.}\jr{I think the factor was probably omitted on purpose to simplify terms, see comment below}
 \begin{lemma}
    \label{lem:smoothdecay2}\uses{lem:smoothdecay,lem: min and bracket}\usesdefs{bracket bump,auto:Wiener-space-definition}
 \lean{smoothDecay2}
@@ -2333,8 +2059,6 @@ Using this twice and Lemma \ref{lem:smoothdecay} estimates $|\phi(x)|$ by
   The claim now follows from Lemma \ref{lem: min and bracket}.
 \end{proof}
 
- \jr{The constants in the inequality below don't conform to our conventions (maybe the conventions are not explicit enough). Every inequality should be $A\le C\cdot B$ where $A,B$ are target expressions reasonably free of explicit constants and $C$ is a numbered explicit constant (with explicit dependencies). It is worth reasonably minimizing the syntactic size of terms because the larger terms are the more cumbersome every step of the formalization. Attempting to faithfully track all the $2\pi$ factors only in the cases where they appear does not seem to be worth the trouble ($N$ will be a fixed number after all).
- But since this lemma is used at most a couple of times and it is already written we can adopt a compromise and leave it as is here. But let us please not write more of these unnecessarily long terms in the future}
 \begin{proposition}[mean value bump estimate]\label{mean value bump estimate 2}\uses{lem:smoothdecay2,lem: min and bracket}\usesdefs{bracket bump,auto:Wiener-space-definition}
 \lean{meanValueBumpEstimate}
 \leanok
@@ -2405,23 +2129,6 @@ Applying the same estimate with $-y$ in place of $y$, at the point $x+y$, gives 
 \]
 and \eqref{auto:mean-value-bump-bound} follows.
 \end{proof}
-
-
-\ct{ few comments:
-
-1) it appears a bit superfluous to compute Schwartz norms for compactly supported
-functions (or FT thereof). You dont need two-parameter Schwartz norms, but
-only sup norms of derivatives, i.e. a one parameter family of norms. See the above lemmas.
-
-
-2) The construction using geometric decay is quite inefficient givin $2^{O(N^2)}$.
-One shoudl aim at $2^{O( N\log N)}$. Ofcourse for small $N$ the constants matter.
-Presumably
-less rapid decay is better. If one new upper
-bound on the N needed, one could improve by convolving N indicators  of equal lentgh.
-One woudl not hav Schwartz, but one never wanted that at the first palce
-(one could make Scwart by concolving with very small further intervals. Screwing
-up higher derivatives than N only.}
 
 
 \begin{definition}[standard bump]\label{standard bump}\uses{}\usesdefs{}
@@ -3205,12 +2912,6 @@ Using the defining sum in Lemma \ref{L:second-gaussian-estimate}, substitute the
 \]
 which proves the displayed estimates.
 \end{proof}
-
-
-\jr{Need this also for other than the standard bump function $\Phi$ (in reduction section)}
-\ls{I changed the assumptions on $\Phi$ (now called $\phi$ since it is no longer the standard bump) to just reflect what is needed. It seems that in applications, $\phi$ is either the standard bump or a window.}
-\ct{or maybe neither, as the stadnard bump definition may change
-and likewise the window.}
 
 \begin{lemma}\label{L:gaussian-bump-decomposition}\uses{L:gaussian-estimate,L:second-gaussian-estimate}\usesdefs{gaussian,auto:Wiener-space-definition}
 \lean{gaussianBumpDecomposition}
@@ -4950,8 +4651,6 @@ Then $\InductPositiveTerms{k,C_k}$
 follows by applying Proposition \ref{induct positive terms imply increase data}, Proposition \ref{increase data implies diagonal band}, Proposition \ref{diagonal band implies vanishing diagonal} and finally Proposition \ref{vanishing diagonal implies induct positive terms}.
 \end{proof}
 
-\ls{I have improved the constants, so that the final result holds with a constant independent of $n$.}
-\jr{Oh, of course, because we only lose $k$ in the $k$th step and this is killed by the square root! So it was there already, I just inefficiently estimated the inducted constant, my bad! Very nice}
 \begin{lemma}[constant $C_k$ \auto]\label{P:better-induction}\uses{P:C_k-induction,Gaussian domination combined,induct positive terms imply increase data}\usesdefs{induct positive terms}
 \lean{betterInduction}
 \leanok
@@ -5112,7 +4811,7 @@ The $k$-th short variation can be expressed as
 $\|a\|_{V_{r,J}([2^k, 2^{k+1}]; B)}$
 and long variations as
 $\|a\|_{V_{r,J}(2^\mathbb{Z}; B)}.$
-
+For more on variation (semi)norms see \cite{JonesSeegerWright08}.
 
 \begin{lemma}\label{lem:shortlongjumps}\uses{}\usesdefs{}
 \lean{shortlongJumps}
@@ -8356,7 +8055,7 @@ We will also write
 
 
 Let $(\phi_0, \phi_1)$ be a universal pair
-and let $\theta, \varphi_{0,k}, \varphi_{1,k}, \varphi_{2,k}, \varphi_{3,k}, \varphi_{4,k}$ be defined as in \eqref{eqn:thetadef}-\eqref{eqn:varphi4kdef}. \jr{GPT: This is invoking {defn:window based bump functions}. This means that in all the lemmas below which use one of these notations defined in {defn:window based bump functions} you must add that label to to the usesdefs list\cgpt}
+and let $\theta, \varphi_{0,k}, \varphi_{1,k}, \varphi_{2,k}, \varphi_{3,k}, \varphi_{4,k}$ be defined as in \eqref{eqn:thetadef}-\eqref{eqn:varphi4kdef}. 
 In what follows we denote
 \begin{equation}\label{variation exponent alpha}
 \alpha(n)=1-2^{-n+2}.
@@ -9204,11 +8903,270 @@ C_{\mathrm{final}}
 \]
 \end{proof}
 
+
+\section{From real to ergodic}\label{sec:realtoergodic}
+The purpose of this section is to prove Theorem \ref{thm:ergodicthm} from Theorem \ref{thm:nct main real}.
+This section is the only place in the blueprint where we invoke two external theorems, i.e. theorems that are not proved in this blueprint. These are Theorem \ref{multilinear interpolation external} (multilinear complex interpolation) and Theorem \ref{Calderon transference external} (Calder\'on transference principle).
+The latter was recently formalized in Lean by Pernegger \cite{Pernegger2025}.
+
+\begin{proposition}[Permutation of the endpoint estimate]\label{permutation of endpoint estimate}\lean{permutation_of_endpoint_estimate}\leanok\uses{thm:nct main real}\usesdefs{A_def}
+Let $n\ge 2$, let $\pi$ be a permutation of $[n)$, and let $J\ge 1$ and $0<t_0<\cdots<t_J$. For real-valued Schwartz functions $(f_i)_{i\in[n)}$,
+\begin{equation}\label{permuted endpoint estimate}
+\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_2^2
+\le C_{\ref{thm:nct main real}}J^{1-2^{2-n}}
+\prod_{i\in[n)}\|f_i\|_{2^{\pi(i)+\min(n-\pi(i),2)}}^2.
+\end{equation}
+\end{proposition}
+
+\begin{proof}[Proof \auto]
+Apply Theorem \ref{thm:nct main real} after permuting the coordinate axes by $\pi$ and permuting the functions by the same permutation. Lebesgue measure, the $L^2$ norm, and the kernel $\mathbf 1_{[0,1]}$ are unchanged by this coordinate permutation. The normalization in Theorem \ref{thm:nct main real} becomes the product on the right-hand side of \eqref{permuted endpoint estimate}; homogeneity gives the stated form.
+\end{proof}
+
+\begin{exttheorem}[Multilinear interpolation]\label{multilinear interpolation external}\lean{multilinear_interpolation_external}\leanok\uses{}\usesdefs{}
+Let $m,n\ge 1$ be integers, let $(X_i,\mu_i)$ and $(Y,\nu)$ be measure spaces, let $p\in[1,\infty]$, and let $T$ be an $n$-linear map on $n$-tuples of complex-valued simple functions with values in $L^p(Y)$. For $a\in[m)$ and $i\in[n)$, let $q_{a,i}\in[1,\infty]$, and assume
+\begin{equation}\label{multilinear interpolation endpoint}
+\|T(f_0,\ldots,f_{n-1})\|_{L^p(Y)}\le A_a\prod_{i\in[n)}\|f_i\|_{L^{q_{a,i}}(X_i)}.
+\end{equation}
+Let $\theta_a\ge 0$ satisfy $\sum_{a\in[m)}\theta_a=1$, and define $p_i\in[1,\infty]$ by
+\begin{equation}\label{multilinear interpolation exponents}
+\tfrac1{p_i}=\sum_{a\in[m)}\tfrac{\theta_a}{q_{a,i}}.
+\end{equation}
+Then $T$ extends to an $n$-linear map from $\prod_{i\in[n)}L^{p_i}(X_i)$ to $L^p(Y)$ and
+\begin{equation}\label{multilinear interpolation conclusion}
+\|T(f_0,\ldots,f_{n-1})\|_{L^p(Y)}\le \prod_{a\in[m)}A_a^{\theta_a}\prod_{i\in[n)}\|f_i\|_{L^{p_i}(X_i)}.
+\end{equation}
+\end{exttheorem}
+
+This is a standard result in interpolation theory, see e.g. \cite{BerghLofstrom}.
+
+\begin{proposition}[Range of exponents]\label{exponent polytope}\lean{exponent_polytope,exponent_polytope_of_exponents}\leanok\uses{}\usesdefs{}
+Let $p_i\in[1,\infty]$ for $i\in[n)$. The vector $(p_i^{-1})_{i\in[n)}$ belongs to the convex hull of the permutations of
+\begin{equation}\label{endpoint reciprocal vector}
+(2^{-2},2^{-3},\ldots,2^{-n},2^{-n})
+\end{equation}
+if and only if
+\begin{equation}\label{exponent polytope sum}
+\sum_{i\in[n)}p_i^{-1}=\tfrac12
+\end{equation}
+and, for every nonempty $I\subset[n)$,
+\begin{equation}\label{exponent polytope inequalities}
+\sum_{i\in I}p_i^{-1}\ge 2^{|I|-n-1}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}[Proof \auto]
+Every permutation of \eqref{endpoint reciprocal vector} satisfies \eqref{exponent polytope sum}. The sum of its $|I|$ smallest coordinates is $2^{|I|-n-1}$, so every convex combination satisfies \eqref{exponent polytope inequalities}.
+
+Conversely, put $x_i=p_i^{-1}$ and let $b_0\ge\cdots\ge b_{n-1}$ be the coordinates in \eqref{endpoint reciprocal vector} in decreasing order. Applying \eqref{exponent polytope inequalities} to complements gives, for every $I\subset[n)$,
+\begin{equation}\label{exponent polytope upper inequalities}
+\sum_{i\in I}x_i\le \sum_{i=0}^{|I|-1}b_i.
+\end{equation}
+Let $c\in\R^n$ and simultaneously relabel the coordinates of $c$ and $x$ so that $c_0\ge\cdots\ge c_{n-1}$. By summation by parts, \eqref{exponent polytope sum}, and \eqref{exponent polytope upper inequalities},
+\[
+\sum_{i\in[n)}c_ix_i
+=c_{n-1}\sum_{i\in[n)}x_i+
+\sum_{m\in[n-1)}(c_m-c_{m+1})\sum_{i=0}^m x_i
+\]
+\[
+\le c_{n-1}\sum_{i\in[n)}b_i+
+\sum_{m\in[n-1)}(c_m-c_{m+1})\sum_{i=0}^m b_i
+=\sum_{i\in[n)}c_ib_i.
+\]
+The last expression is the maximum of $\sum_i c_i y_i$ over the permutations $y$ of \eqref{endpoint reciprocal vector}. The finite-dimensional separation theorem therefore places $x$ in their convex hull.
+\end{proof}
+
+\begin{proposition}[Interpolated real-variable estimate]\label{interpolated real variable estimate}\lean{interpolated_real_variable_estimate}\leanok\uses{permutation of endpoint estimate,exponent polytope,multilinear interpolation external}\usesdefs{A_def}
+Let $n\ge 2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}. For every $J\ge1$, every $0<t_0<\cdots<t_J$, and every $n$-tuple of complex-valued measurable functions $f_i\in L^{p_i}(\R^n)$,
+\begin{equation}\label{interpolated real estimate}
+\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
+\le 2^{2n}C_{\ref{thm:nct main real}}J^{1-2^{2-n}}
+\prod_{i\in[n)}\|f_i\|_{p_i}^2.
+\end{equation}
+\end{proposition}
+
+\begin{proof}[Proof \auto]
+For fixed $J$ and $(t_j)_{j\in[J+1)}$, consider the $n$-linear map whose value is
+\[
+\big(A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\big)_{j\in[J)}
+\]
+in $L^2(\R^n;\ell^2([J)))$. Proposition \ref{permutation of endpoint estimate} gives its endpoint norm at every permutation of \eqref{endpoint reciprocal vector}. Since all endpoint exponents are finite, approximation by Schwartz functions and the endpoint estimate extend this map uniquely to the corresponding products of real $L^p$ spaces. For complex inputs, expand each $f_i$ into real and imaginary parts and use the triangle inequality. This multiplies every endpoint norm by at most $2^n$. Proposition \ref{exponent polytope} and Theorem \ref{multilinear interpolation external} give \eqref{interpolated real estimate} for complex-valued simple functions. Since \eqref{exponent polytope inequalities} for singleton sets gives $p_i<\infty$, approximation by simple functions and the interpolated estimate extend the map to all $f_i\in L^{p_i}(\R^n)$.
+\end{proof}
+
+\begin{exttheorem}[Calder\'on transference principle]\label{Calderon transference external}\lean{calderon_transference_external}\leanok\uses{}\usesdefs{ergodic averages,A_def}
+Let $n\ge2$, let $p_i\in(1,\infty)$ satisfy $\sum_{i\in[n)}p_i^{-1}=1/2$, and let $g:\N\to[1,\infty)$. Assume that for some $C>0$, every $J\ge1$, every $0<t_0<\cdots<t_J$, and every real-valued $f_i\in L^{p_i}(\R^n)$ satisfy
+\begin{equation}\label{Calderon transference assumption}
+\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
+\le Cg(J)\prod_{i\in[n)}\|f_i\|_{p_i}^2.
+\end{equation}
+Then, for every measure space $(X,\Sigma,\mu)$, every family of mutually commuting measure preserving transformations $(T_i)_{i\in[n)}$, every real-valued $f_i\in L^{p_i}(X)$, every $J\ge1$, and every positive integers $N_0<\cdots<N_J$,
+\begin{equation}\label{Calderon transference conclusion}
+\sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
+\le C\,C_{\ref{Calderon transference external},n}\,g(J)
+\prod_{i\in[n)}\|f_i\|_{p_i}^2,
+\end{equation}
+where
+\begin{equation}\label{Calderon transference constant}
+C_{\ref{Calderon transference external},n}
+=
+2^{4n+6}.
+\end{equation}
+\end{exttheorem}
+This is a standard result and can be found e.g. as Theorem 2.5 of \cite{Pernegger2025}, up to slight restatement with an explicit constant and the specific real-variable averages and ergodic averages used here.
+\begin{theorem}[Ergodic jump estimate with general exponents]\label{thm:ergodicthm-interpolation}\lean{ergodic_jump_estimate_interpolation}\leanok\uses{interpolated real variable estimate,Calderon transference external}\usesdefs{ergodic averages}
+Let $n\ge2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be complex-valued functions with $f_i\in L^{p_i}(X)$. For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
+\begin{equation}\label{ergodic jump general exponents}
+\sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
+\le C_{\ref{thm:ergodicthm-interpolation},n,(p_i)_{i\in[n)}}J^{1-2^{2-n}}
+\prod_{i\in[n)}\|f_i\|_{p_i}^2,
+\end{equation}
+where
+\begin{equation}\label{ergodic interpolation constant}
+C_{\ref{thm:ergodicthm-interpolation},n,(p_i)_{i\in[n)}}
+=2^{2n}C_{\ref{Calderon transference external},n}
+\bigl(2^{2n}C_{\ref{thm:nct main real}}\bigr)
+=2^{8n+672}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}[Proof \auto]
+Apply Proposition \ref{interpolated real variable estimate} to real-valued inputs and then Theorem \ref{Calderon transference external} with $g(J)=J^{1-2^{2-n}}$. This gives the factor $C_{\ref{Calderon transference external},n}$ in addition to the constant $2^{2n}C_{\ref{thm:nct main real}}$ from Proposition \ref{interpolated real variable estimate}. For complex inputs, expand every $f_i$ into real and imaginary parts. The triangle inequality in $L^2(X;\ell^2([J)))$ contributes at most another factor $2^n$ to the operator norm. Squaring gives the factor $2^{2n}$ in \eqref{ergodic interpolation constant}.
+\end{proof}
+
+\begin{theorem}[Symmetric ergodic jump estimate]\label{thm:ergodicthmJ}\lean{symmetric_ergodic_jump_estimate}\leanok\uses{thm:ergodicthm-interpolation}\usesdefs{ergodic averages}
+Let $n\ge2$. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be complex-valued functions in $L^{2n}(X)$. For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
+\begin{equation}\label{symmetric ergodic jump estimate}
+\sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
+\le C_{\ref{thm:ergodicthmJ},n}J^{1-2^{2-n}}
+\prod_{i\in[n)}\|f_i\|_{2n}^2,
+\end{equation}
+where
+\begin{equation}\label{symmetric ergodic jump constant}
+C_{\ref{thm:ergodicthmJ},n}
+=2^{8n+672}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}[Proof \auto]
+We have $\sum_{i\in[n)}(2n)^{-1}=1/2$. If $I\subset[n)$ has $m\ge1$ elements, then
+\[
+\sum_{i\in I}(2n)^{-1}=\tfrac{m}{2n}\ge2^{m-n-1},
+\]
+because $m2^{n-m}\ge n$ for $1\le m\le n$. Thus Theorem \ref{thm:ergodicthm-interpolation} applies.
+\end{proof}
+
+\begin{lemma}[From jump estimates to variation]\label{jump estimates imply variation}\lean{jump_estimates_imply_variation_enorm,jump_estimates_imply_variation_endpoint_enorm}\leanok\uses{}\usesdefs{}
+Let $B$ be a seminormed space, let $a:\N\to B$, let $r_0\ge2$, and let $D>0$. Assume that, for every $J\ge1$ and every $0<N_0<\cdots<N_J$,
+\begin{equation}\label{abstract jump estimate}
+\sum_{j\in[J)}\|a(N_{j+1})-a(N_j)\|^2\le D J^{1-2/r_0}.
+\end{equation}
+If $r>r_0$, then
+\begin{equation}\label{abstract variation estimate}
+\|a\|_{V_r(N\in\N,\ N\ge1;B)}
+\le 2^{1-1/r_0}\left(\tfrac{r}{r-r_0}\right)^{1/r}D^{1/2}.
+\end{equation}
+If $r_0=2$, then
+\begin{equation}\label{abstract endpoint variation estimate}
+\|a\|_{V_2(N\in\N,\ N\ge1;B)}\le D^{1/2}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}[Proof \auto]
+Fix $0<N_0<\cdots<N_J$ and write $d_j=\|a(N_{j+1})-a(N_j)\|$. Let $d_1^*\ge\cdots\ge d_J^*$ be the decreasing rearrangement. Choose the indices of the $m$ largest $d_j$ and split them according to the parity of $j$. Within either parity class the selected intervals $[N_j,N_{j+1}]$ are disjoint and nonadjacent. Listing their endpoints in increasing order and applying \eqref{abstract jump estimate} gives
+\[
+\sum_{j\in E}d_j^2\le D(2|E|)^{1-2/r_0}
+\]
+for either class $E$. Hence
+\[
+m(d_m^*)^2\le 2D(2m)^{1-2/r_0},
+\]
+so
+\[
+d_m^*\le2^{1-1/r_0}D^{1/2}m^{-1/r_0}.
+\]
+Therefore, when $r>r_0$,
+\[
+\sum_{j\in[J)}d_j^r
+\le2^{r(1-1/r_0)}D^{r/2}\sum_{m=1}^{\infty}m^{-r/r_0}
+\le2^{r(1-1/r_0)}D^{r/2}\tfrac{r}{r-r_0}.
+\]
+Taking the $r$th root and then the supremum gives \eqref{abstract variation estimate}. If $r_0=2$, \eqref{abstract jump estimate} itself is uniform in $J$ and gives \eqref{abstract endpoint variation estimate} directly.
+\end{proof}
+
+\begin{proof}[Proof of Theorem \ref{thm:ergodicthm} \auto]
+Put
+\[
+D=C_{\ref{thm:ergodicthmJ},n}\prod_{i\in[n)}\|f_i\|_{2n}^2.
+\]
+Theorem \ref{thm:ergodicthmJ} gives \eqref{abstract jump estimate} with $r_0=2^{n-1}$. If $n=2$, Lemma \ref{jump estimates imply variation} gives the result for $r=2$, and the monotonicity of finite $\ell^r$ norms gives it for every $r\ge2$. If $n\ge3$ and $r>2^{n-1}$, the same lemma gives
+\[
+\|M_N(\mathbf f)\|_{V_r(N\in\N,\ N\ge1;L^2(X))}
+\le 2^{1-2^{1-n}}\left(\tfrac{r}{r-2^{n-1}}\right)^{1/r}
+C_{\ref{thm:ergodicthmJ},n}^{1/2}
+\prod_{i\in[n)}\|f_i\|_{2n}.
+\]
+\end{proof}
+
+
 \begin{thebibliography}{99}
+\bibitem{Austin10}
+T.~Austin,
+On the norm convergence of non-conventional ergodic averages,
+\emph{Ergodic Theory Dynam. Systems} \textbf{30} (2010), 321--338.
+
+\bibitem{AvigadRute15}
+J.~Avigad and J.~Rute,
+Oscillation and the mean ergodic theorem for uniformly convex Banach spaces,
+\emph{Ergodic Theory Dynam. Systems} \textbf{35} (2015), 1009--1027.
+
 \bibitem{BerghLofstrom}
 J.~Bergh and J.~L\"ofstr\"om,
 \emph{Interpolation Spaces: An Introduction},
 Springer-Verlag, Berlin, 1976.
+
+\bibitem{CarlesonBlueprint}
+L.~Becker, M.~I.~de Frutos-Fernández, L.~Diedering, F.~van Doorn,
+S.~Gouëzel, A.~Jamneshan, E.~Karunus, E.~van de Meent,
+P.~Monticone, J.~Mulder-Sohn, J.~Portegies, J.~Roos,
+M.~Rothgang, R.~Srivastava, J.~Sundstrom, J.~Tan, and C.~Thiele,
+\emph{A blueprint for the formalization of Carleson's theorem on convergence of Fourier series},
+arXiv:2405.06423v2, 2025.
+
+\bibitem{CarlesonPaper}
+L.~Becker, F.~van Doorn, A.~Jamneshan, R.~Srivastava, and C.~Thiele,
+\emph{Carleson operators on doubling metric measure spaces},
+arXiv:2508.05563, 2025.
+
+\bibitem{DurcikKovacSkrebThiele19}
+P.~Durcik, V.~Kova\v{c}, K.~A.~\v{S}kreb, and C.~Thiele,
+Norm variation of ergodic averages with respect to two commuting transformations,
+\emph{Ergodic Theory Dynam. Systems} \textbf{39} (2019), 658--688.
+
+\bibitem{DurcikKovacThiele19}
+P.~Durcik, V.~Kova\v{c}, and C.~Thiele,
+Power-type cancellation for the simplex Hilbert transform,
+\emph{J. Anal. Math.} \textbf{139} (2019), 67--82.
+
+\bibitem{DurcikSlavikovaThiele22}
+P.~Durcik, L.~Slav\'ikov\'a, and C.~Thiele,
+Local bounds for singular Brascamp--Lieb forms with cubical structure,
+\emph{Math. Z.} \textbf{302} (2022), 2375--2405.
+
+\bibitem{DurcikSlavikovaThiele26}
+P.~Durcik, L.~Slav\'ikov\'a, and C.~Thiele,
+Norm-variation of triple ergodic averages for commuting transformations,
+\emph{Anal. PDE} \textbf{19} (2026), 539--586.
+
+\bibitem{DurcikThiele20}
+P.~Durcik and C.~Thiele,
+Singular Brascamp--Lieb inequalities with cubical structure,
+\emph{Bull. London Math. Soc.} \textbf{52} (2020), 283--298.
+
+\bibitem{DurcikThiele21survey}
+P.~Durcik and C.~Thiele,
+Singular Brascamp--Lieb: a survey,
+in \emph{Geometric Aspects of Harmonic Analysis},
+Springer INdAM Ser. \textbf{45},
+Springer, Cham, 2021, 321--349.
 
 \bibitem{Groechenig}
 K.~Gr\"ochenig,
@@ -9220,6 +9178,47 @@ L.~H\"ormander,
 \emph{The Analysis of Linear Partial Differential Operators I: Distribution Theory and Fourier Analysis},
 second edition, Springer-Verlag, Berlin, 1990.
 
+\bibitem{Host09}
+B.~Host,
+Ergodic seminorms for commuting transformations and applications,
+\emph{Studia Math.} \textbf{195} (2009), 31--49.
+
+\bibitem{JonesOstrovskiiRosenblatt96}
+R.~L.~Jones, I.~V.~Ostrovskii, and J.~M.~Rosenblatt,
+Square functions in ergodic theory,
+\emph{Ergodic Theory Dynam. Systems} \textbf{16} (1996), 267--305.
+
+\bibitem{JonesSeegerWright08}
+R.~L.~Jones, A.~Seeger, and J.~Wright,
+Strong variational and jump inequalities in harmonic analysis,
+\emph{Trans. Amer. Math. Soc.} \textbf{360} (2008), 6711--6742.
+
+\bibitem{Kovac12}
+V.~Kova\v{c},
+Boundedness of the twisted paraproduct,
+\emph{Rev. Mat. Iberoam.} \textbf{28} (2012), 1143--1164.
+
+\bibitem{Kovac16}
+V.~Kova\v{c},
+Quantitative norm convergence of double ergodic averages associated with two commuting group actions,
+\emph{Ergodic Theory Dynam. Systems} \textbf{36} (2016), 860--874.
+
+\bibitem{Mathlib}
+The mathlib Community,
+\emph{The Lean mathematical library},
+in \emph{Proceedings of the 9th ACM SIGPLAN International Conference
+on Certified Programs and Proofs (CPP 2020)},
+Association for Computing Machinery, New York, 2020,
+pp.~367--381,
+doi:10.1145/3372885.3373824.
+
+\bibitem{LeanPaper}
+L.~de Moura and S.~Ullrich,
+\emph{The Lean 4 theorem prover and programming language},
+in \emph{Automated Deduction -- CADE 28},
+Lecture Notes in Computer Science, vol.~12699,
+Springer, 2021, pp.~625--635.
+
 \bibitem{Pernegger2025}
 F.~Pernegger,
 \emph{Formalisation of the Calder\'on Transference Principle in Ergodic Theory},
@@ -9229,6 +9228,11 @@ Bachelor's thesis, Rheinische Friedrich-Wilhelms-Universit\"at Bonn, September 2
 T.~Tao,
 Norm convergence of multiple ergodic averages for commuting transformations,
 \emph{Ergodic Theory Dynam. Systems} \textbf{28} (2008), 657--688.
+
+\bibitem{Walsh12}
+M.~N.~Walsh,
+Norm convergence of nilpotent ergodic averages,
+\emph{Ann. of Math.} \textbf{175} (2012), 1667--1688.
 
 \bibitem{Wiener32}
 N.~Wiener,
