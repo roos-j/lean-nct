@@ -36,17 +36,19 @@ variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
 Let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $n$-tuple of complex-valued functions
 on $X$ and let $(T_j)_{j\in [n)}$ be an $n$-tuple of maps $X\to X$. For every positive integer
 $N$ and every $x\in X$, define the multiple ergodic average
-$$M_{N}(\mathbf{f})(x) = N^{-1} \sum_{0\le i<N} \prod_{0\le j<n} f_l(T_j^i x).$$
+$$M_{N}(\mathbf{f})(x) = N^{-1} \sum_{0\le i<N} \prod_{0\le j<n} f_j(T_j^i x).$$
 
-**Implementation note:** The Lean formulation also allows $N = 0$
+*Implementation note:* The Lean formulation also allows $N = 0$
 where the value is $0$ by junk value conventions.
 -/
 def multipleErgodicAverage (f : Fin n → X → ℂ) (T : Fin n → X → X) (N : ℕ) (x : X) :=
   (N : ℝ)⁻¹ * ∑ i : Fin N, ∏ j : Fin n, (f j) ((T j)^[i] x)
 
-/-- $r$-variation seminorms for sequences on the positive integers
-with values measured in a given norm.
-$$\|a\|_{V_{r}(B)} = \sup_{J\in\mathbb{N}}\ \sup_{\substack{t_0<\cdots<t_M,\\
+/--
+**Definition ($r$-variation seminorms for sequences on the positive integers).**
+
+Define
+$$\|a\|_{V_{r}(B)} = \sup_{J\in\mathbb{N}}\ \sup_{\substack{t_0<\cdots<t_J,\\
 t_j\in \mathbb{N}_{\ge 1}\;
 \text{for all}\;j\in [J+1)}} \Big(\sum_{j\in[J)} \|a(t_{j+1})- a(t_{j})\|^r\Big)^{1/r}.$$
 Note we will only use this for $r\ge 1$.
@@ -79,15 +81,36 @@ scoped notation "𝟙" => indicator (f := (1 : ℝ → ℝ))
 **Definition (Twisted average).**
 
 Let $n\in\mathbb{N}$. For an $n$-tuple of real-valued functions
-$\mathbf f = (f_i)_{i\in \mathbb{N}, i<n}$ on $\R^n$, a function $\chi:\R\to\R$
+$\mathbf f = (f_i)_{i\in \mathbb{N}, i<n}$ on $\mathbb{R}^n$, a function
+$\chi:\mathbb{R}\to\mathbb{R}$
 and $x\in\mathbb{R}^n$ denote
-$$A(\chi,\mathbf f)(x) = \int_{\mathbb{R}} \chi(s)\Big(\prod_{i\in [n)} f_i(x+se_i)\Big)\,ds.$$
+$$A(\chi,\mathbf f)(x) = \int_{\mathbb{R}} \chi(s)\Big(\prod_{i\in [n)} f_i(x+se_i)\Big)\,ds,$$
+whenever the integrand is measurable and integrable.
+Also set $A_t(\chi,\mathbf{f})=A(\chi_{(t)},\mathbf{f})$,
+where $\chi_{(t)}(x)=t^{-1}\chi(t^{-1}x)$ for $t>0$.
+
+*Implementation note:* The Lean formulation uses the Bochner integral, which takes the
+junk value $0$ when the integrand is not integrable.
+
+See also [`nCT.rescaledTwistedAverage`].
 -/
 def twistedAverage (χ : ℝ → ℝ) (f : Fin n → ℝ^n → ℝ)
     (x : ℝ^n) := ∫ s, χ s * ∏ i, f i (x + s • 𝐞 i)
 
-/-- Rescaled twisted average $A_t(\chi,\mathbf f)=A(\chi_{(t)},\mathbf f)$
-See also `nCT.twistedAverage`. -/
+/--
+**Definition (Twisted average).**
+
+Let $n\in\mathbb{N}$. For an $n$-tuple of real-valued functions
+$\mathbf f = (f_i)_{i\in \mathbb{N}, i<n}$ on $\mathbb{R}^n$, a function
+$\chi:\mathbb{R}\to\mathbb{R}$
+and $x\in\mathbb{R}^n$ denote
+$$A(\chi,\mathbf f)(x) = \int_{\mathbb{R}} \chi(s)\Big(\prod_{i\in [n)} f_i(x+se_i)\Big)\,ds,$$
+whenever the integrand is measurable and integrable.
+Also set $A_t(\chi,\mathbf{f})=A(\chi_{(t)},\mathbf{f})$,
+where $\chi_{(t)}(x)=t^{-1}\chi(t^{-1}x)$ for $t>0$.
+
+See also [`nCT.twistedAverage`].
+-/
 def rescaledTwistedAverage (t : ℝ) (χ : ℝ → ℝ) (f : Fin n → ℝ^n → ℝ) :=
     twistedAverage (rescale χ t) f
 

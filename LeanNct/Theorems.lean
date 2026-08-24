@@ -54,13 +54,12 @@ preserving transformations on $X$, and let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $
 of complex-valued measurable functions on $X$
 such that $\|f_j\|_{L^{2n}(X)}<\infty$ for all $j\in[n)$. Then $M_N(\mathbf{f})$ is measurable
 with finite $L^2(X)$ norm for every positive integer $N$ and
-
 $$
- \| M_{N} (\mathbf{f}) \|_{V_{r}(N\in\N,\ N\ge1; L^2(X))}
-\le C_{n,r}
- \prod_{l=0}^{n-1} \|f_l\|_{2n},
+ \| M_{N} (\mathbf{f}) \|_{V_{r}(L^2(X))}
+\le C_{\text{Main ergodic theorem},n,r}
+ \prod_{j=0}^{n-1} \|f_j\|_{2n},
 $$
-where $C_{n,r}$ is as defined in `nCT.C_main_ergodic_theorem`.
+where the constant is defined in [`nCT.C_main_ergodic_theorem`].
 -/
 theorem main_ergodic_theorem (hn : 2 ≤ n) {r : ℝ} (hr : 2 ^ (n - 1) < r ∨ (n = 2 ∧ 2 ≤ r))
     [SigmaFinite μ] {T : Fin n → X → X} (hT : ∀ i, MeasurePreserving (T i) μ μ)
@@ -69,7 +68,7 @@ theorem main_ergodic_theorem (hn : 2 ≤ n) {r : ℝ} (hr : 2 ^ (n - 1) < r ∨ 
     ∀ N, MemLp (multipleErgodicAverage f T N) 2 μ ∧
     variationSeminorm (eLpNorm · 2 μ) r (multipleErgodicAverage f T)
       ≤ C_main_ergodic_theorem n r * ∏ i, eLpNorm (f i) (2 * n) μ :=
-  Codex.RealToErgodic.aux_nCT_main_ergodic_theorem hn hr hT hT' hf
+  Codex.aux_nCT_main_ergodic_theorem hn hr hT hT' hf
 
 /--
 **Theorem (Main twisted theorem).**
@@ -80,17 +79,20 @@ $n$-tuple of real-valued Schwartz functions
 ${\mathbf f}=(f_i)_{i\in[n)}$ satisfying
 $$\|f_i\|_{2^{i+\min(n-i,2)}}=1$$
 for $i\in[n)$, we have
-\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f) -
-  A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_{L^2(\R^n)}^2
-\le 2^{666} J^{1-2^{-n+2}}.
+$$\sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f) -
+  A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_{L^2(\mathbb{R}^n)}^2
+\le C_{\text{Main twisted theorem}}J^{1-2^{-n+2}},
 $$
+where
+$C_{\text{Main twisted theorem}}=2^{666}.$
 
 *Implementation notes:* 1. The Lean formulation of $L^p$ norms here (`MeasureTheory.eLpNorm`) uses
 the lower Lebesgue integral, which exists regardless of measurability of the integrated function.
 This differs from standard mathematical convention. In this theorem, this does not make
 a difference, because the integrated function
 $A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f) - A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)$ is again Schwartz
-for every $j\in [J)$, and in particular measurable with finite $L^2(\R^n)$ norm.
+for every $j\in [J)$, and in particular measurable with finite $L^2(\mathbb{R}^n)$ norm.
+2. We allow $J = 0$ where the conclusion holds trivially.
 -/
 theorem main_twisted_theorem (hn : 2 ≤ n) {J : ℕ}
     {t : Fin (J + 1) → ℝ} (ht : ∀ i, 0 < t i) (ht' : StrictMono t)
@@ -98,7 +100,7 @@ theorem main_twisted_theorem (hn : 2 ≤ n) {J : ℕ}
     ∑ j : Fin J, eLpNorm (𝐀 (t (j.succ))  (𝟙 (Icc 0 1)) (f ·)
       - 𝐀 (t j.castSucc) (𝟙 (Icc 0 1)) (f ·)) 2 volume ^ 2
         ≤ 2 ^ 666 * J ^ (1 - (2 : ℝ) ^ (-(n : ℝ) + 2)) :=
-  Codex.RealToErgodic.aux_nCT_main_twisted_theorem hn ht ht' hf
+  Codex.aux_nCT_main_twisted_theorem hn ht ht' hf
 
 end
 
