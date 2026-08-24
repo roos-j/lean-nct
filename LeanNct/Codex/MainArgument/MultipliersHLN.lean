@@ -12,40 +12,37 @@ set_option linter.style.header false
 Formalization of the first part of the subsection ``Multipliers `H`, `L`, `N``.
 -/
 
-namespace Codex.MainArgument.MultipliersHLN
+namespace Codex
 
 open MeasureTheory Filter Topology Metric
 open scoped BigOperators ENNReal Real FourierTransform RealInnerProductSpace Convolution
 
-open Codex.Preliminaries.Notation
-open Codex.Preliminaries.Gaussians
-open Codex.Preliminaries.KKernels
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.Preliminaries.BumpsAndEstimates
-open Codex.Preliminaries.MKernels
-open Codex.MainArgument.SandwichKernel
 
 
 noncomputable section
 /--
-\begin{definition}[square root Gaussian difference]\label{square root Gaussian difference}
-Let $a\in A$ and $j\in\Z$.
-Define the function $s(a,j):\R \to \R$ by
-\begin{equation}\label{auto:diagonal-Gaussian-square-root}s(a,j) = \mathcal{F}^{-1}(\xi \mapsto
-\sqrt{\g(a(j-1)\xi)-\g(a(j) \xi)}).\end{equation}
-\end{definition}
+**Definition (square root Gaussian difference).**
+
+Let $a\in A$ and $j\in\mathbb{Z}$.
+Define the function $s(a,j):\mathbb{R} \to \mathbb{R}$ by
+
+$$
+s(a,j) = \mathcal{F}^{-1}(\xi \mapsto \sqrt{\mathfrak{g}(a(j-1)\xi)-\mathfrak{g}(a(j) \xi)}).
+$$
 -/
 noncomputable def squareRootGaussianDifference (a : ℤ → ℝ)
     (_ha : SpacedSequence a) (j : ℤ) :
     ℝ → ℝ := fun x =>
   ∫ ξ : ℝ,
-    Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
-      Codex.Preliminaries.Notation.gaussian (a j * ξ)) *
+    Real.sqrt (Codex.gaussian (a (j - 1) * ξ) -
+      Codex.gaussian (a j * ξ)) *
       Real.cos (2 * Real.pi * x * ξ)
 
-/-- This auxiliary Fourier identity turns the real part of the inverse Fourier transform of a
+/--
+This auxiliary Fourier identity turns the real part of the inverse Fourier transform of a
 real-valued integrable function into the cosine integral used by
-`squareRootGaussianDifference`.  It bridges the manuscript's two equivalent notations. -/
+`squareRootGaussianDifference`.  It bridges the manuscript's two equivalent notations.
+-/
 theorem aux_realInverseFourier_eq_cosineIntegral {f : ℝ → ℝ} (hf : Integrable f) (x : ℝ) :
     (FourierTransformInv.fourierInv (fun ξ : ℝ => (f ξ : ℂ)) x).re =
       ∫ ξ : ℝ, f ξ * Real.cos (2 * Real.pi * x * ξ) := by
@@ -82,24 +79,26 @@ theorem aux_realInverseFourier_eq_cosineIntegral {f : ℝ → ℝ} (hf : Integra
       rw [Real.inner_apply]
       ring_nf
 
-/-- This auxiliary lemma supplies the integrability needed to identify the manuscript's
+/--
+This auxiliary lemma supplies the integrability needed to identify the manuscript's
 cosine-integral definition of `s(a,j)` with the inverse Fourier transform in the diagonal
-square-root estimate. -/
+square-root estimate.
+-/
 theorem aux_squareRootGaussianDifference_integrable {a : ℤ → ℝ}
     (ha : SpacedSequence a) (j : ℤ) :
     Integrable (fun ξ : ℝ =>
-      Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
-        Codex.Preliminaries.Notation.gaussian (a j * ξ))) := by
+      Real.sqrt (Codex.gaussian (a (j - 1) * ξ) -
+        Codex.gaussian (a j * ξ))) := by
   have ht₀ : 0 < a (j - 1) := (ha (j - 1)).1
   have hscale : 2 * a (j - 1) ≤ a j := by
     convert (ha (j - 1)).2 using 1; ring_nf
   have hrad (ξ : ℝ) :
-      0 ≤ Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
-        Codex.Preliminaries.Notation.gaussian (a j * ξ) :=
+      0 ≤ Codex.gaussian (a (j - 1) * ξ) -
+        Codex.gaussian (a j * ξ) :=
     aux_diagonalSquareRootFrequency_nonneg (by nlinarith) hscale ξ
   have hcontinuous : Continuous (fun ξ : ℝ =>
-      Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
-        Codex.Preliminaries.Notation.gaussian (a j * ξ))) := by
+      Real.sqrt (Codex.gaussian (a (j - 1) * ξ) -
+        Codex.gaussian (a j * ξ))) := by
     apply Continuous.sqrt
     exact (gaussian_continuous.comp
       (continuous_const.mul continuous_id)).sub
@@ -112,9 +111,9 @@ theorem aux_squareRootGaussianDifference_integrable {a : ℤ → ℝ}
   refine hmajorant.mono' hcontinuous.aestronglyMeasurable (ae_of_all _ fun ξ => ?_)
   rw [Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
   calc
-    Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
-        Codex.Preliminaries.Notation.gaussian (a j * ξ)) ≤
-        Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ)) :=
+    Real.sqrt (Codex.gaussian (a (j - 1) * ξ) -
+        Codex.gaussian (a j * ξ)) ≤
+        Real.sqrt (Codex.gaussian (a (j - 1) * ξ)) :=
       Real.sqrt_le_sqrt (sub_le_self _ (aux_gaussian_pos _).le)
     _ = Real.exp (-Real.pi * (a (j - 1) * ξ) ^ 2 / 2) := by
       change Real.sqrt (Real.exp (-Real.pi * (a (j - 1) * ξ) ^ 2)) = _
@@ -123,9 +122,11 @@ theorem aux_squareRootGaussianDifference_integrable {a : ℤ → ℝ}
       congr 1
       ring
 
-/-- This auxiliary equality identifies `squareRootGaussianDifference` with the diagonal
+/--
+This auxiliary equality identifies `squareRootGaussianDifference` with the diagonal
 square-root kernel from the preliminary estimates, so their decay theorems apply directly to
-the multipliers `s_\gamma`. -/
+the multipliers `s_\gamma`.
+-/
 theorem aux_squareRootGaussianDifference_eq_diagonalSquareRoot {a : ℤ → ℝ}
     (ha : SpacedSequence a) (j : ℤ) (x : ℝ) :
     squareRootGaussianDifference a ha j x =
@@ -135,8 +136,10 @@ theorem aux_squareRootGaussianDifference_eq_diagonalSquareRoot {a : ℤ → ℝ}
     (aux_realInverseFourier_eq_cosineIntegral
       (aux_squareRootGaussianDifference_integrable ha j) x).symm
 
-/-- This auxiliary derivative identity transfers the derivative estimate for the diagonal
-square-root kernel to the cosine-integral multiplier `s(a,j)`. -/
+/--
+This auxiliary derivative identity transfers the derivative estimate for the diagonal
+square-root kernel to the cosine-integral multiplier `s(a,j)`.
+-/
 theorem aux_squareRootGaussianDifference_deriv_eq_diagonalSquareRoot {a : ℤ → ℝ}
     (ha : SpacedSequence a) (j : ℤ) (x : ℝ) :
     deriv (squareRootGaussianDifference a ha j) x =
@@ -146,22 +149,28 @@ theorem aux_squareRootGaussianDifference_deriv_eq_diagonalSquareRoot {a : ℤ �
   exact aux_squareRootGaussianDifference_eq_diagonalSquareRoot ha j y
 
 /--
-\begin{definition}[$s$ multiplier]\label{s multiplier}
-    Let $\gamma=(k,u,a)\in \Gamma$. Let $i\in [k)$ and
-    $j\in \Z$. Define  $(s_{\gamma})_{i,j}: \R \to \R$ by
-\begin{equation}\label{E:b-definition}
+**Definition ($s$ multiplier).**
+
+Let $\gamma=(k,u,a)\in \Gamma$. Let $i\in [k)$ and
+$j\in \mathbb{Z}$. Define  $(s_{\gamma})_{i,j}: \mathbb{R} \to \mathbb{R}$ by
+
+$$
    (s_{\gamma})_{i,j}=s(b,j)
-\end{equation}
+$$
+
 with
-\begin{equation}\label{auto:combined-scale-b}
+
+$$
    b(j)=\sqrt{a_{i}^0(j)^2 + a_{i}^1(j)^2}
-\end{equation}
+$$
+
 if $u_i=0$, and by
-\begin{equation}\label{auto:sandwich-square-root-factor}
+
+$$
    (s_{\gamma})_{i,j}=s(\sqrt{2}a_{i}^1,j)
-\end{equation}
+$$
+
 if $u_i=1$.
-\end{definition}
 -/
 noncomputable def sMultiplier {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) :
     ℝ → ℝ :=
@@ -175,13 +184,14 @@ noncomputable def sMultiplier {n : ℕ} (γ : GeometricParameters n) (i : Fin γ
       (smul_mem_A (γ.scales_spaced i 1) (Real.sqrt_pos.2 (by norm_num))) j
 
 /--
-\begin{proposition}\label{square root Gaussian difference W0}
-  For every $a\in\mathrm{A}$ and $j\in\mathbb{Z}$
-  we have that $s(a,j)$ is a well-defined function in $W_0(\R)$. Consequently, if $\gamma \in
-  \Gamma$ and $i\in [k)$, $j\in \Z$, then $(s_{\gamma})_{i,j}$ is a well-defined function in
-  $W_0(\R)$.
-\end{proposition}
-See also [`Codex.MainArgument.MultipliersHLN.sMultiplier_memW0`].
+**Proposition.**
+
+For every $a\in\mathrm{A}$ and $j\in\mathbb{Z}$
+we have that $s(a,j)$ is a well-defined function in $W_0(\mathbb{R})$. Consequently, if $\gamma \in
+  \Gamma$ and $i\in [k)$, $j\in \mathbb{Z}$, then $(s_{\gamma})_{i,j}$ is a well-defined function in
+  $W_0(\mathbb{R})$.
+
+See also [`Codex.sMultiplier_memW0`].
 -/
 theorem squareRootGaussianDifference_memW0 {a : ℤ → ℝ}
     (ha : SpacedSequence a) (j : ℤ) :
@@ -195,9 +205,9 @@ theorem squareRootGaussianDifference_memW0 {a : ℤ → ℝ}
   · simpa using (ha (j - 1)).2
 
 /--
-\label{square root Gaussian difference W0}
+Blueprint label `square root Gaussian difference W0`.
 
-See also [`Codex.MainArgument.MultipliersHLN.squareRootGaussianDifference_memW0`].
+See also [`Codex.squareRootGaussianDifference_memW0`].
 -/
 theorem sMultiplier_memW0 {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) :
@@ -208,47 +218,52 @@ theorem sMultiplier_memW0 {n : ℕ} (γ : GeometricParameters n)
   · apply squareRootGaussianDifference_memW0
 
 /--
-\begin{definition}[H multiplier]\label{H multiplier}
+**Definition (H multiplier).**
+
 Let $\gamma=(k,u,a)\in \Gamma$. Define
-    $H_{\gamma}=(H_\gamma)_{i\in [k),j\in \Z}$ by
-\begin{equation}\label{auto:H-kernel-definition}
-(H_{\gamma})_{i,j}:=(s_{\gamma})_{i,j}\otimes (s_{\gamma})_{i,j}
+$H_{\gamma}=(H_\gamma)_{i\in [k),j\in \mathbb{Z}}$ by
+
+$$
+(H_{\gamma})_{i,j}=(s_{\gamma})_{i,j}\otimes (s_{\gamma})_{i,j}
   -(Y_{\gamma})_{i,j}
-\end{equation}
+$$
+
 for every $i\in [k), j\in\mathbb{Z}$.
-\end{definition}
 -/
 noncomputable def hMultiplier {n : ℕ} (γ : GeometricParameters n) : DoubleSequence γ.k :=
   fun i j v => sMultiplier γ i j v.1 * sMultiplier γ i j v.2 - gaussianDifference γ i j v
 
 /--
-\begin{proposition}\label{H-in-X}
+**Proposition.**
+
 Let $\gamma=(k,u,a)\in \Gamma$. Then $H_{\gamma}\in \mathcal{X}_k$.
-\end{proposition}
 -/
 theorem hMultiplier_memDoubleSequence {n : ℕ} (γ : GeometricParameters n) :
     MemDoubleSequence γ.k (hMultiplier γ) := by
   intro i j
   change MemW0 (fun v : RealPlane =>
     sMultiplier γ i j v.1 * sMultiplier γ i j v.2 - gaussianDifference γ i j v)
-  exact Codex.Preliminaries.KKernels.aux_memW0_sub
+  exact Codex.aux_memW0_sub
     ((sMultiplier_memW0 γ i j).aux_mul_prod (sMultiplier_memW0 γ i j))
     (aux_gaussianDifference_mem γ i j)
 
 /--
-\begin{definition}\label{auto:L-kernel-definition}
-Let $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$. For $t>0$, we set
-\begin{equation}\label{auto:L-kernel-convolution}
+**Definition.**
+
+Let $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \mathbb{Z}$. For $t>0$, we set
+
+$$
 (L_{\gamma,t})_{i,j} =(H_{\gamma})_{i,j} \ast_{(1,1)} \Phi_{(t)}.
-\end{equation}
-\end{definition}
+$$
 -/
 noncomputable def lMultiplierAtScale {n : ℕ} (γ : GeometricParameters n) (t : ℝ) :
     DoubleSequence γ.k := fun i j v =>
   ∫ p : ℝ, hMultiplier γ i j (v.1 - p, v.2 - p) * standardBumpRescale t p
 
-/-- Positive rescalings of the standard bump remain in the Wiener space.  This is the
-input needed for the convolution closure in `lMultiplierAtScale_memDoubleSequence`. -/
+/--
+Positive rescalings of the standard bump remain in the Wiener space.  This is the
+input needed for the convolution closure in `lMultiplierAtScale_memDoubleSequence`.
+-/
 theorem aux_standardBumpRescale_memW0 {t : ℝ} (ht : 0 < t) :
     MemW0 (standardBumpRescale t) := by
   have hcont₀ : Continuous standardBump :=
@@ -304,14 +319,16 @@ theorem aux_standardBumpRescale_memW0 {t : ℝ} (ht : 0 < t) :
   exact hcomplex.2
 
 /--
-\begin{lemma}\label{L:F_t}
-Let $\gamma=(k,u,a)\in \Gamma$ and $t>0$. Then $L_{\gamma,t} \in \mathcal{X}_k$ and for $i\in
-[k)$, $j\in \Z$, we have
-\begin{equation}\label{auto:L-kernel-small-scale-limit}
+**Lemma.**
+
+Let $\gamma=(k,u,a)\in \Gamma$ and $t>0$. Then $L_{\gamma,t} \in \mathcal{X}_k$ and for $i\in [k)$,
+$j\in \mathbb{Z}$, we have
+
+$$
 \lim_{t\to 0_+} (L_{\gamma,t})_{i,j} = (H_{\gamma})_{i,j} \quad\text{in}\;L^1.
-\end{equation}
-\end{lemma}
-See also [`Codex.MainArgument.MultipliersHLN.lMultiplierAtScale_tendsto_hMultiplier`].
+$$
+
+See also [`Codex.lMultiplierAtScale_tendsto_hMultiplier`].
 -/
 theorem lMultiplierAtScale_memDoubleSequence {n : ℕ} (γ : GeometricParameters n)
     {t : ℝ} (ht : 0 < t) :
@@ -319,7 +336,7 @@ theorem lMultiplierAtScale_memDoubleSequence {n : ℕ} (γ : GeometricParameters
   intro i j
   have hH : MemW0 (hMultiplier γ i j) := hMultiplier_memDoubleSequence γ i j
   have hphi : MemW0 (standardBumpRescale t) := aux_standardBumpRescale_memW0 ht
-  have hconv := Codex.Preliminaries.MKernels.aux_memW0_convolutionAlong
+  have hconv := Codex.aux_memW0_convolutionAlong
     (hMultiplier γ i j) hH (standardBumpRescale t) hphi (1, 1)
   change MemW0 (fun v : RealPlane => ∫ p : ℝ,
     hMultiplier γ i j (v.1 - p, v.2 - p) * standardBumpRescale t p)
@@ -328,8 +345,10 @@ theorem lMultiplierAtScale_memDoubleSequence {n : ℕ} (γ : GeometricParameters
   rcases v with ⟨v₁, v₂⟩
   simp [smul_eq_mul, sub_eq_add_neg]
 
-/-- Translation is continuous in the ordinary `L¹` norm for Wiener functions.  This is used
-for the small-scale limit in `lMultiplierAtScale_tendsto_hMultiplier`. -/
+/--
+Translation is continuous in the ordinary `L¹` norm for Wiener functions.  This is used
+for the small-scale limit in `lMultiplierAtScale_tendsto_hMultiplier`.
+-/
 theorem aux_w0_translation_tendsto_integral_norm
     {f : RealPlane → ℝ} (hf : MemW0 f) :
     Tendsto (fun p : RealPlane => ∫ v : RealPlane, ‖f (v - p) - f v‖)
@@ -429,14 +448,14 @@ theorem aux_memW0_shear_difference
   let P : RealPlane × ℝ → ℝ := fun z => f z.1 * standardBump z.2
   have hP : MemW0 P := by
     simpa [P] using hf.aux_mul_prod aux_standardBump_memW0
-  have hPs : MemW0 (P ∘ Codex.Preliminaries.MKernels.aux_convolutionAlongShear (t, t)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP _
-  have hsub := Codex.Preliminaries.KKernels.aux_memW0_sub hPs hP
+  have hPs : MemW0 (P ∘ Codex.aux_convolutionAlongShear (t, t)) :=
+    Codex.aux_memW0_comp_continuousLinearEquiv hP _
+  have hsub := Codex.aux_memW0_sub hPs hP
   convert hsub using 1
   funext z
   rcases z with ⟨v, q⟩
-  dsimp [P, Function.comp_def, Codex.Preliminaries.MKernels.aux_convolutionAlongShear]
-  simp [sub_mul, mul_comm]
+  dsimp [P, Function.comp_def, Codex.aux_convolutionAlongShear]
+  ring
 
 /-- Integrability of the shear difference used in `lMultiplierAtScale_tendsto_hMultiplier`. -/
 theorem aux_integrable_shear_difference
@@ -445,7 +464,7 @@ theorem aux_integrable_shear_difference
       standardBump z.2 * (f (z.1 - z.2 • (t, t)) - f z.1)) := by
   let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
-  exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+  exact Codex.aux_memW0_integrable_of_addHaar
     (aux_memW0_shear_difference hf t)
 
 /-- A uniform translation bound that supplies domination for the outer integral. -/
@@ -454,7 +473,7 @@ theorem aux_translation_difference_bound
     (∫ v : RealPlane, ‖f (v - p) - f v‖) ≤
       2 * ∫ v : RealPlane, ‖f v‖ := by
   have hf_int : Integrable f :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hf
+    Codex.aux_memW0_integrable_of_addHaar hf
   have hshift : Integrable (fun v : RealPlane => f (v - p)) :=
     hf_int.comp_sub_right p
   have hleft : Integrable (fun v : RealPlane => ‖f (v - p) - f v‖) :=
@@ -554,14 +573,14 @@ theorem aux_lMultiplierAtScale_scaled_convolution_difference
   let P : RealPlane × ℝ → ℝ := fun z => f z.1 * standardBump z.2
   have hP : MemW0 P := by
     simpa [P] using hf.aux_mul_prod aux_standardBump_memW0
-  have hPs : MemW0 (P ∘ Codex.Preliminaries.MKernels.aux_convolutionAlongShear (t, t)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP _
+  have hPs : MemW0 (P ∘ Codex.aux_convolutionAlongShear (t, t)) :=
+    Codex.aux_memW0_comp_continuousLinearEquiv hP _
   have hA : Integrable (fun q : ℝ => f (v - q • (t, t)) * standardBump q) := by
     have hslice := hPs.aux_memW0_slice_of_addHaar v
-    have hslice_int := Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hslice
+    have hslice_int := Codex.aux_memW0_integrable_of_addHaar hslice
     convert hslice_int using 1
     funext q
-    dsimp [P, Function.comp_def, Codex.Preliminaries.MKernels.aux_convolutionAlongShear]
+    dsimp [P, Function.comp_def, Codex.aux_convolutionAlongShear]
   have hA' : Integrable (fun q : ℝ =>
       f (v.1 - t * q, v.2 - t * q) * standardBump q) := by
     convert hA using 1
@@ -604,19 +623,19 @@ theorem aux_lMultiplierAtScale_error_le
   let : Measure.IsAddHaarMeasure (volume : Measure (RealPlane × ℝ)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   have hphi : MemW0 (standardBumpRescale t) := aux_standardBumpRescale_memW0 ht
-  have hconv := Codex.Preliminaries.MKernels.aux_memW0_convolutionAlong
+  have hconv := Codex.aux_memW0_convolutionAlong
     f hf (standardBumpRescale t) hphi (1, 1)
   have hconv_int : Integrable (fun v : RealPlane => ∫ p : ℝ,
       f (v.1 - p, v.2 - p) * standardBumpRescale t p) := by
     have hconv' : Integrable (fun v : RealPlane => ∫ p : ℝ,
         f (v - p • (1, 1)) * standardBumpRescale t p) :=
-      Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hconv
+      Codex.aux_memW0_integrable_of_addHaar hconv
     convert hconv' using 1
     funext v
     rcases v with ⟨v₁, v₂⟩
     simp [smul_eq_mul, sub_eq_add_neg]
   have hf_int : Integrable f :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hf
+    Codex.aux_memW0_integrable_of_addHaar hf
   have hleft : Integrable (fun v : RealPlane =>
       |(∫ p : ℝ, f (v.1 - p, v.2 - p) * standardBumpRescale t p) - f v|) := by
     simpa only [Pi.sub_apply, Real.norm_eq_abs] using (hconv_int.sub hf_int).norm
@@ -660,9 +679,9 @@ theorem aux_lMultiplierAtScale_tendsto_integral_norm
     exact aux_lMultiplierAtScale_error_le hf t ht
 
 /--
-\label{L:F_t}
+Blueprint label `L:F_t`.
 
-See also [`Codex.MainArgument.MultipliersHLN.lMultiplierAtScale_memDoubleSequence`].
+See also [`Codex.lMultiplierAtScale_memDoubleSequence`].
 -/
 theorem lMultiplierAtScale_tendsto_hMultiplier
     {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) :
@@ -685,44 +704,51 @@ theorem lMultiplierAtScale_tendsto_hMultiplier
   · exact Filter.Eventually.of_forall fun _ => bot_le
   · filter_upwards [self_mem_nhdsWithin] with t ht
     have hL : Integrable (lMultiplierAtScale γ t i j) :=
-      Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      Codex.aux_memW0_integrable_of_addHaar
         (lMultiplierAtScale_memDoubleSequence γ ht i j)
     have hH : Integrable (hMultiplier γ i j) :=
-      Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      Codex.aux_memW0_integrable_of_addHaar
         (hMultiplier_memDoubleSequence γ i j)
     refine aux_eLpNorm_one_le_of_integral_norm_le (hL.sub hH) ?_
     simp only [Pi.sub_apply, Real.norm_eq_abs]
     exact le_rfl
 
 /--
-\begin{definition}[L multiplier]\label{L multiplier}
+**Definition (L multiplier).**
+
 Let $\gamma=(k,u,a)\in \Gamma$.
+
 Define the index set
-\begin{equation}\label{auto:L-kernel-index-set}\mathcal{I}_{\gamma} =
-\{(m,0)\,:\,m\in\mathbb{Z}, m\not=0\} \cup \{(0,l)\,:\,|l|\le \Delta_{\gamma}\} \subset
-\mathbb{Z}^2.\end{equation}
+
+$$
+\mathcal{I}_{\gamma} = \{(m,0)\,:\,m\in\mathbb{Z}, m\not=0\} \cup \{(0,l)\,:\,|l|\le
+\Delta_{\gamma}\} \subset \mathbb{Z}^2.
+$$
 
 For every $\iota \in\mathcal{I}_{\gamma}$, we define  $L_{\gamma,\iota}=(L_{\gamma,\iota})_{i\in
-[k),j\in \Z}$
+[k),j\in \mathbb{Z}}$
 such that for $|l|\le \Delta_{\gamma}$,
-\begin{equation}\label{auto:L-kernel-central-band}
-  (L_{\gamma,(0,l)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)}
+
+$$
+(L_{\gamma,(0,l)})_{i,j}= (H_{\gamma})_{i,j} \ast_{(1,1)}
   (\Phi_{(a_i^1(j+l-1))}-\Phi_{(a_i^1(j+l))})\, ,
- \end{equation}
+$$
 
 if $h>0$, then
-\begin{equation}\label{auto:L-kernel-positive-band}
-(L_{\gamma,(h,0)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)}
-(\Phi_{(2^{h-1}a_i^1(j+\Delta_{\gamma}))}-\Phi_{(2^{h}a_i^1(j+\Delta_{\gamma}))})\, ,
-\end{equation}
-and if $h<0$, then
-\begin{equation}\label{auto:L-kernel-negative-band}
- (L_{\gamma,(h,0)})_{i,j}:= (H_{\gamma})_{i,j} \ast_{(1,1)}
- (\Phi_{(2^{h}a_i^1(j-\Delta_{\gamma}-1))}-\Phi_{(2^{h+1}a_i^1(j-\Delta_{\gamma}-1))})\, .
-\end{equation}
-\end{definition}
 
-See also [`Codex.MainArgument.MultipliersHLN.lMultiplier`].
+$$
+(L_{\gamma,(h,0)})_{i,j}= (H_{\gamma})_{i,j} \ast_{(1,1)}
+(\Phi_{(2^{h-1}a_i^1(j+\Delta_{\gamma}))}-\Phi_{(2^{h}a_i^1(j+\Delta_{\gamma}))})\, ,
+$$
+
+and if $h<0$, then
+
+$$
+(L_{\gamma,(h,0)})_{i,j}= (H_{\gamma})_{i,j} \ast_{(1,1)}
+ (\Phi_{(2^{h}a_i^1(j-\Delta_{\gamma}-1))}-\Phi_{(2^{h+1}a_i^1(j-\Delta_{\gamma}-1))})\, .
+$$
+
+See also [`Codex.lMultiplier`].
 -/
 def multiplierIndexSet {n : ℕ} (γ : GeometricParameters n) : Set (ℤ × ℤ) :=
   {ι | (ι.1 ≠ 0 ∧ ι.2 = 0) ∨ (ι.1 = 0 ∧ ι.2.natAbs ≤ geometricDelta γ)}
@@ -740,16 +766,18 @@ noncomputable def aux_multiplierIndexTruncation {n : ℕ} (γ : GeometricParamet
       (fun ι => ι ∈ multiplierIndexSet γ)
 
 /--
-\begin{definition}[Summation over $\mathcal I_{\gamma}$]\label{summation-definition}
-Let $X$ be a normed $\R$-vector space.
+**Definition (Summation over $\mathcal I_{\gamma}$).**
+
+Let $X$ be a normed $\mathbb{R}$-vector space.
 Let $\gamma=(k,u,a)\in \Gamma$ and let $D_\iota \in X$ for $\iota \in \mathcal{I}_{\gamma}$. We
 define
-\begin{equation}\label{auto:symmetric-series-definition}
-\sum_{\iota \in \mathcal{I}_{\gamma}} D_{\iota}:=\lim_{N\to \infty} \sum_{\iota
-\in\mathcal{I}_{\gamma}, ~|\iota| \leq N} D_{\iota},
-\end{equation}
+
+$$
+\sum_{\iota \in \mathcal{I}_{\gamma}} D_{\iota}=\lim_{N\to \infty} \sum_{\iota
+\in\mathcal{I}_{\gamma},  |\iota| \leq N} D_{\iota},
+$$
+
 where the limit is taken in $X$.
-\end{definition}
 -/
 noncomputable def sumOverMultiplierIndex {n : ℕ} {X : Type*} [NormedAddCommGroup X]
     (γ : GeometricParameters n) (D : MultiplierIndex γ → X) : X := by
@@ -766,9 +794,9 @@ noncomputable def sumOverMultiplierIndexENNReal {n : ℕ}
     if hι : ι ∈ multiplierIndexSet γ then D ⟨ι, hι⟩ else 0
 
 /--
-\label{L multiplier}
+Blueprint label `L multiplier`.
 
-See also [`Codex.MainArgument.MultipliersHLN.multiplierIndexSet`].
+See also [`Codex.multiplierIndexSet`].
 -/
 noncomputable def lMultiplier {n : ℕ} (γ : GeometricParameters n) (ι : MultiplierIndex γ) :
     DoubleSequence γ.k := fun i j v =>
@@ -955,9 +983,9 @@ theorem aux_fourierPlane_diagonalConvolution
   have hcomplex := aux_fourierPlaneComplex_diagonalConvolution
     (fun v : RealPlane => (F v : ℂ)) (fun p : ℝ => (ρ p : ℂ))
     (Complex.continuous_ofReal.comp hF.1)
-      (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hF).ofReal
+      (Codex.aux_memW0_integrable_of_addHaar hF).ofReal
     (Complex.continuous_ofReal.comp hρ.1)
-      (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hρ).ofReal ξ
+      (Codex.aux_memW0_integrable_of_addHaar hρ).ofReal ξ
   have hconv (v : RealPlane) :
       ((∫ p : ℝ, F (v.1 - p, v.2 - p) * ρ p : ℝ) : ℂ) =
         ∫ p : ℝ, (F (v.1 - p, v.2 - p) : ℂ) * (ρ p : ℂ) := by
@@ -1007,7 +1035,7 @@ theorem aux_fourierPlane_lMultiplier_vertical {n : ℕ}
   have hphi : MemW0 (fun p : ℝ =>
       standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) p -
         standardBumpRescale (γ.scales i 1 (j + ι.1.2)) p) :=
-    Codex.Preliminaries.KKernels.aux_memW0_sub
+    Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0
         (aux_spacedSequence_pos (γ.scales_spaced i 1) _))
       (aux_standardBumpRescale_memW0
@@ -1039,7 +1067,7 @@ theorem aux_fourierPlane_lMultiplier_positive {n : ℕ}
         γ.scales i 1 (j + (geometricDelta γ : ℤ))) p -
       standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
         γ.scales i 1 (j + (geometricDelta γ : ℤ))) p) :=
-    Codex.Preliminaries.KKernels.aux_memW0_sub
+    Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0
         (mul_pos (zpow_pos (by norm_num) _)
           (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
@@ -1075,7 +1103,7 @@ theorem aux_fourierPlane_lMultiplier_negative {n : ℕ}
         γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p -
       standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
         γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p) :=
-    Codex.Preliminaries.KKernels.aux_memW0_sub
+    Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0
         (mul_pos (zpow_pos (by norm_num) _)
           (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
@@ -1198,8 +1226,8 @@ theorem aux_fourierReal_sub (f g : ℝ → ℝ)
           ring_nf,
       Complex.norm_exp]
     norm_num
-  have hfint := Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hf
-  have hgint := Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hg
+  have hfint := Codex.aux_memW0_integrable_of_addHaar hf
+  have hgint := Codex.aux_memW0_integrable_of_addHaar hg
   have hf' : Integrable (fun x : ℝ => (f x : ℂ) * e x) := by
     apply (hfint.ofReal.bdd_mul he.aestronglyMeasurable (ae_of_all _ he_bound)).congr
     filter_upwards [] with x
@@ -1289,16 +1317,16 @@ theorem aux_fourierPlane_lMultiplier_negative_phiHat {n : ℕ}
 theorem aux_squareRootGaussianDifference_fourier {a : ℤ → ℝ}
     (ha : SpacedSequence a) (j : ℤ) (ξ : ℝ) :
     aux_fourierReal (squareRootGaussianDifference a ha j) ξ =
-      (Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
-        Codex.Preliminaries.Notation.gaussian (a j * ξ)) : ℂ) := by
+      (Real.sqrt (Codex.gaussian (a (j - 1) * ξ) -
+        Codex.gaussian (a j * ξ)) : ℂ) := by
   let f : ℝ → ℝ := fun η =>
-    Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * η) -
-      Codex.Preliminaries.Notation.gaussian (a j * η))
+    Real.sqrt (Codex.gaussian (a (j - 1) * η) -
+      Codex.gaussian (a j * η))
   have hf : Integrable f := by
     simpa only [f] using aux_squareRootGaussianDifference_integrable ha j
   have hfeven : ∀ η : ℝ, f (-η) = f η := by
     intro η
-    simp [f, Codex.Preliminaries.Notation.gaussian]
+    simp [f, Codex.gaussian]
   have hcont : Continuous f := by
     dsimp [f]
     apply Continuous.sqrt
@@ -1323,7 +1351,7 @@ theorem aux_squareRootGaussianDifference_fourier {a : ℤ → ℝ}
     filter_upwards [] with η
     exact_mod_cast hfeven η
   have hsint : Integrable (fun x : ℝ => (squareRootGaussianDifference a ha j x : ℂ)) := by
-    exact (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    exact (Codex.aux_memW0_integrable_of_addHaar
       (squareRootGaussianDifference_memW0 ha j)).ofReal
   have hfourierint : Integrable (FourierTransform.fourier (fun η : ℝ => (f η : ℂ))) := by
     rw [← hinv_eq_fourier, ← funext hs_eq_inv]
@@ -1344,7 +1372,7 @@ theorem aux_squareRootGaussianDifference_fourier {a : ℤ → ℝ}
 /-- The normalized rescaled Gaussian has its expected raw Fourier transform. -/
 theorem aux_fourierReal_gaussianRescale (t : ℝ) (ht : 0 < t) (ξ : ℝ) :
     aux_fourierReal (gaussianRescale t) ξ =
-      (Codex.Preliminaries.Notation.gaussian (t * ξ) : ℂ) := by
+      (Codex.gaussian (t * ξ) : ℂ) := by
   rw [aux_fourierReal_eq_fourier]
   exact congrFun (gaussianRescale_fourier t ht) ξ
 
@@ -1352,8 +1380,8 @@ theorem aux_fourierReal_gaussianRescale (t : ℝ) (ht : 0 < t) (ξ : ℝ) :
 theorem aux_fourierPlane_twoDimensionalGaussian_zero (q : Fin 2 → ℝ)
     (hq : ∀ r, 0 < q r) (ξ η : ℝ) :
     aux_fourierPlane (twoDimensionalGaussian q 0) (ξ, η) =
-      (Codex.Preliminaries.Notation.gaussian (q 0 * ξ) *
-        Codex.Preliminaries.Notation.gaussian (q 1 * η) : ℂ) := by
+      (Codex.gaussian (q 0 * ξ) *
+        Codex.gaussian (q 1 * η) : ℂ) := by
   rw [show twoDimensionalGaussian q 0 =
       fun v : RealPlane => gaussianRescale (q 0) v.1 * gaussianRescale (q 1) v.2 by
         ext v
@@ -1366,8 +1394,8 @@ theorem aux_fourierPlane_twoDimensionalGaussian_zero (q : Fin 2 → ℝ)
 theorem aux_fourierPlane_twoDimensionalGaussian_one (q : Fin 2 → ℝ)
     (hq : ∀ r, 0 < q r) (ξ η : ℝ) :
     aux_fourierPlane (twoDimensionalGaussian q 1) (ξ, η) =
-      (Codex.Preliminaries.Notation.gaussian (q 0 * ((ξ + η) / Real.sqrt 2)) *
-        Codex.Preliminaries.Notation.gaussian (q 1 * ((-ξ + η) / Real.sqrt 2)) : ℂ) := by
+      (Codex.gaussian (q 0 * ((ξ + η) / Real.sqrt 2)) *
+        Codex.gaussian (q 1 * ((-ξ + η) / Real.sqrt 2)) : ℂ) := by
   let g : RealPlane → ℝ := fun w =>
     gaussianRescale (q 0) w.1 * gaussianRescale (q 1) w.2
   let F : RealPlane → ℂ := fun w => (g w : ℂ) * Complex.exp
@@ -1413,11 +1441,11 @@ theorem aux_fourierPlane_twoDimensionalGaussian_one (q : Fin 2 → ℝ)
 
 /-- The two identity-orientation Fourier factors combine into the diagonal scale. -/
 theorem aux_gaussian_mul_diag (a b x : ℝ) :
-    (Codex.Preliminaries.Notation.gaussian (a * x) *
-      Codex.Preliminaries.Notation.gaussian (b * (-x)) : ℂ) =
-      (Codex.Preliminaries.Notation.gaussian (Real.sqrt (a ^ 2 + b ^ 2) * x) : ℂ) := by
+    (Codex.gaussian (a * x) *
+      Codex.gaussian (b * (-x)) : ℂ) =
+      (Codex.gaussian (Real.sqrt (a ^ 2 + b ^ 2) * x) : ℂ) := by
   norm_cast
-  unfold Codex.Preliminaries.Notation.gaussian
+  unfold Codex.gaussian
   rw [← Real.exp_add]
   congr 1
   have hsqrt : Real.sqrt (a ^ 2 + b ^ 2) ^ 2 = a ^ 2 + b ^ 2 :=
@@ -1430,9 +1458,9 @@ theorem aux_gaussian_mul_diag (a b x : ℝ) :
 
 /-- The rotated diagonal frequency reduces to the second scale. -/
 theorem aux_gaussian_wOne_diag (a x : ℝ) :
-    (Codex.Preliminaries.Notation.gaussian
+    (Codex.gaussian
       (a * ((-x + -x) / Real.sqrt 2)) : ℂ) =
-      (Codex.Preliminaries.Notation.gaussian (Real.sqrt 2 * a * x) : ℂ) := by
+      (Codex.gaussian (Real.sqrt 2 * a * x) : ℂ) := by
   have hsqrt : (Real.sqrt 2) ^ 2 = 2 := by norm_num
   have hroot : Real.sqrt 2 ≠ 0 := Real.sqrt_ne_zero'.mpr (by norm_num)
   have harg : a * ((-x + -x) / Real.sqrt 2) = -(Real.sqrt 2 * a * x) := by
@@ -1440,17 +1468,17 @@ theorem aux_gaussian_wOne_diag (a x : ℝ) :
     rw [hsqrt]
     ring
   rw [harg]
-  simp [Codex.Preliminaries.Notation.gaussian]
+  simp [Codex.gaussian]
 
 /-- The Fourier transform of a gamma Gaussian on the anti-diagonal. -/
 theorem aux_gammaGaussian_fourier_diagonal {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) (ξ : ℝ) :
     aux_fourierPlane (gammaGaussian γ i j) (ξ, -ξ) =
       if _h : γ.orientation i = 0 then
-        (Codex.Preliminaries.Notation.gaussian
+        (Codex.gaussian
           (Real.sqrt ((γ.scales i 0 j) ^ 2 + (γ.scales i 1 j) ^ 2) * ξ) : ℂ)
       else
-        (Codex.Preliminaries.Notation.gaussian
+        (Codex.gaussian
           (Real.sqrt 2 * γ.scales i 1 j * ξ) : ℂ) := by
   have horient : γ.orientation i = 0 ∨ γ.orientation i = 1 := by
     have hfin (u : Fin 2) : u = 0 ∨ u = 1 := by
@@ -1470,9 +1498,9 @@ theorem aux_gammaGaussian_fourier_diagonal {n : ℕ} (γ : GeometricParameters n
     rw [gammaGaussian, hone,
       aux_fourierPlane_twoDimensionalGaussian_one
         (fun r => γ.scales i r j) hq ξ (-ξ)]
-    have hzero : Codex.Preliminaries.Notation.gaussian
+    have hzero : Codex.gaussian
         (γ.scales i 0 j * ((ξ + -ξ) / Real.sqrt 2)) = 1 := by
-      simp [Codex.Preliminaries.Notation.gaussian]
+      simp [Codex.gaussian]
     rw [hzero]
     norm_num
     exact_mod_cast aux_gaussian_wOne_diag (γ.scales i 1 j) ξ
@@ -1482,22 +1510,22 @@ theorem aux_squareRootGaussianDifference_fourier_diagonal {a : ℤ → ℝ}
     (ha : SpacedSequence a) (j : ℤ) (ξ : ℝ) :
     aux_fourierReal (squareRootGaussianDifference a ha j) ξ *
       aux_fourierReal (squareRootGaussianDifference a ha j) (-ξ) =
-      (Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
-        Codex.Preliminaries.Notation.gaussian (a j * ξ) : ℂ) := by
+      (Codex.gaussian (a (j - 1) * ξ) -
+        Codex.gaussian (a j * ξ) : ℂ) := by
   rw [aux_squareRootGaussianDifference_fourier ha j ξ,
     aux_squareRootGaussianDifference_fourier ha j (-ξ)]
   have hscale : 2 * a (j - 1) ≤ a j := by
     convert (ha (j - 1)).2 using 1; ring_nf
-  have hrad : 0 ≤ Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
-      Codex.Preliminaries.Notation.gaussian (a j * ξ) :=
+  have hrad : 0 ≤ Codex.gaussian (a (j - 1) * ξ) -
+      Codex.gaussian (a j * ξ) :=
     aux_diagonalSquareRootFrequency_nonneg (by nlinarith [(ha (j - 1)).1]) hscale ξ
   have hneg :
-      Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * -ξ) -
-        Codex.Preliminaries.Notation.gaussian (a j * -ξ)) =
-      Real.sqrt (Codex.Preliminaries.Notation.gaussian (a (j - 1) * ξ) -
-        Codex.Preliminaries.Notation.gaussian (a j * ξ)) := by
+      Real.sqrt (Codex.gaussian (a (j - 1) * -ξ) -
+        Codex.gaussian (a j * -ξ)) =
+      Real.sqrt (Codex.gaussian (a (j - 1) * ξ) -
+        Codex.gaussian (a j * ξ)) := by
     congr 1
-    simp [Codex.Preliminaries.Notation.gaussian]
+    simp [Codex.gaussian]
   rw [hneg]
   norm_cast
   simpa [pow_two] using Real.sq_sqrt hrad
@@ -1508,14 +1536,14 @@ theorem aux_sMultiplier_tensor_fourier_diagonal {n : ℕ}
     aux_fourierPlane (fun v : RealPlane =>
       sMultiplier γ i j v.1 * sMultiplier γ i j v.2) (ξ, -ξ) =
       if _h : γ.orientation i = 0 then
-        (Codex.Preliminaries.Notation.gaussian
+        (Codex.gaussian
           (Real.sqrt ((γ.scales i 0 (j - 1)) ^ 2 + (γ.scales i 1 (j - 1)) ^ 2) * ξ) -
-          Codex.Preliminaries.Notation.gaussian
+          Codex.gaussian
             (Real.sqrt ((γ.scales i 0 j) ^ 2 + (γ.scales i 1 j) ^ 2) * ξ) : ℂ)
       else
-        (Codex.Preliminaries.Notation.gaussian
+        (Codex.gaussian
           (Real.sqrt 2 * γ.scales i 1 (j - 1) * ξ) -
-          Codex.Preliminaries.Notation.gaussian
+          Codex.gaussian
             (Real.sqrt 2 * γ.scales i 1 j * ξ) : ℂ) := by
   by_cases h : γ.orientation i = 0
   · rw [dif_pos h, aux_fourierPlane_tensor, sMultiplier, dif_pos h]
@@ -1573,18 +1601,19 @@ theorem aux_gaussianDifference_fourier_diagonal {n : ℕ}
         aux_fourierPlane (gammaGaussian γ i j) (ξ, -ξ) := by
   unfold gaussianDifference
   apply aux_fourierPlane_sub
-  · exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+  · exact Codex.aux_memW0_integrable_of_addHaar
       (aux_gammaGaussian_memW0 γ i (j - 1))
-  · exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+  · exact Codex.aux_memW0_integrable_of_addHaar
       (aux_gammaGaussian_memW0 γ i j)
 
 /--
-\begin{proposition}[H vanishing]\label{H vanishing}
-    For $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$, and $\xi\in \R$,
-\begin{equation}\label{auto:H-kernel-diagonal-cancellation-Fourier}
+**Proposition (H vanishing).**
+
+For $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \mathbb{Z}$, and $\xi\in \mathbb{R}$,
+
+$$
     \widehat{(H_{\gamma})_{i,j}}(\xi,-\xi)=0\, .
-\end{equation}
-\end{proposition}
+$$
 -/
 theorem hMultiplier_fourier_diagonal_vanishing {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) (ξ : ℝ) :
@@ -1601,9 +1630,9 @@ theorem hMultiplier_fourier_diagonal_vanishing {n : ℕ}
       ring
     · simp only [dif_neg h]
       ring
-  · exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+  · exact Codex.aux_memW0_integrable_of_addHaar
       ((sMultiplier_memW0 γ i j).aux_mul_prod (sMultiplier_memW0 γ i j))
-  · exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+  · exact Codex.aux_memW0_integrable_of_addHaar
       (aux_gaussianDifference_mem γ i j)
 
 /-- The measure-preserving shear turning a diagonal line integral into a coordinate slice. -/
@@ -1653,10 +1682,10 @@ theorem aux_fourierReal_diagonalSlice (f : RealPlane → ℝ) (hf : MemW0 f)
   let S : RealPlane → ℝ := fun q => f (aux_diagonalShear q)
   have hS : MemW0 S := by
     change MemW0 (f ∘ (aux_diagonalShear : RealPlane → RealPlane))
-    exact Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hf
+    exact Codex.aux_memW0_comp_continuousLinearEquiv hf
       aux_diagonalShear
   have hSint : Integrable S :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hS
+    Codex.aux_memW0_integrable_of_addHaar hS
   let phase : RealPlane → ℂ := fun q => Complex.exp
     (-((2 : ℂ) * Real.pi * Complex.I * q.1 * ξ))
   have hphase : Continuous phase := by
@@ -1726,12 +1755,13 @@ theorem aux_fourierReal_diagonalSlice (f : RealPlane → ℝ) (hf : MemW0 f)
           ring_nf
 
 /--
-\begin{proposition}[H vanishing integral]\label{H vanishing integral}
-    For $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$, and $z\in \R$,
-\begin{equation}\label{auto:H-kernel-diagonal-cancellation-integral}
-   \int_{\R} (H_{\gamma})_{i,j}(z+p,p)\,dp=0.
-\end{equation}
-\end{proposition}
+**Proposition (H vanishing integral).**
+
+For $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \mathbb{Z}$, and $z\in \mathbb{R}$,
+
+$$
+   \int_{\mathbb{R}} (H_{\gamma})_{i,j}(z+p,p)\,dp=0.
+$$
 -/
 theorem hMultiplier_vanishing_integral {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) (z : ℝ) :
@@ -1739,10 +1769,10 @@ theorem hMultiplier_vanishing_integral {n : ℕ} (γ : GeometricParameters n)
   have hH : MemW0 (hMultiplier γ i j) := hMultiplier_memDoubleSequence γ i j
   let L : ℝ → ℝ := fun u => ∫ p : ℝ, hMultiplier γ i j (u + p, p)
   have hS : MemW0 (fun q : RealPlane => hMultiplier γ i j (aux_diagonalShear q)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hH
+    Codex.aux_memW0_comp_continuousLinearEquiv hH
       aux_diagonalShear
   have hL : MemW0 L := by
-    have hslice := Codex.Preliminaries.KKernels.aux_memW0_integral_slice_of_addHaar hS
+    have hslice := Codex.aux_memW0_integral_slice_of_addHaar hS
     have hslice_eq :
         (fun u : ℝ => ∫ v : ℝ,
           hMultiplier γ i j (aux_diagonalShear (u, v))) = L := by
@@ -1751,7 +1781,7 @@ theorem hMultiplier_vanishing_integral {n : ℕ} (γ : GeometricParameters n)
     rw [hslice_eq] at hslice
     exact hslice
   have hLInt : Integrable (fun u : ℝ => (L u : ℂ)) :=
-    (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hL).ofReal
+    (Codex.aux_memW0_integrable_of_addHaar hL).ofReal
   have hLCont : Continuous (fun u : ℝ => (L u : ℂ)) :=
     Complex.continuous_ofReal.comp hL.1
   have hFourierZero (ξ : ℝ) :
@@ -1949,7 +1979,7 @@ theorem aux_w0_translation_integral_norm_continuous_oneDim
     Continuous (fun p : ℝ => ∫ z : ℝ, ‖f (z - p) - f z‖) := by
   let ω : ℝ → ℝ := fun p => ∫ z : ℝ, ‖f (z - p) - f z‖
   have hfint : Integrable f :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hf
+    Codex.aux_memW0_integrable_of_addHaar hf
   have hω_diff (p p₀ : ℝ) : |ω p - ω p₀| ≤ ω (p - p₀) := by
     have hA : Integrable (fun z : ℝ => f (z - p) - f z) :=
       (hfint.comp_sub_right p).sub hfint
@@ -2119,12 +2149,12 @@ theorem aux_lMultiplierAtScale_largeScaleIntegrand_memW0
   have hP : MemW0 P := by
     simpa [P] using hF.aux_mul_prod (aux_standardBumpRescale_memW0 ht)
   have hshift : MemW0 (P ∘ aux_lMultiplierAtScale_largeScaleShear) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP
+    Codex.aux_memW0_comp_continuousLinearEquiv hP
       aux_lMultiplierAtScale_largeScaleShear
   have hplain : MemW0 (P ∘ aux_lMultiplierAtScale_largeScaleReorder) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP
+    Codex.aux_memW0_comp_continuousLinearEquiv hP
       aux_lMultiplierAtScale_largeScaleReorder
-  have hsub := Codex.Preliminaries.KKernels.aux_memW0_sub hshift hplain
+  have hsub := Codex.aux_memW0_sub hshift hplain
   convert hsub using 1
   funext z
   rcases z with ⟨⟨x, y⟩, q⟩
@@ -2149,24 +2179,24 @@ theorem aux_lMultiplierAtScale_largeScaleConvolution_bound
   have hKmem : MemW0 K := by
     simpa [K, φ] using aux_lMultiplierAtScale_largeScaleIntegrand_memW0 hF t ht
   have hK : Integrable K :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hKmem
+    Codex.aux_memW0_integrable_of_addHaar hKmem
   have hFint : Integrable F :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hF
+    Codex.aux_memW0_integrable_of_addHaar hF
   have hφmem : MemW0 φ := by
     simpa [φ] using aux_standardBumpRescale_memW0 ht
   have hφint : Integrable φ :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hφmem
+    Codex.aux_memW0_integrable_of_addHaar hφmem
   let C : RealPlane → ℝ := fun xy => ∫ q : ℝ, F (xy.1, q) * φ (xy.2 - q)
   let R : RealPlane → ℝ := fun xy => ∫ q : ℝ, ‖K (xy, q)‖
   have hC_eq (xy : RealPlane) : C xy = ∫ q : ℝ, K (xy, q) := by
     have hFslice_mem : MemW0 (fun q : ℝ => F (xy.1, q)) :=
       hF.aux_memW0_slice_of_addHaar xy.1
     have hFslice : Integrable (fun q : ℝ => F (xy.1, q)) :=
-      Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hFslice_mem
+      Codex.aux_memW0_integrable_of_addHaar hFslice_mem
     have hB : Integrable (fun q : ℝ => F (xy.1, q) * φ xy.2) :=
       hFslice.mul_const _
     have hKslice : Integrable (fun q : ℝ => K (xy, q)) :=
-      Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      Codex.aux_memW0_integrable_of_addHaar
         (hKmem.aux_memW0_slice_of_addHaar xy)
     have hA : Integrable (fun q : ℝ => F (xy.1, q) * φ (xy.2 - q)) := by
       have hsum := hKslice.add hB
@@ -2206,7 +2236,7 @@ theorem aux_lMultiplierAtScale_largeScaleConvolution_bound
     exact integral_mono hCnorm hR hpoint
   let Fswap : RealPlane → ℝ := fun xq => F (xq.2, xq.1)
   have hFswap : MemW0 Fswap := by
-    have hs := Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hF
+    have hs := Codex.aux_memW0_comp_continuousLinearEquiv hF
       (ContinuousLinearEquiv.prodComm ℝ ℝ ℝ)
     convert hs using 1
     funext xq
@@ -2220,7 +2250,7 @@ theorem aux_lMultiplierAtScale_largeScaleConvolution_bound
       have hs := hFswap.aux_memW0_slice_of_addHaar q
       convert hs using 1
     have hFx : Integrable (fun x : ℝ => ‖F (x, q)‖) :=
-      (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hFxmem).norm
+      (Codex.aux_memW0_integrable_of_addHaar hFxmem).norm
     have hφdiff : Integrable (fun y : ℝ => φ (y - q) - φ y) :=
       (hφint.comp_sub_right q).sub hφint
     have hφnorm : Integrable (fun y : ℝ => ‖φ (y - q) - φ y‖) := hφdiff.norm
@@ -2265,13 +2295,13 @@ theorem aux_lMultiplierAtScale_tendsto_integral_norm_atTop
   have hH : MemW0 (hMultiplier γ i j) := hMultiplier_memDoubleSequence γ i j
   have hF : MemW0 F := by
     change MemW0 (hMultiplier γ i j ∘ aux_diagonalShear)
-    exact Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hH
+    exact Codex.aux_memW0_comp_continuousLinearEquiv hH
       aux_diagonalShear
   have hzero (x : ℝ) : (∫ q : ℝ, F (x, q)) = 0 := by
     exact hMultiplier_vanishing_integral γ i j x
   let g : ℝ → ℝ := fun q => ∫ x : ℝ, ‖F (x, q)‖
   have hFint : Integrable F :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hF
+    Codex.aux_memW0_integrable_of_addHaar hF
   have hg : Integrable g := by
     simpa [g] using hFint.integral_norm_prod_right
   have hg_nonneg (q : ℝ) : 0 ≤ g q := by
@@ -2327,12 +2357,13 @@ theorem aux_lMultiplierAtScale_tendsto_integral_norm_atTop
             ring
 
 /--
-\begin{lemma}\label{L:ft-infty}
-Let $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$, $t>0$. Then
-\begin{equation}\label{auto:L-kernel-large-scale-limit}
+**Lemma.**
+
+Let $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \mathbb{Z}$, $t>0$. Then
+
+$$
 \lim_{t\to \infty} (L_{\gamma,t})_{i,j} = 0 \quad\text{in}\;L^1.
-\end{equation}
-\end{lemma}
+$$
 -/
 theorem lMultiplierAtScale_tendsto_zero
     {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) :
@@ -2347,7 +2378,7 @@ theorem lMultiplierAtScale_tendsto_zero
   · exact Filter.Eventually.of_forall fun _ => bot_le
   · filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
     have hL : Integrable (lMultiplierAtScale γ t i j) :=
-      Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+      Codex.aux_memW0_integrable_of_addHaar
         (lMultiplierAtScale_memDoubleSequence γ ht i j)
     refine aux_eLpNorm_one_le_of_integral_norm_le hL ?_
     simp only [Real.norm_eq_abs]
@@ -2358,13 +2389,13 @@ theorem aux_hMultiplier_diagonal_translate_integrable
     Integrable (fun p : ℝ => hMultiplier γ i j (v.1 - p, v.2 - p)) := by
   let S : RealPlane → ℝ := hMultiplier γ i j ∘ aux_diagonalShear
   have hS : MemW0 S := by
-    exact Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv
+    exact Codex.aux_memW0_comp_continuousLinearEquiv
       (hMultiplier_memDoubleSequence γ i j) aux_diagonalShear
   have hG : MemW0 (fun q : ℝ => hMultiplier γ i j ((v.1 - v.2) + q, q)) := by
     simpa [S, Function.comp_def, aux_diagonalShear] using
       hS.aux_memW0_slice_of_addHaar (v.1 - v.2)
   have hGint : Integrable (fun q : ℝ => hMultiplier γ i j ((v.1 - v.2) + q, q)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hG
+    Codex.aux_memW0_integrable_of_addHaar hG
   have hmp : MeasurePreserving (fun p : ℝ => v.2 - p) volume volume := by
     convert (Measure.measurePreserving_neg (volume : Measure ℝ)).comp
       (measurePreserving_sub_right (volume : Measure ℝ) v.2) using 1
@@ -2748,12 +2779,12 @@ theorem lMultiplier_memDoubleSequence {n : ℕ} (γ : GeometricParameters n)
   · have hphi : MemW0 (fun p : ℝ =>
         standardBumpRescale (γ.scales i 1 (j + ι.1.2 - 1)) p -
           standardBumpRescale (γ.scales i 1 (j + ι.1.2)) p) :=
-      Codex.Preliminaries.KKernels.aux_memW0_sub
+      Codex.aux_memW0_sub
         (aux_standardBumpRescale_memW0
           (aux_spacedSequence_pos (γ.scales_spaced i 1) _))
         (aux_standardBumpRescale_memW0
           (aux_spacedSequence_pos (γ.scales_spaced i 1) _))
-    have hconv := Codex.Preliminaries.MKernels.aux_memW0_convolutionAlong
+    have hconv := Codex.aux_memW0_convolutionAlong
       (hMultiplier γ i j) (hMultiplier_memDoubleSequence γ i j) _ hphi (1, 1)
     convert hconv using 1
     funext v
@@ -2764,14 +2795,14 @@ theorem lMultiplier_memDoubleSequence {n : ℕ} (γ : GeometricParameters n)
           γ.scales i 1 (j + (geometricDelta γ : ℤ))) p -
           standardBumpRescale ((2 : ℝ) ^ ι.1.1 *
             γ.scales i 1 (j + (geometricDelta γ : ℤ))) p) :=
-      Codex.Preliminaries.KKernels.aux_memW0_sub
+      Codex.aux_memW0_sub
         (aux_standardBumpRescale_memW0
           (mul_pos (zpow_pos (by norm_num) _)
             (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
         (aux_standardBumpRescale_memW0
           (mul_pos (zpow_pos (by norm_num) _)
             (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
-    have hconv := Codex.Preliminaries.MKernels.aux_memW0_convolutionAlong
+    have hconv := Codex.aux_memW0_convolutionAlong
       (hMultiplier γ i j) (hMultiplier_memDoubleSequence γ i j) _ hphi (1, 1)
     convert hconv using 1
     funext v
@@ -2782,14 +2813,14 @@ theorem lMultiplier_memDoubleSequence {n : ℕ} (γ : GeometricParameters n)
           γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p -
           standardBumpRescale ((2 : ℝ) ^ (ι.1.1 + 1) *
             γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1)) p) :=
-      Codex.Preliminaries.KKernels.aux_memW0_sub
+      Codex.aux_memW0_sub
         (aux_standardBumpRescale_memW0
           (mul_pos (zpow_pos (by norm_num) _)
             (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
         (aux_standardBumpRescale_memW0
           (mul_pos (zpow_pos (by norm_num) _)
             (aux_spacedSequence_pos (γ.scales_spaced i 1) _)))
-    have hconv := Codex.Preliminaries.MKernels.aux_memW0_convolutionAlong
+    have hconv := Codex.aux_memW0_convolutionAlong
       (hMultiplier γ i j) (hMultiplier_memDoubleSequence γ i j) _ hphi (1, 1)
     convert hconv using 1
     funext v
@@ -2797,15 +2828,17 @@ theorem lMultiplier_memDoubleSequence {n : ℕ} (γ : GeometricParameters n)
     simp [smul_eq_mul, sub_eq_add_neg]
 
 /--
-\begin{proposition}[Properties of L multipliers]\label{sum L multiplier convergence-L1}
+**Proposition (Properties of L multipliers).**
+
 Let $\gamma=(k,u,a)\in \Gamma$ and $\iota \in\mathcal{I}_{\gamma}$. Then
  $L_{\gamma,\iota}$ is a well-defined element of $\mathcal{X}_k$. In addition, if $i
-\in [k)$ and $j\in \Z$ then
-\begin{equation}\label{E:L2-convergence}
+\in [k)$ and $j\in \mathbb{Z}$ then
+
+$$
 (H_{\gamma})_{i,j} = \sum_{\iota \in\mathcal{I}_{\gamma}} (L_{\gamma,\iota})_{i,j},
-\end{equation}
+$$
+
 where the sum on the right converges in $L^1$.
-\end{proposition}
 -/
 theorem sumLMultiplierConvergenceL1 {n : ℕ} (γ : GeometricParameters n)
     (ι : MultiplierIndex γ) :
@@ -2830,7 +2863,7 @@ noncomputable def multiplierIndexPartialSum {n : ℕ} (γ : GeometricParameters 
 
 noncomputable def sandwichMultiplierIndexPartialSum {n : ℕ} (γ : GeometricParameters n)
     (Xι : MultiplierIndex γ → DoubleSequence γ.k) (i : Fin γ.k) (j : ℤ) (N : ℕ) :
-    Codex.Preliminaries.MKernels.MKernel γ.k := by
+    Codex.MKernel γ.k := by
   classical
   exact ∑ ξ ∈ aux_multiplierIndexTruncation γ N,
     if hξ : ξ ∈ multiplierIndexSet γ then sandwichKernel γ (Xι ⟨ξ, hξ⟩) i j else 0
@@ -2844,7 +2877,7 @@ theorem aux_multiplierIndexPartialSum_memW0 {n : ℕ} (γ : GeometricParameters 
   unfold multiplierIndexPartialSum
   have hsum : MemW0 (fun x : RealPlane => ∑ ξ ∈ aux_multiplierIndexTruncation γ N,
       (if hξ : ξ ∈ multiplierIndexSet γ then Xι ⟨ξ, hξ⟩ i j else 0) x) := by
-    apply Codex.Preliminaries.KKernels.aux_memW0_finset_sum
+    apply Codex.aux_memW0_finset_sum
     intro ξ hξ
     have hmem : ξ ∈ multiplierIndexSet γ :=
       (Finset.mem_filter.mp hξ).2
@@ -2870,13 +2903,13 @@ theorem aux_sandwichMultiplierIndexPartialSum_sub_eq_sandwichKernel {n : ℕ}
   simp only [Pi.sub_apply, Finset.sum_apply]
   have hkernel_apply (ξ : ℤ × ℤ) :
       (if hξ : ξ ∈ multiplierIndexSet γ then
-        (fun z : Codex.Preliminaries.KKernels.RealVector γ.k ×
-            Codex.Preliminaries.KKernels.RealVector γ.k =>
+        (fun z : Codex.RealVector γ.k ×
+            Codex.RealVector γ.k =>
           (∏ m ∈ Finset.univ.filter (fun m => m < i), gammaGaussian γ m j (z.1 m, z.2 m)) *
             Xι ⟨ξ, hξ⟩ i j (z.1 i, z.2 i) *
           (∏ m ∈ Finset.univ.filter (fun m => i < m),
             gammaGaussian γ m (j - 1) (z.1 m, z.2 m))) else
-          (0 : Codex.Preliminaries.MKernels.MKernel γ.k)) y =
+          (0 : Codex.MKernel γ.k)) y =
         if hξ : ξ ∈ multiplierIndexSet γ then
           (∏ m ∈ Finset.univ.filter (fun m => m < i), gammaGaussian γ m j (y.1 m, y.2 m)) *
             Xι ⟨ξ, hξ⟩ i j (y.1 i, y.2 i) *
@@ -2912,15 +2945,18 @@ theorem aux_sandwichMultiplierIndexPartialSum_sub_eq_sandwichKernel {n : ℕ}
   ring
 
 /--
-\begin{lemma}\label{sandwich sums L1}
+**Lemma.**
+
 Let $\gamma=(k,u,a)\in \Gamma$.
 Assume $X, X_\iota\in \mathcal{X}_k$ for $\iota\in \mathcal{I}_{\gamma}$ are such that for every
-$i\in [k)$, $j\in\Z$, $X_{i,j}=\sum_{\iota\in \mathcal{I}_{\gamma}} (X_\iota)_{i,j}$ holds in
-$L^1$.
-Then for every $i\in [k), j\in\Z$,
-\begin{equation}\label{auto:H-kernel-L-decomposition} \mathbf{M}(\gamma,X,i)_j = \sum_{\iota\in
-\mathcal{I}_{\gamma}} \mathbf{M}(\gamma,X_\iota,i)_j\quad\text{in}\;L^1.\end{equation}
-\end{lemma}
+$i\in [k)$, $j\in\mathbb{Z}$, $X_{i,j}=\sum_{\iota\in \mathcal{I}_{\gamma}} (X_\iota)_{i,j}$ holds
+in $L^1$.
+Then for every $i\in [k), j\in\mathbb{Z}$,
+
+$$
+\mathbf{M}(\gamma,X,i)_j = \sum_{\iota\in \mathcal{I}_{\gamma}}
+\mathbf{M}(\gamma,X_\iota,i)_j\quad\text{in}\;L^1.
+$$
 -/
 theorem sandwichSumsL1 {n : ℕ} (γ : GeometricParameters n) (X : DoubleSequence γ.k)
     (Xι : MultiplierIndex γ → DoubleSequence γ.k)
@@ -2939,30 +2975,30 @@ theorem sandwichSumsL1 {n : ℕ} (γ : GeometricParameters n) (X : DoubleSequenc
   rw [aux_sandwichMultiplierIndexPartialSum_sub_eq_sandwichKernel]
   exact (aux_eLpNorm_one_sandwichKernel γ
     (multiplierIndexPartialDifference γ X Xι N) i j
-    (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
-      (Codex.Preliminaries.KKernels.aux_memW0_sub
+    (Codex.aux_memW0_integrable_of_addHaar
+      (Codex.aux_memW0_sub
         (aux_multiplierIndexPartialSum_memW0 γ Xι hXι i j N) (hX i j)))).symm
 
 noncomputable def mKernelMultiplierIndexPartialSum {n : ℕ}
     (γ : GeometricParameters n)
-    (Mι : MultiplierIndex γ → Codex.Preliminaries.MKernels.MKernel γ.k) (N : ℕ) :
-    Codex.Preliminaries.MKernels.MKernel γ.k := by
+    (Mι : MultiplierIndex γ → Codex.MKernel γ.k) (N : ℕ) :
+    Codex.MKernel γ.k := by
   classical
   exact ∑ ξ ∈ aux_multiplierIndexTruncation γ N,
     if hξ : ξ ∈ multiplierIndexSet γ then Mι ⟨ξ, hξ⟩ else 0
 
 theorem aux_mKernelMultiplierIndexPartialSum_memW0 {n : ℕ}
     (γ : GeometricParameters n)
-    (Mι : MultiplierIndex γ → Codex.Preliminaries.MKernels.MKernel γ.k)
+    (Mι : MultiplierIndex γ → Codex.MKernel γ.k)
     (hMι : ∀ ι, MemW0 (Mι ι)) (N : ℕ) :
     MemW0 (mKernelMultiplierIndexPartialSum γ Mι N) := by
   classical
   unfold mKernelMultiplierIndexPartialSum
-  have hsum : MemW0 (fun x : Codex.Preliminaries.KKernels.RealVector γ.k ×
-      Codex.Preliminaries.KKernels.RealVector γ.k =>
+  have hsum : MemW0 (fun x : Codex.RealVector γ.k ×
+      Codex.RealVector γ.k =>
       ∑ ξ ∈ aux_multiplierIndexTruncation γ N,
         (if hξ : ξ ∈ multiplierIndexSet γ then Mι ⟨ξ, hξ⟩ else 0) x) := by
-    apply Codex.Preliminaries.KKernels.aux_memW0_finset_sum
+    apply Codex.aux_memW0_finset_sum
     intro ξ hξ
     have hmem : ξ ∈ multiplierIndexSet γ := (Finset.mem_filter.mp hξ).2
     simpa [hmem] using hMι ⟨ξ, hmem⟩
@@ -2971,16 +3007,16 @@ theorem aux_mKernelMultiplierIndexPartialSum_memW0 {n : ℕ}
   simp only [Finset.sum_apply]
 
 theorem aux_prismForm_finset_sum {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n)
-    {α : Type*} (s : Finset α) (M : α → Codex.Preliminaries.MKernels.MKernel k)
+    {α : Type*} (s : Finset α) (M : α → Codex.MKernel k)
     (hM : ∀ a ∈ s, MemW0 (M a))
-    (F : Fin n → SchwartzMap (Codex.Preliminaries.KKernels.RealVector n) ℝ) :
-    Codex.Preliminaries.MKernels.prismForm n k hk hkn (fun y => ∑ a ∈ s, M a y)
+    (F : Fin n → SchwartzMap (Codex.RealVector n) ℝ) :
+    Codex.prismForm n k hk hkn (fun y => ∑ a ∈ s, M a y)
         (fun i => F i) =
-      ∑ a ∈ s, Codex.Preliminaries.MKernels.prismForm n k hk hkn (M a) (fun i => F i) := by
+      ∑ a ∈ s, Codex.prismForm n k hk hkn (M a) (fun i => F i) := by
   classical
   let e : Fin (Fintype.card {a // a ∈ s}) ≃ {a // a ∈ s} :=
     (Fintype.equivFin {a // a ∈ s}).symm
-  let M' : Fin (Fintype.card {a // a ∈ s}) → Codex.Preliminaries.MKernels.MKernel k :=
+  let M' : Fin (Fintype.card {a // a ∈ s}) → Codex.MKernel k :=
     fun q => M (e q).1
   have hM' (q : Fin (Fintype.card {a // a ∈ s})) : MemW0 (M' q) := hM (e q).1 (e q).2
   have hsum (f : α → ℝ) : (∑ q, f (e q).1) = ∑ a ∈ s, f a := by
@@ -2989,40 +3025,40 @@ theorem aux_prismForm_finset_sum {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n)
         Equiv.sum_comp e (fun a => f a.1)
       _ = ∑ a ∈ s, f a := by
         simpa using Finset.sum_attach s f
-  have hsumM (y : Codex.Preliminaries.KKernels.RealVector k ×
-      Codex.Preliminaries.KKernels.RealVector k) :
+  have hsumM (y : Codex.RealVector k ×
+      Codex.RealVector k) :
       (∑ q, M' q y) = ∑ a ∈ s, M a y := by
     simpa [M'] using hsum (fun a => M a y)
   have hsumP :
-      (∑ q, Codex.Preliminaries.KKernels.prismBrascampLiebForm n k hk hkn
-        (Codex.Preliminaries.MKernels.mToK k hk (M' q)) (fun i x => F i x)) =
-        ∑ a ∈ s, Codex.Preliminaries.KKernels.prismBrascampLiebForm n k hk hkn
-          (Codex.Preliminaries.MKernels.mToK k hk (M a)) (fun i x => F i x) := by
+      (∑ q, Codex.prismBrascampLiebForm n k hk hkn
+        (Codex.mToK k hk (M' q)) (fun i x => F i x)) =
+        ∑ a ∈ s, Codex.prismBrascampLiebForm n k hk hkn
+          (Codex.mToK k hk (M a)) (fun i x => F i x) := by
     simpa [M'] using hsum (fun a =>
-      Codex.Preliminaries.KKernels.prismBrascampLiebForm n k hk hkn
-        (Codex.Preliminaries.MKernels.mToK k hk (M a)) (fun i x => F i x))
+      Codex.prismBrascampLiebForm n k hk hkn
+        (Codex.mToK k hk (M a)) (fun i x => F i x))
   calc
-    Codex.Preliminaries.MKernels.prismForm n k hk hkn (fun y => ∑ a ∈ s, M a y)
+    Codex.prismForm n k hk hkn (fun y => ∑ a ∈ s, M a y)
         (fun i => F i) =
-        Codex.Preliminaries.KKernels.prismBrascampLiebForm n k hk hkn
-          (Codex.Preliminaries.MKernels.mToK k hk (fun y => ∑ q, M' q y))
+        Codex.prismBrascampLiebForm n k hk hkn
+          (Codex.mToK k hk (fun y => ∑ q, M' q y))
           (fun i x => F i x) := by
       congr 3
       funext y
       exact (hsumM y).symm
-    _ = Codex.Preliminaries.KKernels.prismBrascampLiebForm n k hk hkn
-        (fun z => ∑ q, Codex.Preliminaries.MKernels.mToK k hk (M' q) z)
+    _ = Codex.prismBrascampLiebForm n k hk hkn
+        (fun z => ∑ q, Codex.mToK k hk (M' q) z)
         (fun i x => F i x) := by
-      rw [Codex.Preliminaries.MKernels.aux_mToK_finset_sum k
+      rw [Codex.aux_mToK_finset_sum k
         (Fintype.card {a // a ∈ s}) hk M' hM']
-    _ = ∑ q, Codex.Preliminaries.KKernels.prismBrascampLiebForm n k hk hkn
-        (Codex.Preliminaries.MKernels.mToK k hk (M' q)) (fun i x => F i x) := by
-      apply Codex.Preliminaries.MKernels.aux_prismBrascampLiebForm_finset_sum
+    _ = ∑ q, Codex.prismBrascampLiebForm n k hk hkn
+        (Codex.mToK k hk (M' q)) (fun i x => F i x) := by
+      apply Codex.aux_prismBrascampLiebForm_finset_sum
       intro q
-      exact Codex.Preliminaries.MKernels.mToK_memW0 n k hk hkn (M' q) (hM' q)
-    _ = ∑ a ∈ s, Codex.Preliminaries.KKernels.prismBrascampLiebForm n k hk hkn
-        (Codex.Preliminaries.MKernels.mToK k hk (M a)) (fun i x => F i x) := hsumP
-    _ = ∑ a ∈ s, Codex.Preliminaries.MKernels.prismForm n k hk hkn (M a)
+      exact Codex.mToK_memW0 n k hk hkn (M' q) (hM' q)
+    _ = ∑ a ∈ s, Codex.prismBrascampLiebForm n k hk hkn
+        (Codex.mToK k hk (M a)) (fun i x => F i x) := hsumP
+    _ = ∑ a ∈ s, Codex.prismForm n k hk hkn (M a)
         (fun i => F i) := by rfl
 
 /-- The kernel-sequence seminorm is subadditive on Wiener kernel sequences. -/
@@ -3178,33 +3214,33 @@ theorem aux_kernelSequenceSeminorm_finset_sum_le {n k : ℕ} (hk : 1 ≤ k) (hkn
 
 noncomputable def prismMultiplierIndexPartialAbsoluteSum {n : ℕ}
     (γ : GeometricParameters n)
-    (Mι : MultiplierIndex γ → Codex.Preliminaries.MKernels.MKernel γ.k)
-    (F : Fin n → SchwartzMap (Codex.Preliminaries.KKernels.RealVector n) ℝ) (N : ℕ) :
+    (Mι : MultiplierIndex γ → Codex.MKernel γ.k)
+    (F : Fin n → SchwartzMap (Codex.RealVector n) ℝ) (N : ℕ) :
     ℝ≥0∞ := by
   classical
   exact ∑ ξ ∈ aux_multiplierIndexTruncation γ N,
     if hξ : ξ ∈ multiplierIndexSet γ then
-      ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n
+      ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n
         (Mι ⟨ξ, hξ⟩) (fun i => F i)‖ₑ
     else 0
 
 noncomputable def prismMultiplierIndexPartialSum {n : ℕ}
     (γ : GeometricParameters n)
-    (Mι : MultiplierIndex γ → Codex.Preliminaries.MKernels.MKernel γ.k)
-    (F : Fin n → SchwartzMap (Codex.Preliminaries.KKernels.RealVector n) ℝ) (N : ℕ) :
+    (Mι : MultiplierIndex γ → Codex.MKernel γ.k)
+    (F : Fin n → SchwartzMap (Codex.RealVector n) ℝ) (N : ℕ) :
     ℝ := by
   classical
   exact ∑ ξ ∈ aux_multiplierIndexTruncation γ N,
     if hξ : ξ ∈ multiplierIndexSet γ then
-      Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n
+      Codex.prismForm n γ.k γ.one_le_k γ.k_le_n
         (Mι ⟨ξ, hξ⟩) (fun i => F i)
     else 0
 
 theorem aux_prismForm_mKernelMultiplierIndexPartialSum {n : ℕ} (γ : GeometricParameters n)
-    (Mι : MultiplierIndex γ → Codex.Preliminaries.MKernels.MKernel γ.k)
+    (Mι : MultiplierIndex γ → Codex.MKernel γ.k)
     (hMι : ∀ ι, MemW0 (Mι ι))
-    (F : Fin n → SchwartzMap (Codex.Preliminaries.KKernels.RealVector n) ℝ) (N : ℕ) :
-    Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n
+    (F : Fin n → SchwartzMap (Codex.RealVector n) ℝ) (N : ℕ) :
+    Codex.prismForm n γ.k γ.one_le_k γ.k_le_n
         (mKernelMultiplierIndexPartialSum γ Mι N) (fun i => F i) =
       prismMultiplierIndexPartialSum γ Mι F N := by
   classical
@@ -3228,41 +3264,41 @@ theorem aux_prismForm_mKernelMultiplierIndexPartialSum {n : ℕ} (γ : Geometric
     simpa [hmem] using hMι ⟨ξ, hmem⟩
 
 theorem aux_mToK_sub {k : ℕ} (hk : 1 ≤ k)
-    (M₁ M₂ : Codex.Preliminaries.MKernels.MKernel k)
+    (M₁ M₂ : Codex.MKernel k)
     (hM₁ : MemW0 M₁) (hM₂ : MemW0 M₂) :
-    Codex.Preliminaries.MKernels.mToK k hk (fun y => M₁ y - M₂ y) =
-      fun z => Codex.Preliminaries.MKernels.mToK k hk M₁ z -
-        Codex.Preliminaries.MKernels.mToK k hk M₂ z := by
+    Codex.mToK k hk (fun y => M₁ y - M₂ y) =
+      fun z => Codex.mToK k hk M₁ z -
+        Codex.mToK k hk M₂ z := by
   funext z
-  unfold Codex.Preliminaries.MKernels.mToK
+  unfold Codex.mToK
   rw [integral_sub]
-  · exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
-      (Codex.Preliminaries.MKernels.mToK_integrand_memW0 k k hk le_rfl M₁ hM₁ z)
-  · exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
-      (Codex.Preliminaries.MKernels.mToK_integrand_memW0 k k hk le_rfl M₂ hM₂ z)
+  · exact Codex.aux_memW0_integrable_of_addHaar
+      (Codex.mToK_integrand_memW0 k k hk le_rfl M₁ hM₁ z)
+  · exact Codex.aux_memW0_integrable_of_addHaar
+      (Codex.mToK_integrand_memW0 k k hk le_rfl M₂ hM₂ z)
 
 theorem aux_prismForm_sub {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n)
-    (M₁ M₂ : Codex.Preliminaries.MKernels.MKernel k)
+    (M₁ M₂ : Codex.MKernel k)
     (hM₁ : MemW0 M₁) (hM₂ : MemW0 M₂)
-    (F : Fin n → SchwartzMap (Codex.Preliminaries.KKernels.RealVector n) ℝ) :
-    Codex.Preliminaries.MKernels.prismForm n k hk hkn M₁ (fun i => F i) -
-      Codex.Preliminaries.MKernels.prismForm n k hk hkn M₂ (fun i => F i) =
-      Codex.Preliminaries.MKernels.prismForm n k hk hkn (fun y => M₁ y - M₂ y)
+    (F : Fin n → SchwartzMap (Codex.RealVector n) ℝ) :
+    Codex.prismForm n k hk hkn M₁ (fun i => F i) -
+      Codex.prismForm n k hk hkn M₂ (fun i => F i) =
+      Codex.prismForm n k hk hkn (fun y => M₁ y - M₂ y)
         (fun i => F i) := by
-  unfold Codex.Preliminaries.MKernels.prismForm
+  unfold Codex.prismForm
   rw [aux_mToK_sub hk M₁ M₂ hM₁ hM₂]
-  exact Codex.Preliminaries.KKernels.aux_prismBrascampLiebForm_sub n k hk hkn
-    (Codex.Preliminaries.MKernels.mToK k hk M₁)
-    (Codex.Preliminaries.MKernels.mToK k hk M₂)
-    (Codex.Preliminaries.MKernels.mToK_memW0 n k hk hkn M₁ hM₁)
-    (Codex.Preliminaries.MKernels.mToK_memW0 n k hk hkn M₂ hM₂) F
+  exact Codex.aux_prismBrascampLiebForm_sub n k hk hkn
+    (Codex.mToK k hk M₁)
+    (Codex.mToK k hk M₂)
+    (Codex.mToK_memW0 n k hk hkn M₁ hM₁)
+    (Codex.mToK_memW0 n k hk hkn M₂ hM₂) F
 
 theorem aux_enorm_prismForm_mKernelMultiplierIndexPartialSum_le {n : ℕ}
     (γ : GeometricParameters n)
-    (Mι : MultiplierIndex γ → Codex.Preliminaries.MKernels.MKernel γ.k)
+    (Mι : MultiplierIndex γ → Codex.MKernel γ.k)
     (hMι : ∀ ι, MemW0 (Mι ι))
-    (F : Fin n → SchwartzMap (Codex.Preliminaries.KKernels.RealVector n) ℝ) (N : ℕ) :
-    ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n
+    (F : Fin n → SchwartzMap (Codex.RealVector n) ℝ) (N : ℕ) :
+    ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n
         (mKernelMultiplierIndexPartialSum γ Mι N) (fun i => F i)‖ₑ ≤
       prismMultiplierIndexPartialAbsoluteSum γ Mι F N := by
   classical
@@ -3272,13 +3308,13 @@ theorem aux_enorm_prismForm_mKernelMultiplierIndexPartialSum_le {n : ℕ}
     ‖prismMultiplierIndexPartialSum γ Mι F N‖ₑ ≤
         ∑ ξ ∈ aux_multiplierIndexTruncation γ N,
           ‖if hξ : ξ ∈ multiplierIndexSet γ then
-            Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n
+            Codex.prismForm n γ.k γ.one_le_k γ.k_le_n
               (Mι ⟨ξ, hξ⟩) (fun i => F i)
           else 0‖ₑ := by
       exact enorm_sum_le _ _
     _ = ∑ ξ ∈ aux_multiplierIndexTruncation γ N,
           if hξ : ξ ∈ multiplierIndexSet γ then
-            ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n
+            ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n
               (Mι ⟨ξ, hξ⟩) (fun i => F i)‖ₑ
           else 0 := by
       apply Finset.sum_congr rfl
@@ -3294,26 +3330,29 @@ theorem aux_le_iSup_of_tendsto_error {a S : ℝ≥0∞} {e : ℕ → ℝ≥0∞}
   exact ge_of_tendsto' hright' h
 
 /--
-\begin{lemma}\label{prism sum le sum prism-L1}
+**Lemma.**
+
 Let $\gamma=(k,u,a)\in \Gamma$.
 If $M=\sum_{\iota\in \mathcal{I}_\gamma} M_\iota$ holds in $L^1$ for $M,M_\iota\in
-W_0((\R^2)^k)$, then for every $\mathbf{F}\in\mathfrak{F}$,
-\begin{equation}\label{auto:prism-form-series-bound} |\Lambda_k(M)(\mathbf{F})| \le
-\sup_{N\in\mathbb N}\sum_{\substack{\iota\in \mathcal{I}_\gamma\\|\iota|\le N}}
-|\Lambda_k(M_\iota)(\mathbf{F})|. \end{equation}
+W_0((\mathbb{R}^2)^k)$, then for every $\mathbf{F}\in\mathfrak{F}$,
+
+$$
+|\Lambda_k(M)(\mathbf{F})| \le \sup_{N\in\mathbb N}\sum_{\substack{\iota\in
+\mathcal{I}_\gamma\\|\iota|\le N}} |\Lambda_k(M_\iota)(\mathbf{F})|.
+$$
+
 Here the supremum is taken in the extended half-line $[0,\infty]$.
-\end{lemma}
 -/
 theorem prismSumLeSumPrismL1 {n : ℕ} (γ : GeometricParameters n)
-    (M : Codex.Preliminaries.MKernels.MKernel γ.k)
-    (Mι : MultiplierIndex γ → Codex.Preliminaries.MKernels.MKernel γ.k)
+    (M : Codex.MKernel γ.k)
+    (Mι : MultiplierIndex γ → Codex.MKernel γ.k)
     (hM : MemW0 M) (hMι : ∀ ι, MemW0 (Mι ι))
     (hconverges : Tendsto (fun N : ℕ =>
       eLpNorm (mKernelMultiplierIndexPartialSum γ Mι N - M) 1 volume)
       atTop (nhds 0))
-    (F : Fin n → SchwartzMap (Codex.Preliminaries.KKernels.RealVector n) ℝ)
-    (hF : F ∈ Codex.Preliminaries.KKernels.normalizedFunctionTuples n) :
-    ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n M
+    (F : Fin n → SchwartzMap (Codex.RealVector n) ℝ)
+    (hF : F ∈ Codex.normalizedFunctionTuples n) :
+    ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n M
         (fun i => F i)‖ₑ ≤
       ⨆ N : ℕ, prismMultiplierIndexPartialAbsoluteSum γ Mι F N := by
   classical
@@ -3322,46 +3361,46 @@ theorem prismSumLeSumPrismL1 {n : ℕ} (γ : GeometricParameters n)
   let P := mKernelMultiplierIndexPartialSum γ Mι N
   have hP : MemW0 P := aux_mKernelMultiplierIndexPartialSum_memW0 γ Mι hMι N
   have hdiff : MemW0 (P - M) :=
-    Codex.Preliminaries.KKernels.aux_memW0_sub hP hM
+    Codex.aux_memW0_sub hP hM
   have hform_sub :
-      Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n P
+      Codex.prismForm n γ.k γ.one_le_k γ.k_le_n P
           (fun i => F i) -
-        Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n M
+        Codex.prismForm n γ.k γ.one_le_k γ.k_le_n M
           (fun i => F i) =
-        Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n (P - M)
+        Codex.prismForm n γ.k γ.one_le_k γ.k_le_n (P - M)
           (fun i => F i) := by
     exact aux_prismForm_sub γ.one_le_k γ.k_le_n P M hP hM F
   have herror :
-      ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n (P - M)
+      ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n (P - M)
           (fun i => F i)‖ₑ ≤ eLpNorm (P - M) 1 volume := by
-    change ‖Codex.Preliminaries.KKernels.prismBrascampLiebForm n γ.k γ.one_le_k γ.k_le_n
-        (Codex.Preliminaries.MKernels.mToK γ.k γ.one_le_k (P - M))
+    change ‖Codex.prismBrascampLiebForm n γ.k γ.one_le_k γ.k_le_n
+        (Codex.mToK γ.k γ.one_le_k (P - M))
           (fun i x => F i x)‖ₑ ≤ _
     exact
-      (Codex.Preliminaries.KKernels.prismBLInequality n γ.k γ.one_le_k γ.k_le_n
-        (Codex.Preliminaries.MKernels.mToK γ.k γ.one_le_k (P - M))
-        (Codex.Preliminaries.MKernels.mToK_memW0 n γ.k γ.one_le_k γ.k_le_n
+      (Codex.prismBLInequality n γ.k γ.one_le_k γ.k_le_n
+        (Codex.mToK γ.k γ.one_le_k (P - M))
+        (Codex.mToK_memW0 n γ.k γ.one_le_k γ.k_le_n
           (P - M) hdiff) F hF).trans
-      (Codex.Preliminaries.MKernels.mToK_eLpNorm_one_le n γ.k γ.one_le_k γ.k_le_n
+      (Codex.mToK_eLpNorm_one_le n γ.k γ.one_le_k γ.k_le_n
         (P - M) hdiff)
   have hpartial :
-      ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n P
+      ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n P
           (fun i => F i)‖ₑ ≤ prismMultiplierIndexPartialAbsoluteSum γ Mι F N := by
     dsimp [P]
     exact aux_enorm_prismForm_mKernelMultiplierIndexPartialSum_le γ Mι hMι F N
   calc
-    ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n M
+    ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n M
         (fun i => F i)‖ₑ =
-        ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n P
+        ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n P
             (fun i => F i) -
-          Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n (P - M)
+          Codex.prismForm n γ.k γ.one_le_k γ.k_le_n (P - M)
             (fun i => F i)‖ₑ := by
           rw [← hform_sub]
           congr 1
           ring
-    _ ≤ ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n P
+    _ ≤ ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n P
             (fun i => F i)‖ₑ +
-          ‖Codex.Preliminaries.MKernels.prismForm n γ.k γ.one_le_k γ.k_le_n (P - M)
+          ‖Codex.prismForm n γ.k γ.one_le_k γ.k_le_n (P - M)
             (fun i => F i)‖ₑ := enorm_sub_le
     _ ≤ prismMultiplierIndexPartialAbsoluteSum γ Mι F N +
           eLpNorm (P - M) 1 volume := add_le_add hpartial herror
@@ -3373,29 +3412,41 @@ theorem prismSumLeSumPrismL1 {n : ℕ} (γ : GeometricParameters n)
 
 
 /--
-\begin{definition}[N multiplier]\label{N multiplier}
-  Let $\gamma=(k,u,a)\in \Gamma$ and assume $k\le n-1$.  
-Let $\nu=1$ if $k<n-1$ and $\nu=2$ if $k=n-1$ and let $i\in [k)$, $j\in \Z$.
-For $\iota\in\mathcal{I}_{\gamma}$ define functions $\sigma_{\gamma,\iota,i,j}:\R\to\R$ so that
+**Definition (N multiplier).**
+
+Let $\gamma=(k,u,a)\in \Gamma$ and assume $k\le n-1$.
+Let $\nu=1$ if $k<n-1$ and $\nu=2$ if $k=n-1$ and let $i\in [k)$, $j\in \mathbb{Z}$.
+For $\iota\in\mathcal{I}_{\gamma}$ define functions
+$\sigma_{\gamma,\iota,i,j}:\mathbb{R}\to\mathbb{R}$ so that
 if $|l|\le \Delta_{\gamma}$,
-\begin{equation}\label{auto:sigma-central-band} \sigma_{\gamma,(0,l),i,j} = s(a_i^1(\cdot+l), j)
-\end{equation}
+
+$$
+\sigma_{\gamma,(0,l),i,j} = s(a_i^1(\cdot+l), j)
+$$
+
 and for $h>0$,
-\begin{equation}\label{auto:sigma-positive-band} \sigma_{\gamma,(h,0),i,j} = s(2^h
-a_i^1(\cdot+\Delta_{\gamma}), j) \end{equation}
+
+$$
+\sigma_{\gamma,(h,0),i,j} = s(2^h a_i^1(\cdot+\Delta_{\gamma}), j)
+$$
+
 and for $h<0$,
-\begin{equation}\label{auto:sigma-negative-band} \sigma_{\gamma,(h,0),i,j} = s(2^h
-a_i^1(\cdot-\Delta_{\gamma}), j). \end{equation}
+
+$$
+\sigma_{\gamma,(h,0),i,j} = s(2^h a_i^1(\cdot-\Delta_{\gamma}), j).
+$$
+
 For every $\iota\in\mathcal{I}_{\gamma}$ we define $N_{\gamma,\iota}= (N_{\gamma,\iota})_{i\in
-[k),j\in \Z}$ such that
-\begin{equation}\label{auto:N-kernel-definition}
+[k),j\in \mathbb{Z}}$ such that
+
+$$
  (N_{\gamma,\iota})_{i,j} =
- \mathcal F^{-1}((\xi,\eta) \mapsto \widehat{
- {\sigma_{\gamma,\iota,i,j}}(\xi+\eta)^{-\nu}
- \widehat{(L_{\gamma,\iota})_{i,j}}(\xi,\eta))\, .
-\end{equation}
-\end{definition}
-See also [`Codex.MainArgument.MultipliersHLN.nMultiplier`].
+\mathcal F^{-1}((\xi,\eta) \mapsto
+ \widehat{\sigma_{\gamma,\iota,i,j}}(\xi+\eta)^{-\nu}\widehat{(L_{\gamma,\iota})_{i,j}}(\xi,\eta))\,
+ .
+$$
+
+See also [`Codex.nMultiplier`].
 -/
 noncomputable def sigmaMultiplier {n : ℕ} (γ : GeometricParameters n) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) : ℝ → ℝ :=
@@ -3436,17 +3487,21 @@ $N_{\gamma,\iota}= (N_{\gamma,\iota})_{i\in [k),j\in \Z}$ such that
 \end{equation}
 \end{definition}
 -/
-/-- The frequency-side integrand in the displayed definition of the N multiplier.
-The convolution representative below is the implementation used for the real kernel. -/
+/--
+The frequency-side integrand in the displayed definition of the N multiplier.
+The convolution representative below is the implementation used for the real kernel.
+-/
 noncomputable def nMultiplierFrequency {n : ℕ} (γ : GeometricParameters n)
     (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ) : RealPlane → ℂ := fun ξ =>
   (aux_fourierReal (sigmaMultiplier γ ι i j) (ξ.1 + ξ.2))⁻¹ ^
       (if γ.k < n - 1 then 1 else 2) *
     aux_fourierPlane (lMultiplier γ ι i j) ξ
 
-/-- The unbridged raw-coordinate inverse-Fourier expression from the displayed definition
+/--
+The unbridged raw-coordinate inverse-Fourier expression from the displayed definition
 of the N multiplier. No equality with the convolution representative is asserted until the
-product-coordinate Fourier/convolution bridge is formalized. -/
+product-coordinate Fourier/convolution bridge is formalized.
+-/
 noncomputable def nMultiplierRawInverseFourier {n : ℕ} (γ : GeometricParameters n)
     (_hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ) : DoubleSequence γ.k := fun i j v =>
   (aux_inverseFourierPlane (nMultiplierFrequency γ ι i j) v).re
@@ -3679,8 +3734,8 @@ theorem aux_fourScaleGaussianRhoFrequency_real
   rcases aux_fourier_standardBump_range (lambdaMinus * xi) with ⟨a, ha, hfa⟩
   rcases aux_fourier_standardBump_range (lambdaPlus * xi) with ⟨b, hb, hfb⟩
   refine ⟨(a - b) * Real.rpow
-    (Codex.Preliminaries.Gaussians.gaussian (muMinus * xi) -
-      Codex.Preliminaries.Gaussians.gaussian (muPlus * xi)) nu, ?_⟩
+    (Codex.gaussian (muMinus * xi) -
+      Codex.gaussian (muPlus * xi)) nu, ?_⟩
   unfold fourScaleGaussianRhoFrequency
   rw [hfa, hfb]
   norm_cast
@@ -3760,7 +3815,7 @@ theorem aux_fourierReal_re_fourScaleGaussianRho
   · change Integrable (fourScaleGaussianRho
         (FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ)))
         muMinus muPlus lambdaMinus lambdaPlus nu)
-    exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    exact Codex.aux_memW0_integrable_of_addHaar
       (aux_fourScaleGaussianRho_memW0 hmuMinus hmuPlus hlambdaMinus hlambdaPlus hscales hnu)
   · exact aux_fourScaleGaussianRhoFrequency_real
       muMinus muPlus lambdaMinus lambdaPlus nu
@@ -3910,26 +3965,25 @@ theorem aux_fourierReal_nMultiplierRho_negative {n : ℕ}
   simpa [r, h, a] using hraw
 
 /--
-\label{N multiplier}
+Blueprint label `N multiplier`.
 
-See also [`Codex.MainArgument.MultipliersHLN.sigmaMultiplier`].
+See also [`Codex.sigmaMultiplier`].
 -/
 noncomputable def nMultiplier {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
     (ι : MultiplierIndex γ) : DoubleSequence γ.k := fun i j v =>
   ∫ q : ℝ, hMultiplier γ i j (v.1 - q, v.2 - q) * nMultiplierRho γ hkn ι i j q
 
 /--
-\begin{proposition}\label{auto:N-kernel-well-definedness}
-Let $\gamma=(k,u,a)\in \Gamma$ and assume $k\le n-1$. Then for every
-$\iota\in\mathcal{I}_{\gamma}$, the double sequence $N_{\gamma,\iota}$ is well-defined and
-belongs to $\mathcal{X}_k$.
-\end{proposition}
+**Proposition.**
+
+Let $\gamma=(k,u,a)\in \Gamma$ and assume $k\le n-1$. Then for every $\iota\in\mathcal{I}_{\gamma}$,
+the double sequence $N_{\gamma,\iota}$ is well-defined and belongs to $\mathcal{X}_k$.
 -/
 theorem nKernelWellDefinedness {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ) :
     MemDoubleSequence γ.k (nMultiplier γ hkn ι) := by
   intro i j
-  have hconv := Codex.Preliminaries.MKernels.aux_memW0_convolutionAlong
+  have hconv := Codex.aux_memW0_convolutionAlong
     (hMultiplier γ i j) (hMultiplier_memDoubleSequence γ i j)
     (nMultiplierRho γ hkn ι i j) (nMultiplierRho_memW0 γ hkn ι i j) (1, 1)
   unfold nMultiplier
@@ -3996,11 +4050,11 @@ theorem aux_fourScaleFrequency_mul_sqrt_eq_phiDifference
     (hmuMinus : 0 < muMinus) (hmuScale : 2 * muMinus ≤ muPlus) :
     fourScaleGaussianRhoFrequency phiHat muMinus muPlus lambdaMinus lambdaPlus
         (-(1 / 2 : ℝ)) u *
-      (Real.sqrt (Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-        Codex.Preliminaries.Gaussians.gaussian (muPlus * u)) : ℂ) =
+      (Real.sqrt (Codex.gaussian (muMinus * u) -
+        Codex.gaussian (muPlus * u)) : ℂ) =
       phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u) := by
-  let g : ℝ := Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-    Codex.Preliminaries.Gaussians.gaussian (muPlus * u)
+  let g : ℝ := Codex.gaussian (muMinus * u) -
+    Codex.gaussian (muPlus * u)
   let c : ℂ := phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u)
   have hg : 0 ≤ g := by
     dsimp [g]
@@ -4047,13 +4101,13 @@ theorem aux_fourScaleFrequency_mul_sqrt_sq_eq_phiDifference
     (phiHat : ℝ → ℂ) (muMinus muPlus lambdaMinus lambdaPlus u : ℝ)
     (hmuMinus : 0 < muMinus) (hmuScale : 2 * muMinus ≤ muPlus) :
     fourScaleGaussianRhoFrequency phiHat muMinus muPlus lambdaMinus lambdaPlus (-1 : ℝ) u *
-      (Real.sqrt (Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-        Codex.Preliminaries.Gaussians.gaussian (muPlus * u)) : ℂ) *
-      (Real.sqrt (Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-        Codex.Preliminaries.Gaussians.gaussian (muPlus * u)) : ℂ) =
+      (Real.sqrt (Codex.gaussian (muMinus * u) -
+        Codex.gaussian (muPlus * u)) : ℂ) *
+      (Real.sqrt (Codex.gaussian (muMinus * u) -
+        Codex.gaussian (muPlus * u)) : ℂ) =
       phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u) := by
-  let g : ℝ := Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-    Codex.Preliminaries.Gaussians.gaussian (muPlus * u)
+  let g : ℝ := Codex.gaussian (muMinus * u) -
+    Codex.gaussian (muPlus * u)
   let c : ℂ := phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u)
   have hg : 0 ≤ g := by
     dsimp [g]
@@ -4074,9 +4128,9 @@ theorem aux_fourierReal_sigmaMultiplier_vertical {n : ℕ}
     (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
     (hzero : ι.1.1 = 0) (u : ℝ) :
     aux_fourierReal (sigmaMultiplier γ ι i j) u =
-      (Real.sqrt (Codex.Preliminaries.Notation.gaussian
+      (Real.sqrt (Codex.gaussian
         (γ.scales i 1 (j + ι.1.2 - 1) * u) -
-        Codex.Preliminaries.Notation.gaussian (γ.scales i 1 (j + ι.1.2) * u)) : ℂ) := by
+        Codex.gaussian (γ.scales i 1 (j + ι.1.2) * u)) : ℂ) := by
   rw [sigmaMultiplier, dif_pos hzero]
   convert aux_squareRootGaussianDifference_fourier
     (shift_mem_A (γ.scales_spaced i 1) ι.1.2) j u using 1; ring_nf
@@ -4085,9 +4139,9 @@ theorem aux_fourierReal_sigmaMultiplier_positive {n : ℕ}
     (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
     (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1) (u : ℝ) :
     aux_fourierReal (sigmaMultiplier γ ι i j) u =
-      (Real.sqrt (Codex.Preliminaries.Notation.gaussian
+      (Real.sqrt (Codex.gaussian
         ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ) - 1) * u) -
-        Codex.Preliminaries.Notation.gaussian
+        Codex.gaussian
           ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j + (geometricDelta γ : ℤ)) * u)) : ℂ) := by
   rw [sigmaMultiplier, dif_neg hzero, dif_pos hpositive]
   let a : ℤ → ℝ := fun r => (2 : ℝ) ^ ι.1.1 *
@@ -4103,9 +4157,9 @@ theorem aux_fourierReal_sigmaMultiplier_negative {n : ℕ}
     (γ : GeometricParameters n) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
     (hzero : ι.1.1 ≠ 0) (hnegative : ι.1.1 < 0) (u : ℝ) :
     aux_fourierReal (sigmaMultiplier γ ι i j) u =
-      (Real.sqrt (Codex.Preliminaries.Notation.gaussian
+      (Real.sqrt (Codex.gaussian
         ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ) - 1) * u) -
-        Codex.Preliminaries.Notation.gaussian
+        Codex.gaussian
           ((2 : ℝ) ^ ι.1.1 * γ.scales i 1 (j - (geometricDelta γ : ℤ)) * u)) : ℂ) := by
   have hnotpositive : ¬ 0 < ι.1.1 := not_lt_of_ge hnegative.le
   rw [sigmaMultiplier, dif_neg hzero, dif_neg hnotpositive]
@@ -4282,7 +4336,7 @@ theorem aux_realConvolution_nRho_sigma_vertical_eq
   apply aux_real_eq_of_aux_fourierReal_eq
   · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
       (sigmaMultiplier_memW0 γ ι i j)
-  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+  · exact Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0 (γ.scales_spaced i 1 _ |>.1))
       (aux_standardBumpRescale_memW0 (γ.scales_spaced i 1 _ |>.1))
   · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _
@@ -4321,7 +4375,7 @@ theorem aux_realConvolution_nRho_sigma_positive_eq
   apply aux_real_eq_of_aux_fourierReal_eq
   · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
       (sigmaMultiplier_memW0 γ ι i j)
-  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+  · exact Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0 hs) (aux_standardBumpRescale_memW0 ht)
   · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _ hs ht
   · intro u
@@ -4362,7 +4416,7 @@ theorem aux_realConvolution_nRho_sigma_negative_eq
   apply aux_real_eq_of_aux_fourierReal_eq
   · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
       (sigmaMultiplier_memW0 γ ι i j)
-  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+  · exact Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0 hs) (aux_standardBumpRescale_memW0 ht)
   · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _ hs ht
   · intro u
@@ -4505,7 +4559,7 @@ theorem aux_realConvolution_nRho_sigmaSq_vertical_eq
   · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
       (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
         (sigmaMultiplier_memW0 γ ι i j))
-  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+  · exact Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0 (γ.scales_spaced i 1 _ |>.1))
       (aux_standardBumpRescale_memW0 (γ.scales_spaced i 1 _ |>.1))
   · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _
@@ -4546,7 +4600,7 @@ theorem aux_realConvolution_nRho_sigmaSq_positive_eq
   · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
       (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
         (sigmaMultiplier_memW0 γ ι i j))
-  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+  · exact Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0 hs) (aux_standardBumpRescale_memW0 ht)
   · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _ hs ht
   · intro u
@@ -4589,7 +4643,7 @@ theorem aux_realConvolution_nRho_sigmaSq_negative_eq
   · exact aux_realConvolution_memW0 _ _ (nMultiplierRho_memW0 γ hkn ι i j)
       (aux_realConvolution_memW0 _ _ (sigmaMultiplier_memW0 γ ι i j)
         (sigmaMultiplier_memW0 γ ι i j))
-  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+  · exact Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0 hs) (aux_standardBumpRescale_memW0 ht)
   · exact aux_fourierReal_standardBumpRescale_sub_integrable _ _ hs ht
   · intro u
@@ -4642,9 +4696,9 @@ theorem aux_diagonalConvolution_assoc
     F (v.1 - qp.1 - qp.2, v.2 - qp.1 - qp.2) * rho qp.1 * sigma qp.2
   have hH_w0 : MemW0 H := by
     have hPT : MemW0 (P ∘ T) :=
-      Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP T
+      Codex.aux_memW0_comp_continuousLinearEquiv hP T
     have hPTA : MemW0 ((P ∘ T) ∘ assoc) :=
-      Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hPT assoc
+      Codex.aux_memW0_comp_continuousLinearEquiv hPT assoc
     have hslice := hPTA.aux_memW0_slice_of_addHaar v
     convert hslice using 1
     funext qp
@@ -4656,7 +4710,7 @@ theorem aux_diagonalConvolution_assoc
     rw [hv]
     ring_nf
   have hH : Integrable H :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hH_w0
+    Codex.aux_memW0_integrable_of_addHaar hH_w0
   have hLeft :
       (∫ p : ℝ, (∫ q : ℝ, F (v.1 - p - q, v.2 - p - q) * rho q) * sigma p) =
         ∫ p : ℝ, ∫ q : ℝ, H (q, p) := by
@@ -4824,8 +4878,10 @@ theorem lMultiplier_eq_nMultiplier_diagonalConvolution_endpoint
         (by simp [lMultiplier, hzero, hpositive])
         (aux_realConvolution_nRho_sigmaSq_negative_eq γ hkn ι i j hzero hnegative hk)
 
-/-- Diagonal cancellation rewrites the convolution representative of an N multiplier using a
-difference of its one-dimensional kernel. -/
+/--
+Diagonal cancellation rewrites the convolution representative of an N multiplier using a
+difference of its one-dimensional kernel.
+-/
 theorem aux_hMultiplier_diagonal_convolution_cancellation
     {n : ℕ} {rho : ℝ → ℝ} (hrho : MemW0 rho) (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) (x y c : ℝ) :
@@ -4835,21 +4891,21 @@ theorem aux_hMultiplier_diagonal_convolution_cancellation
     Measure.prod.instIsAddHaarMeasure _ _
   let F : RealPlane → ℝ := fun z => hMultiplier γ i j (aux_diagonalShear z)
   have hF : MemW0 F := by
-    exact Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv
+    exact Codex.aux_memW0_comp_continuousLinearEquiv
       (hMultiplier_memDoubleSequence γ i j) aux_diagonalShear
   let P : RealPlane × ℝ → ℝ := fun z => F z.1 * rho z.2
   have hP : MemW0 P := by
     simpa [P] using hF.aux_mul_prod hrho
   have hshift : MemW0 (P ∘ aux_lMultiplierAtScale_largeScaleShear) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP
+    Codex.aux_memW0_comp_continuousLinearEquiv hP
       aux_lMultiplierAtScale_largeScaleShear
   have hplain : MemW0 (P ∘ aux_lMultiplierAtScale_largeScaleReorder) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP
+    Codex.aux_memW0_comp_continuousLinearEquiv hP
       aux_lMultiplierAtScale_largeScaleReorder
   let K : RealPlane × ℝ → ℝ := fun z =>
     F (z.1.1, z.2) * (rho (z.1.2 - z.2) - rho z.1.2)
   have hKmem : MemW0 K := by
-    have hsub := Codex.Preliminaries.KKernels.aux_memW0_sub hshift hplain
+    have hsub := Codex.aux_memW0_sub hshift hplain
     convert hsub using 1
     funext z
     rcases z with ⟨⟨u, v⟩, q⟩
@@ -4859,10 +4915,10 @@ theorem aux_hMultiplier_diagonal_convolution_cancellation
   have hFslice_mem : MemW0 (fun q : ℝ => F (x, q)) :=
     hF.aux_memW0_slice_of_addHaar x
   have hFslice : Integrable (fun q : ℝ => F (x, q)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hFslice_mem
+    Codex.aux_memW0_integrable_of_addHaar hFslice_mem
   have hB : Integrable (fun q : ℝ => F (x, q) * rho y) := hFslice.mul_const _
   have hKslice : Integrable (fun q : ℝ => K ((x, y), q)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    Codex.aux_memW0_integrable_of_addHaar
       (hKmem.aux_memW0_slice_of_addHaar (x, y))
   have hA : Integrable (fun q : ℝ => F (x, q) * rho (y - q)) := by
     have hsum := hKslice.add hB
@@ -4900,8 +4956,10 @@ theorem aux_hMultiplier_diagonal_convolution_cancellation
       dsimp [F, aux_diagonalShear]
       ring
 
-/-- The preceding cancellation identity specialized to the convolution representative of an N
-multiplier. -/
+/--
+The preceding cancellation identity specialized to the convolution representative of an N
+multiplier.
+-/
 theorem aux_nMultiplier_diagonal_cancellation {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
     (x y : ℝ) :
@@ -4912,8 +4970,10 @@ theorem aux_nMultiplier_diagonal_cancellation {n : ℕ} (γ : GeometricParameter
     aux_hMultiplier_diagonal_convolution_cancellation
       (nMultiplierRho_memW0 γ hkn ι i j) γ i j x y y
 
-/-- The positive-band cancellation identity in the rotated coordinates used by the first
-Gaussian-domination case. -/
+/--
+The positive-band cancellation identity in the rotated coordinates used by the first
+Gaussian-domination case.
+-/
 theorem aux_nMultiplier_caseOne_cancellation {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ)
     (w₀ w₁ : ℝ) :
@@ -4949,4 +5009,4 @@ theorem aux_nMultiplier_caseOne_cancellation {n : ℕ} (γ : GeometricParameters
 
 end
 
-end Codex.MainArgument.MultipliersHLN
+end Codex

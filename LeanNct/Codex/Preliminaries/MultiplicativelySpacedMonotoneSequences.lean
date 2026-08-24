@@ -15,67 +15,59 @@ manuscript.
 
 @[expose] public section
 
-namespace Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
+namespace Codex
 
 open Set
 
 /--
-\begin{definition}[Multiplicatively spaced monotone sequences]\label{multiplicatively spaced
-monotone sequences}
+**Definition (Multiplicatively spaced monotone sequences).**
 
-A sequence $a:\Z\to\R$ with $a(j)>0$ for every $j\in\Z$ is called multiplicatively spaced if,
-for each $j\in\Z$
-\begin{equation}\label{auto:spaced-sequence-growth}
+A sequence $a:\mathbb{Z}\to\mathbb{R}$ with $a(j)>0$ for every $j\in\mathbb{Z}$ is called
+multiplicatively spaced if, for each $j\in\mathbb{Z}$
+
+$$
     2a(j)\le a(j+1)\, .
-\end{equation}
-Let ${\rm A}$ be the set of such sequences.
-\end{definition}
+$$
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.A`].
+Let ${\rm A}$ be the set of such sequences.
+
+See also [`Codex.A`].
 -/
 def SpacedSequence (a : ℤ → ℝ) : Prop :=
   ∀ j : ℤ, 0 < a j ∧ 2 * a j ≤ a (j + 1)
 
 /--
-\begin{definition}[Multiplicatively spaced monotone sequences]\label{multiplicatively spaced
-monotone sequences}
+**Definition (Multiplicatively spaced monotone sequences).**
 
-A sequence $a:\Z\to\R$ with $a(j)>0$ for every $j\in\Z$ is called multiplicatively spaced if,
-for each $j\in\Z$
-\begin{equation}\label{auto:spaced-sequence-growth}
+A sequence $a:\mathbb{Z}\to\mathbb{R}$ with $a(j)>0$ for every $j\in\mathbb{Z}$ is called
+multiplicatively spaced if, for each $j\in\mathbb{Z}$
+
+$$
     2a(j)\le a(j+1)\, .
-\end{equation}
-Let ${\rm A}$ be the set of such sequences.
-\end{definition}
+$$
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.SpacedSequence`].
+Let ${\rm A}$ be the set of such sequences.
+
+See also [`Codex.SpacedSequence`].
 -/
 def A : Set (ℤ → ℝ) := {a | SpacedSequence a}
 
-/--
-This auxiliary theorem extracts positivity from the defining conditions of a spaced sequence.
--/
+/-- This auxiliary theorem extracts positivity from the defining conditions of a spaced sequence. -/
 theorem aux_spacedSequence_pos {a : ℤ → ℝ} (ha : SpacedSequence a) (j : ℤ) : 0 < a j :=
   (ha j).1
 
-/--
-This auxiliary theorem records the one-step monotonicity implied by multiplicative spacing.
--/
+/-- This auxiliary theorem records the one-step monotonicity implied by multiplicative spacing. -/
 theorem aux_spacedSequence_le_succ {a : ℤ → ℝ} (ha : SpacedSequence a) (j : ℤ) :
     a j ≤ a (j + 1) := by
   have hpos := (ha j).1
   have hspace := (ha j).2
   nlinarith
 
-/--
-This auxiliary theorem gives the monotonicity used in the distance estimates below.
--/
+/-- This auxiliary theorem gives the monotonicity used in the distance estimates below. -/
 theorem aux_spacedSequence_monotone {a : ℤ → ℝ} (ha : SpacedSequence a) : Monotone a :=
   monotone_int_of_le_succ (aux_spacedSequence_le_succ ha)
 
-/--
-This auxiliary theorem iterates the defining spacing inequality forward.
--/
+/-- This auxiliary theorem iterates the defining spacing inequality forward. -/
 theorem aux_pow_two_mul_le_shift {a : ℤ → ℝ} (ha : SpacedSequence a) (j : ℤ) (k : ℕ) :
     (2 : ℝ) ^ k * a j ≤ a (j + k) := by
   induction k with
@@ -92,16 +84,14 @@ theorem aux_pow_two_mul_le_shift {a : ℤ → ℝ} (ha : SpacedSequence a) (j : 
         _ ≤ a (j + Nat.succ k) := by
           convert hstep using 1; push_cast; ring_nf
 
-/--
-This auxiliary theorem is the backwards form of the iterated spacing inequality.
--/
+/-- This auxiliary theorem is the backwards form of the iterated spacing inequality. -/
 theorem aux_pow_two_mul_shift_le {a : ℤ → ℝ} (ha : SpacedSequence a) (j : ℤ) (k : ℕ) :
     (2 : ℝ) ^ k * a (j - k) ≤ a j := by
   convert aux_pow_two_mul_le_shift ha (j - k) k using 1; ring_nf
 
 /--
 Auxiliary explicit extension used in Proposition
- [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.extensionOfSequences`], formalized by
+ [`Codex.extensionOfSequences`], formalized by
 `extensionOfSequences`.
 -/
 noncomputable def aux_extensionOfSequence (J : ℕ) (a : ℤ → ℝ) : ℤ → ℝ := fun j =>
@@ -110,13 +100,12 @@ noncomputable def aux_extensionOfSequence (J : ℕ) (a : ℤ → ℝ) : ℤ → 
   else (2 : ℝ) ^ (j - J + 1) * a (J - 1)
 
 /--
-\begin{proposition}[Extension of sequences]\label{Extension of sequences}
+**Proposition (Extension of sequences).**
 
-Let $J\in\N$ with $J\ge1$ and let $a:[J)\to\R$ satisfy $a(j)>0$ for every $j\in[J)$ and, for all
-$j\in[J-1)$, we have $a(j+1)\ge 2a(j)$.
-Then there is a unique $b\in A$ such that for all $j\in [J)$ we have $a(j)=b(j)$ and for $j\ge
-J$ we have $b(j)=2^{j-J+1} a(J-1)$ and for $j<0$ we have $b(j)=2^j a(0)$\, .
-\end{proposition}
+Let $J\in\mathbb{N}$ with $J\ge1$ and let $a:[J)\to\mathbb{R}$ satisfy $a(j)>0$ for every $j\in[J)$
+and, for all $j\in[J-1)$, we have $a(j+1)\ge 2a(j)$.
+Then there is a unique $b\in A$ such that for all $j\in [J)$ we have $a(j)=b(j)$ and for $j\ge J$ we
+have $b(j)=2^{j-J+1} a(J-1)$ and for $j<0$ we have $b(j)=2^j a(0)$\, .
 -/
 theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
     (ha_pos : ∀ j : ℤ, 0 ≤ j → j < (J : ℤ) → 0 < a j)
@@ -218,24 +207,23 @@ theorem extensionOfSequences (J : ℕ) (hJ : 0 < J) (a : ℤ → ℝ)
         simp [b, aux_extensionOfSequence, hjneg, hjmid]
 
 /--
-\begin{proposition}[Operations on spaced sequences]\label{Operations on spaced sequences}
+**Proposition (Operations on spaced sequences).**
 
-    Let $a,b\in {\rm A}$. Then the following hold:
+Let $a,b\in {\rm A}$. Then the following hold:
 
-    (i) $\max(a,b)\in {\rm A}$
+(i) $\max(a,b)\in {\rm A}$
 
-    (ii) $t\cdot a\in {\rm A}$ for every $t>0$.
+(ii) $t\cdot a\in {\rm A}$ for every $t>0$.
 
-    (iii) Let $n\in\mathbb{Z}$. If $c:\Z\to(0,\infty)$ is defined by $c(j)=a(j+n)$ for all
-    $j\in\mathbb{Z}$, then $c\in {\rm A}$.
+(iii) Let $n\in\mathbb{Z}$. If $c:\mathbb{Z}\to(0,\infty)$ is defined by $c(j)=a(j+n)$ for all
+$j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-    (iv) If $c:\Z\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all $j\in\Z$,
-    then $c\in {\rm A}$.
-\end{proposition}
+(iv) If $c:\mathbb{Z}\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all
+$j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.smul_mem_A`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.shift_mem_A`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sqrt_sq_add_sq_mem_A`].
+See also [`Codex.smul_mem_A`],
+[`Codex.shift_mem_A`],
+[`Codex.sqrt_sq_add_sq_mem_A`].
 -/
 theorem max_mem_A {a b : ℤ → ℝ} (ha : SpacedSequence a) (hb : SpacedSequence b) :
     SpacedSequence (fun j => max (a j) (b j)) := by
@@ -250,24 +238,23 @@ theorem max_mem_A {a b : ℤ → ℝ} (ha : SpacedSequence a) (hb : SpacedSequen
       exact (ha j).2.trans (le_max_left _ _)
 
 /--
-\begin{proposition}[Operations on spaced sequences]\label{Operations on spaced sequences}
+**Proposition (Operations on spaced sequences).**
 
-    Let $a,b\in {\rm A}$. Then the following hold:
+Let $a,b\in {\rm A}$. Then the following hold:
 
-    (i) $\max(a,b)\in {\rm A}$
+(i) $\max(a,b)\in {\rm A}$
 
-    (ii) $t\cdot a\in {\rm A}$ for every $t>0$.
+(ii) $t\cdot a\in {\rm A}$ for every $t>0$.
 
-    (iii) Let $n\in\mathbb{Z}$. If $c:\Z\to(0,\infty)$ is defined by $c(j)=a(j+n)$ for all
-    $j\in\mathbb{Z}$, then $c\in {\rm A}$.
+(iii) Let $n\in\mathbb{Z}$. If $c:\mathbb{Z}\to(0,\infty)$ is defined by $c(j)=a(j+n)$ for all
+$j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-    (iv) If $c:\Z\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all $j\in\Z$,
-    then $c\in {\rm A}$.
-\end{proposition}
+(iv) If $c:\mathbb{Z}\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all
+$j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.max_mem_A`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.shift_mem_A`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sqrt_sq_add_sq_mem_A`].
+See also [`Codex.max_mem_A`],
+[`Codex.shift_mem_A`],
+[`Codex.sqrt_sq_add_sq_mem_A`].
 -/
 theorem smul_mem_A {a : ℤ → ℝ} (ha : SpacedSequence a) {t : ℝ} (ht : 0 < t) :
     SpacedSequence (fun j => t * a j) := by
@@ -279,24 +266,23 @@ theorem smul_mem_A {a : ℤ → ℝ} (ha : SpacedSequence a) {t : ℝ} (ht : 0 <
       _ ≤ t * a (j + 1) := by gcongr; exact (ha j).2
 
 /--
-\begin{proposition}[Operations on spaced sequences]\label{Operations on spaced sequences}
+**Proposition (Operations on spaced sequences).**
 
-    Let $a,b\in {\rm A}$. Then the following hold:
+Let $a,b\in {\rm A}$. Then the following hold:
 
-    (i) $\max(a,b)\in {\rm A}$
+(i) $\max(a,b)\in {\rm A}$
 
-    (ii) $t\cdot a\in {\rm A}$ for every $t>0$.
+(ii) $t\cdot a\in {\rm A}$ for every $t>0$.
 
-    (iii) Let $n\in\mathbb{Z}$. If $c:\Z\to(0,\infty)$ is defined by $c(j)=a(j+n)$ for all
-    $j\in\mathbb{Z}$, then $c\in {\rm A}$.
+(iii) Let $n\in\mathbb{Z}$. If $c:\mathbb{Z}\to(0,\infty)$ is defined by $c(j)=a(j+n)$ for all
+$j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-    (iv) If $c:\Z\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all $j\in\Z$,
-    then $c\in {\rm A}$.
-\end{proposition}
+(iv) If $c:\mathbb{Z}\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all
+$j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.max_mem_A`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.smul_mem_A`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sqrt_sq_add_sq_mem_A`].
+See also [`Codex.max_mem_A`],
+[`Codex.smul_mem_A`],
+[`Codex.sqrt_sq_add_sq_mem_A`].
 -/
 theorem shift_mem_A {a : ℤ → ℝ} (ha : SpacedSequence a) (n : ℤ) :
     SpacedSequence (fun j => a (j + n)) := by
@@ -306,24 +292,23 @@ theorem shift_mem_A {a : ℤ → ℝ} (ha : SpacedSequence a) (n : ℤ) :
   · convert (ha (j + n)).2 using 1; ring_nf
 
 /--
-\begin{proposition}[Operations on spaced sequences]\label{Operations on spaced sequences}
+**Proposition (Operations on spaced sequences).**
 
-    Let $a,b\in {\rm A}$. Then the following hold:
+Let $a,b\in {\rm A}$. Then the following hold:
 
-    (i) $\max(a,b)\in {\rm A}$
+(i) $\max(a,b)\in {\rm A}$
 
-    (ii) $t\cdot a\in {\rm A}$ for every $t>0$.
+(ii) $t\cdot a\in {\rm A}$ for every $t>0$.
 
-    (iii) Let $n\in\mathbb{Z}$. If $c:\Z\to(0,\infty)$ is defined by $c(j)=a(j+n)$ for all
-    $j\in\mathbb{Z}$, then $c\in {\rm A}$.
+(iii) Let $n\in\mathbb{Z}$. If $c:\mathbb{Z}\to(0,\infty)$ is defined by $c(j)=a(j+n)$ for all
+$j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-    (iv) If $c:\Z\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all $j\in\Z$,
-    then $c\in {\rm A}$.
-\end{proposition}
+(iv) If $c:\mathbb{Z}\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all
+$j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.max_mem_A`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.smul_mem_A`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.shift_mem_A`].
+See also [`Codex.max_mem_A`],
+[`Codex.smul_mem_A`],
+[`Codex.shift_mem_A`].
 -/
 theorem sqrt_sq_add_sq_mem_A {a b : ℤ → ℝ} (ha : SpacedSequence a) (hb : SpacedSequence b) :
     SpacedSequence (fun j => Real.sqrt (a j ^ 2 + b j ^ 2)) := by
@@ -346,31 +331,33 @@ theorem sqrt_sq_add_sq_mem_A {a b : ℤ → ℝ} (ha : SpacedSequence a) (hb : S
       Real.sqrt_nonneg (a (j + 1) ^ 2 + b (j + 1) ^ 2)]
 
 /--
-\begin{definition}[Distance of spaced sequences]\label{Distance of spaced sequences}
+**Definition (Distance of spaced sequences).**
 
 Given $a,b\in {\rm A}$, define
-\begin{equation}\label{auto:spaced-sequence-distance}
-    \dist(a,b)=\min\{k\in\mathbb{Z}_{\ge 0}\,:\,\forall j, a(j-k)\le b(j)\le a(j+k)\}
-\end{equation}
-with the understanding that the value is $\infty$ if there is no such $k$.
-\end{definition}
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.SequenceDistance`].
+$$
+    \operatorname{dist}(a,b)=\min\{k\in\mathbb{Z}_{\ge 0}\,:\,\forall j, a(j-k)\le b(j)\le a(j+k)\}
+$$
+
+with the understanding that the value is $\infty$ if there is no such $k$.
+
+See also [`Codex.SequenceDistance`].
 -/
 def WithinSequenceDistance (a b : ℤ → ℝ) (k : ℕ) : Prop :=
   ∀ j : ℤ, a (j - k) ≤ b j ∧ b j ≤ a (j + k)
 
 /--
-\begin{definition}[Distance of spaced sequences]\label{Distance of spaced sequences}
+**Definition (Distance of spaced sequences).**
 
 Given $a,b\in {\rm A}$, define
-\begin{equation}\label{auto:spaced-sequence-distance}
-    \dist(a,b)=\min\{k\in\mathbb{Z}_{\ge 0}\,:\,\forall j, a(j-k)\le b(j)\le a(j+k)\}
-\end{equation}
-with the understanding that the value is $\infty$ if there is no such $k$.
-\end{definition}
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.WithinSequenceDistance`].
+$$
+    \operatorname{dist}(a,b)=\min\{k\in\mathbb{Z}_{\ge 0}\,:\,\forall j, a(j-k)\le b(j)\le a(j+k)\}
+$$
+
+with the understanding that the value is $\infty$ if there is no such $k$.
+
+See also [`Codex.WithinSequenceDistance`].
 -/
 noncomputable def SequenceDistance (a b : ℤ → ℝ) : WithTop ℕ :=
   by
@@ -389,9 +376,7 @@ theorem aux_sequenceDistance_le_of_within {a b : ℤ → ℝ} {k : ℕ}
     exact_mod_cast Nat.find_min' h hk
   · exact (h ⟨k, hk⟩).elim
 
-/--
-This auxiliary theorem transports a distance comparison after exchanging its two sequences.
--/
+/-- This auxiliary theorem transports a distance comparison after exchanging its two sequences. -/
 theorem aux_withinSequenceDistance_symm {a b : ℤ → ℝ} {k : ℕ} :
     WithinSequenceDistance a b k ↔ WithinSequenceDistance b a k := by
   constructor <;> intro h <;> intro j
@@ -406,9 +391,7 @@ theorem aux_withinSequenceDistance_symm {a b : ℤ → ℝ} {k : ℕ} :
     · have h' := (h (j + k)).1
       convert h' using 1; ring_nf
 
-/--
-This auxiliary theorem composes the pointwise comparisons used to define sequence distance.
--/
+/-- This auxiliary theorem composes the pointwise comparisons used to define sequence distance. -/
 theorem aux_withinSequenceDistance_trans {a b c : ℤ → ℝ} {k l : ℕ}
     (hab : WithinSequenceDistance a b k) (hbc : WithinSequenceDistance b c l) :
     WithinSequenceDistance a c (k + l) := by
@@ -437,30 +420,29 @@ theorem aux_withinSequenceDistance_max {a b c : ℤ → ℝ} {k : ℕ}
   · exact max_le (hab j).2 (hac j).2
 
 /--
-\begin{proposition}[Properties of distance of sequences]\label{Properties of distance of sequences}
+**Proposition (Properties of distance of sequences).**
 
-    Let $a,b,c\in {\rm A}$.
-    Then
+Let $a,b,c\in {\rm A}$.
+Then
 
-    (i) If $\dist(a,b)=0$, then $a=b$.
+(i) If $\operatorname{dist}(a,b)=0$, then $a=b$.
 
-    (ii) $\dist(a,b)=\dist(b,a)$
+(ii) $\operatorname{dist}(a,b)=\operatorname{dist}(b,a)$
 
-    (iii) $\dist(a,c)\le \dist(a,b)+\dist(b,c)$
+(iii) $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+\operatorname{dist}(b,c)$
 
-    (iv) If $c(j)=b(j+1)$, then $\dist(a,c)\le \dist(a,b)+1$.
+(iv) If $c(j)=b(j+1)$, then $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+1$.
 
-    (v) For all $t>0$, $\dist(t\cdot a,t\cdot b)=\dist(a,b)$
+(v) For all $t>0$, $\operatorname{dist}(t\cdot a,t\cdot b)=\operatorname{dist}(a,b)$
 
-    (vi) For all $h\in\mathbb{Z}$,
-    $\dist(a,2^h a)\le |h|$.
-\end{proposition}
+(vi) For all $h\in\mathbb{Z}$,
+$\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_comm`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_triangle`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_shift_le`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_smul`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_pow_two_smul_le`].
+See also [`Codex.sequenceDistance_comm`],
+[`Codex.sequenceDistance_triangle`],
+[`Codex.sequenceDistance_shift_le`],
+[`Codex.sequenceDistance_smul`],
+[`Codex.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_zero_eq {a b : ℤ → ℝ} (h : SequenceDistance a b = 0) : a = b := by
   classical
@@ -475,30 +457,29 @@ theorem sequenceDistance_zero_eq {a b : ℤ → ℝ} (h : SequenceDistance a b =
   · simp [SequenceDistance, hab] at h
 
 /--
-\begin{proposition}[Properties of distance of sequences]\label{Properties of distance of sequences}
+**Proposition (Properties of distance of sequences).**
 
-    Let $a,b,c\in {\rm A}$.
-    Then
+Let $a,b,c\in {\rm A}$.
+Then
 
-    (i) If $\dist(a,b)=0$, then $a=b$.
+(i) If $\operatorname{dist}(a,b)=0$, then $a=b$.
 
-    (ii) $\dist(a,b)=\dist(b,a)$
+(ii) $\operatorname{dist}(a,b)=\operatorname{dist}(b,a)$
 
-    (iii) $\dist(a,c)\le \dist(a,b)+\dist(b,c)$
+(iii) $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+\operatorname{dist}(b,c)$
 
-    (iv) If $c(j)=b(j+1)$, then $\dist(a,c)\le \dist(a,b)+1$.
+(iv) If $c(j)=b(j+1)$, then $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+1$.
 
-    (v) For all $t>0$, $\dist(t\cdot a,t\cdot b)=\dist(a,b)$
+(v) For all $t>0$, $\operatorname{dist}(t\cdot a,t\cdot b)=\operatorname{dist}(a,b)$
 
-    (vi) For all $h\in\mathbb{Z}$,
-    $\dist(a,2^h a)\le |h|$.
-\end{proposition}
+(vi) For all $h\in\mathbb{Z}$,
+$\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_zero_eq`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_triangle`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_shift_le`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_smul`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_pow_two_smul_le`].
+See also [`Codex.sequenceDistance_zero_eq`],
+[`Codex.sequenceDistance_triangle`],
+[`Codex.sequenceDistance_shift_le`],
+[`Codex.sequenceDistance_smul`],
+[`Codex.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_comm (a b : ℤ → ℝ) :
     SequenceDistance a b = SequenceDistance b a := by
@@ -521,30 +502,29 @@ theorem sequenceDistance_comm (a b : ℤ → ℝ) :
     simp [SequenceDistance, h, h']
 
 /--
-\begin{proposition}[Properties of distance of sequences]\label{Properties of distance of sequences}
+**Proposition (Properties of distance of sequences).**
 
-    Let $a,b,c\in {\rm A}$.
-    Then
+Let $a,b,c\in {\rm A}$.
+Then
 
-    (i) If $\dist(a,b)=0$, then $a=b$.
+(i) If $\operatorname{dist}(a,b)=0$, then $a=b$.
 
-    (ii) $\dist(a,b)=\dist(b,a)$
+(ii) $\operatorname{dist}(a,b)=\operatorname{dist}(b,a)$
 
-    (iii) $\dist(a,c)\le \dist(a,b)+\dist(b,c)$
+(iii) $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+\operatorname{dist}(b,c)$
 
-    (iv) If $c(j)=b(j+1)$, then $\dist(a,c)\le \dist(a,b)+1$.
+(iv) If $c(j)=b(j+1)$, then $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+1$.
 
-    (v) For all $t>0$, $\dist(t\cdot a,t\cdot b)=\dist(a,b)$
+(v) For all $t>0$, $\operatorname{dist}(t\cdot a,t\cdot b)=\operatorname{dist}(a,b)$
 
-    (vi) For all $h\in\mathbb{Z}$,
-    $\dist(a,2^h a)\le |h|$.
-\end{proposition}
+(vi) For all $h\in\mathbb{Z}$,
+$\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_zero_eq`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_comm`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_shift_le`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_smul`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_pow_two_smul_le`].
+See also [`Codex.sequenceDistance_zero_eq`],
+[`Codex.sequenceDistance_comm`],
+[`Codex.sequenceDistance_shift_le`],
+[`Codex.sequenceDistance_smul`],
+[`Codex.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_triangle (a b c : ℤ → ℝ) :
     SequenceDistance a c ≤ SequenceDistance a b + SequenceDistance b c := by
@@ -563,30 +543,29 @@ theorem sequenceDistance_triangle (a b c : ℤ → ℝ) :
   · simp [SequenceDistance, hab]
 
 /--
-\begin{proposition}[Properties of distance of sequences]\label{Properties of distance of sequences}
+**Proposition (Properties of distance of sequences).**
 
-    Let $a,b,c\in {\rm A}$.
-    Then
+Let $a,b,c\in {\rm A}$.
+Then
 
-    (i) If $\dist(a,b)=0$, then $a=b$.
+(i) If $\operatorname{dist}(a,b)=0$, then $a=b$.
 
-    (ii) $\dist(a,b)=\dist(b,a)$
+(ii) $\operatorname{dist}(a,b)=\operatorname{dist}(b,a)$
 
-    (iii) $\dist(a,c)\le \dist(a,b)+\dist(b,c)$
+(iii) $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+\operatorname{dist}(b,c)$
 
-    (iv) If $c(j)=b(j+1)$, then $\dist(a,c)\le \dist(a,b)+1$.
+(iv) If $c(j)=b(j+1)$, then $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+1$.
 
-    (v) For all $t>0$, $\dist(t\cdot a,t\cdot b)=\dist(a,b)$
+(v) For all $t>0$, $\operatorname{dist}(t\cdot a,t\cdot b)=\operatorname{dist}(a,b)$
 
-    (vi) For all $h\in\mathbb{Z}$,
-    $\dist(a,2^h a)\le |h|$.
-\end{proposition}
+(vi) For all $h\in\mathbb{Z}$,
+$\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_zero_eq`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_comm`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_triangle`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_smul`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_pow_two_smul_le`].
+See also [`Codex.sequenceDistance_zero_eq`],
+[`Codex.sequenceDistance_comm`],
+[`Codex.sequenceDistance_triangle`],
+[`Codex.sequenceDistance_smul`],
+[`Codex.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_shift_le {a b c : ℤ → ℝ}
     (ha : SpacedSequence a) (hb : SpacedSequence b)
@@ -615,30 +594,29 @@ theorem sequenceDistance_shift_le {a b c : ℤ → ℝ}
   · simp [SequenceDistance, hab]
 
 /--
-\begin{proposition}[Properties of distance of sequences]\label{Properties of distance of sequences}
+**Proposition (Properties of distance of sequences).**
 
-    Let $a,b,c\in {\rm A}$.
-    Then
+Let $a,b,c\in {\rm A}$.
+Then
 
-    (i) If $\dist(a,b)=0$, then $a=b$.
+(i) If $\operatorname{dist}(a,b)=0$, then $a=b$.
 
-    (ii) $\dist(a,b)=\dist(b,a)$
+(ii) $\operatorname{dist}(a,b)=\operatorname{dist}(b,a)$
 
-    (iii) $\dist(a,c)\le \dist(a,b)+\dist(b,c)$
+(iii) $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+\operatorname{dist}(b,c)$
 
-    (iv) If $c(j)=b(j+1)$, then $\dist(a,c)\le \dist(a,b)+1$.
+(iv) If $c(j)=b(j+1)$, then $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+1$.
 
-    (v) For all $t>0$, $\dist(t\cdot a,t\cdot b)=\dist(a,b)$
+(v) For all $t>0$, $\operatorname{dist}(t\cdot a,t\cdot b)=\operatorname{dist}(a,b)$
 
-    (vi) For all $h\in\mathbb{Z}$,
-    $\dist(a,2^h a)\le |h|$.
-\end{proposition}
+(vi) For all $h\in\mathbb{Z}$,
+$\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_zero_eq`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_comm`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_triangle`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_shift_le`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_pow_two_smul_le`].
+See also [`Codex.sequenceDistance_zero_eq`],
+[`Codex.sequenceDistance_comm`],
+[`Codex.sequenceDistance_triangle`],
+[`Codex.sequenceDistance_shift_le`],
+[`Codex.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_smul (a b : ℤ → ℝ) {t : ℝ} (ht : 0 < t) :
     SequenceDistance (fun j => t * a j) (fun j => t * b j) = SequenceDistance a b := by
@@ -670,30 +648,29 @@ theorem sequenceDistance_smul (a b : ℤ → ℝ) {t : ℝ} (ht : 0 < t) :
     simp [SequenceDistance, h, h']
 
 /--
-\begin{proposition}[Properties of distance of sequences]\label{Properties of distance of sequences}
+**Proposition (Properties of distance of sequences).**
 
-    Let $a,b,c\in {\rm A}$.
-    Then
+Let $a,b,c\in {\rm A}$.
+Then
 
-    (i) If $\dist(a,b)=0$, then $a=b$.
+(i) If $\operatorname{dist}(a,b)=0$, then $a=b$.
 
-    (ii) $\dist(a,b)=\dist(b,a)$
+(ii) $\operatorname{dist}(a,b)=\operatorname{dist}(b,a)$
 
-    (iii) $\dist(a,c)\le \dist(a,b)+\dist(b,c)$
+(iii) $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+\operatorname{dist}(b,c)$
 
-    (iv) If $c(j)=b(j+1)$, then $\dist(a,c)\le \dist(a,b)+1$.
+(iv) If $c(j)=b(j+1)$, then $\operatorname{dist}(a,c)\le \operatorname{dist}(a,b)+1$.
 
-    (v) For all $t>0$, $\dist(t\cdot a,t\cdot b)=\dist(a,b)$
+(v) For all $t>0$, $\operatorname{dist}(t\cdot a,t\cdot b)=\operatorname{dist}(a,b)$
 
-    (vi) For all $h\in\mathbb{Z}$,
-    $\dist(a,2^h a)\le |h|$.
-\end{proposition}
+(vi) For all $h\in\mathbb{Z}$,
+$\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_zero_eq`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_comm`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_triangle`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_shift_le`],
-[`Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences.sequenceDistance_smul`].
+See also [`Codex.sequenceDistance_zero_eq`],
+[`Codex.sequenceDistance_comm`],
+[`Codex.sequenceDistance_triangle`],
+[`Codex.sequenceDistance_shift_le`],
+[`Codex.sequenceDistance_smul`].
 -/
 theorem sequenceDistance_pow_two_smul_le {a : ℤ → ℝ} (ha : SpacedSequence a) (h : ℤ) :
     SequenceDistance a (fun j => (2 : ℝ) ^ h * a j) ≤ (Int.natAbs h : WithTop ℕ) := by
@@ -733,15 +710,15 @@ theorem sequenceDistance_pow_two_smul_le {a : ℤ → ℝ} (ha : SpacedSequence 
     simpa [Int.natAbs_neg, zpow_natCast] using aux_sequenceDistance_le_of_within hwithin
 
 /--
-\begin{definition}[Closed balls in $\mathrm{A}$]\label{closed balls in A}
+**Definition (Closed balls in $\mathrm{A}$).**
 
 For $a\in\mathrm{A}$ and $r>0$ denote
-\begin{equation}
-\label{auto:spaced-sequence-distance-ball}B_{\mathrm{dist}}(a,r)=\{b\in\mathrm{A}\,:\,\dist(a,b)
-\le r\}.\end{equation}
-\end{definition}
+
+$$
+B_{\mathrm{dist}}(a,r)=\{b\in\mathrm{A}\,:\,\operatorname{dist}(a,b)\le r\}.
+$$
 -/
 def sequenceDistanceBall (a : ℤ → ℝ) (r : WithTop ℕ) : Set (ℤ → ℝ) :=
   {b | SpacedSequence b ∧ SequenceDistance a b ≤ r}
 
-end Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
+end Codex

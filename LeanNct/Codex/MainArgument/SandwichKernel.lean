@@ -15,16 +15,11 @@ set_option linter.style.header false
 Formalization of the subsection ``The sandwich kernel''.
 -/
 
-namespace Codex.MainArgument.SandwichKernel
+namespace Codex
 
 open MeasureTheory
 open scoped BigOperators ENNReal
 
-open Codex.Preliminaries.Notation
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.Preliminaries.Gaussians
-open Codex.Preliminaries.KKernels
-open Codex.Preliminaries.MKernels
 
 
 noncomputable section
@@ -35,58 +30,61 @@ abbrev RealPlane := ℝ × ℝ
 abbrev SequencePair := Fin 2 → ℤ → ℝ
 
 /--
-\label{double sequence of 2D functions}
+Blueprint label `double sequence of 2D functions`.
 
-See also [`Codex.MainArgument.SandwichKernel.MemDoubleSequence`].
+See also [`Codex.MemDoubleSequence`].
 -/
 abbrev DoubleSequence (k : ℕ) := Fin k → ℤ → RealPlane → ℝ
 
 /--
-\label{kernel sequences}
+Blueprint label `kernel sequences`.
 
-See also [`Codex.MainArgument.SandwichKernel.MemKernelSequence`] and
-[`Codex.MainArgument.SandwichKernel.kernelSequenceSeminorm`].
+See also [`Codex.MemKernelSequence`] and
+[`Codex.kernelSequenceSeminorm`].
 -/
 abbrev KernelSequence (k : ℕ) := ℤ → MKernel k
 
 /--
-\begin{definition}[double sequence of 2D functions]\label{double sequence of 2D functions}
-  For $1\le k\le n$, let $\mathcal{X}_k$ be the set of
-  double sequences
-  \begin{equation}\label{auto:sandwich-data-array}
-      X=(X_{i,j})_{i\in [k),j\in \Z}
-  \end{equation}
-  with $X_{i,j}\in W_0(\R^2)$.
-\end{definition}
+**Definition (double sequence of 2D functions).**
 
-See also [`Codex.MainArgument.SandwichKernel.DoubleSequence`].
+For $1\le k\le n$, let $\mathcal{X}_k$ be the set of
+  double sequences
+
+$$
+      X=(X_{i,j})_{i\in [k),j\in \mathbb{Z}}
+$$
+
+  with $X_{i,j}\in W_0(\mathbb{R}^2)$.
+
+See also [`Codex.DoubleSequence`].
 -/
 def MemDoubleSequence (k : ℕ) (X : DoubleSequence k) : Prop :=
   ∀ i j, Codex.MemW0 (X i j)
 
 /--
-\label{kernel sequences}
+Blueprint label `kernel sequences`.
 
-See also [`Codex.MainArgument.SandwichKernel.KernelSequence`] and
-[`Codex.MainArgument.SandwichKernel.kernelSequenceSeminorm`].
+See also [`Codex.KernelSequence`] and
+[`Codex.kernelSequenceSeminorm`].
 -/
 def MemKernelSequence (k : ℕ) (M : KernelSequence k) : Prop :=
   ∀ j, Codex.MemW0 (M j)
 
 /--
-\begin{definition}[geometric parameters]\label{geometric parameters}
-  Let $\Gamma$ be the set of triples $(k,u,a)$ with $k\in\N$, $1\le k\le n$,
-  $u\in[2)^k$, $a\in ({\rm A}^{2})^k$  so that $\dist(a_{i}^0,a_{i}^1)<\infty$ for all $i\in [k)$.
-  For a sequence pair $\alpha=(\alpha_0,\alpha_1)\in {\rm A}^2$ we write
-  $\Delta(\alpha) = \mathrm{dist}(\alpha_{0}, \alpha_1)$
-  and for $\gamma\in\Gamma$ let
-  \begin{equation}\label{auto:sandwich-distance-sum}
-  \Delta_\gamma= 1+\sum_{i\in [k)} \Delta(a_i).
-  \end{equation}
-\end{definition}
+**Definition (geometric parameters).**
 
-See also [`Codex.MainArgument.SandwichKernel.sequencePairDistance`] and
-[`Codex.MainArgument.SandwichKernel.geometricDelta`].
+Let $\Gamma$ be the set of triples $(k,u,a)$ with $k\in\mathbb{N}$, $1\le k\le n$, $u\in[2)^k$,
+$a\in ({\rm A}^{2})^k$  so that $\operatorname{dist}(a_{i}^0,a_{i}^1)<\infty$ for all $i\in [k)$.
+For a sequence pair $\alpha=(\alpha_0,\alpha_1)\in {\rm A}^2$ we write $\Delta(\alpha) =
+  \mathrm{dist}(\alpha_{0}, \alpha_1)$
+  and for $\gamma\in\Gamma$ let
+
+$$
+\Delta_\gamma= 1+\sum_{i\in [k)} \Delta(a_i).
+$$
+
+See also [`Codex.sequencePairDistance`] and
+[`Codex.geometricDelta`].
 -/
 structure GeometricParameters (n : ℕ) where
   k : ℕ
@@ -99,37 +97,39 @@ structure GeometricParameters (n : ℕ) where
     SequenceDistance (scales i 0) (scales i 1) < ⊤
 
 /--
-\label{geometric parameters}
+Blueprint label `geometric parameters`.
 
-See also [`Codex.MainArgument.SandwichKernel.GeometricParameters`] and
-[`Codex.MainArgument.SandwichKernel.geometricDelta`].
+See also [`Codex.GeometricParameters`] and
+[`Codex.geometricDelta`].
 -/
 noncomputable def sequencePairDistance (a : SequencePair) : WithTop ℕ :=
   SequenceDistance (a 0) (a 1)
 
 /--
-\label{geometric parameters}
+Blueprint label `geometric parameters`.
 
-See also [`Codex.MainArgument.SandwichKernel.GeometricParameters`] and
-[`Codex.MainArgument.SandwichKernel.sequencePairDistance`].
+See also [`Codex.GeometricParameters`] and
+[`Codex.sequencePairDistance`].
 -/
 noncomputable def geometricDelta {n : ℕ} (γ : GeometricParameters n) : ℕ :=
   1 + ∑ i, (sequencePairDistance (γ.scales i)).untop (ne_of_lt (γ.finite_distance i))
 
 /--
-\begin{definition}[two unitary matrices]\label{auto:unitary-matrices-definition}
-For $u\in [2)$ define unitary matrices $W_u\in\R^{2\times 2}$ as follows:
-Let $W_0$ be the $2\times 2$ identity matrix and
-$W_1=\frac{1}{\sqrt{2}}\begin{pmatrix}1 & 1\\-1 & 1\end{pmatrix}$.
-\end{definition}
+**Definition (two unitary matrices).**
+
+For $u\in [2)$ define unitary matrices $W_u\in\mathbb{R}^{2\times 2}$ as follows:
+Let $W_0$ be the $2\times 2$ identity matrix and $W_1=\frac{1}{\sqrt{2}}\begin{pmatrix}1 & 1\\-1 &
+1\end{pmatrix}$.
 -/
 noncomputable def W (u : Fin 2) (v : RealPlane) : RealPlane :=
   if u = 0 then v else
     ((v.1 + v.2) / Real.sqrt 2, (-v.1 + v.2) / Real.sqrt 2)
 
-/-- This auxiliary continuous linear equivalence realizes the nontrivial
+/--
+This auxiliary continuous linear equivalence realizes the nontrivial
 matrix `W_1` from the two-unitary-matrices definition, so that Wiener-space
-closure under a change of coordinates can be applied to 2D Gaussians. -/
+closure under a change of coordinates can be applied to 2D Codex.
+-/
 noncomputable def aux_WOneContinuousLinearEquiv : RealPlane ≃L[ℝ] RealPlane where
   toFun := fun v =>
     ((v.1 + v.2) / Real.sqrt 2, (-v.1 + v.2) / Real.sqrt 2)
@@ -162,52 +162,61 @@ noncomputable def aux_WOneContinuousLinearEquiv : RealPlane ≃L[ℝ] RealPlane 
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
-/-- This auxiliary equivalence packages either `W_0` or `W_1` as a linear
-coordinate change for the Wiener-space proof of the 2D Gaussian facts. -/
+/--
+This auxiliary equivalence packages either `W_0` or `W_1` as a linear
+coordinate change for the Wiener-space proof of the 2D Gaussian facts.
+-/
 noncomputable def aux_WContinuousLinearEquiv (u : Fin 2) : RealPlane ≃L[ℝ] RealPlane :=
   if u = 0 then ContinuousLinearEquiv.refl ℝ RealPlane else aux_WOneContinuousLinearEquiv
 
-/-- This auxiliary identity identifies the raw matrix notation `W` with its
-continuous-linear-equivalence implementation. -/
+/--
+This auxiliary identity identifies the raw matrix notation `W` with its
+continuous-linear-equivalence implementation.
+-/
 theorem aux_WContinuousLinearEquiv_apply (u : Fin 2) (v : RealPlane) :
     aux_WContinuousLinearEquiv u v = W u v := by
   unfold aux_WContinuousLinearEquiv W
   split_ifs <;> rfl
 
 /--
-\begin{definition}[2D Gaussians]\label{2D Gaussians}
-For $q\in\R^2$ with $q_0,q_1>0$, $u\in[2)$, and $v\in\mathbb R^2$, define
-\begin{equation}\label{auto:rotated-Gaussian-kernel}
-G_{q,u}(v) = \g_{(q_0)}((W_u v)_0) \g_{(q_1)}((W_u v)_1).
-\end{equation}
+**Definition (2D Gaussians).**
+
+For $q\in\mathbb{R}^2$ with $q_0,q_1>0$, $u\in[2)$, and $v\in\mathbb R^2$, define
+
+$$
+G_{q,u}(v) = \mathfrak{g}_{(q_0)}((W_u v)_0) \mathfrak{g}_{(q_1)}((W_u v)_1).
+$$
+
 For $\gamma=(k,u,a)\in \Gamma$, define
-\begin{equation}\label{auto:sandwich-Gaussian-factor}
+
+$$
 (G_{\gamma})_{i,j} = G_{a_i(j),u(i)}.
-\end{equation}
-\end{definition}
-See also [`Codex.MainArgument.SandwichKernel.gammaGaussian`].
+$$
+
+See also [`Codex.gammaGaussian`].
 -/
 noncomputable def twoDimensionalGaussian (q : Fin 2 → ℝ) (u : Fin 2) (v : RealPlane) : ℝ :=
   gaussianRescale (q 0) (W u v).1 * gaussianRescale (q 1) (W u v).2
 
 /--
-\label{2D Gaussians}
+Blueprint label `2D Gaussians`.
 
-See also [`Codex.MainArgument.SandwichKernel.twoDimensionalGaussian`].
+See also [`Codex.twoDimensionalGaussian`].
 -/
 noncomputable def gammaGaussian {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) :
     RealPlane → ℝ :=
   twoDimensionalGaussian (fun r => γ.scales i r j) (γ.orientation i)
 
 /--
-\begin{definition}[sandwich kernel]\label{sandwich kernel}
-Let $\gamma=(k,u,a)\in \Gamma$, $X\in \mathcal{X}_k$, and $i\in [k)$. Define for
-$j\in \Z$ and $y\in (\R^{2})^k$,
-\begin{equation}\label{auto:sandwich-kernel-definition}
-(\M(\gamma,X,i))_j(y) = \Big(\prod_{m\in [i)} (G_{\gamma})_{m,j}(y_m) \Big)
-X_{i,j}(y_i) \Big(\prod_{m=i+1}^{k-1} (G_{\gamma})_{m,j-1}(y_m) \Big).
-\end{equation}
-\end{definition}
+**Definition (sandwich kernel).**
+
+Let $\gamma=(k,u,a)\in \Gamma$, $X\in \mathcal{X}_k$, and $i\in [k)$. Define for  $j\in \mathbb{Z}$
+and $y\in (\mathbb{R}^{2})^k$,
+
+$$
+(\mathbf{M}(\gamma,X,i))_j(y) =  \Big(\prod_{m\in [i)} (G_{\gamma})_{m,j}(y_m) \Big) X_{i,j}(y_i)
+\Big(\prod_{m=i+1}^{k-1} (G_{\gamma})_{m,j-1}(y_m) \Big).
+$$
 -/
 noncomputable def sandwichKernel {n : ℕ} (γ : GeometricParameters n) (X : DoubleSequence γ.k)
     (i : Fin γ.k) : KernelSequence γ.k := fun j y =>
@@ -216,29 +225,31 @@ noncomputable def sandwichKernel {n : ℕ} (γ : GeometricParameters n) (X : Dou
   ∏ m ∈ Finset.univ.filter (fun m => i < m), gammaGaussian γ m (j - 1) (y.1 m, y.2 m)
 
 /--
-\begin{definition}[difference of 2D Gaussians]\label{auto:Gaussian-difference-kernel-definition}
-Let $\gamma=(k,u,a)\in \Gamma$.  For $i\in [k)$, $j\in \Z$, define
-\begin{equation}\label{auto:Gaussian-difference-kernel}
+**Definition (difference of 2D Gaussians).**
+
+Let $\gamma=(k,u,a)\in \Gamma$.  For $i\in [k)$, $j\in \mathbb{Z}$, define
+
+$$
 (Y_\gamma)_{i,j} = (G_\gamma)_{i,j-1} - (G_\gamma)_{i,j}\ .
-\end{equation}
-\end{definition}
+$$
 -/
 noncomputable def gaussianDifference {n : ℕ} (γ : GeometricParameters n) : DoubleSequence γ.k :=
   fun i j v => gammaGaussian γ i (j - 1) v - gammaGaussian γ i j v
 
 /--
-\begin{definition}[kernel sequences]\label{kernel sequences}
-Let $k\in\N$ with $1\le k\le n$. Let ${\rm M}(k)$ be the space of sequences
-$\M=(M_j)_{j\in \Z}$ such that for $j\in \Z$ we have
-$M_j\in W_0((\R^2)^k)$. Define
-\begin{equation}
-\|\M\|_{{\rm M}(k)}:=
-\sup_{J\in\N,\,J\ge1,\,\F\in\mathfrak F}\min(1,J^{-1+2^{k-n+1}})
-|\Lambda_k(\sum_{j\in [J)} M_j)(\F)| \, .
-\end{equation}
-\end{definition}
-See also [`Codex.MainArgument.SandwichKernel.KernelSequence`] and
-[`Codex.MainArgument.SandwichKernel.MemKernelSequence`].
+**Definition (kernel sequences).**
+
+Let $k\in\mathbb{N}$ with $1\le k\le n$. Let ${\rm M}(k)$ be the space of sequences
+$\mathbf{M}=(M_j)_{j\in \mathbb{Z}}$ such that for $j\in \mathbb{Z}$ we have
+$M_j\in W_0((\mathbb{R}^2)^k)$. Define
+
+$$
+\|\mathbf{M}\|_{{\rm M}(k)}=\sup_{J\in\mathbb{N},\,J\ge1,\,\mathbf{F}\in\mathfrak
+F}\min(1,J^{-1+2^{k-n+1}}) |\Lambda_k(\sum_{j\in [J)} M_j)(\mathbf{F})| \, .
+$$
+
+See also [`Codex.KernelSequence`] and
+[`Codex.MemKernelSequence`].
 -/
 noncomputable def kernelSequenceSeminorm (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n)
     (M : KernelSequence k) : ℝ≥0∞ :=
@@ -627,9 +638,9 @@ theorem aux_fin_telescope {k : ℕ} (a b : Fin k → ℝ) :
 /-- The normalized one-dimensional rescaled Gaussian has integral one. -/
 theorem aux_integral_gaussianRescale (t : ℝ) (ht : 0 < t) :
     (∫ x : ℝ, gaussianRescale t x) = 1 := by
-  change (∫ x : ℝ, t⁻¹ * Codex.Preliminaries.Gaussians.gaussian (t⁻¹ * x)) = 1
+  change (∫ x : ℝ, t⁻¹ * Codex.gaussian (t⁻¹ * x)) = 1
   rw [integral_const_mul,
-    Measure.integral_comp_inv_mul_left Codex.Preliminaries.Gaussians.gaussian t,
+    Measure.integral_comp_inv_mul_left Codex.gaussian t,
     aux_integral_gaussian]
   simp [smul_eq_mul, abs_of_pos ht, ht.ne']
 
@@ -891,7 +902,7 @@ theorem aux_eLpNorm_one_gammaBoundaryProduct {n : ℕ} (γ : GeometricParameters
       (volume : Measure (RealVector γ.k × RealVector γ.k)) :=
     Measure.prod.instIsAddHaarMeasure _ _
   have hI : Integrable (aux_gammaBoundaryProduct γ j) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    Codex.aux_memW0_integrable_of_addHaar
       (aux_gammaBoundaryProduct_memW0 γ j)
   rw [eLpNorm_one_eq_lintegral_enorm,
     ← ofReal_integral_norm_eq_lintegral_enorm hI]
@@ -1047,7 +1058,7 @@ theorem aux_positiveTermsOutside_memW0 {n : ℕ} (γ : GeometricParameters n)
   have hmain := aux_fintype_plane_product_memW0 (γ.k - 1) g hg
   simpa [aux_positiveTermsOutside, g, hK, i'] using hmain
 
-theorem aux_gammaGaussian_nonneg {n : ℕ} (γ : GeometricParameters n)
+theorem aux_sk_gammaGaussian_nonneg {n : ℕ} (γ : GeometricParameters n)
     (a : Fin γ.k) (j : ℤ) (v : RealPlane) : 0 ≤ gammaGaussian γ a j v := by
   unfold gammaGaussian
   apply aux_twoDimensionalGaussian_nonneg
@@ -1060,7 +1071,7 @@ theorem aux_positiveTermsOutside_nonneg {n : ℕ} (γ : GeometricParameters n)
   unfold aux_positiveTermsOutside
   apply Finset.prod_nonneg
   intro r hr
-  split_ifs <;> apply aux_gammaGaussian_nonneg
+  split_ifs <;> apply aux_sk_gammaGaussian_nonneg
 
 theorem aux_prod_univ_succAbove_cast {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (A : Fin γ.k → ℝ) :
@@ -1144,15 +1155,16 @@ theorem aux_sandwichKernel_eq_tensorSquareExtension {n : ℕ}
       htensor.symm
 
 /--
-\begin{proposition}[positive terms]\label{positive terms}
-Let $\gamma=(k,u,a)\in \Gamma$. Let $X\in \mathcal{X}_k$ and assume for each
-$i\in [k)$ and $j\in \Z$ we have
- $X_{i,j}(u,v)=f_{i,j}(u)f_{i,j}(v)$ for some real valued $f_{i,j}\in W_0(\R)$.
-Then for each $i\in [k)$, $j\in\Z$, and for all $\F\in {\mathfrak{F}}$,
-\begin{equation}\label{E:form-nonnegative}
-    \Lambda_k(\M(\gamma,X,i)_j)(\mathbf{F})\ge 0.
-\end{equation}
-\end{proposition}
+**Proposition (positive terms).**
+
+Let $\gamma=(k,u,a)\in \Gamma$. Let $X\in \mathcal{X}_k$ and assume for each $i\in [k)$ and  $j\in
+\mathbb{Z}$ we have
+ $X_{i,j}(u,v)=f_{i,j}(u)f_{i,j}(v)$ for some real valued $f_{i,j}\in W_0(\mathbb{R})$.
+Then for each $i\in [k)$, $j\in\mathbb{Z}$, and for all $\mathbf{F}\in {\mathfrak{F}}$,
+
+$$
+    \Lambda_k(\mathbf{M}(\gamma,X,i)_j)(\mathbf{F})\ge 0.
+$$
 -/
 theorem positiveTerms {n : ℕ} (γ : GeometricParameters n)
     (X : DoubleSequence γ.k) (_hX : MemDoubleSequence γ.k X)
@@ -1328,8 +1340,10 @@ theorem aux_kernelSequenceSeminorm_le_two {n k : ℕ} (hk : 1 ≤ k) (hkn : k �
     _ ≤ 1 * 2 := by gcongr
     _ = 2 := by norm_num
 
-/-- A telescoping kernel sequence is controlled by two uniformly `L¹`-bounded
-boundary terms. -/
+/--
+A telescoping kernel sequence is controlled by two uniformly `L¹`-bounded
+boundary terms.
+-/
 theorem aux_kernelSequenceSeminorm_le_of_telescope
     {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n) (C : ℝ) (hC : 0 ≤ C)
     (B : ℤ → MKernel k) (M : KernelSequence k)
@@ -1392,12 +1406,14 @@ theorem aux_kernelSequenceSeminorm_le_of_telescope
     _ = ENNReal.ofReal (2 * C) := by simp
 
 /--
-\begin{proposition}[telescoping terms]\label{telescoping terms}
-Let $\gamma=(k,u,a)\in \Gamma$. Then $Y_\gamma\in \mathcal X_k$ and
-\begin{equation}\label{auto:telescoping-terms-bound}
-    \|\sum_{i\in [k)} \M(\gamma,Y_\gamma,i)\|_{{\rm M}(k)}\le 2.
-\end{equation}
-\end{proposition}
+**Proposition (telescoping terms).**
+
+Let $\gamma=(k,u,a)\in \Gamma$.
+Then $Y_\gamma\in \mathcal{X}_k$ and
+
+$$
+    \|\sum_{i\in [k)} \mathbf{M}(\gamma,Y_\gamma,i)\|_{{\rm M}(k)}\le 2.
+$$
 -/
 theorem telescopingTerms {n : ℕ} (γ : GeometricParameters n) :
     MemDoubleSequence γ.k (gaussianDifference γ) ∧
@@ -1414,4 +1430,4 @@ theorem telescopingTerms {n : ℕ} (γ : GeometricParameters n) :
 
 end
 
-end Codex.MainArgument.SandwichKernel
+end Codex

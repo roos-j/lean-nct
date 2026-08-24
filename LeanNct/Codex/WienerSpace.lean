@@ -22,24 +22,32 @@ open MeasureTheory Metric Set Filter Topology
 open scoped BigOperators ENNReal Function
 
 /--
-\begin{definition}\label{auto:Wiener-space-definition}
+**Definition.**
 
-Let $d\in \N$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
+Let $d\in \mathbb{N}$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
 following definition is finite and measurable. Define
-\begin{equation}\label{auto:Wiener-local-norm}
-\|f\|_{W_0,d,r}:=    \int_{\R^d} \sup_{|x-y|\le r} |f(y)|\,dx.
-\end{equation}
+
+$$
+\|f\|_{W_0,d,r}=    \int_{\mathbb{R}^d} \sup_{|x-y|\le r} |f(y)|\,dx.
+$$
+
 As $d$ can be inferred from the type of $f$, we
 will omit it from the notation.
 We also set
-\begin{equation}\label{auto:Wiener-norm}
-    \|f\|_{W_0}:=\|f\|_{W_0,1}\, .
-\end{equation}
-Write $W_0(\R^d)$ or $W_0(d)$ for the set of continuous functions $f:\R^d\to\mathbb{K}$ so that
-\begin{equation}\label{auto:Wiener-space-finiteness}  \|f\|_{W_0}< \infty\, . \end{equation}
+
+$$
+    \|f\|_{W_0}=\|f\|_{W_0,1}\, .
+$$
+
+Write $W_0(\mathbb{R}^d)$ or $W_0(d)$ for the set of continuous functions
+$f:\mathbb{R}^d\to\mathbb{K}$ so that
+
+$$
+\|f\|_{W_0}< \infty\, .
+$$
+
 We also say that $f$ is in $W_0$ as again the type of $f$
 determines $d$.
-\end{definition}
 
 See also [`Codex.MemW0`], [`Codex.wienerNorm`], [`Codex.wienerNormOne`].
 -/
@@ -47,9 +55,7 @@ noncomputable def wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [NormedAdd
     (f : E → F) (r : ℝ) (x : E) : ℝ :=
   sSup ((fun z : E ↦ ‖f (x + z)‖) '' closedBall 0 r)
 
-/--
-`wienerEnvelope` is precisely the supremum in the definition from the draft.
--/
+/-- `wienerEnvelope` is precisely the supremum in the definition from the draft. -/
 theorem aux_wienerEnvelope_eq_sSup {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
     {f : E → F} {r : ℝ} {x : E} :
     wienerEnvelope f r x = sSup ((fun y : E ↦ ‖f y‖) '' closedBall x r) := by
@@ -86,9 +92,7 @@ theorem measurable_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSp
     (hf : Continuous f) (r : ℝ) : Measurable (wienerEnvelope f r) :=
   (continuous_wienerEnvelope hf r).measurable
 
-/--
-The supremum defining the envelope is attained on every nonempty closed ball.
--/
+/-- The supremum defining the envelope is attained on every nonempty closed ball. -/
 theorem aux_exists_wienerEnvelope_eq_and_ge {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [NormedAddCommGroup F] {f : E → F} (hf : Continuous f) {r : ℝ} (hr : 0 ≤ r) (x : E) :
     ∃ z ∈ closedBall (0 : E) r, wienerEnvelope f r x = ‖f (x + z)‖ ∧
@@ -109,15 +113,16 @@ theorem upperSemicontinuous_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] 
   (continuous_wienerEnvelope hf r).upperSemicontinuous
 
 /--
-\begin{proposition}\label{auto:local-supremum-measurability}
+**Proposition.**
 
-Let $d\in \N$ and $f:\R^d\to \mathbb{K}$ be continuous.
-Then for $r\in (0,\infty)$, the function $g:\R^d\to [0,\infty]$  defined by
-\begin{equation}\label{auto:local-supremum-function}
+Let $d\in \mathbb{N}$ and $f:\mathbb{R}^d\to \mathbb{K}$ be continuous.
+Then for $r\in (0,\infty)$, the function $g:\mathbb{R}^d\to [0,\infty]$  defined by
+
+$$
     g(x)=\sup_{|x-y|\le r}|f(y)|
-\end{equation}
+$$
+
 is finite and upper semi continuous and measurable.
-\end{proposition}
 -/
 theorem localSupremumMeasurability {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : Continuous f) {r : ℝ} (_hr : 0 < r) :
@@ -125,24 +130,32 @@ theorem localSupremumMeasurability {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 
   exact ⟨upperSemicontinuous_wienerEnvelope hf r, measurable_wienerEnvelope hf r⟩
 
 /--
-\begin{definition}\label{auto:Wiener-space-definition}
+**Definition.**
 
-Let $d\in \N$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
+Let $d\in \mathbb{N}$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
 following definition is finite and measurable. Define
-\begin{equation}\label{auto:Wiener-local-norm}
-\|f\|_{W_0,d,r}:=    \int_{\R^d} \sup_{|x-y|\le r} |f(y)|\,dx.
-\end{equation}
+
+$$
+\|f\|_{W_0,d,r}=    \int_{\mathbb{R}^d} \sup_{|x-y|\le r} |f(y)|\,dx.
+$$
+
 As $d$ can be inferred from the type of $f$, we
 will omit it from the notation.
 We also set
-\begin{equation}\label{auto:Wiener-norm}
-    \|f\|_{W_0}:=\|f\|_{W_0,1}\, .
-\end{equation}
-Write $W_0(\R^d)$ or $W_0(d)$ for the set of continuous functions $f:\R^d\to\mathbb{K}$ so that
-\begin{equation}\label{auto:Wiener-space-finiteness}  \|f\|_{W_0}< \infty\, . \end{equation}
+
+$$
+    \|f\|_{W_0}=\|f\|_{W_0,1}\, .
+$$
+
+Write $W_0(\mathbb{R}^d)$ or $W_0(d)$ for the set of continuous functions
+$f:\mathbb{R}^d\to\mathbb{K}$ so that
+
+$$
+\|f\|_{W_0}< \infty\, .
+$$
+
 We also say that $f$ is in $W_0$ as again the type of $f$
 determines $d$.
-\end{definition}
 
 See also [`Codex.wienerEnvelope`], [`Codex.wienerNorm`], [`Codex.wienerNormOne`].
 -/
@@ -151,24 +164,32 @@ def MemW0 {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpace E] [NormedAddCom
   Continuous f ∧ Integrable (wienerEnvelope f 1)
 
 /--
-\begin{definition}\label{auto:Wiener-space-definition}
+**Definition.**
 
-Let $d\in \N$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
+Let $d\in \mathbb{N}$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
 following definition is finite and measurable. Define
-\begin{equation}\label{auto:Wiener-local-norm}
-\|f\|_{W_0,d,r}:=    \int_{\R^d} \sup_{|x-y|\le r} |f(y)|\,dx.
-\end{equation}
+
+$$
+\|f\|_{W_0,d,r}=    \int_{\mathbb{R}^d} \sup_{|x-y|\le r} |f(y)|\,dx.
+$$
+
 As $d$ can be inferred from the type of $f$, we
 will omit it from the notation.
 We also set
-\begin{equation}\label{auto:Wiener-norm}
-    \|f\|_{W_0}:=\|f\|_{W_0,1}\, .
-\end{equation}
-Write $W_0(\R^d)$ or $W_0(d)$ for the set of continuous functions $f:\R^d\to\mathbb{K}$ so that
-\begin{equation}\label{auto:Wiener-space-finiteness}  \|f\|_{W_0}< \infty\, . \end{equation}
+
+$$
+    \|f\|_{W_0}=\|f\|_{W_0,1}\, .
+$$
+
+Write $W_0(\mathbb{R}^d)$ or $W_0(d)$ for the set of continuous functions
+$f:\mathbb{R}^d\to\mathbb{K}$ so that
+
+$$
+\|f\|_{W_0}< \infty\, .
+$$
+
 We also say that $f$ is in $W_0$ as again the type of $f$
 determines $d$.
-\end{definition}
 
 See also [`Codex.wienerEnvelope`], [`Codex.MemW0`], [`Codex.wienerNormOne`].
 -/
@@ -177,24 +198,32 @@ noncomputable def wienerNorm {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpa
   ∫⁻ x, ENNReal.ofReal (wienerEnvelope f r x)
 
 /--
-\begin{definition}\label{auto:Wiener-space-definition}
+**Definition.**
 
-Let $d\in \N$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
+Let $d\in \mathbb{N}$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
 following definition is finite and measurable. Define
-\begin{equation}\label{auto:Wiener-local-norm}
-\|f\|_{W_0,d,r}:=    \int_{\R^d} \sup_{|x-y|\le r} |f(y)|\,dx.
-\end{equation}
+
+$$
+\|f\|_{W_0,d,r}=    \int_{\mathbb{R}^d} \sup_{|x-y|\le r} |f(y)|\,dx.
+$$
+
 As $d$ can be inferred from the type of $f$, we
 will omit it from the notation.
 We also set
-\begin{equation}\label{auto:Wiener-norm}
-    \|f\|_{W_0}:=\|f\|_{W_0,1}\, .
-\end{equation}
-Write $W_0(\R^d)$ or $W_0(d)$ for the set of continuous functions $f:\R^d\to\mathbb{K}$ so that
-\begin{equation}\label{auto:Wiener-space-finiteness}  \|f\|_{W_0}< \infty\, . \end{equation}
+
+$$
+    \|f\|_{W_0}=\|f\|_{W_0,1}\, .
+$$
+
+Write $W_0(\mathbb{R}^d)$ or $W_0(d)$ for the set of continuous functions
+$f:\mathbb{R}^d\to\mathbb{K}$ so that
+
+$$
+\|f\|_{W_0}< \infty\, .
+$$
+
 We also say that $f$ is in $W_0$ as again the type of $f$
 determines $d$.
-\end{definition}
 
 See also [`Codex.wienerEnvelope`], [`Codex.MemW0`], [`Codex.wienerNorm`].
 -/
@@ -202,9 +231,7 @@ noncomputable abbrev wienerNormOne {E 𝕜 : Type*} [NormedAddCommGroup E] [Meas
     [NormedAddCommGroup 𝕜] (f : E → 𝕜) : ℝ≥0∞ :=
   wienerNorm f 1
 
-/--
-Membership in `W₀` gives the defining continuity and integrability facts.
--/
+/-- Membership in `W₀` gives the defining continuity and integrability facts. -/
 theorem MemW0.aux_continuous {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpace E]
     [NormedAddCommGroup 𝕜] {f : E → 𝕜} (hf : MemW0 f) : Continuous f :=
   hf.1
@@ -213,9 +240,7 @@ theorem MemW0.aux_integrable_envelope {E 𝕜 : Type*} [NormedAddCommGroup E] [M
     [NormedAddCommGroup 𝕜] {f : E → 𝕜} (hf : MemW0 f) : Integrable (wienerEnvelope f 1) :=
   hf.2
 
-/--
-A local supremum is nonnegative when its ball is nonempty.
--/
+/-- A local supremum is nonnegative when its ball is nonempty. -/
 theorem aux_wienerEnvelope_nonneg {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [NormedAddCommGroup F] {f : E → F} (hf : Continuous f) {r : ℝ} (hr : 0 ≤ r) (x : E) :
     0 ≤ wienerEnvelope f r x := by
@@ -228,9 +253,7 @@ theorem aux_wienerEnvelope_nonneg {E F : Type*} [NormedAddCommGroup E] [ProperSp
       · exact (isCompact_closedBall (0 : E) r).bddAbove_image h.continuousOn
       · exact ⟨0, Metric.mem_closedBall_self hr, rfl⟩
 
-/--
-The original function is bounded by every nonempty-radius Wiener envelope.
--/
+/-- The original function is bounded by every nonempty-radius Wiener envelope. -/
 theorem aux_norm_le_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [NormedAddCommGroup F] {f : E → F} (hf : Continuous f) {r : ℝ} (hr : 0 ≤ r) (x : E) :
     ‖f x‖ ≤ wienerEnvelope f r x := by
@@ -240,9 +263,7 @@ theorem aux_norm_le_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperS
     (le_csSup ((isCompact_closedBall (0 : E) r).bddAbove_image h.continuousOn)
       ⟨0, Metric.mem_closedBall_self hr, rfl⟩)
 
-/--
-Any point in the ball defining the envelope is bounded by that envelope.
--/
+/-- Any point in the ball defining the envelope is bounded by that envelope. -/
 theorem aux_norm_le_wienerEnvelope_of_mem_closedBall {E F : Type*} [NormedAddCommGroup E]
     [ProperSpace E] [NormedAddCommGroup F] {f : E → F} (hf : Continuous f) {r : ℝ}
     {x y : E} (hy : y ∈ closedBall x r) :
@@ -255,9 +276,7 @@ theorem aux_norm_le_wienerEnvelope_of_mem_closedBall {E F : Type*} [NormedAddCom
     · simpa [Metric.mem_closedBall, dist_eq_norm] using hy
     · abel_nf
 
-/--
-Enlarging the radius can only enlarge the local supremum.
--/
+/-- Enlarging the radius can only enlarge the local supremum. -/
 theorem aux_wienerEnvelope_mono_radius {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [NormedAddCommGroup F] {f : E → F} (hf : Continuous f) {r s : ℝ} (hr : 0 ≤ r)
     (hrs : r ≤ s) (x : E) :
@@ -340,9 +359,7 @@ theorem aux_wienerEnvelope_comp_linearIsometryEquiv {E F K : Type*}
     · simpa [Metric.mem_closedBall, dist_eq_norm] using hw
     · simp only [Function.comp_apply, e.map_add, e.apply_symm_apply]
 
-/--
-Isometric linear equivalences preserve Wiener-space membership.
--/
+/-- Isometric linear equivalences preserve Wiener-space membership. -/
 theorem MemW0.aux_comp_linearIsometryEquiv {E F K : Type*}
     [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E]
@@ -473,9 +490,7 @@ theorem aux_orthogonalDecomposition_range_apply {E F : Type*}
       _ = π.rangeRestrict x := Subtype.ext (by rfl)
   · exact (π.range).orthogonalProjectionOnto_orthogonal_apply_eq_zero hx
 
-/--
-Taking a local envelope twice is bounded by taking one envelope at the sum of the radii.
--/
+/-- Taking a local envelope twice is bounded by taking one envelope at the sum of the radii. -/
 theorem aux_wienerEnvelope_wienerEnvelope_le {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [NormedAddCommGroup F] {f : E → F} (hf : Continuous f) {r s : ℝ} (hr : 0 ≤ r)
     (hs : 0 ≤ s) (x : E) :
@@ -520,9 +535,7 @@ theorem aux_exists_finite_closedBall_cover {E : Type*} [NormedAddCommGroup E] [P
   exact Metric.mem_closedBall.mpr
     ((Metric.mem_ball.mp hyz).le.trans (by linarith))
 
-/--
-The volume-packing estimate behind the sharp Euclidean radius comparison.
--/
+/-- The volume-packing estimate behind the sharp Euclidean radius comparison. -/
 theorem aux_card_le_sharp_packing {d : ℕ} {r s : ℝ}
     (hr : 0 < r) (hrs : r ≤ s)
     (t : Finset (EuclideanSpace ℝ (Fin d)))
@@ -590,9 +603,7 @@ theorem aux_card_le_sharp_packing {d : ℕ} {r s : ℝ}
       pow_le_pow_left₀ (div_nonneg (by dsimp [ρ]; linarith) hδ.le) hratio _
     _ = (3 * s / r) ^ d := by simp [E]
 
-/--
-A closed Euclidean ball has a finite `r`-cover with the sharp packing count from the draft.
--/
+/-- A closed Euclidean ball has a finite `r`-cover with the sharp packing count from the draft. -/
 theorem aux_exists_finset_cover_closedBall_card_le {d : ℕ} {r s : ℝ}
     (hr : 0 < r) (hrs : r ≤ s) :
     ∃ t : Finset (EuclideanSpace ℝ (Fin d)),
@@ -768,9 +779,7 @@ theorem aux_exists_wienerEnvelope_comp_continuousLinearEquiv_bound {E F K : Type
     _ ≤ max 1 (a * (t.card : ℝ)) * ∫ y, wienerEnvelope f 1 y :=
       mul_le_mul_of_nonneg_right (le_max_right _ _) hnon
 
-/--
-Positive-radius local envelopes of a Wiener-space function are themselves in `W₀`.
--/
+/-- Positive-radius local envelopes of a Wiener-space function are themselves in `W₀`. -/
 theorem MemW0.aux_mem_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [MeasureSpace E] [BorelSpace E] [Measure.IsAddRightInvariant (volume : Measure E)]
     [NormedAddCommGroup F] {f : E → F} (hf : MemW0 f) {r : ℝ} (hr : 0 ≤ r) :
@@ -806,7 +815,7 @@ theorem aux_integrable_wienerEnvelope_of_integrable {d : ℕ} {𝕜 : Type*} [No
 
 /--
 In particular, for every $0<r<\infty$, a continuous
-$f:\R^d\to \mathbb{K}$ is in $W_0$ if and only if $\|f\|_{W_0,r}<\infty$.
+$f:\mathbb{R}^d\to \mathbb{K}$ is in $W_0$ if and only if $\|f\|_{W_0,r}<\infty$.
 -/
 theorem integrable_wienerEnvelope_iff {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : Continuous f) {r s : ℝ} (hr : 0 < r)
@@ -843,9 +852,7 @@ theorem aux_integral_wienerEnvelope_le_card_mul {d : ℕ} {𝕜 : Type*} [Normed
       simp_rw [integral_add_right_eq_self]
     _ = (t.card : ℝ) * ∫ x, wienerEnvelope f r x := by simp
 
-/--
-The sharp radius comparison from the draft.
--/
+/-- The sharp radius comparison from the draft. -/
 theorem aux_integral_wienerEnvelope_le_max_one_three_mul_div_pow_mul {d : ℕ} {𝕜 : Type*}
     [NormedAddCommGroup 𝕜] {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : Continuous f)
     {r s : ℝ} (hr : 0 < r) (hs : 0 < s) (hfr : Integrable (wienerEnvelope f r)) :
@@ -886,22 +893,24 @@ noncomputable def C_wienerNormRadiusIndependence (d : ℕ) (r s : ℝ) : ℝ :=
   max 1 ((3 * s / r) ^ d)
 
 /--
-\begin{proposition}\label{W_0 radius independence}
+**Proposition.**
 
-Let $d\in \N$.
+Let $d\in \mathbb{N}$.
 Let $0<r,s<\infty$ and set
-\begin{equation}\label{auto:Wiener-radius-comparison-constant}
-    C_{\text{W\_0 radius independence},d,r,s}:=\max(1,(3s/r)^d)\, .
-\end{equation}
+
+$$
+    C_{\text{W\_0 radius independence},d,r,s}=\max(1,(3s/r)^d)\, .
+$$
 
 Then for all continuous
-$f:\R^d\to \mathbb{K}$ we have
-\begin{equation}\label{W_0(r) property}
+$f:\mathbb{R}^d\to \mathbb{K}$ we have
+
+$$
     \|f\|_{W_0,s}\le C_{\text{W\_0 radius independence},d,r,s}\|f\|_{W_0,r}\, .
-\end{equation}
+$$
+
 In particular, for every $0<r<\infty$, a  continuous
-$f:\R^d\to \mathbb{K}$ is in $W_0$ if and only if $\|f\|_{W_0,r}<\infty$.
-\end{proposition}
+$f:\mathbb{R}^d\to \mathbb{K}$ is in $W_0$ if and only if $\|f\|_{W_0,r}<\infty$.
 
 See also [`Codex.memW0_iff_integrable_wienerEnvelope`],
 [`Codex.wienerNorm_le_max_one_three_mul_div_pow_mul`].
@@ -943,22 +952,24 @@ theorem wienerNorm_le_max_one_three_mul_div_pow_mul {d : ℕ} {𝕜 : Type*}
         rw [ENNReal.ofReal_mul hCpos.le, ← hwr]
 
 /--
-\begin{proposition}\label{W_0 radius independence}
+**Proposition.**
 
-Let $d\in \N$.
+Let $d\in \mathbb{N}$.
 Let $0<r,s<\infty$ and set
-\begin{equation}\label{auto:Wiener-radius-comparison-constant}
-    C_{\text{W\_0 radius independence},d,r,s}:=\max(1,(3s/r)^d)\, .
-\end{equation}
+
+$$
+    C_{\text{W\_0 radius independence},d,r,s}=\max(1,(3s/r)^d)\, .
+$$
 
 Then for all continuous
-$f:\R^d\to \mathbb{K}$ we have
-\begin{equation}\label{W_0(r) property}
+$f:\mathbb{R}^d\to \mathbb{K}$ we have
+
+$$
     \|f\|_{W_0,s}\le C_{\text{W\_0 radius independence},d,r,s}\|f\|_{W_0,r}\, .
-\end{equation}
+$$
+
 In particular, for every $0<r<\infty$, a  continuous
-$f:\R^d\to \mathbb{K}$ is in $W_0$ if and only if $\|f\|_{W_0,r}<\infty$.
-\end{proposition}
+$f:\mathbb{R}^d\to \mathbb{K}$ is in $W_0$ if and only if $\|f\|_{W_0,r}<\infty$.
 
 See also [`Codex.wienerNorm_le_max_one_three_mul_div_pow_mul`].
 -/
@@ -972,9 +983,7 @@ theorem memW0_iff_integrable_wienerEnvelope {d : ℕ} {𝕜 : Type*} [NormedAddC
   · intro h
     exact ⟨hf, (integrable_wienerEnvelope_iff hf hr zero_lt_one).mp h⟩
 
-/--
-The `L¹` part of the Wiener-space embedding.
--/
+/-- The `L¹` part of the Wiener-space embedding. -/
 theorem MemW0.aux_integrable {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : MemW0 f) : Integrable f := by
   refine hf.aux_integrable_envelope.mono hf.aux_continuous.aestronglyMeasurable
@@ -983,16 +992,12 @@ theorem MemW0.aux_integrable {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     abs_of_nonneg (aux_wienerEnvelope_nonneg hf.aux_continuous zero_le_one x)]
     using aux_norm_le_wienerEnvelope hf.aux_continuous zero_le_one x
 
-/--
-Consequently, `W₀` continuously embeds into `L¹`.
--/
+/-- Consequently, `W₀` continuously embeds into `L¹`. -/
 theorem MemW0.aux_memLp_one {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : MemW0 f) : MemLp f 1 volume :=
   memLp_one_iff_integrable.mpr hf.aux_integrable
 
-/--
-The elementary `L¹` estimate from the draft.
--/
+/-- The elementary `L¹` estimate from the draft. -/
 theorem aux_integral_norm_le_integral_wienerEnvelope {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : MemW0 f) :
     (∫ x, ‖f x‖) ≤ ∫ x, wienerEnvelope f 1 x := by
@@ -1027,9 +1032,7 @@ theorem aux_norm_mul_unitClosedBallVolume_le_integral_wienerEnvelope {d : ℕ} {
       setIntegral_le_integral hf.aux_integrable_envelope
         (ae_of_all _ fun y ↦ aux_wienerEnvelope_nonneg hf.aux_continuous zero_le_one y)
 
-/--
-The unit-ball volume is strictly positive.
--/
+/-- The unit-ball volume is strictly positive. -/
 theorem aux_unitClosedBallVolume_pos {d : ℕ} :
     0 < volume.real (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) := by
   exact ENNReal.toReal_pos (measure_closedBall_pos volume 0 zero_lt_one).ne'
@@ -1061,9 +1064,7 @@ theorem aux_norm_le_integral_wienerEnvelope_div_unitClosedBallVolume {d : ℕ} {
   rw [le_div_iff₀ (aux_unitClosedBallVolume_pos (d := d))]
   exact aux_norm_mul_unitClosedBallVolume_le_integral_wienerEnvelope hf x
 
-/--
-Consequently, `W₀` continuously embeds into `L∞`.
--/
+/-- Consequently, `W₀` continuously embeds into `L∞`. -/
 theorem MemW0.aux_memLp_top {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : MemW0 f) : MemLp f ∞ volume := by
   apply memLp_top_of_bound hf.aux_continuous.aestronglyMeasurable
@@ -1072,17 +1073,19 @@ theorem MemW0.aux_memLp_top {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
   exact ae_of_all _ fun x ↦ aux_norm_le_integral_wienerEnvelope_div_unitClosedBallVolume hf x
 
 /--
-\begin{proposition}\label{P:lp-embedding}
+**Proposition.**
 
-Let $d\in \N$ be given and set
-\begin{equation}\label{auto:Wiener-Lp-embedding-constant}
-    C_{\text{P:lp-embedding},d}:=\pi^{d/2}\Gamma(d/2+1)^{-1}\, .
-\end{equation}
+Let $d\in \mathbb{N}$ be given and set
+
+$$
+    C_{\text{P:lp-embedding},d}=\pi^{d/2}\Gamma(d/2+1)^{-1}\, .
+$$
+
 If $f\in W_0(d)$ and $1\le p\le \infty$, then
-\begin{equation}\label{Lp W_0}
+
+$$
 \|f\|_p\le C_{\text{P:lp-embedding},d}^{\tfrac 1p -1}\|f\|_{W_0}    \, .
-\end{equation}
-\end{proposition}
+$$
 
 See also [`Codex.MemW0.memLp`].
 -/
@@ -1123,9 +1126,7 @@ theorem MemW0.memLp {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
         mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (norm_nonneg _) (hC x) hp_sub)
           (norm_nonneg _)
 
-/--
-An `L¹` estimate in the extended seminorm convention.
--/
+/-- An `L¹` estimate in the extended seminorm convention. -/
 theorem aux_eLpNorm_one_le_of_integral_norm_le
     {E 𝕜 : Type*} [MeasurableSpace E] [NormedAddCommGroup 𝕜] {μ : Measure E}
     {f : E → 𝕜} (hf : Integrable f μ) {I : ℝ} (hI : (∫ x, ‖f x‖ ∂μ) ≤ I) :
@@ -1137,9 +1138,7 @@ theorem aux_eLpNorm_one_le_of_integral_norm_le
   rw [← ENNReal.ofReal_toReal htop, ← integral_norm_eq_lintegral_enorm hf.1]
   exact ENNReal.ofReal_le_ofReal hI
 
-/--
-A pointwise norm bound is an extended `L∞` estimate.
--/
+/-- A pointwise norm bound is an extended `L∞` estimate. -/
 theorem aux_eLpNorm_top_le_of_bound
     {E 𝕜 : Type*} [MeasurableSpace E] [NormedAddCommGroup 𝕜] {μ : Measure E}
     {f : E → 𝕜} {B : ℝ} (hB : ∀ᵐ x ∂μ, ‖f x‖ ≤ B) :
@@ -1147,9 +1146,7 @@ theorem aux_eLpNorm_top_le_of_bound
   rw [eLpNorm_exponent_top]
   exact eLpNormEssSup_le_of_ae_bound hB
 
-/--
-The elementary interpolation estimate between `L¹` and `L∞`.
--/
+/-- The elementary interpolation estimate between `L¹` and `L∞`. -/
 theorem aux_eLpNorm_interpolation_one_top_of_one_lt
     {E 𝕜 : Type*} [MeasurableSpace E] [NormedAddCommGroup 𝕜] {μ : Measure E}
     {f : E → 𝕜} (hf : AEStronglyMeasurable f μ) {q : ℝ} (hq : 1 < q) :
@@ -1208,9 +1205,7 @@ theorem aux_eLpNorm_interpolation_one_top_of_one_lt
   congr 3
   field_simp
 
-/--
-Quantitative `L¹`--`L∞` interpolation, including the endpoint `q = 1`.
--/
+/-- Quantitative `L¹`--`L∞` interpolation, including the endpoint `q = 1`. -/
 theorem aux_eLpNorm_interpolation_one_top_of_one_le
     {E 𝕜 : Type*} [MeasurableSpace E] [NormedAddCommGroup 𝕜] {μ : Measure E}
     {f : E → 𝕜} (hf : AEStronglyMeasurable f μ) {q : ℝ} (hq : 1 ≤ q) :
@@ -1220,9 +1215,7 @@ theorem aux_eLpNorm_interpolation_one_top_of_one_le
   · norm_num
   exact aux_eLpNorm_interpolation_one_top_of_one_lt hf hq
 
-/--
-Substituting explicit `L¹` and `L∞` bounds into interpolation.
--/
+/-- Substituting explicit `L¹` and `L∞` bounds into interpolation. -/
 theorem aux_eLpNorm_le_of_l1_linf_bounds
     {E 𝕜 : Type*} [MeasurableSpace E] [NormedAddCommGroup 𝕜] {μ : Measure E}
     {f : E → 𝕜} (hf : AEStronglyMeasurable f μ) {q : ℝ} (hq : 1 ≤ q)
@@ -1241,9 +1234,7 @@ theorem aux_eLpNorm_le_of_l1_linf_bounds
       mul_le_mul (ENNReal.rpow_le_rpow hA hqinv) (ENNReal.rpow_le_rpow hB hqcomp)
         bot_le bot_le
 
-/--
-The real-valued form of the preceding estimate.
--/
+/-- The real-valued form of the preceding estimate. -/
 theorem aux_eLpNorm_toReal_le_of_l1_linf_bounds
     {E 𝕜 : Type*} [MeasurableSpace E] [NormedAddCommGroup 𝕜] {μ : Measure E}
     {f : E → 𝕜} (hf : AEStronglyMeasurable f μ) {q : ℝ} (hq : 1 ≤ q)
@@ -1265,9 +1256,7 @@ theorem aux_eLpNorm_toReal_le_of_l1_linf_bounds
   simpa only [ENNReal.toReal_mul, ← ENNReal.toReal_rpow,
     ENNReal.toReal_ofReal hA0, ENNReal.toReal_ofReal hB0] using hreal
 
-/--
-Algebraic normalization of the interpolation constant to the form in the source draft.
--/
+/-- Algebraic normalization of the interpolation constant to the form in the source draft. -/
 theorem aux_rpow_interpolation_constant {I V q : ℝ} (hI : 0 ≤ I) (hV : 0 < V)
     (hq : 1 ≤ q) :
     I ^ q⁻¹ * (I / V) ^ (1 - q⁻¹) = V ^ (q⁻¹ - 1) * I := by
@@ -1308,18 +1297,14 @@ theorem aux_eLpNorm_toReal_le_interpolation_constant
       aux_eLpNorm_toReal_le_of_l1_linf_bounds hf hq hI (div_nonneg hI hV.le) hL1 hLinf
     _ = V ^ (q⁻¹ - 1) * I := aux_rpow_interpolation_constant hI hV hq
 
-/--
-The quantitative `L¹` endpoint in the Wiener-space estimate.
--/
+/-- The quantitative `L¹` endpoint in the Wiener-space estimate. -/
 theorem MemW0.aux_eLpNorm_one_le_wienerEnvelope {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : MemW0 f) :
     eLpNorm f 1 volume ≤ ENNReal.ofReal (∫ x, wienerEnvelope f 1 x) :=
   aux_eLpNorm_one_le_of_integral_norm_le hf.aux_integrable
     (aux_integral_norm_le_integral_wienerEnvelope hf)
 
-/--
-The quantitative `L∞` endpoint in the Wiener-space estimate.
--/
+/-- The quantitative `L∞` endpoint in the Wiener-space estimate. -/
 theorem MemW0.aux_eLpNorm_top_le_wienerEnvelope {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : MemW0 f) :
     eLpNorm f ∞ volume ≤ ENNReal.ofReal ((∫ x, wienerEnvelope f 1 x) /
@@ -1329,9 +1314,10 @@ theorem MemW0.aux_eLpNorm_top_le_wienerEnvelope {d : ℕ} {𝕜 : Type*} [Normed
 
 /--
 If $f\in W_0(d)$ and $1\le p\le \infty$, then
-\begin{equation}
+
+$$
 \|f\|_p\le C_{\text{P:lp-embedding},d}^{\frac 1p -1}\|f\|_{W_0}    \, .
-\end{equation}
+$$
 
 See also [`Codex.MemW0.memLp`].
 -/
@@ -1407,9 +1393,7 @@ theorem Integrable.aux_comp_add_right_prod {m l : ℕ} {𝕜 : Type*} [NormedAdd
     ext x <;> rfl
   simpa only [Function.comp_def] using htrans.integrable_comp_of_integrable hf
 
-/--
-Radius-independence of envelope integrability for a product of Euclidean spaces.
--/
+/-- Radius-independence of envelope integrability for a product of Euclidean spaces. -/
 theorem aux_integrable_wienerEnvelope_prod_of_integrable {m l : ℕ} {𝕜 : Type*}
     [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin l) → 𝕜}
@@ -1445,9 +1429,7 @@ theorem MemW0.aux_mem_wienerEnvelope_prod {m l : ℕ} {𝕜 : Type*} [NormedAddC
     (ae_of_all _ fun x ↦ ?_)
   exact aux_wienerEnvelope_wienerEnvelope_le hf.1 hr zero_le_one x
 
-/--
-The `L¹` consequence of `MemW0` on a Euclidean product.
--/
+/-- The `L¹` consequence of `MemW0` on a Euclidean product. -/
 theorem MemW0.aux_integrable_prod {m l : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin l) → 𝕜}
     (hf : MemW0 f) : Integrable f := by
@@ -1523,9 +1505,7 @@ theorem MemW0.aux_memW0_slice_of_addHaar {E F K : Type*}
   · exact le_of_lt (by simpa [dist_comm] using (Metric.mem_ball.mp hu'))
   · simpa [Metric.mem_closedBall, dist_eq_norm] using hz
 
-/--
-The symmetric version of `MemW0.aux_memW0_slice_of_addHaar`.
--/
+/-- The symmetric version of `MemW0.aux_memW0_slice_of_addHaar`. -/
 theorem MemW0.aux_memW0_slice_snd_of_addHaar {E F K : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ProperSpace E]
     [MeasureSpace E] [BorelSpace E] [SFinite (volume : Measure E)]
@@ -1913,9 +1893,7 @@ theorem aux_integral_wienerEnvelope_slice_le_unitClosedBallVolume_inv_mul
     _ ≤ V⁻¹ * ∫ p, G p :=
       mul_le_mul_of_nonneg_left hmain' (inv_nonneg.mpr (le_of_lt hVpos))
 
-/--
-The unit-envelope of a Wiener-space function is integrable on every coordinate fibre.
--/
+/-- The unit-envelope of a Wiener-space function is integrable on every coordinate fibre. -/
 theorem MemW0.aux_integrable_wienerEnvelope_slice {m l : ℕ} {𝕜 : Type*}
     [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin l) → 𝕜}
@@ -1923,9 +1901,7 @@ theorem MemW0.aux_integrable_wienerEnvelope_slice {m l : ℕ} {𝕜 : Type*}
     Integrable (fun v ↦ wienerEnvelope f 1 (u, v)) :=
   MemW0.aux_integrable (MemW0.aux_memW0_slice (hf.aux_mem_wienerEnvelope_prod zero_le_one) u)
 
-/--
-Integration along the second coordinate is continuous on `W₀`.
--/
+/-- Integration along the second coordinate is continuous on `W₀`. -/
 theorem aux_continuous_integral_slice {m l : ℕ} {𝕜 : Type*}
     [NormedAddCommGroup 𝕜] [NormedSpace ℝ 𝕜]
     {f : EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin l) → 𝕜}
@@ -2049,10 +2025,9 @@ theorem aux_integral_wienerEnvelope_integral_slice_le {m l : ℕ} {𝕜 : Type*}
     _ = ∫ p, wienerEnvelope f 1 p := rfl
 
 /--
-\begin{proposition}\label{P:schwartz-into-wiener}
+**Proposition.**
 
-We have $\mathcal{S}(\R^n)\subset W_0(\R^n)$.
-\end{proposition}
+We have $\mathcal{S}(\mathbb{R}^n)\subset W_0(\mathbb{R}^n)$.
 -/
 theorem SchwartzMap.memW0 {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜] [NormedSpace ℝ 𝕜]
     (f : SchwartzMap (EuclideanSpace ℝ (Fin d)) 𝕜) :
@@ -2139,9 +2114,7 @@ theorem aux_wienerEnvelope_mul_prod_le {E F 𝕜 : Type*} [NormedAddCommGroup E]
   rw [norm_mul]
   exact mul_le_mul hfx hgz (norm_nonneg _) (aux_wienerEnvelope_nonneg hf zero_le_one _)
 
-/--
-A product of two integrable nonnegative local envelopes is integrable on the product.
--/
+/-- A product of two integrable nonnegative local envelopes is integrable on the product. -/
 theorem aux_integrable_wienerEnvelope_mul_prod {E F 𝕜 : Type*} [NormedAddCommGroup E]
     [ProperSpace E] [MeasureSpace E] [BorelSpace E] [SFinite (volume : Measure E)]
     [NormedAddCommGroup F] [ProperSpace F] [MeasureSpace F] [BorelSpace F]
@@ -2197,9 +2170,7 @@ theorem MemW0.aux_mul_prod {E F 𝕜 : Type*} [NormedAddCommGroup E] [ProperSpac
     (ae_of_all _ fun x ↦ ?_)
   exact aux_wienerEnvelope_mul_prod_le hf.1 hg.1 x
 
-/--
-The quantitative binary tensor-product estimate for the extended Wiener integrals.
--/
+/-- The quantitative binary tensor-product estimate for the extended Wiener integrals. -/
 theorem aux_wienerNormOne_mul_prod_le {E F 𝕜 : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [MeasureSpace E] [BorelSpace E] [NormedAddCommGroup F] [ProperSpace F]
     [MeasureSpace F] [BorelSpace F] [SFinite (volume : Measure F)] [NormedField 𝕜]
@@ -2226,9 +2197,7 @@ theorem aux_wienerNormOne_mul_prod_le {E F 𝕜 : Type*} [NormedAddCommGroup E] 
         (ENNReal.continuous_ofReal.measurable.comp_aemeasurable
           (measurable_wienerEnvelope hg 1).aemeasurable)
 
-/--
-The canonical splitting of Euclidean coordinates into two blocks preserves Lebesgue volume.
--/
+/-- The canonical splitting of Euclidean coordinates into two blocks preserves Lebesgue volume. -/
 theorem aux_finAdd_measurePreserving (n m : ℕ) :
     MeasurePreserving (EuclideanSpace.finAddEquivProd :
       EuclideanSpace ℝ (Fin (n + m)) →
@@ -2279,9 +2248,7 @@ theorem aux_memW0_comp_finAddEquivProd_symm {n m : ℕ} {𝕜 : Type*}
     (ae_of_all _ fun p => ?_)
   exact aux_wienerEnvelope_comp_continuousLinearMap_le g hf.1 p
 
-/--
-Pullback along an injective linear map with a product Euclidean domain preserves `W₀`.
--/
+/-- Pullback along an injective linear map with a product Euclidean domain preserves `W₀`. -/
 theorem MemW0.aux_comp_injective_continuousLinearMap_prod
     {m l n : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin n) → 𝕜} (hf : MemW0 f)
@@ -2300,26 +2267,35 @@ theorem MemW0.aux_comp_injective_continuousLinearMap_prod
   simpa [A, e, Function.comp_def] using hP
 
 /--
-\begin{proposition}\label{W_0 fiber integrals}
+**Proposition.**
 
-For every injective linear map $\pi:\R^{m}\times \R^{l}\to \R^n$ with $m,l\in\N$, $1\le m+l\le n$
+For every injective linear map $\pi:\mathbb{R}^{m}\times \mathbb{R}^{l}\to \mathbb{R}^n$ with
+$m,l\in\mathbb{N}$, $1\le m+l\le n$
 there are $0<C_{\text{W\_0 fiber integrals},\pi,1},C_{\text{W\_0 fiber integrals},\pi,2}<\infty$
-such that the following holds. For every $f\in W_0(n)$ and $u\in\R^m$, the function $h_u$ defined by
-\begin{equation}\label{auto:Wiener-fiber-function}
+such that the following holds. For every $f\in W_0(n)$ and $u\in\mathbb{R}^m$, the function $h_u$
+defined by
+
+$$
     h_u(v)=f(\pi(u,v))
-\end{equation}
+$$
+
 is in $W_0(l)$ with
-\begin{equation}\label{W_0 on fiber}
+
+$$
     \|h_u\|_{W_0}\le C_{\text{W\_0 fiber integrals},\pi,1} \|f\|_{W_0}\, .
-\end{equation}
-The function $g:\Rm\to \C$ defined by
-\begin{equation}\label{auto:Wiener-fiber-integral} g(u) := \int_{\R^l} f(\pi(u,v)) \,dv=
-\int_{\R^l} h_u(v) \,dv \end{equation}
+$$
+
+The function $g:\mathbb{R}^m\to \mathbb{C}$ defined by
+
+$$
+g(u) = \int_{\mathbb{R}^l} f(\pi(u,v)) \,dv= \int_{\mathbb{R}^l} h_u(v) \,dv
+$$
+
 is in $W_0(m)$ with
-\begin{equation}\label{W_0 across fibers}
+
+$$
     \|g\|_{W_0}\le C_{\text{W\_0 fiber integrals},\pi,2}  \|f\|_{W_0}\, .
-\end{equation}
-\end{proposition}
+$$
 
 See also
 [`Codex.exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinearMap_bound`].
@@ -2408,9 +2384,7 @@ theorem exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinear
         simpa only [P] using aux_integral_wienerEnvelope_integral_slice_le hP
       _ ≤ (Ce * Cg) * ∫ y, wienerEnvelope f 1 y := hP_bound
 
-/--
-Each coordinate block has norm at most the norm of the whole Euclidean vector.
--/
+/-- Each coordinate block has norm at most the norm of the whole Euclidean vector. -/
 theorem aux_norm_finAdd_fst_le {n m : ℕ} (w : EuclideanSpace ℝ (Fin (n + m))) :
     ‖(EuclideanSpace.finAddEquivProd w).1‖ ≤ ‖w‖ := by
   let e₁ : EuclideanSpace ℝ (Fin (n + m)) ≃ₗᵢ[ℝ]
@@ -2430,9 +2404,7 @@ theorem aux_norm_finAdd_fst_le {n m : ℕ} (w : EuclideanSpace ℝ (Fin (n + m))
     _ = ‖e₁ w‖ := e₂.norm_map _
     _ = ‖w‖ := e₁.norm_map _
 
-/--
-Each coordinate block has norm at most the norm of the whole Euclidean vector.
--/
+/-- Each coordinate block has norm at most the norm of the whole Euclidean vector. -/
 theorem aux_norm_finAdd_snd_le {n m : ℕ} (w : EuclideanSpace ℝ (Fin (n + m))) :
     ‖(EuclideanSpace.finAddEquivProd w).2‖ ≤ ‖w‖ := by
   let e₁ : EuclideanSpace ℝ (Fin (n + m)) ≃ₗᵢ[ℝ]
@@ -2452,9 +2424,7 @@ theorem aux_norm_finAdd_snd_le {n m : ℕ} (w : EuclideanSpace ℝ (Fin (n + m))
     _ = ‖e₁ w‖ := e₂.norm_map _
     _ = ‖w‖ := e₁.norm_map _
 
-/--
-The coordinate splitting does not increase norm.
--/
+/-- The coordinate splitting does not increase norm. -/
 theorem aux_norm_finAdd_le {n m : ℕ} (w : EuclideanSpace ℝ (Fin (n + m))) :
     ‖EuclideanSpace.finAddEquivProd w‖ ≤ ‖w‖ := by
   rw [Prod.norm_def]
@@ -2493,9 +2463,7 @@ theorem aux_wienerEnvelope_finAdd_tensor_le {n m : ℕ} {𝕜 : Type*} [NormedFi
   apply aux_norm_le_wienerEnvelope_of_mem_closedBall hP
   simpa [Metric.mem_closedBall, dist_eq_norm] using hw'
 
-/--
-The Euclidean binary tensor product belongs to `W₀` once its product-coordinate version does.
--/
+/-- The Euclidean binary tensor product belongs to `W₀` once its product-coordinate version does. -/
 theorem aux_memW0_finAdd_tensor_of_memW0_prod {n m : ℕ} {𝕜 : Type*} [NormedField 𝕜]
     {f : EuclideanSpace ℝ (Fin n) → 𝕜} {g : EuclideanSpace ℝ (Fin m) → 𝕜}
     (hf : Continuous f) (hg : Continuous g)
@@ -2519,9 +2487,7 @@ theorem aux_memW0_finAdd_tensor_of_memW0_prod {n m : ℕ} {𝕜 : Type*} [Normed
     (ae_of_all _ fun z ↦ aux_wienerEnvelope_nonneg hH zero_le_one z) (ae_of_all _ fun z ↦ ?_)
   exact aux_wienerEnvelope_finAdd_tensor_le hf hg z
 
-/--
-The finite-dimensional tensor-product property in Euclidean coordinates.
--/
+/-- The finite-dimensional tensor-product property in Euclidean coordinates. -/
 theorem MemW0.aux_mul_finAdd {n m : ℕ} {𝕜 : Type*} [NormedField 𝕜]
     {f : EuclideanSpace ℝ (Fin n) → 𝕜} {g : EuclideanSpace ℝ (Fin m) → 𝕜}
     (hf : MemW0 f) (hg : MemW0 g) :
@@ -2529,9 +2495,7 @@ theorem MemW0.aux_mul_finAdd {n m : ℕ} {𝕜 : Type*} [NormedField 𝕜]
       f (EuclideanSpace.finAddEquivProd z).1 * g (EuclideanSpace.finAddEquivProd z).2) :=
   aux_memW0_finAdd_tensor_of_memW0_prod hf.1 hg.1 (hf.aux_mul_prod hg)
 
-/--
-The Euclidean-coordinate tensor product obeys the same Wiener-integral estimate.
--/
+/-- The Euclidean-coordinate tensor product obeys the same Wiener-integral estimate. -/
 theorem aux_wienerNormOne_finAdd_tensor_le {n m : ℕ} {𝕜 : Type*} [NormedField 𝕜]
     {f : EuclideanSpace ℝ (Fin n) → 𝕜} {g : EuclideanSpace ℝ (Fin m) → 𝕜}
     (hf : Continuous f) (hg : Continuous g) :
@@ -2559,9 +2523,7 @@ theorem aux_wienerNormOne_finAdd_tensor_le {n m : ℕ} {𝕜 : Type*} [NormedFie
             (ENNReal.continuous_ofReal.measurable.comp (continuous_wienerEnvelope hP 1).measurable)
     _ ≤ wienerNormOne f * wienerNormOne g := aux_wienerNormOne_mul_prod_le hf hg
 
-/--
-A finite tensor product of continuous functions is continuous.
--/
+/-- A finite tensor product of continuous functions is continuous. -/
 theorem aux_continuous_fintype_tensor {ι : Type*} [Fintype ι]
     {d : ι → ℕ} {𝕜 : Type*} [NormedField 𝕜]
     {f : ∀ i, EuclideanSpace ℝ (Fin (d i)) → 𝕜} (hf : ∀ i, Continuous (f i)) :
@@ -2596,19 +2558,21 @@ theorem aux_wienerEnvelope_fintype_tensor_le {ι : Type*} [Fintype ι]
     simpa [Metric.mem_closedBall, dist_eq_norm] using hzi
 
 /--
-\begin{proposition}\label{tensor Wiener}
+**Proposition.**
 
-    Let $J\in \N$ with $J\ge 1$. For $j\in [J)$, let $I_j\subset \N$ and assume the $I_j$ are
-    pairwise disjoint.
-    Set $I:=\bigcup_{j\in [J)}I_j$. Let $f_j:\R^{|I_j|}\to \mathbb{K}$ in $W_0(|I_j|)$ and define
-    \begin{equation}\label{auto:Wiener-product-function}
+Let $J\in \mathbb{N}$ with $J\ge 1$. For $j\in [J)$, let $I_j\subset \mathbb{N}$ and assume the
+$I_j$ are pairwise disjoint.
+Set $I=\bigcup_{j\in [J)}I_j$. Let $f_j:\mathbb{R}^{|I_j|}\to \mathbb{K}$ in $W_0(|I_j|)$ and define
+
+$$
         f(x_I)=\prod_{j\in [J)}f_j(x_{I_j})\, .
-    \end{equation}
-    Then $f\in W_0(|I|)$ and
-    \begin{equation}\label{product W_0}
+$$
+
+Then $f\in W_0(|I|)$ and
+
+$$
         \|f\|_{W_0}\le \prod_{j\in [J)}\|f_j\|_{W_0}\, .
-    \end{equation}
-\end{proposition}
+$$
 
 See also [`Codex.fintype_tensor_wienerNorm_le`].
 -/
@@ -2630,19 +2594,21 @@ theorem MemW0.fintype_tensor {ι : Type*} [Fintype ι]
   exact aux_wienerEnvelope_fintype_tensor_le (fun i ↦ (hf i).1) x
 
 /--
-\begin{proposition}\label{tensor Wiener}
+**Proposition.**
 
-    Let $J\in \N$ with $J\ge 1$. For $j\in [J)$, let $I_j\subset \N$ and assume the $I_j$ are
-    pairwise disjoint.
-    Set $I:=\bigcup_{j\in [J)}I_j$. Let $f_j:\R^{|I_j|}\to \mathbb{K}$ in $W_0(|I_j|)$ and define
-    \begin{equation}\label{auto:Wiener-product-function}
+Let $J\in \mathbb{N}$ with $J\ge 1$. For $j\in [J)$, let $I_j\subset \mathbb{N}$ and assume the
+$I_j$ are pairwise disjoint.
+Set $I=\bigcup_{j\in [J)}I_j$. Let $f_j:\mathbb{R}^{|I_j|}\to \mathbb{K}$ in $W_0(|I_j|)$ and define
+
+$$
         f(x_I)=\prod_{j\in [J)}f_j(x_{I_j})\, .
-    \end{equation}
-    Then $f\in W_0(|I|)$ and
-    \begin{equation}\label{product W_0}
+$$
+
+Then $f\in W_0(|I|)$ and
+
+$$
         \|f\|_{W_0}\le \prod_{j\in [J)}\|f_j\|_{W_0}\, .
-    \end{equation}
-\end{proposition}
+$$
 
 See also [`Codex.MemW0.fintype_tensor`].
 -/
@@ -2666,9 +2632,7 @@ theorem fintype_tensor_wienerNorm_le {ι : Type*} [Fintype ι]
     _ = ∏ i, ∫ x, wienerEnvelope (f i) 1 x :=
       integral_fintype_prod_volume_eq_prod (fun i ↦ wienerEnvelope (f i) 1)
 
-/--
-An injective simultaneous linear pullback of a finite tensor product belongs to `W₀`.
--/
+/-- An injective simultaneous linear pullback of a finite tensor product belongs to `W₀`. -/
 theorem MemW0.aux_fintype_tensor_comp_injective
     {ι : Type*} [Fintype ι] {m l : ℕ} {d : ι → ℕ}
     {𝕜 : Type*} [NormedField 𝕜]
@@ -2743,30 +2707,36 @@ theorem MemW0.aux_fintype_tensor_comp_of_iInf_ker_eq_bot
     (aux_continuousLinearMap_pi_injective_of_iInf_ker_eq_bot π hker)
 
 /--
-\begin{proposition}\label{W_0 Brascamp Lieb}
+**Proposition.**
 
- Let  $m,l\in\N$, $m+l\le n$ and assume $l\neq 0$.
-Let $J\in \N$ with $J\ge 1$. For $j\in [J)$, let $l_j\in \N$ and let  $\Pi_j:\R^m\times \R^l \to
-\R^{l_j}$
+Let  $m,l\in\mathbb{N}$, $m+l\le n$ and assume $l\neq 0$.
+Let $J\in \mathbb{N}$ with $J\ge 1$. For $j\in [J)$, let $l_j\in \mathbb{N}$ and let
+$\Pi_j:\mathbb{R}^m\times \mathbb{R}^l \to \mathbb{R}^{l_j}$
 be a linear map such that
-\begin{equation}\label{pi injective}
+
+$$
     \bigcap_{j\in [J)} {\rm ker}\Pi_j=\{0\}\, .
-\end{equation}
+$$
+
 Then there is $C>0$ such that the following holds.
-For $j\in [J)$, let $f_j\in W_0(\R^{l_j})$. Then for each
- $u\in \R^m$, the function
- \begin{equation}\label{auto:Wiener-Brascamp-Lieb-fiber-integrand}
+For $j\in [J)$, let $f_j\in W_0(\mathbb{R}^{l_j})$. Then for each
+ $u\in \mathbb{R}^m$, the function
+
+$$
      v\to \prod_{j\in [J)}f_j(\Pi_{j}(u,v))
- \end{equation}
- is in $W_0(\R^l)$ and with $f$ defined by
-    \begin{equation}\label{auto:Wiener-Brascamp-Lieb-integral}
-        f(u):=\int_{\R^l}\prod_{j\in [J)}f_j(\Pi_{j}(u,v))\, dv \, ,
-    \end{equation}
-    we have $f\in W_0(\R^{m})$ and
-    \begin{equation}\label{auto:Wiener-Brascamp-Lieb-bound}
+$$
+
+ is in $W_0(\mathbb{R}^l)$ and with $f$ defined by
+
+$$
+        f(u)=\int_{\mathbb{R}^l}\prod_{j\in [J)}f_j(\Pi_{j}(u,v))\, dv \, ,
+$$
+
+we have $f\in W_0(\mathbb{R}^{m})$ and
+
+$$
         \|f\|_{W_0}\le C\prod_{j\in[J)}\|f_j\|_{W_0}\, .
-    \end{equation}
-\end{proposition}
+$$
 -/
 theorem exists_brascamp_lieb_memW0
     {ι : Type*} [Fintype ι] {m l : ℕ} {d : ι → ℕ}

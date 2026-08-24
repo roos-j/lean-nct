@@ -12,35 +12,42 @@ set_option linter.style.header false
 Formalization of the ``Windows and pairs'' subsection of the reduction argument.
 -/
 
-namespace Codex.Reduction.WindowsAndPairs
+namespace Codex
 
 open MeasureTheory Filter
 open scoped FourierTransform Real Convolution Pointwise
-open Codex.Preliminaries.BumpsAndEstimates
 
 
 noncomputable section
 /--
-\begin{definition}[$(c,N)$-window]\label{def:cn-window}
-Let $c > 0$, $N\in\mathbb{N}$. A {\em $(c,N)$-window} is a Schwartz function
-$\phi:\R\to\R$ such that
-\begin{enumerate}
-\item For all $\xi\in \R$, $\widehat{\phi}$ is real and
-\begin{equation}\label{auto:window-Fourier-range}0\le \widehat{\phi}(\xi)\le 1.\end{equation}
-\item For all $\xi\in \R\setminus [-1,1]$ we have
-\begin{equation}\label{ft_window_eq_zero}
-\widehat{\phi}(\xi)=0.
-\end{equation}
-\item For all $\xi\in   [-\frac12,\frac12]$ we have
-\begin{equation}\label{ft_window_eq_one}
-\widehat{\phi}(\xi)=1.
-\end{equation}
-\item For all $\xi \in [-1,1]$ and all $m\le N$,
-\begin{equation}\label{windowbound}
-|\widehat{\phi}^{(m)}(\xi)| \leq c.
-\end{equation}
-\end{enumerate}
-\end{definition}
+**Definition ($(c,N)$-window).**
+
+Let $c > 0$, $N\in\mathbb{N}$. A *$(c,N)$-window* is a Schwartz function
+$\phi:\mathbb{R}\to\mathbb{R}$ such that
+
+1. For all $\xi\in \mathbb{R}$, $\widehat{\phi}$ is real and
+
+   $$
+   0\le \widehat{\phi}(\xi)\le 1.
+   $$
+
+1. For all $\xi\in \mathbb{R}\setminus [-1,1]$ we have
+
+   $$
+   \widehat{\phi}(\xi)=0.
+   $$
+
+1. For all $\xi\in   [-\frac12,\frac12]$ we have
+
+   $$
+   \widehat{\phi}(\xi)=1.
+   $$
+
+1. For all $\xi \in [-1,1]$ and all $m\le N$,
+
+   $$
+   |\widehat{\phi}^{(m)}(\xi)| \leq c.
+   $$
 -/
 def cnWindow (c : ℝ) (N : ℕ) (φ : SchwartzMap ℝ ℝ) : Prop :=
   0 < c ∧
@@ -54,14 +61,13 @@ def cnWindow (c : ℝ) (N : ℕ) (φ : SchwartzMap ℝ ℝ) : Prop :=
     ‖iteratedDeriv m (FourierTransform.fourier (fun x : ℝ => (φ x : ℂ))) ξ‖ ≤ c
 
 /--
-\begin{definition}[$(c,N)$-pair]
-\label{def:cpair}
-Let $c > 0$, $N\in\mathbb{N}$.  A pair $(\phi_0,\phi_1)$ of $(c,N)$-windows is
-a {\em $(c,N)$-pair} if
-\begin{equation}\label{windowsum}
+**Definition ($(c,N)$-pair).**
+
+Let $c > 0$, $N\in\mathbb{N}$.  A pair $(\phi_0,\phi_1)$ of $(c,N)$-windows is a *$(c,N)$-pair* if
+
+$$
 (\widehat{\phi_0})^2+(1-\widehat{\phi_1})^2=1.
-\end{equation}
-\end{definition}
+$$
 -/
 def cPair (c : ℝ) (N : ℕ) (φ₀ φ₁ : SchwartzMap ℝ ℝ) : Prop :=
   cnWindow c N φ₀ ∧ cnWindow c N φ₁ ∧
@@ -69,40 +75,46 @@ def cPair (c : ℝ) (N : ℕ) (φ₀ φ₁ : SchwartzMap ℝ ℝ) : Prop :=
       FourierTransform.fourier (fun x : ℝ => (φ₀ x : ℂ)) ξ ^ 2 +
         (1 - FourierTransform.fourier (fun x : ℝ => (φ₁ x : ℂ)) ξ) ^ 2 = 1
 
-/-- The order fixed in Definition [`Codex.Reduction.WindowsAndPairs.uniPair`]. -/
+/-- The order fixed in Definition [`Codex.uniPair`]. -/
 def N_uniPair : ℕ := 3
 
-/-- The derivative constant fixed in Definition [`Codex.Reduction.WindowsAndPairs.uniPair`]. -/
+/-- The derivative constant fixed in Definition [`Codex.uniPair`]. -/
 def C_uniPair : ℝ := 2 ^ 15
 
 /--
-\begin{definition}[Universal pair]\label{def:unipair}
-Set
-\begin{equation}\label{universal pair parameters}
-N_{\text{def:unipair}}=3,
-\end{equation}
-and
-\begin{equation}\label{auto:universal-window-constant}
-C_{\text{def:unipair}}=2^{15}.
-\end{equation}
-A universal pair is a $(C_{\text{def:unipair}},N_{\text{def:unipair}})$-pair.
-\end{definition}
+**Definition (Universal pair).**
 
-See also [`Codex.Reduction.WindowsAndPairs.uniPair`].
+Set
+
+$$
+N_{\text{Universal pair}}=3,
+$$
+
+and
+
+$$
+C_{\text{Universal pair}}=2^{15}.
+$$
+
+A universal pair is a $(C_{\text{Universal pair}},N_{\text{Universal pair}})$-pair.
+
+See also [`Codex.uniPair`].
 -/
 def uniPair (φ₀ φ₁ : SchwartzMap ℝ ℝ) : Prop :=
   cPair C_uniPair N_uniPair φ₀ φ₁
 
 /--
-\begin{definition}[Windows]\label{def:window}
+**Definition (Windows).**
+
 A function is a window if it is one of the two components of a universal pair.
-\end{definition}
 -/
 def window (φ : SchwartzMap ℝ ℝ) : Prop :=
   ∃ φ₀ φ₁ : SchwartzMap ℝ ℝ, uniPair φ₀ φ₁ ∧ (φ = φ₀ ∨ φ = φ₁)
 
-/-- For `existsUniversalPair`, Fourier inversion preserves a real-even compact smooth
-frequency profile after taking the real part of its inverse transform. -/
+/--
+For `existsUniversalPair`, Fourier inversion preserves a real-even compact smooth
+frequency profile after taking the real part of its inverse transform.
+-/
 theorem aux_fourier_re_fourierInv_of_real_even
     (f : ℝ → ℂ) (hcont : Continuous f) (hint : Integrable f)
     (hinvint : Integrable (FourierTransformInv.fourierInv f))
@@ -159,8 +171,10 @@ theorem aux_fourierInv_even_of_even (H : ℝ → ℂ)
   rw [Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_neg]
   simpa only [neg_neg] using hfourier.symm
 
-/-- Construct a real even Schwartz function with a prescribed real-even, compactly supported
-smooth Fourier profile. -/
+/--
+Construct a real even Schwartz function with a prescribed real-even, compactly supported
+smooth Fourier profile.
+-/
 theorem exists_real_even_schwartz_fourier_eq
     (H : ℝ → ℂ) (hcompact : HasCompactSupport H)
     (hsmooth : ContDiff ℝ (⊤ : ℕ∞) H)
@@ -264,8 +278,10 @@ theorem aux_exists_cPair_of_profiles
     rw [hphi0 xi, hphi1 xi]
     exact hpartition xi
 
-/-- A small smooth probability kernel used to turn a finite density into a smooth
-frequency profile for `existsUniversalPair`. -/
+/--
+A small smooth probability kernel used to turn a finite density into a smooth
+frequency profile for `existsUniversalPair`.
+-/
 def aux_uniPairKappa : ContDiffBump (0 : ℝ) :=
   { rIn := 1 / 128
     rOut := 1 / 64
@@ -978,9 +994,9 @@ theorem aux_uniPair_profiles_deriv_bound (m : ℕ) (hm : m ≤ 3) (x : ℝ) :
   simpa [C_uniPair] using hmain
 
 /--
-\begin{lemma}[Existence of a universal pair]\label{lem:cpair}\lean{existsUniversalPair}\leanok
+**Lemma (Existence of a universal pair).**
+
 There exists a universal pair.
-\end{lemma}
 -/
 theorem existsUniversalPair : ∃ φ₀ φ₁ : SchwartzMap ℝ ℝ, uniPair φ₀ φ₁ := by
   exact aux_exists_cPair_of_profiles C_uniPair N_uniPair aux_uniPairA aux_uniPairB
@@ -997,4 +1013,4 @@ theorem existsUniversalPair : ∃ φ₀ φ₁ : SchwartzMap ℝ ℝ, uniPair φ�
 
 end
 
-end Codex.Reduction.WindowsAndPairs
+end Codex

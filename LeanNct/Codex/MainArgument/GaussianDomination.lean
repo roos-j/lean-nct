@@ -12,27 +12,25 @@ set_option linter.style.header false
 Formalization of the subsection ``Gaussian domination''.
 -/
 
-namespace Codex.MainArgument.GaussianDomination
+namespace Codex
 
 open MeasureTheory
 open scoped BigOperators ENNReal Real FourierTransform
 
-open Codex.Preliminaries.Notation
-open Codex.Preliminaries.Gaussians
-open Codex.Preliminaries.BumpsAndEstimates
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
 
 
 noncomputable section
-/-- This auxiliary directional derivative is needed to write the manuscript's
-`(\partial_0+\partial_1)` in the raw product-coordinate model of `\mathbb R^2`. -/
+/--
+This auxiliary directional derivative is needed to write the manuscript's
+`(\partial_0+\partial_1)` in the raw product-coordinate model of `\mathbb R^2`.
+-/
 def aux_diagonalDerivative (f : RealPlane → ℝ) (v : RealPlane) : ℝ :=
   deriv (fun t : ℝ => f (v.1 + t, v.2 + t)) 0
 
-/-- This auxiliary product-rule identity evaluates the manuscript's diagonal derivative on a
-tensor product of two copies of a differentiable one-dimensional function. -/
+/--
+This auxiliary product-rule identity evaluates the manuscript's diagonal derivative on a
+tensor product of two copies of a differentiable one-dimensional function.
+-/
 theorem aux_diagonalDerivative_tensor {f : ℝ → ℝ} {v : RealPlane}
     (hf₀ : DifferentiableAt ℝ f v.1) (hf₁ : DifferentiableAt ℝ f v.2) :
     aux_diagonalDerivative (fun w : RealPlane => f w.1 * f w.2) v =
@@ -91,8 +89,10 @@ theorem aux_diagonalDerivative_tensor {f : ℝ → ℝ} {v : RealPlane}
   unfold aux_diagonalDerivative
   simpa using hprod'.deriv
 
-/-- This auxiliary product-rule identity is the two-function version needed for differentiated
-two-dimensional Gaussians. -/
+/--
+This auxiliary product-rule identity is the two-function version needed for differentiated
+two-dimensional Codex.
+-/
 theorem aux_diagonalDerivative_product {f g : ℝ → ℝ} {v : RealPlane}
     (hf : DifferentiableAt ℝ f v.1) (hg : DifferentiableAt ℝ g v.2) :
     aux_diagonalDerivative (fun w : RealPlane => f w.1 * g w.2) v =
@@ -151,8 +151,10 @@ theorem aux_diagonalDerivative_product {f g : ℝ → ℝ} {v : RealPlane}
   unfold aux_diagonalDerivative
   simpa using hprod'.deriv
 
-/-- This auxiliary product-rule identity evaluates the diagonal derivative of a two-dimensional
-Gaussian in the identity orientation. -/
+/--
+This auxiliary product-rule identity evaluates the diagonal derivative of a two-dimensional
+Gaussian in the identity orientation.
+-/
 theorem aux_diagonalDerivative_twoDimensionalGaussian_zero
     (t : Fin 2 → ℝ) (v : RealPlane) :
     aux_diagonalDerivative (twoDimensionalGaussian t 0) v =
@@ -165,8 +167,10 @@ theorem aux_diagonalDerivative_twoDimensionalGaussian_zero
     (gaussianRescale_hasDerivAt (t 0) v.1).differentiableAt
     (gaussianRescale_hasDerivAt (t 1) v.2).differentiableAt
 
-/-- This auxiliary estimate bounds the diagonal derivative of a product Gaussian in the identity
-orientation by the weighted bracket product used in the derivative kernel estimate. -/
+/--
+This auxiliary estimate bounds the diagonal derivative of a product Gaussian in the identity
+orientation by the weighted bracket product used in the derivative kernel estimate.
+-/
 theorem aux_abs_diagonalDerivative_twoDimensionalGaussian_zero_le
     (t : Fin 2 → ℝ) (ht : ∀ r : Fin 2, 0 < t r) (v : RealPlane) :
     |aux_diagonalDerivative (twoDimensionalGaussian t 0) v| ≤
@@ -256,8 +260,10 @@ theorem aux_abs_diagonalDerivative_twoDimensionalGaussian_zero_le
           (scaledBracketBump 2 (t 0) v.1 * scaledBracketBump 2 (t 1) v.2) := by
       simp only [b₀, b₁]
 
-/-- This auxiliary product-rule identity evaluates the diagonal derivative of a two-dimensional
-Gaussian in the nontrivial orientation. -/
+/--
+This auxiliary product-rule identity evaluates the diagonal derivative of a two-dimensional
+Gaussian in the nontrivial orientation.
+-/
 theorem aux_diagonalDerivative_twoDimensionalGaussian_one
     (t : Fin 2 → ℝ) (v : RealPlane) :
     aux_diagonalDerivative (twoDimensionalGaussian t 1) v =
@@ -297,7 +303,7 @@ theorem aux_diagonalDerivative_twoDimensionalGaussian_one
     simp [q, W]
   have hfirstDeriv : deriv (gaussianRescale (t 0)) (p 0) =
       (t 0)⁻¹ * (-2 * Real.pi * ((t 0)⁻¹ * p 0) *
-        Preliminaries.Gaussians.gaussian ((t 0)⁻¹ * p 0)) * (t 0)⁻¹ :=
+        Codex.gaussian ((t 0)⁻¹ * p 0)) * (t 0)⁻¹ :=
     (gaussianRescale_hasDerivAt (t 0) (p 0)).deriv
   have hdiag : (fun s : ℝ => twoDimensionalGaussian t 1 (v.1 + s, v.2 + s)) =
       (gaussianRescale (t 0) ∘ p) * (gaussianRescale (t 1) ∘ q) := by
@@ -310,8 +316,10 @@ theorem aux_diagonalDerivative_twoDimensionalGaussian_one
   rw [← hfirstDeriv, hp0, hq0]
   ring
 
-/-- This auxiliary estimate bounds the diagonal derivative of a product Gaussian in the
-nontrivial orientation by the weighted bracket product used in the derivative kernel estimate. -/
+/--
+This auxiliary estimate bounds the diagonal derivative of a product Gaussian in the
+nontrivial orientation by the weighted bracket product used in the derivative kernel estimate.
+-/
 theorem aux_abs_diagonalDerivative_twoDimensionalGaussian_one_le
     (t : Fin 2 → ℝ) (ht : ∀ r : Fin 2, 0 < t r) (v : RealPlane) :
     |aux_diagonalDerivative (twoDimensionalGaussian t 1) v| ≤
@@ -382,44 +390,54 @@ theorem aux_abs_diagonalDerivative_twoDimensionalGaussian_one_le
             scaledBracketBump 2 (t 1) (W 1 v).2) := by
       simp only [b₀, b₁]
 
-/-- This auxiliary abbreviation records the `\ell^1` size `|m|` of an element of
-`\mathbb N^2`, used in the displayed Gaussian series. -/
+/--
+This auxiliary abbreviation records the `\ell^1` size `|m|` of an element of
+`\mathbb N^2`, used in the displayed Gaussian series.
+-/
 def aux_natPairWeight (m : Fin 2 → ℕ) : ℕ := m 0 + m 1
 
-/-- This auxiliary weight is the coefficient `2^{-|m|/2}` in the Gaussian domination
-series. -/
+/--
+This auxiliary weight is the coefficient `2^{-|m|/2}` in the Gaussian domination
+series.
+-/
 def aux_gaussianDominationWeight (m : Fin 2 → ℕ) : ℝ :=
   Real.rpow 2 (-((aux_natPairWeight m : ℕ) : ℝ) / 2)
 
-/-- This auxiliary term is the two-dimensional Gaussian `G_{p(j),u}` occurring in the
-Gaussian-domination conclusion. -/
+/--
+This auxiliary term is the two-dimensional Gaussian `G_{p(j),u}` occurring in the
+Gaussian-domination conclusion.
+-/
 def aux_dominatingGaussianTerm (p : SequencePair) (u : Fin 2) (j : ℤ)
     (v : RealPlane) : ℝ :=
   twoDimensionalGaussian (fun r => p r j) u v
 
 
-/-- Constant from [`Codex.MainArgument.GaussianDomination.hKernelEstimateGaussianDomination`]. -/
+/-- Constant from [`Codex.hKernelEstimateGaussianDomination`]. -/
 def C_hKernelEstimateGaussianDomination : ℝ :=
   4 * C_diagonalSquareRoot 2 ^ 2 + C_gaussianBumpDecay 0 2 ^ 2
 
 /--
 Constant from
-[`Codex.MainArgument.GaussianDomination.hKernelDerivativeEstimateGaussianDomination`].
+[`Codex.hKernelDerivativeEstimateGaussianDomination`].
 -/
 def C_hKernelDerivativeEstimateGaussianDomination : ℝ :=
   4 * C_diagonalSquareRoot 2 * C_derivativeDiagonalSquareRoot 2 +
     2 * C_gaussianBumpDecay 0 2 * C_gaussianBumpDecay 1 2
 
-/-- This auxiliary sign check is needed when combining the positive component estimates into
-the kernel majorant. -/
+/--
+This auxiliary sign check is needed when combining the positive component estimates into
+the kernel majorant.
+-/
 theorem aux_C_hKernelEstimateGaussianDomination_nonneg :
     0 ≤ C_hKernelEstimateGaussianDomination := by
   rw [C_hKernelEstimateGaussianDomination, C_diagonalSquareRoot,
     aux_twoBumpEstimate_two_two]
   positivity
 
-/-- This auxiliary sign check is needed when combining the differentiated component estimates
-into the derivative kernel majorant. -/
+/--
+This auxiliary sign check is needed when combining the differentiated component estimates
+into the derivative kernel majorant.
+-/
 theorem aux_C_hKernelDerivativeEstimateGaussianDomination_nonneg :
     0 ≤ C_hKernelDerivativeEstimateGaussianDomination := by
   have hgaussian (m N : ℕ) : 0 ≤ C_gaussianBumpDecay m N := by
@@ -437,16 +455,16 @@ theorem aux_C_hKernelDerivativeEstimateGaussianDomination_nonneg :
     (mul_nonneg (mul_nonneg (by norm_num) hdiagonal) hderivative)
     (mul_nonneg (mul_nonneg (by norm_num) (hgaussian 0 2)) (hgaussian 1 2))
 
-/-- Constant from [`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`]. -/
+/-- Constant from [`Codex.gaussianDominationCombined`]. -/
 def C_gaussianDominationCombinedCard : ℕ := 36
 
-/-- Constant from [`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`]. -/
+/-- Constant from [`Codex.gaussianDominationCombined`]. -/
 def C_gaussianDominationCombinedDistance : ℕ := 2
 
-/-- Constant from [`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`]. -/
+/-- Constant from [`Codex.gaussianDominationCombined`]. -/
 def C_gaussianDominationCombined : ℝ := (2 : ℝ) ^ (153 : ℕ)
 
-/-- Constant from [`Codex.MainArgument.GaussianDomination.gaussDominationCase1`]. -/
+/-- Constant from [`Codex.gaussDominationCase1`]. -/
 noncomputable def C_gaussDominationCase1 : ℝ :=
   2 * ((2 : ℝ) ^ (7 : ℕ) * Real.pi * Real.exp (2 * Real.pi) *
     C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2 *
@@ -455,29 +473,33 @@ noncomputable def C_gaussDominationCase1 : ℝ :=
       (4 * C_bumpTriangle (-(1 / 2)) (1 / 2) (3 / 2) (3 / 2) *
         C_twoBumpEstimate (3 / 2) (3 / 2)))
 
-/-- Constant from [`Codex.MainArgument.GaussianDomination.gaussDominationCase2`]. -/
+/-- Constant from [`Codex.gaussDominationCase2`]. -/
 noncomputable def C_gaussDominationCase2 : ℝ :=
   3 * (2 : ℝ) ^ (7 : ℕ) * Real.exp (2 * Real.pi) *
     C_standardBumpPropertiesTilde 0 3 * C_fourScaleGaussianKernel 3 *
     C_hKernelDerivativeEstimateGaussianDomination * C_bumpTriangle 1 1 2 2 *
     C_twoBumpEstimate 2 2
 
-/-- Constant from [`Codex.MainArgument.GaussianDomination.gaussDominationCase3`]. -/
+/-- Constant from [`Codex.gaussDominationCase3`]. -/
 noncomputable def C_gaussDominationCase3 : ℝ :=
   (2 : ℝ) ^ (7 : ℕ) * Real.exp (2 * Real.pi) *
     C_standardBumpPropertiesTilde 0 2 * C_fourScaleGaussianKernel 2 *
     C_hKernelEstimateGaussianDomination * C_bumpTriangle 1 1 2 2 *
     C_twoBumpEstimate 2 2
 
-/-- This auxiliary positivity fact removes the junk-value branch of a rescaled Gaussian at
-the positive scales supplied by spaced sequences. -/
+/--
+This auxiliary positivity fact removes the junk-value branch of a rescaled Gaussian at
+the positive scales supplied by spaced sequences.
+-/
 theorem aux_gaussianRescale_nonneg {t : ℝ} (ht : 0 < t) (x : ℝ) :
     0 ≤ gaussianRescale t x := by
   unfold gaussianRescale
   exact mul_nonneg (inv_nonneg.mpr ht.le) (aux_gaussian_pos _).le
 
-/-- This auxiliary positivity fact is used when estimating the Gaussian-difference part of
-the `H` multiplier. -/
+/--
+This auxiliary positivity fact is used when estimating the Gaussian-difference part of
+the `H` multiplier.
+-/
 theorem aux_gammaGaussian_nonneg {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) (v : RealPlane) :
     0 ≤ gammaGaussian γ i j v := by
@@ -486,8 +508,10 @@ theorem aux_gammaGaussian_nonneg {n : ℕ} (γ : GeometricParameters n)
     (aux_gaussianRescale_nonneg ((γ.scales_spaced i 0 j).1) _)
     (aux_gaussianRescale_nonneg ((γ.scales_spaced i 1 j).1) _)
 
-/-- This auxiliary triangle-inequality estimate isolates the two Gaussian terms in the
-Gaussian-difference part of the `H` multiplier. -/
+/--
+This auxiliary triangle-inequality estimate isolates the two Gaussian terms in the
+Gaussian-difference part of the `H` multiplier.
+-/
 theorem aux_abs_gaussianDifference_le {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) (v : RealPlane) :
     |gaussianDifference γ i j v| ≤
@@ -502,8 +526,10 @@ theorem aux_abs_gaussianDifference_le {n : ℕ} (γ : GeometricParameters n)
       rw [abs_of_nonneg (aux_gammaGaussian_nonneg γ i (j - 1) v),
         abs_of_nonneg (aux_gammaGaussian_nonneg γ i j v)]
 
-/-- This auxiliary estimate reduces the kernel bound to estimates for the two factors of
-`s_\gamma` and the two Gaussian terms. -/
+/--
+This auxiliary estimate reduces the kernel bound to estimates for the two factors of
+`s_\gamma` and the two Gaussian terms.
+-/
 theorem aux_abs_hMultiplier_le {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) (v : RealPlane) :
     |hMultiplier γ i j v| ≤
@@ -525,9 +551,11 @@ theorem aux_abs_hMultiplier_le {n : ℕ} (γ : GeometricParameters n)
     _ = |sMultiplier γ i j v.1| * |sMultiplier γ i j v.2| +
         gammaGaussian γ i (j - 1) v + gammaGaussian γ i j v := by ring
 
-/-- This auxiliary lemma recovers the defining comparison at an arbitrary larger finite
+/--
+This auxiliary lemma recovers the defining comparison at an arbitrary larger finite
 distance from the `SequenceDistance` bound.  It is needed to verify the explicit multiset
-used in the kernel estimate. -/
+used in the kernel estimate.
+-/
 theorem aux_withinSequenceDistance_of_sequenceDistance_le {a b : ℤ → ℝ}
     (ha : SpacedSequence a) {r : ℕ}
     (h : SequenceDistance a b ≤ (r : WithTop ℕ)) : WithinSequenceDistance a b r := by
@@ -549,8 +577,10 @@ theorem aux_withinSequenceDistance_of_sequenceDistance_le {a b : ℤ → ℝ}
         _ ≤ a (j + r) := aux_spacedSequence_monotone ha (by omega)
   · simp [SequenceDistance, hexists] at h
 
-/-- This auxiliary bound says that the distance of the two scale sequences at a fixed index
-is absorbed by the manuscript's global parameter `\Delta_\gamma`. -/
+/--
+This auxiliary bound says that the distance of the two scale sequences at a fixed index
+is absorbed by the manuscript's global parameter `\Delta_\gamma`.
+-/
 theorem aux_sequencePairDistance_succ_le_geometricDelta {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) :
     sequencePairDistance (γ.scales i) + 1 ≤ (geometricDelta γ : WithTop ℕ) := by
@@ -573,15 +603,19 @@ theorem aux_sequencePairDistance_succ_le_geometricDelta {n : ℕ}
   rw [← WithTop.coe_one, ← WithTop.coe_add]
   exact WithTop.coe_le_coe.mpr hnat
 
-/-- This auxiliary positivity fact is used for the nonnegative Gaussian series in the combined
-domination statement. -/
+/--
+This auxiliary positivity fact is used for the nonnegative Gaussian series in the combined
+domination statement.
+-/
 theorem aux_gaussianDominationWeight_nonneg (m : Fin 2 → ℕ) :
     0 ≤ aux_gaussianDominationWeight m := by
   unfold aux_gaussianDominationWeight
   exact Real.rpow_nonneg (by norm_num) _
 
-/-- This auxiliary positivity fact verifies that every Gaussian term in the displayed
-dominating series is nonnegative. -/
+/--
+This auxiliary positivity fact verifies that every Gaussian term in the displayed
+dominating series is nonnegative.
+-/
 theorem aux_dominatingGaussianTerm_nonneg (p : SequencePair)
     (hp : ∀ r : Fin 2, SpacedSequence (p r)) (u : Fin 2) (j : ℤ)
     (v : RealPlane) :
@@ -600,8 +634,10 @@ theorem aux_dominatingGaussianTerm_memW0 (p : SequencePair)
   intro r
   exact aux_spacedSequence_pos (hp r) j
 
-/-- This auxiliary algebraic estimate expands the product of the two two-scale bounds used
-for the tensor-product term of the `H` multiplier. -/
+/--
+This auxiliary algebraic estimate expands the product of the two two-scale bounds used
+for the tensor-product term of the `H` multiplier.
+-/
 theorem aux_abs_mul_le_four_products {f g A u₀ u₁ v₀ v₁ : ℝ}
     (hA : 0 ≤ A) (hu₀ : 0 ≤ u₀) (hu₁ : 0 ≤ u₁)
     (hv₀ : 0 ≤ v₀) (hv₁ : 0 ≤ v₁)
@@ -615,8 +651,10 @@ theorem aux_abs_mul_le_four_products {f g A u₀ u₁ v₀ v₁ : ℝ}
       mul_le_mul hf hg (abs_nonneg _) (mul_nonneg hA hu)
     _ = A ^ 2 * (u₀ * v₀ + u₀ * v₁ + u₁ * v₀ + u₁ * v₁) := by ring
 
-/-- This auxiliary product-rule majorant is the algebraic part of the derivative kernel
-estimate.  It keeps the inverse scale attached to the factor on which the derivative falls. -/
+/--
+This auxiliary product-rule majorant is the algebraic part of the derivative kernel
+estimate.  It keeps the inverse scale attached to the factor on which the derivative falls.
+-/
 theorem aux_abs_tensorDerivative_le_four_products
     {f₀ f₁ d₀ d₁ c d a₀ a₁ b₀ b₁ u₀ u₁ v₀ v₁ : ℝ}
     (hc : 0 ≤ c) (hd : 0 ≤ d) (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁)
@@ -668,8 +706,10 @@ theorem aux_abs_tensorDerivative_le_four_products
     _ ≤ 4 * c * d * Q := by
       nlinarith [mul_nonneg (mul_nonneg hc hd) hQ]
 
-/-- This auxiliary estimate converts the one-dimensional Gaussian bump estimate into the
-two-dimensional product estimate needed for each Gaussian entry of the kernel multiset. -/
+/--
+This auxiliary estimate converts the one-dimensional Gaussian bump estimate into the
+two-dimensional product estimate needed for each Gaussian entry of the kernel multiset.
+-/
 theorem aux_twoDimensionalGaussian_le_gaussianBumpProduct (t : Fin 2 → ℝ)
     (ht : ∀ r : Fin 2, 0 < t r) (u : Fin 2) (v : RealPlane) :
     twoDimensionalGaussian t u v ≤ C_gaussianBumpDecay 0 2 ^ 2 *
@@ -694,8 +734,10 @@ theorem aux_twoDimensionalGaussian_le_gaussianBumpProduct (t : Fin 2 → ℝ)
         (scaledBracketBump 2 (t 0) (W u v).1 *
           scaledBracketBump 2 (t 1) (W u v).2) := by ring
 
-/-- This auxiliary arithmetic step combines the tensor-product contribution and the two
-Gaussian-difference contributions into the six-term kernel majorant. -/
+/--
+This auxiliary arithmetic step combines the tensor-product contribution and the two
+Gaussian-difference contributions into the six-term kernel majorant.
+-/
 theorem aux_sixTermKernelMajorant {A c d S r₀ r₁ : ℝ}
     (hc : 0 ≤ c) (hd : 0 ≤ d) (hS : 0 ≤ S) (hr₀ : 0 ≤ r₀) (hr₁ : 0 ≤ r₁)
     (hA : A ≤ 4 * c ^ 2 * S) :
@@ -709,8 +751,10 @@ theorem aux_sixTermKernelMajorant {A c d S r₀ r₁ : ℝ}
   nlinarith [mul_nonneg hfourc hr₀, mul_nonneg hfourc hr₁,
     mul_nonneg hdSq hS]
 
-/-- This auxiliary arithmetic step combines the tensor derivative contribution and the two
-Gaussian derivative contributions into the six-term differentiated-kernel majorant. -/
+/--
+This auxiliary arithmetic step combines the tensor derivative contribution and the two
+Gaussian derivative contributions into the six-term differentiated-kernel majorant.
+-/
 theorem aux_sixTermDerivativeMajorant {X c d g S r₀ r₁ : ℝ}
     (hc : 0 ≤ c) (hd : 0 ≤ d) (hg : 0 ≤ g)
     (hS : 0 ≤ S) (hr₀ : 0 ≤ r₀) (hr₁ : 0 ≤ r₁)
@@ -726,9 +770,11 @@ theorem aux_sixTermDerivativeMajorant {X c d g S r₀ r₁ : ℝ}
       le_add_of_nonneg_right hextra
     _ = (4 * c * d + g) * (S + r₀ + r₁) := by ring
 
-/-- This auxiliary comparison replaces a scale lying between `t` and `2t` by `t` in the
+/--
+This auxiliary comparison replaces a scale lying between `t` and `2t` by `t` in the
 second-order bracket bump.  It is the elementary scale comparison used in both orientation
-cases of the kernel estimate. -/
+cases of the kernel estimate.
+-/
 theorem aux_scaledBracketBump_two_scale_le {t s x : ℝ}
     (ht : 0 < t) (hts : t ≤ s) (hst : s ≤ 2 * t) :
     scaledBracketBump 2 s x ≤ 2 * scaledBracketBump 2 t x := by
@@ -754,8 +800,10 @@ theorem aux_scaledBracketBump_two_scale_le {t s x : ℝ}
       div_le_div_of_nonneg_left (by positivity) (pow_pos htplus _) hden
     _ = 2 * (t / (t + |x|) ^ 2) := by ring
 
-/-- This auxiliary identity writes the second-order scaled bracket bump in a form convenient for
-comparing nearby scales. -/
+/--
+This auxiliary identity writes the second-order scaled bracket bump in a form convenient for
+comparing nearby scales.
+-/
 theorem aux_scaledBracketBump_two_eq {t x : ℝ} (ht : 0 < t) :
     scaledBracketBump 2 t x = t / (t + |x|) ^ 2 := by
   unfold scaledBracketBump
@@ -766,8 +814,10 @@ theorem aux_scaledBracketBump_two_eq {t x : ℝ} (ht : 0 < t) :
   rw [abs_mul, abs_inv, abs_of_pos ht]
   field_simp [htne, hsumne, hinnerne]
 
-/-- This auxiliary comparison is the derivative-scale version of the preceding bump comparison:
-the extra inverse scale removes the loss incurred by enlarging a scale. -/
+/--
+This auxiliary comparison is the derivative-scale version of the preceding bump comparison:
+the extra inverse scale removes the loss incurred by enlarging a scale.
+-/
 theorem aux_inv_mul_scaledBracketBump_two_le_of_le_scale {t s x : ℝ}
     (ht : 0 < t) (hts : t ≤ s) :
     s⁻¹ * scaledBracketBump 2 s x ≤ t⁻¹ * scaledBracketBump 2 t x := by
@@ -792,9 +842,11 @@ theorem aux_inv_mul_scaledBracketBump_two_le_of_le_scale {t s x : ℝ}
     _ = t⁻¹ * (t / (t + |x|) ^ 2) := by
       field_simp [ne_of_gt ht, htdenne]
 
-/-- This auxiliary scale comparison controls the Euclidean combination of two positive scales by
+/--
+This auxiliary scale comparison controls the Euclidean combination of two positive scales by
 their pointwise maximum.  It is used to compare the first orientation's `s`-multiplier scales
-with the two maximum sequences in the explicit multiset. -/
+with the two maximum sequences in the explicit multiset.
+-/
 theorem aux_sqrt_sq_add_sq_between_max_and_two_mul_max {x y : ℝ}
     (hx : 0 ≤ x) (hy : 0 ≤ y) :
     max x y ≤ Real.sqrt (x ^ 2 + y ^ 2) ∧
@@ -827,8 +879,10 @@ theorem aux_sqrt_sq_add_sq_between_max_and_two_mul_max {x y : ℝ}
     rw [Real.sq_sqrt hsum]
     nlinarith
 
-/-- This auxiliary sequence packages the two cases in the definition of the manuscript's
-`s_\gamma` multiplier, so that its diagonal-square-root estimates can be applied uniformly. -/
+/--
+This auxiliary sequence packages the two cases in the definition of the manuscript's
+`s_\gamma` multiplier, so that its diagonal-square-root estimates can be applied uniformly.
+-/
 noncomputable def aux_sMultiplierScale {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) : ℤ → ℝ :=
   if γ.orientation i = 0 then
@@ -836,8 +890,10 @@ noncomputable def aux_sMultiplierScale {n : ℕ} (γ : GeometricParameters n)
   else
     fun r => Real.sqrt 2 * γ.scales i 1 r
 
-/-- This auxiliary fact verifies the spacedness required to use the diagonal-square-root
-estimate for the uniformly packaged scale sequence. -/
+/--
+This auxiliary fact verifies the spacedness required to use the diagonal-square-root
+estimate for the uniformly packaged scale sequence.
+-/
 theorem aux_sMultiplierScale_spaced {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) : SpacedSequence (aux_sMultiplierScale γ i) := by
   classical
@@ -847,8 +903,10 @@ theorem aux_sMultiplierScale_spaced {n : ℕ} (γ : GeometricParameters n)
   · simpa [aux_sMultiplierScale, h] using
       smul_mem_A (γ.scales_spaced i 1) (Real.sqrt_pos.2 (by norm_num))
 
-/-- This auxiliary identity lets the preliminary diagonal-square-root estimates be used directly
-for `sMultiplier`. -/
+/--
+This auxiliary identity lets the preliminary diagonal-square-root estimates be used directly
+for `sMultiplier`.
+-/
 theorem aux_sMultiplier_eq_diagonalSquareRoot {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) (x : ℝ) :
     sMultiplier γ i j x =
@@ -863,8 +921,10 @@ theorem aux_sMultiplier_eq_diagonalSquareRoot {n : ℕ}
     rw [aux_squareRootGaussianDifference_eq_diagonalSquareRoot]
     simp [aux_sMultiplierScale, h]
 
-/-- This auxiliary derivative identity transfers the preliminary derivative estimate for the
-diagonal-square-root kernel to the raw `sMultiplier` definition. -/
+/--
+This auxiliary derivative identity transfers the preliminary derivative estimate for the
+diagonal-square-root kernel to the raw `sMultiplier` definition.
+-/
 theorem aux_deriv_sMultiplier_eq_diagonalSquareRoot {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) (x : ℝ) :
     deriv (sMultiplier γ i j) x =
@@ -879,8 +939,10 @@ theorem aux_deriv_sMultiplier_eq_diagonalSquareRoot {n : ℕ}
     rw [aux_squareRootGaussianDifference_deriv_eq_diagonalSquareRoot]
     simp [aux_sMultiplierScale, h]
 
-/-- This auxiliary identity evaluates the diagonal derivative of a difference once both
-restrictions to the diagonal line are differentiable. -/
+/--
+This auxiliary identity evaluates the diagonal derivative of a difference once both
+restrictions to the diagonal line are differentiable.
+-/
 theorem aux_diagonalDerivative_sub
     {f g : RealPlane → ℝ} {v : RealPlane}
     (hf : DifferentiableAt ℝ (fun t : ℝ => f (v.1 + t, v.2 + t)) 0)
@@ -974,8 +1036,10 @@ theorem aux_gammaGaussian_diagonal_differentiable {n : ℕ}
     · apply (gaussianRescale_hasDerivAt (γ.scales i 1 j) _).differentiableAt.comp 0
       fun_prop
 
-/-- This auxiliary identity expands the diagonal derivative of the H multiplier once its
-component restrictions to the diagonal line are differentiable. -/
+/--
+This auxiliary identity expands the diagonal derivative of the H multiplier once its
+component restrictions to the diagonal line are differentiable.
+-/
 theorem aux_hMultiplier_diagonalDerivative_decomposition
     {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) (v : RealPlane)
     (hs₀ : DifferentiableAt ℝ (sMultiplier γ i j) v.1)
@@ -1007,8 +1071,10 @@ theorem aux_hMultiplier_diagonalDerivative_decomposition
   rw [aux_diagonalDerivative_sub htensor hgaussianDifferenceDiff]
   rw [aux_diagonalDerivative_tensor hs₀ hs₁, hgaussianDifference]
 
-/-- This auxiliary triangle inequality isolates the tensor and two Gaussian derivative terms
-in the differentiated H multiplier. -/
+/--
+This auxiliary triangle inequality isolates the tensor and two Gaussian derivative terms
+in the differentiated H multiplier.
+-/
 theorem aux_abs_hMultiplier_diagonalDerivative_triangle
     {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) (v : RealPlane)
     (hs₀ : DifferentiableAt ℝ (sMultiplier γ i j) v.1)
@@ -1064,8 +1130,10 @@ theorem aux_abs_hMultiplier_diagonalDerivative_triangle
         (aux_diagonalDerivative (gammaGaussian γ i j) v))
     _ = _ := by ring
 
-/-- This auxiliary sign check permits the diagonal-square-root bound to be enlarged by the
-scale-comparison factor in the kernel estimate. -/
+/--
+This auxiliary sign check permits the diagonal-square-root bound to be enlarged by the
+scale-comparison factor in the kernel estimate.
+-/
 theorem aux_C_diagonalSquareRoot_two_nonneg :
     0 ≤ C_diagonalSquareRoot 2 := by
   have hgaussian (m N : ℕ) : 0 ≤ C_gaussianBumpDecay m N := by
@@ -1074,9 +1142,11 @@ theorem aux_C_diagonalSquareRoot_two_nonneg :
   exact mul_nonneg (Real.sqrt_nonneg _)
     (le_trans (hgaussian 0 2) (le_max_left _ _))
 
-/-- This auxiliary predicate gives the exact membership condition
+/--
+This auxiliary predicate gives the exact membership condition
 `\mathcal P\subset B_{\mathrm{dist}}(a_i^1,\Delta_\gamma)^2\times[2)`
-for a multiset, including multiplicities. -/
+for a multiset, including multiplicities.
+-/
 def aux_ValidKernelGaussianPackage {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (P : Multiset (SequencePair × Fin 2)) : Prop :=
   ∀ q ∈ P,
@@ -1088,8 +1158,10 @@ def aux_kernelBracketProduct (q : SequencePair × Fin 2) (j : ℤ) (v : RealPlan
   scaledBracketBump 2 (q.1 0 j) (W q.2 v).1 *
     scaledBracketBump 2 (q.1 1 j) (W q.2 v).2
 
-/-- This auxiliary positivity fact allows finite multiset sums of kernel bracket products to
-serve as nonnegative majorants. -/
+/--
+This auxiliary positivity fact allows finite multiset sums of kernel bracket products to
+serve as nonnegative majorants.
+-/
 theorem aux_kernelBracketProduct_nonneg (q : SequencePair × Fin 2)
     (hq : ∀ r : Fin 2, SpacedSequence (q.1 r)) (j : ℤ) (v : RealPlane) :
     0 ≤ aux_kernelBracketProduct q j v := by
@@ -1098,22 +1170,28 @@ theorem aux_kernelBracketProduct_nonneg (q : SequencePair × Fin 2)
     (aux_scaledBracketBump_nonneg 2 ((hq 0 j).1) _)
     (aux_scaledBracketBump_nonneg 2 ((hq 1 j).1) _)
 
-/-- This auxiliary sequence is the shifted scale
+/--
+This auxiliary sequence is the shifted scale
 `t_{m,\ell}(j)=a_i^\ell(j+m-1)` used to construct the six-term multiset in the
-kernel Gaussian estimate. -/
+kernel Gaussian estimate.
+-/
 def aux_hKernelShiftedScale {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k)
     (m r : Fin 2) : ℤ → ℝ :=
   fun j => γ.scales i r (j + (m : ℤ) - 1)
 
-/-- This auxiliary scale is the manuscript's
-`t_m^+=\max(t_{m,0},t_{m,1})`. -/
+/--
+This auxiliary scale is the manuscript's
+`t_m^+=\max(t_{m,0},t_{m,1})`.
+-/
 def aux_hKernelMaxScale {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k)
     (m : Fin 2) : ℤ → ℝ :=
   fun j => max (aux_hKernelShiftedScale γ i m 0 j)
     (aux_hKernelShiftedScale γ i m 1 j)
 
-/-- This auxiliary theorem verifies that every shifted scale used in the six-term multiset
-remains multiplicatively spaced. -/
+/--
+This auxiliary theorem verifies that every shifted scale used in the six-term multiset
+remains multiplicatively spaced.
+-/
 theorem aux_hKernelShiftedScale_spaced {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (m r : Fin 2) : SpacedSequence (aux_hKernelShiftedScale γ i m r) := by
   convert shift_mem_A (γ.scales_spaced i r) ((m : ℤ) - 1) using 1
@@ -1121,8 +1199,10 @@ theorem aux_hKernelShiftedScale_spaced {n : ℕ} (γ : GeometricParameters n)
   simp [aux_hKernelShiftedScale]
   ring_nf
 
-/-- This auxiliary estimate gives the one-step distance control for each of the shifted scales
-appearing in the six-element multiset. -/
+/--
+This auxiliary estimate gives the one-step distance control for each of the shifted scales
+appearing in the six-element multiset.
+-/
 theorem aux_sequenceDistance_scale_hKernelShiftedScale_le_one {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (m r : Fin 2) :
     SequenceDistance (γ.scales i r) (aux_hKernelShiftedScale γ i m r) ≤ 1 := by
@@ -1141,8 +1221,10 @@ theorem aux_sequenceDistance_scale_hKernelShiftedScale_le_one {n : ℕ}
     · norm_num [aux_hKernelShiftedScale]
       exact aux_spacedSequence_monotone (γ.scales_spaced i r) (by omega)
 
-/-- This auxiliary membership proof supplies the distance condition for each shifted scale in
-the kernel Gaussian multiset. -/
+/--
+This auxiliary membership proof supplies the distance condition for each shifted scale in
+the kernel Gaussian multiset.
+-/
 theorem aux_hKernelShiftedScale_mem_sequenceDistanceBall {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (m r : Fin 2) :
     aux_hKernelShiftedScale γ i m r ∈
@@ -1170,15 +1252,19 @@ theorem aux_hKernelShiftedScale_mem_sequenceDistanceBall {n : ℕ}
         simp
       _ ≤ (geometricDelta γ : WithTop ℕ) := hdelta
 
-/-- This auxiliary theorem verifies that the pointwise maximum scales used when `u(i)=0`
-remain multiplicatively spaced. -/
+/--
+This auxiliary theorem verifies that the pointwise maximum scales used when `u(i)=0`
+remain multiplicatively spaced.
+-/
 theorem aux_hKernelMaxScale_spaced {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (m : Fin 2) : SpacedSequence (aux_hKernelMaxScale γ i m) := by
   exact max_mem_A (aux_hKernelShiftedScale_spaced γ i m 0)
     (aux_hKernelShiftedScale_spaced γ i m 1)
 
-/-- This auxiliary membership proof supplies the distance condition for the maximum scales
-used in the `u(i)=0` part of the kernel Gaussian multiset. -/
+/--
+This auxiliary membership proof supplies the distance condition for the maximum scales
+used in the `u(i)=0` part of the kernel Gaussian multiset.
+-/
 theorem aux_hKernelMaxScale_mem_sequenceDistanceBall {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (m : Fin 2) :
     aux_hKernelMaxScale γ i m ∈
@@ -1201,8 +1287,10 @@ theorem aux_hKernelMaxScale_mem_sequenceDistanceBall {n : ℕ}
   · unfold aux_hKernelMaxScale
     exact max_le (hzero_within j).2 (hone_within j).2
 
-/-- This auxiliary consequence translates a diagonal-square-root estimate to the two maximum
-scales used in the `u(i)=0` part of the six-term kernel multiset. -/
+/--
+This auxiliary consequence translates a diagonal-square-root estimate to the two maximum
+scales used in the `u(i)=0` part of the six-term kernel multiset.
+-/
 theorem aux_sMultiplier_bound_orientation_zero_of_diagonal {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ)
     (horientation : γ.orientation i = 0)
@@ -1247,8 +1335,10 @@ theorem aux_sMultiplier_bound_orientation_zero_of_diagonal {n : ℕ}
         (scaledBracketBump 2 (aux_hKernelMaxScale γ i 0 j) x +
           scaledBracketBump 2 (aux_hKernelMaxScale γ i 1 j) x) := by ring
 
-/-- This auxiliary consequence translates a diagonal-square-root estimate to the shifted second
-scale sequences used in the `u(i)=1` part of the six-term kernel multiset. -/
+/--
+This auxiliary consequence translates a diagonal-square-root estimate to the shifted second
+scale sequences used in the `u(i)=1` part of the six-term kernel multiset.
+-/
 theorem aux_sMultiplier_bound_orientation_one_of_diagonal {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ)
     (horientation : γ.orientation i ≠ 0)
@@ -1301,8 +1391,10 @@ theorem aux_sMultiplier_bound_orientation_one_of_diagonal {n : ℕ}
         (scaledBracketBump 2 (aux_hKernelShiftedScale γ i 0 1 j) x +
           scaledBracketBump 2 (aux_hKernelShiftedScale γ i 1 1 j) x) := by ring
 
-/-- This auxiliary sign check permits the derivative diagonal-square-root bound to be enlarged
-or transported through the scale comparisons used below. -/
+/--
+This auxiliary sign check permits the derivative diagonal-square-root bound to be enlarged
+or transported through the scale comparisons used below.
+-/
 theorem aux_C_derivativeDiagonalSquareRoot_two_nonneg :
     0 ≤ C_derivativeDiagonalSquareRoot 2 := by
   have hgaussian (m N : ℕ) : 0 ≤ C_gaussianBumpDecay m N := by
@@ -1311,8 +1403,10 @@ theorem aux_C_derivativeDiagonalSquareRoot_two_nonneg :
   exact mul_nonneg (by norm_num)
     (le_trans (hgaussian 1 2) (le_max_left _ _))
 
-/-- This auxiliary consequence translates a derivative diagonal-square-root estimate to the
-maximum scales used in the `u(i)=0` part of the derivative kernel estimate. -/
+/--
+This auxiliary consequence translates a derivative diagonal-square-root estimate to the
+maximum scales used in the `u(i)=0` part of the derivative kernel estimate.
+-/
 theorem aux_deriv_sMultiplier_bound_orientation_zero_of_diagonal {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ)
     (horientation : γ.orientation i = 0)
@@ -1360,8 +1454,10 @@ theorem aux_deriv_sMultiplier_bound_orientation_zero_of_diagonal {n : ℕ}
       mul_le_mul_of_nonneg_left (add_le_add hprevBump hcurrBump)
         aux_C_derivativeDiagonalSquareRoot_two_nonneg
 
-/-- This auxiliary consequence translates a derivative diagonal-square-root estimate to the
-shifted second scales used in the `u(i)=1` part of the derivative kernel estimate. -/
+/--
+This auxiliary consequence translates a derivative diagonal-square-root estimate to the
+shifted second scales used in the `u(i)=1` part of the derivative kernel estimate.
+-/
 theorem aux_deriv_sMultiplier_bound_orientation_one_of_diagonal {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ)
     (horientation : γ.orientation i ≠ 0)
@@ -1407,25 +1503,33 @@ theorem aux_deriv_sMultiplier_bound_orientation_one_of_diagonal {n : ℕ}
       mul_le_mul_of_nonneg_left (add_le_add hprevBump hcurrBump)
         aux_C_derivativeDiagonalSquareRoot_two_nonneg
 
-/-- This auxiliary constructor packages two one-dimensional scale sequences into the sequence
-pair that is an entry of the Gaussian-dominating multiset. -/
+/--
+This auxiliary constructor packages two one-dimensional scale sequences into the sequence
+pair that is an entry of the Gaussian-dominating multiset.
+-/
 def aux_sequencePairOf (t₀ t₁ : ℤ → ℝ) : SequencePair :=
   fun r => if r = 0 then t₀ else t₁
 
-/-- This auxiliary projection identity is used to read the two scale sequences from an entry
-of the explicitly constructed multiset. -/
+/--
+This auxiliary projection identity is used to read the two scale sequences from an entry
+of the explicitly constructed multiset.
+-/
 theorem aux_sequencePairOf_apply_zero (t₀ t₁ : ℤ → ℝ) :
     aux_sequencePairOf t₀ t₁ 0 = t₀ := by
   simp [aux_sequencePairOf]
 
-/-- This auxiliary projection identity is used to read the two scale sequences from an entry
-of the explicitly constructed multiset. -/
+/--
+This auxiliary projection identity is used to read the two scale sequences from an entry
+of the explicitly constructed multiset.
+-/
 theorem aux_sequencePairOf_apply_one (t₀ t₁ : ℤ → ℝ) :
     aux_sequencePairOf t₀ t₁ 1 = t₁ := by
   simp [aux_sequencePairOf]
 
-/-- This auxiliary multiset is exactly the six-element multiset constructed in the proof of
-the kernel Gaussian estimate, with the two cases selected by `u(i)`. -/
+/--
+This auxiliary multiset is exactly the six-element multiset constructed in the proof of
+the kernel Gaussian estimate, with the two cases selected by `u(i)`.
+-/
 def aux_hKernelGaussianMultiset {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) :
     Multiset (SequencePair × Fin 2) :=
   if γ.orientation i = 0 then
@@ -1455,16 +1559,20 @@ def aux_hKernelGaussianMultiset {n : ℕ} (γ : GeometricParameters n) (i : Fin 
       {(aux_sequencePairOf (aux_hKernelShiftedScale γ i 1 0)
         (aux_hKernelShiftedScale γ i 1 1), (1 : Fin 2))})
 
-/-- This auxiliary theorem records the multiplicity-sensitive cardinality of the explicitly
-constructed multiset; repetitions of sequences are retained, as in the manuscript. -/
+/--
+This auxiliary theorem records the multiplicity-sensitive cardinality of the explicitly
+constructed multiset; repetitions of sequences are retained, as in the manuscript.
+-/
 theorem aux_hKernelGaussianMultiset_card {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) : (aux_hKernelGaussianMultiset γ i).card = 6 := by
   classical
   by_cases h : γ.orientation i = 0 <;>
     simp [aux_hKernelGaussianMultiset, h]
 
-/-- This auxiliary theorem verifies the distance-ball membership of every entry of the explicit
-six-element multiset from the proof of the kernel Gaussian estimate. -/
+/--
+This auxiliary theorem verifies the distance-ball membership of every entry of the explicit
+six-element multiset from the proof of the kernel Gaussian estimate.
+-/
 theorem aux_hKernelGaussianMultiset_valid {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) :
     aux_ValidKernelGaussianPackage γ i (aux_hKernelGaussianMultiset γ i) := by
@@ -1525,8 +1633,10 @@ theorem aux_hKernelGaussianMultiset_valid {n : ℕ} (γ : GeometricParameters n)
         (aux_hKernelShiftedScale_mem_sequenceDistanceBall γ i 1 0)
         (aux_hKernelShiftedScale_mem_sequenceDistanceBall γ i 1 1)
 
-/-- This auxiliary predicate is the full conclusion of the kernel estimate, with its
-multiset retained to account for repeated sequence triples. -/
+/--
+This auxiliary predicate is the full conclusion of the kernel estimate, with its
+multiset retained to account for repeated sequence triples.
+-/
 def aux_HKernelGaussianBound {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (P : Multiset (SequencePair × Fin 2)) : Prop :=
   aux_ValidKernelGaussianPackage γ i P ∧ P.card = 6 ∧
@@ -1544,8 +1654,10 @@ def aux_HKernelDerivativeGaussianBound {n : ℕ} (γ : GeometricParameters n)
           (P.map fun q =>
             ((q.1 0 j)⁻¹ + (q.1 1 j)⁻¹) * aux_kernelBracketProduct q j v).sum
 
-/-- This auxiliary theorem carries out the `u(i)=0` algebra in the proof of the kernel estimate
-after the one-dimensional diagonal-square-root estimate has been supplied. -/
+/--
+This auxiliary theorem carries out the `u(i)=0` algebra in the proof of the kernel estimate
+after the one-dimensional diagonal-square-root estimate has been supplied.
+-/
 theorem aux_hKernelGaussianBound_orientation_zero_of_sBounds {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (horientation : γ.orientation i = 0)
     (hs : ∀ (j : ℤ) (x : ℝ), |sMultiplier γ i j x| ≤
@@ -1667,8 +1779,10 @@ theorem aux_hKernelGaussianBound_orientation_zero_of_sBounds {n : ℕ}
       unfold C_hKernelEstimateGaussianDomination
       ring
 
-/-- This auxiliary theorem carries out the `u(i)=1` algebra in the proof of the kernel estimate
-after the one-dimensional diagonal-square-root estimate has been supplied. -/
+/--
+This auxiliary theorem carries out the `u(i)=1` algebra in the proof of the kernel estimate
+after the one-dimensional diagonal-square-root estimate has been supplied.
+-/
 theorem aux_hKernelGaussianBound_orientation_one_of_sBounds {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (horientation : γ.orientation i ≠ 0)
     (hs : ∀ (j : ℤ) (x : ℝ), |sMultiplier γ i j x| ≤
@@ -1791,22 +1905,24 @@ theorem aux_hKernelGaussianBound_orientation_one_of_sBounds {n : ℕ}
       ring
 
 /--
-\begin{proposition}[Kernel estimate for Gaussian domination]\label{H kernel estimate Gaussian
-domination}
+**Proposition (Kernel estimate for Gaussian domination).**
+
 Let $\gamma=(k,u,a)\in \Gamma$ and let $i\in [k)$.
-There exists a finite multiset $\mathcal{P}\subset
-B_{\mathrm{dist}}(a_i^1,\Delta_\gamma)^2\times [2)$ with $\#\mathcal{P}= 6$ and for every $v\in
-\R^2$ and $j\in\Z$,
-\begin{equation}\label{auto:H-kernel-Gaussian-domination}|(H_\gamma)_{i,j}|(v) \le C_{\mathrm{H\
-kernel\ estimate\ Gaussian\ domination}} \sum_{(t_0,t_1,u)\in\mathcal{P}} \langle (W_u
-v)_0\rangle_{(t_0(j))}^2 \langle (W_u v)_1\rangle_{(t_1(j))}^2, \end{equation}
+There exists a finite multiset $\mathcal{P}\subset B_{\mathrm{dist}}(a_i^1,\Delta_\gamma)^2\times
+[2)$ with $\#\mathcal{P}= 6$ and for every $v\in \mathbb{R}^2$ and $j\in\mathbb{Z}$,
+
+$$
+|(H_\gamma)_{i,j}|(v) \le C_{\text{Kernel estimate for Gaussian domination}}
+\sum_{(t_0,t_1,u)\in\mathcal{P}} \langle (W_u v)_0\rangle_{(t_0(j))}^2 \langle (W_u
+v)_1\rangle_{(t_1(j))}^2,
+$$
+
 where
-$C_{\mathrm{H\ kernel\ estimate\ Gaussian\ domination}}
+$C_{\text{Kernel estimate for Gaussian domination}}
 =
-4C_{\mathrm{diagonal\ square\ root},2}^{\,2}
+4C_{\text{diagonal square root},2}^{\,2}
 +
-C_{\mathrm{Gaussian\ bump\ decay},0,2}^{\,2}.$
-\end{proposition}
+C_{\text{Gaussian bump decay},0,2}^{\,2}.$
 -/
 theorem hKernelEstimateGaussianDomination {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) :
@@ -1833,14 +1949,15 @@ theorem hKernelEstimateGaussianDomination {n : ℕ} (γ : GeometricParameters n)
     · convert hsp.2 using 1; ring_nf
 
 /--
-\label{constant H kernel estimate Gaussian domination}
+Blueprint label `constant H kernel estimate Gaussian domination`.
 
-The constant from [`Codex.MainArgument.GaussianDomination.hKernelEstimateGaussianDomination`]
+The constant from [`Codex.hKernelEstimateGaussianDomination`]
 satisfies
-\begin{equation}\label{constant H kernel estimate Gaussian domination bound}
+
+$$
 C_{\mathrm{H\ kernel\ estimate\ Gaussian\ domination}}
 =51^2\cdot2^{15}+12^2<2^{27}.
-\end{equation}
+$$
 -/
 theorem constantHKernelEstimateGaussianDomination :
     C_hKernelEstimateGaussianDomination = 51 ^ 2 * 2 ^ 15 + 12 ^ 2 ∧
@@ -1858,8 +1975,10 @@ theorem constantHKernelEstimateGaussianDomination :
     rw [hsqrt]
     norm_num
 
-/-- This auxiliary theorem carries out the differentiated six-term kernel algebra in the
-identity-orientation case. -/
+/--
+This auxiliary theorem carries out the differentiated six-term kernel algebra in the
+identity-orientation case.
+-/
 theorem aux_hKernelDerivativeGaussianBound_orientation_zero_of_sBounds {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (horientation : γ.orientation i = 0)
     (hs : ∀ (j : ℤ) (x : ℝ), |sMultiplier γ i j x| ≤
@@ -2042,8 +2161,10 @@ theorem aux_hKernelDerivativeGaussianBound_orientation_zero_of_sBounds {n : ℕ}
       rw [hsum]
       unfold C_hKernelDerivativeEstimateGaussianDomination
       ring
-/-- This auxiliary theorem carries out the differentiated six-term kernel algebra in the
-nontrivial-orientation case. -/
+/--
+This auxiliary theorem carries out the differentiated six-term kernel algebra in the
+nontrivial-orientation case.
+-/
 theorem aux_hKernelDerivativeGaussianBound_orientation_one_of_sBounds {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (horientation : γ.orientation i ≠ 0)
     (hs : ∀ (j : ℤ) (x : ℝ), |sMultiplier γ i j x| ≤
@@ -2229,27 +2350,27 @@ theorem aux_hKernelDerivativeGaussianBound_orientation_one_of_sBounds {n : ℕ}
       ring
 
 /--
-\begin{proposition}[Kernel derivative estimate for Gaussian domination]\label{H kernel
-derivative estimate Gaussian domination}
+**Proposition (Kernel derivative estimate for Gaussian domination).**
+
 Let $\gamma=(k,u,a)\in \Gamma$ and let $i\in [k)$.
-There exists a finite multiset $\mathcal{P}\subset
-B_{\mathrm{dist}}(a_i^1,\Delta_\gamma)^2\times [2)$ with $\#\mathcal{P}\le 6$ and for every
-$v\in \R^2$ and $j\in\Z$,
-    \begin{equation}\label{auto:H-kernel-derivative-Gaussian-domination}
-    |(\partial_0+\partial_1)(H_\gamma)_{i,j}(v)| \le C_{\mathrm{H\ kernel\ derivative\ estimate\
-    Gaussian\ domination}} \sum_{(t_0,t_1,u)\in\mathcal{P}} (t_0(j)^{-1} + t_1(j)^{-1}) \langle
-    (W_u v)_0\rangle_{(t_0(j))}^2 \langle (W_u v)_1\rangle_{(t_1(j))}^2,
-    \end{equation}
+There exists a finite multiset $\mathcal{P}\subset B_{\mathrm{dist}}(a_i^1,\Delta_\gamma)^2\times
+[2)$ with $\#\mathcal{P}\le 6$ and for every $v\in \mathbb{R}^2$ and $j\in\mathbb{Z}$,
+
+$$
+|(\partial_0+\partial_1)(H_\gamma)_{i,j}(v)| \le C_{\text{Kernel derivative estimate for Gaussian
+domination}} \sum_{(t_0,t_1,u)\in\mathcal{P}} (t_0(j)^{-1} + t_1(j)^{-1}) \langle (W_u
+v)_0\rangle_{(t_0(j))}^2 \langle (W_u v)_1\rangle_{(t_1(j))}^2,
+$$
+
 where $
-C_{\mathrm{H\ kernel\ derivative\ estimate\ Gaussian\ domination}}
+C_{\text{Kernel derivative estimate for Gaussian domination}}
 =
-4C_{\mathrm{diagonal\ square\ root},2}
-C_{\mathrm{derivative\ of\ diagonal\ square\ root},2}
+4C_{\text{diagonal square root},2}
+C_{\text{derivative of diagonal square root},2}
 +
-2C_{\mathrm{Gaussian\ bump\ decay},0,2}
-C_{\mathrm{Gaussian\ bump\ decay},1,2}.
+2C_{\text{Gaussian bump decay},0,2}
+C_{\text{Gaussian bump decay},1,2}.
 $
-\end{proposition}
 -/
 theorem hKernelDerivativeEstimateGaussianDomination {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) :
@@ -2292,14 +2413,15 @@ theorem hKernelDerivativeEstimateGaussianDomination {n : ℕ}
       · convert hsp.2 using 1; ring_nf
 
 /--
-\label{constant H kernel derivative estimate Gaussian domination}
+Blueprint label `constant H kernel derivative estimate Gaussian domination`.
 
 The constant from
-[`Codex.MainArgument.GaussianDomination.hKernelDerivativeEstimateGaussianDomination`] satisfies
-\begin{equation}\label{constant H kernel derivative estimate Gaussian domination bound}
+[`Codex.hKernelDerivativeEstimateGaussianDomination`] satisfies
+
+$$
 C_{\mathrm{H\ kernel\ derivative\ estimate\ Gaussian\ domination}}
 <2^{30}.
-\end{equation}
+$$
 -/
 theorem constantHKernelDerivativeEstimateGaussianDomination :
     C_hKernelDerivativeEstimateGaussianDomination < 2 ^ 30 := by
@@ -2508,33 +2630,38 @@ theorem aux_gaussDominationCaseConstants_le_combined :
         (pow_le_pow_right₀ (by norm_num) (by norm_num))
 
 /--
-\begin{lemma}[constant $C_{\mathrm{Gaussian\ domination\ combined},2}$ \auto]\label{Gauss
-domination constant}
-We have
-\begin{equation}\label{auto:Gaussian-domination-case-constant-bounds}
-C_{\mathrm{Gauss\ domination\ case\ 1}}<2^{117},
-\end{equation}
-\begin{equation}\label{auto:Gaussian-domination-case-two-constant-bound}
-C_{\mathrm{Gauss\ domination\ case\ 2}}<2^{153},
-\end{equation}
-and
-\begin{equation}\label{auto:Gaussian-domination-case-three-constant-bound}
-C_{\mathrm{Gauss\ domination\ case\ 3}}<2^{110}.
-\end{equation}
-In particular,
-\begin{equation}\label{auto:Gaussian-domination-common-constant-bound}
-\max\bigl(C_{\mathrm{Gauss\ domination\ case\ 1}},C_{\mathrm{Gauss\ domination\ case\
-2}},C_{\mathrm{Gauss\ domination\ case\ 3}}\bigr)
-\le C_{\mathrm{Gaussian\ domination\ combined},2}.
-\end{equation}
-Thus [`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`] holds with the claimed
-constant in
-\eqref{Gaussian domination main estimate}.
-\end{lemma}
+**Lemma (constant $C_{\text{Gaussian domination, combined},2}$).**
 
-See also [`Codex.MainArgument.GaussianDomination.gaussDominationCase1`],
-[`Codex.MainArgument.GaussianDomination.gaussDominationCase2`], and
-[`Codex.MainArgument.GaussianDomination.gaussDominationCase3`].
+We have
+
+$$
+C_{\text{Gaussian domination, near case}}<2^{117},
+$$
+
+$$
+C_{\text{Gaussian domination, far case}}<2^{153},
+$$
+
+and
+
+$$
+C_{\text{Gaussian domination, intermediate case}}<2^{110}.
+$$
+
+In particular,
+
+$$
+\max\bigl(C_{\text{Gaussian domination, near case}},C_{\text{Gaussian domination, far
+case}},C_{\text{Gaussian domination, intermediate case}}\bigr)
+\le C_{\text{Gaussian domination, combined},2}.
+$$
+
+Thus Proposition [`Codex.gaussianDominationCombined`] holds with the claimed constant in (`Gaussian
+domination main estimate`).
+
+See also [`Codex.gaussDominationCase1`],
+[`Codex.gaussDominationCase2`], and
+[`Codex.gaussDominationCase3`].
 -/
 theorem gaussDominationConstant :
     C_gaussDominationCase1 < (2 : ℝ) ^ (117 : ℕ) ∧
@@ -2548,9 +2675,11 @@ theorem gaussDominationConstant :
     aux_gaussDominationCase3_lt_two_pow_110,
     aux_gaussDominationCaseConstants_le_combined⟩
 
-/-- This auxiliary structure is a direct finite-set encoding of the data in the conclusion of
+/--
+This auxiliary structure is a direct finite-set encoding of the data in the conclusion of
 Gaussian domination.  Its fields are exactly the set `\mathcal B`, orientations `u_b`, and
-sequence pairs `p_{b,m}` from the manuscript. -/
+sequence pairs `p_{b,m}` from the manuscript.
+-/
 structure aux_GaussianDominationWitness {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ) (C : ℝ) where
   B : Finset ℕ
@@ -2575,8 +2704,10 @@ structure aux_GaussianDominationWitness {n : ℕ} (γ : GeometricParameters n)
       aux_gaussianDominationWeight m *
         ∑ b ∈ B, aux_dominatingGaussianTerm (scales b m) (orientation b) j v)
 
-/-- This auxiliary predicate packages precisely the conclusion of
-[`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`] for a fixed index. -/
+/--
+This auxiliary predicate packages precisely the conclusion of
+[`Codex.gaussianDominationCombined`] for a fixed index.
+-/
 def aux_GaussianDominationConclusion {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ) (C : ℝ) : Prop :=
   Nonempty (aux_GaussianDominationWitness γ hkn i ι C)
@@ -2632,8 +2763,10 @@ theorem aux_GaussianDominationConclusion_mono {n : ℕ}
             ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v := by
       ring
 
-/-- The multiplier-index definition has exactly the three analytic cases used in the
-Gaussian-domination argument. -/
+/--
+The multiplier-index definition has exactly the three analytic cases used in the
+Gaussian-domination argument.
+-/
 theorem aux_multiplierIndex_cases {n : ℕ} (γ : GeometricParameters n)
     (ι : MultiplierIndex γ) :
     (0 < ι.1.1 ∧ ι.1.2 = 0) ∨ (ι.1.1 < 0 ∧ ι.1.2 = 0) ∨
@@ -2646,8 +2779,10 @@ theorem aux_multiplierIndex_cases {n : ℕ} (γ : GeometricParameters n)
     · exact Or.inl ⟨hpos, hsecond⟩
   · exact Or.inr (Or.inr hvertical)
 
-/-- Combines the three multiplier-index cases once each has been established at the
-common Gaussian-domination constant. -/
+/--
+Combines the three multiplier-index cases once each has been established at the
+common Gaussian-domination constant.
+-/
 theorem aux_gaussianDominationCombined_of_cases {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (i : Fin γ.k)
     (hpositive : ∀ ι : MultiplierIndex γ,
@@ -2667,8 +2802,10 @@ theorem aux_gaussianDominationCombined_of_cases {n : ℕ}
   · exact hnegative ι hι.1 hι.2
   · exact hzero ι hι.1 hι.2
 
-/-- Diagonal cancellation converts a convolution into a difference of its one-dimensional
-kernel. This is the pointwise bridge used in the Gaussian-domination cases. -/
+/--
+Diagonal cancellation converts a convolution into a difference of its one-dimensional
+kernel. This is the pointwise bridge used in the Gaussian-domination cases.
+-/
 theorem aux_diagonal_convolution_eq_difference
     {F : RealPlane → ℝ} (hF : MemW0 F)
     (hzero : ∀ x : ℝ, (∫ q : ℝ, F (x, q)) = 0)
@@ -2679,7 +2816,7 @@ theorem aux_diagonal_convolution_eq_difference
   have hFslice_mem : MemW0 (fun q : ℝ => F (x, q)) :=
     hF.aux_memW0_slice_of_addHaar x
   have hFslice : Integrable (fun q : ℝ => F (x, q)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hFslice_mem
+    Codex.aux_memW0_integrable_of_addHaar hFslice_mem
   have hB : Integrable (fun q : ℝ => F (x, q) * rho y) := hFslice.mul_const _
   have hBzero : (∫ q : ℝ, F (x, q) * rho y) = 0 := by
     rw [integral_mul_const, hzero x, zero_mul]
@@ -2694,8 +2831,10 @@ theorem aux_diagonal_convolution_eq_difference
       filter_upwards [] with q
       ring
 
-/-- The positive horizontal band of the four-scale N-kernel has the mean-difference estimate
-needed for Gaussian domination. -/
+/--
+The positive horizontal band of the four-scale N-kernel has the mean-difference estimate
+needed for Gaussian domination.
+-/
 theorem aux_nMultiplierRho_positive_difference_bound {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1)
@@ -2834,8 +2973,10 @@ theorem aux_caseOne_move_twoPi_out {A lambda y B : ℝ}
       mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hmin hA) hB
     _ = (2 * Real.pi * A) * min 1 (lambda⁻¹ * |y|) * B := by ring
 
-/-- Scratch: any scale in the H-kernel distance ball is smaller than a positive-band
-N scale by the required factor. -/
+/--
+Scratch: any scale in the H-kernel distance ball is smaller than a positive-band
+N scale by the required factor.
+-/
 theorem aux_caseOne_distanceBall_scale_ratio_le {a b : ℤ → ℝ} (ha : SpacedSequence a)
     {d : ℕ} (hb : b ∈ sequenceDistanceBall a (d : WithTop ℕ))
     (h j : ℤ) :
@@ -2854,8 +2995,10 @@ theorem aux_caseOne_distanceBall_scale_ratio_le {a b : ℤ → ℝ} (ha : Spaced
       rw [← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0), neg_add_cancel, zpow_zero, one_mul]
     _ = (2 : ℝ) ^ (-h) * ((2 : ℝ) ^ h * a (j + (d : ℤ))) := by ring
 
-/-- Scratch: multiplying a second-order bracket bump by the square-root loss converts it
-exactly to the real exponent `3/2` used by the two-bump estimate. -/
+/--
+Scratch: multiplying a second-order bracket bump by the square-root loss converts it
+exactly to the real exponent `3/2` used by the two-bump estimate.
+-/
 theorem aux_caseOne_scaledBracketBump_two_sqrt_eq_threeHalves (t x : ℝ) (ht : 0 < t) :
     Real.rpow (1 + t⁻¹ * |x|) (1 / 2 : ℝ) * scaledBracketBump 2 t x =
       scaledBracketBumpReal (3 / 2 : ℝ) t x := by
@@ -2979,15 +3122,19 @@ theorem aux_caseOne_scaledBracketBumpReal_simul_rescale (N c s x : ℝ) (hc : 0 
         (c * (c * s)⁻¹) * (1 + |s⁻¹ * x|).rpow (-N) := by ring
     _ = s⁻¹ * (1 + |s⁻¹ * x|).rpow (-N) := by rw [hinv]
 
-/-- A simultaneous spatial-and-scale rescaling leaves a real-exponent bracket bump
-invariant after its natural prefactor. -/
+/--
+A simultaneous spatial-and-scale rescaling leaves a real-exponent bracket bump
+invariant after its natural prefactor.
+-/
 theorem aux_scaledBracketBumpReal_simul_rescale (N c s x : ℝ) (hc : 0 < c) :
     c * scaledBracketBumpReal N (c * s) (c * x) = scaledBracketBumpReal N s x :=
   aux_caseOne_scaledBracketBumpReal_simul_rescale N c s x hc
 
-/-- A concrete scalar form of the orthogonal-coordinate dichotomy needed in case one.
+/--
+A concrete scalar form of the orthogonal-coordinate dichotomy needed in case one.
 It is deliberately stated directly in the `W₁` coordinates, avoiding an auxiliary
-identification of `ℝ × ℝ` with Euclidean space. -/
+identification of `ℝ × ℝ` with Euclidean space.
+-/
 theorem aux_caseOne_orthogonal_dichotomy (x y : ℝ) :
     |x| ≤ 3 * |(-x + y) / Real.sqrt 2| ∨
       |(x + y) / Real.sqrt 2| ≤ 3 * |y| := by
@@ -3036,8 +3183,10 @@ theorem aux_caseOne_orthogonal_dichotomy (x y : ℝ) :
       nlinarith [habound, hsqrty, hbsmall']
     simpa [a] using hfinal
 
-/-- The two-term real-exponent orthogonal decay used to turn the remaining case-one
-three-bump integral into its two `M₂` products. -/
+/--
+The two-term real-exponent orthogonal decay used to turn the remaining case-one
+three-bump integral into its two `M₂` products.
+-/
 theorem aux_caseOne_orthogonal_decay (x y lam t : ℝ)
     (hlam : 0 < lam) (ht : 0 < t) :
     scaledBracketBumpReal (3 / 2 : ℝ) lam y *
@@ -3146,8 +3295,10 @@ theorem aux_caseOne_scaledBracketBumpReal_product_integrable
           mul_le_mul_of_nonneg_left hle hleft
       _ = s₁⁻¹ * scaledBracketBumpReal n₀ s₀ (x₀ - p) := by ring
 
-/-- The three-bump integral in the orientation-zero H-kernel case, before the final
-orthogonal-coordinate splitting. -/
+/--
+The three-bump integral in the orientation-zero H-kernel case, before the final
+orthogonal-coordinate splitting.
+-/
 theorem aux_caseOne_threeBumpIntegral_bound (w₀ w₁ lam t₀ t₁ : ℝ)
     (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁)
     (ht₀lam : t₀ ≤ lam) (ht₁lam : t₁ ≤ lam) :
@@ -3347,9 +3498,11 @@ theorem aux_caseOne_threeBumpIntegral_bound (w₀ w₁ lam t₀ t₁ : ℝ)
       dsimp [C, B]
       ring
 
-/-- The orientation-zero three-bump contribution is controlled by the four `M₂` terms
+/--
+The orientation-zero three-bump contribution is controlled by the four `M₂` terms
 arising from the orthogonal-coordinate split.  The harmless `√2` rescalings make the
-coordinate identities exact in the formal `W 1` convention. -/
+coordinate identities exact in the formal `W 1` convention.
+-/
 theorem aux_caseOne_threeBump_to_fourM2 (w0 w1 lam t0 t1 : ℝ)
     (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1)
     (ht0lam : t0 ≤ lam) (ht1lam : t1 ≤ lam) :
@@ -3548,8 +3701,10 @@ theorem aux_caseOne_threeBump_to_fourM2 (w0 w1 lam t0 t1 : ℝ)
               scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * t1) (Real.sqrt 2 * w1)) := by
       ring
 
-/-- Exact rescaling of the orientation-one M₁ term coming from an orientation-zero
-H occurrence. -/
+/--
+Exact rescaling of the orientation-one M₁ term coming from an orientation-zero
+H occurrence.
+-/
 theorem aux_caseOne_M1_zero_rescale (w0 w1 lam t0 t1 : ℝ) :
     scaledBracketBumpReal (3 / 2 : ℝ) lam w0 *
         scaledBracketBumpReal (3 / 2 : ℝ) (max t0 t1) (2 * w1) =
@@ -3581,16 +3736,20 @@ theorem aux_caseOne_M1_zero_rescale (w0 w1 lam t0 t1 : ℝ) :
   rw [← hfirst', ← hsecond']
   ring
 
-/-- The exact orientation-one M₁ second scale.  In the orientation-zero branch the
-normalization of `W 1` contributes a reciprocal square-root factor. -/
+/--
+The exact orientation-one M₁ second scale.  In the orientation-zero branch the
+normalization of `W 1` contributes a reciprocal square-root factor.
+-/
 def aux_caseOneExactM1Scale (q : SequencePair × Fin 2) : ℤ → ℝ :=
   if q.2 = 0 then
     fun j => (Real.sqrt 2)⁻¹ * max (q.1 0 j) (q.1 1 j)
   else q.1 1
 
-/-- The five exact real-exponent slots reserved for one occurrence of the six-term H
+/--
+The five exact real-exponent slots reserved for one occurrence of the six-term H
 majorant: one M₁ term and four M₂ terms.  Orientation-one occurrences use M₁ as
-nonnegative padding in the remaining four slots. -/
+nonnegative padding in the remaining four slots.
+-/
 def aux_caseOneExactSlotOf (lam : ℤ → ℝ) (q : SequencePair × Fin 2) (r : Fin 5) :
     SequencePair × Fin 2 :=
   if r = 0 then
@@ -3697,8 +3856,10 @@ theorem aux_caseOneExactSlotTerm_nonneg (lam : ℤ → ℝ) (hlam : SpacedSequen
     (aux_scaledBracketBumpReal_nonneg _ _ _ ((hslot 0 j).1))
     (aux_scaledBracketBumpReal_nonneg _ _ _ ((hslot 1 j).1))
 
-/-- The four non-padding slots of an orientation-zero occurrence are exactly the four
-real-exponent products output by `aux_caseOne_threeBump_to_fourM2`. -/
+/--
+The four non-padding slots of an orientation-zero occurrence are exactly the four
+real-exponent products output by `aux_caseOne_threeBump_to_fourM2`.
+-/
 theorem aux_caseOneExactSlotTerms_M2 (lam : ℤ → ℝ) (q : SequencePair × Fin 2)
     (j : ℤ) (w0 w1 : ℝ) (hu : q.2 = 0) :
     scaledBracketBumpReal (3 / 2 : ℝ) (Real.sqrt 2 * q.1 0 j) (w0 - w1) *
@@ -3721,8 +3882,10 @@ theorem aux_caseOneExactSlotTerms_M2 (lam : ℤ → ℝ) (q : SequencePair × Fi
   simp [aux_caseOneExactSlotTerm, aux_caseOneExactSlotOf, hu,
     aux_sequencePairOf, hWzero, hWone]
 
-/-- The orientation-zero three-bump contribution is bounded by the same five-slot
-occurrence package used for the final thirty-slot witness. -/
+/--
+The orientation-zero three-bump contribution is bounded by the same five-slot
+occurrence package used for the final thirty-slot witness.
+-/
 theorem aux_caseOne_threeBump_to_exactSlots (lam : ℤ → ℝ)
     (hlam : SpacedSequence lam) (q : SequencePair × Fin 2)
     (hq : ∀ s : Fin 2, SpacedSequence (q.1 s)) (j : ℤ) (w0 w1 : ℝ)
@@ -3821,8 +3984,10 @@ theorem aux_caseOne_threeBump_to_exactSlots (lam : ℤ → ℝ)
               aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r := by
           rw [hsum]
 
-/-- The M₁ contribution of an orientation-zero H occurrence.  The two-bump integral is
-placed in exact `W 1` coordinates using the max-scale output. -/
+/--
+The M₁ contribution of an orientation-zero H occurrence.  The two-bump integral is
+placed in exact `W 1` coordinates using the max-scale output.
+-/
 theorem aux_caseOne_m1_orientation_zero (w0 w1 lam t0 t1 : ℝ)
     (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1) :
     scaledBracketBumpReal 2 lam w0 *
@@ -3885,8 +4050,10 @@ theorem aux_caseOne_m1_orientation_zero (w0 w1 lam t0 t1 : ℝ)
       rw [aux_caseOne_M1_zero_rescale]
       ring
 
-/-- The orientation-zero M₁ contribution is absorbed by the same five exact slots as
-the M₂ contribution. -/
+/--
+The orientation-zero M₁ contribution is absorbed by the same five exact slots as
+the M₂ contribution.
+-/
 theorem aux_caseOne_m1_zero_to_exactSlots (lam : ℤ → ℝ)
     (hlam : SpacedSequence lam) (q : SequencePair × Fin 2)
     (hq : ∀ s : Fin 2, SpacedSequence (q.1 s)) (j : ℤ) (w0 w1 : ℝ)
@@ -3937,9 +4104,11 @@ theorem aux_caseOne_m1_zero_to_exactSlots (lam : ℤ → ℝ)
         ∑ r : Fin 5, aux_caseOneExactSlotTerm lam q j (w0 - w1, w0 + w1) r :=
       mul_le_mul_of_nonneg_left hsumle hCtwo
 
-/-- Uniformly absorbs the M₁ and M₂ coefficients of one orientation-zero occurrence
+/--
+Uniformly absorbs the M₁ and M₂ coefficients of one orientation-zero occurrence
 into the case-one max constant.  The slack is deliberately kept explicit for the outer
-multiset summation. -/
+multiset summation.
+-/
 theorem aux_caseOne_zero_coefficients_absorb (S X Y : ℝ) (hS : 0 ≤ S)
     (hX : X ≤ C_twoBumpEstimate (3 / 2) (3 / 2) * S)
     (hY : Y ≤ 16 * C_bumpTriangle (-(1 / 2 : ℝ)) (1 / 2) (3 / 2) (3 / 2) *
@@ -3991,8 +4160,10 @@ theorem aux_caseOne_zero_coefficients_absorb (S X Y : ℝ) (hS : 0 ≤ S)
     nlinarith
   exact hsum.trans (by simpa [Ctwo, Ctri, K] using hfive)
 
-/-- Subadditivity of the clipped linear factor used to split the cancellation gain
-between the two orientation-zero H coordinates. -/
+/--
+Subadditivity of the clipped linear factor used to split the cancellation gain
+between the two orientation-zero H coordinates.
+-/
 theorem aux_caseOne_min_one_subadd (a b : ℝ) (ha0 : 0 ≤ a) (hb0 : 0 ≤ b) :
     min 1 (a + b) ≤ min 1 a + min 1 b := by
   by_cases ha : 1 ≤ a
@@ -4041,8 +4212,10 @@ theorem aux_caseOne_min_split (lam p w1 : ℝ) (hlam : 0 < lam) :
     _ = min 1 ((2 * lam)⁻¹ * |-w1 - p|) +
         min 1 ((2 * lam)⁻¹ * |w1 - p|) := by rfl
 
-/-- The square-root cancellation gain turns the two orientation-zero second-order
-bracket factors into real exponent `3/2` factors. -/
+/--
+The square-root cancellation gain turns the two orientation-zero second-order
+bracket factors into real exponent `3/2` factors.
+-/
 theorem aux_caseOne_u0_min_product (d : ℕ) (lam t0 t1 p w1 : ℝ)
     (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1)
     (hscale0 : t0 / (2 * lam) ≤ Real.rpow 2 (-(d : ℝ)))
@@ -4161,8 +4334,10 @@ theorem aux_caseOne_u0_min_product (d : ℕ) (lam t0 t1 p w1 : ℝ)
         scaledBracketBumpReal (3 / 2 : ℝ) t0 (-w1 - p) *
           scaledBracketBumpReal (3 / 2 : ℝ) t1 (w1 - p) := by rfl
 
-/-- Full orientation-zero occurrence estimate in the common five-slot case-one package.
-This is the analytic input used before summing the six H-kernel occurrences. -/
+/--
+Full orientation-zero occurrence estimate in the common five-slot case-one package.
+This is the analytic input used before summing the six H-kernel occurrences.
+-/
 theorem aux_caseOne_u0_occurrence (d : ℕ) (lam : ℤ → ℝ)
     (hlam : SpacedSequence lam) (q : SequencePair × Fin 2)
     (hq : ∀ s : Fin 2, SpacedSequence (q.1 s)) (j : ℤ) (w0 w1 : ℝ)
@@ -4353,8 +4528,10 @@ theorem aux_caseOne_u0_occurrence (d : ℕ) (lam : ℤ → ℝ)
       dsimp [r, S]
       ring
 
-/-- The orientation-zero five-slot occurrence estimate with its dyadic loss obtained
-directly from a member of an H-kernel Gaussian package. -/
+/--
+The orientation-zero five-slot occurrence estimate with its dyadic loss obtained
+directly from a member of an H-kernel Gaussian package.
+-/
 theorem aux_caseOne_u0_occurrence_of_package {n : ℕ}
     (γ : GeometricParameters n) (_hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
@@ -4571,8 +4748,10 @@ theorem aux_caseOne_u0_real_integrand_integrable
           mul_le_mul_of_nonneg_right hminsum hTnon
     simpa only [Real.norm_eq_abs, abs_of_nonneg hfnon, abs_of_nonneg hgnon] using hfg
 
-/-- The rho-difference estimate lifted through one orientation-zero occurrence of an
-H-kernel Gaussian package, in the common exact five-slot majorant. -/
+/--
+The rho-difference estimate lifted through one orientation-zero occurrence of an
+H-kernel Gaussian package, in the common exact five-slot majorant.
+-/
 theorem aux_caseOne_u0_rho_occurrence_of_package {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
@@ -5254,8 +5433,10 @@ theorem caseOneScales_distance_bound {n : ℕ} (γ : GeometricParameters n)
       simp only [aux_natPairWeight]
       omega
 
-/-- The first three fields of the case-one Gaussian-domination witness, ready to be paired
-with the analytic estimate and Gaussian-series convergence proofs. -/
+/--
+The first three fields of the case-one Gaussian-domination witness, ready to be paired
+with the analytic estimate and Gaussian-series convergence proofs.
+-/
 theorem caseOne_witness_side_conditions {n : ℕ} (γ : GeometricParameters n)
     (ι : MultiplierIndex γ) (i : Fin γ.k) (hpositive : 0 < ι.1.1) :
     caseOneB.card ≤ C_gaussianDominationCombinedCard ∧
@@ -5286,8 +5467,10 @@ theorem caseOneSlotNat_encode {n : ℕ} (γ : GeometricParameters n)
   unfold caseOneSlotNat
   rw [caseOneSlotIndex_encode]
 
-/-- Reindex the 30 natural-number witness slots as six multiset occurrences with five slots
-each.  This preserves the occurrence multiplicities of the H-kernel package. -/
+/--
+Reindex the 30 natural-number witness slots as six multiset occurrences with five slots
+each.  This preserves the occurrence multiplicities of the H-kernel package.
+-/
 theorem caseOne_sum_range30_reindex {n : ℕ} (γ : GeometricParameters n)
     (ι : MultiplierIndex γ) (i : Fin γ.k) {R : Type*} [AddCommMonoid R]
     (F : SequencePair × Fin 2 → R) :
@@ -5617,8 +5800,10 @@ theorem aux_gaussianDominationWeight_secondMoment_summable :
     exact mul_nonneg (aux_gaussianDominationWeight_nonneg m) (sq_nonneg _))
     hpoint hmajorant
 
-/-- The dyadic two-parameter Gaussian weight has the second moment used in the
-main induction. -/
+/--
+The dyadic two-parameter Gaussian weight has the second moment used in the
+main induction.
+-/
 theorem aux_gaussianDominationWeight_secondMoment_le_two_pow_ten :
     (∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m *
       (1 + (aux_natPairWeight m : ℝ)) ^ (2 : ℕ)) ≤ (2 : ℝ) ^ (10 : ℕ) := by
@@ -5761,7 +5946,7 @@ theorem aux_dyadic_gaussian_term_integrable
     (fun r => (2 : ℝ) ^ (m r) * p r j) u hq
   have hint : Integrable (twoDimensionalGaussian
       (fun r => (2 : ℝ) ^ (m r) * p r j) u) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hmem
+    Codex.aux_memW0_integrable_of_addHaar hmem
   simpa [aux_dominatingGaussianTerm] using
     hint.const_mul (aux_gaussianDominationWeight m)
 
@@ -5877,8 +6062,10 @@ theorem aux_finite_dyadic_gaussian_series_integrable
   rw [← hfun]
   exact hmain
 
-/-- Wrapper in the exact `aux_GaussianDominationWitness.scales` shape: the scale pair at
-`m` is obtained from a fixed base pair by coordinatewise dyadic dilation. -/
+/--
+Wrapper in the exact `aux_GaussianDominationWitness.scales` shape: the scale pair at
+`m` is obtained from a fixed base pair by coordinatewise dyadic dilation.
+-/
 theorem aux_finite_dyadic_gaussian_series_summable_of_scales
     (B : Finset ℕ) (p : ℕ → SequencePair)
     (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
@@ -5930,8 +6117,10 @@ theorem aux_finite_dyadic_gaussian_series_integrable_of_scales
   rw [hfun]
   exact hbase
 
-/-- The two analytic tail fields of a Gaussian-domination witness, for any finite family of
-base scale pairs and their coordinatewise dyadic dilates. -/
+/--
+The two analytic tail fields of a Gaussian-domination witness, for any finite family of
+base scale pairs and their coordinatewise dyadic dilates.
+-/
 theorem aux_finite_dyadic_gaussian_series
     (B : Finset ℕ) (p : ℕ → SequencePair)
     (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
@@ -5962,8 +6151,10 @@ theorem aux_dyadic_scales_in_A
   intro b hb m r
   exact smul_mem_A (hp b hb r) (pow_pos (by norm_num) _)
 
-/-- In the orientation-one case the kernel sees `√2 * p`; this only improves
-the real bracket profile. -/
+/--
+In the orientation-one case the kernel sees `√2 * p`; this only improves
+the real bracket profile.
+-/
 theorem aux_caseOne_m1_sqrt_arg_le (N t p : ℝ)
     (hN : 0 ≤ N) (ht : 0 < t) :
     scaledBracketBumpReal N t (Real.sqrt 2 * p) ≤
@@ -5981,8 +6172,10 @@ theorem aux_caseOne_m1_sqrt_arg_le (N t p : ℝ)
   · exact Real.rpow_le_rpow_of_nonpos (by positivity) hbase (by linarith)
   · exact inv_nonneg.mpr ht.le
 
-/-- Exact simultaneous rescaling used to express the first M₁ coordinate in
-the formal `W 1` coordinates. -/
+/--
+Exact simultaneous rescaling used to express the first M₁ coordinate in
+the formal `W 1` coordinates.
+-/
 theorem aux_caseOne_m1_simul_rescale (N c s x : ℝ) (hc : 0 < c) :
     c * scaledBracketBumpReal N (c * s) (c * x) =
       scaledBracketBumpReal N s x := by
@@ -6048,9 +6241,11 @@ theorem aux_caseOne_m1_product_integrable
         s₀⁻¹ * scaledBracketBumpReal (3 / 2 : ℝ) s₁ p := by
           nlinarith [mul_le_mul_of_nonneg_right hle hright]
 
-/-- The single orientation-one occurrence in the positive-horizontal case is
+/--
+The single orientation-one occurrence in the positive-horizontal case is
 controlled by its M₁ term in exact `W 1` coordinates.  The factor `2` only
-absorbs `√2 ≤ 2`; the output scale pair is `(√2 * λ, t₁)`. -/
+absorbs `√2 ≤ 2`; the output scale pair is `(√2 * λ, t₁)`.
+-/
 theorem aux_caseOne_m1_orientation_one (w₀ w₁ lam t₀ t₁ : ℝ)
     (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) (ht₀lam : t₀ ≤ lam) :
     (∫ p : ℝ,
@@ -6234,8 +6429,10 @@ theorem aux_caseOne_m1_move_twoPi_out {A lambda y B : ℝ}
       mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hmin hA) hB
     _ = (2 * Real.pi * A) * min 1 (lambda⁻¹ * |y|) * B := by ring
 
-/-- A scale in the H-kernel distance ball is smaller than the positive-band
-N scale by the required dyadic factor. -/
+/--
+A scale in the H-kernel distance ball is smaller than the positive-band
+N scale by the required dyadic factor.
+-/
 theorem aux_caseOne_m1_distanceBall_scale_ratio_le {a b : ℤ → ℝ}
     (ha : SpacedSequence a) {d : ℕ} (hb : b ∈ sequenceDistanceBall a (d : WithTop ℕ))
     (h j : ℤ) :
@@ -6254,8 +6451,10 @@ theorem aux_caseOne_m1_distanceBall_scale_ratio_le {a b : ℤ → ℝ}
       rw [← zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0), neg_add_cancel, zpow_zero, one_mul]
     _ = (2 : ℝ) ^ (-h) * ((2 : ℝ) ^ h * a (j + (d : ℤ))) := by ring
 
-/-- The square-root loss converts the second-order H bump into the `3/2` bump
-needed by the M₁ integral theorem. -/
+/--
+The square-root loss converts the second-order H bump into the `3/2` bump
+needed by the M₁ integral theorem.
+-/
 theorem aux_caseOne_m1_two_sqrt_eq_threeHalves (t x : ℝ) (ht : 0 < t) :
     Real.rpow (1 + t⁻¹ * |x|) (1 / 2 : ℝ) * scaledBracketBump 2 t x =
       scaledBracketBumpReal (3 / 2 : ℝ) t x := by
@@ -6329,8 +6528,10 @@ theorem aux_caseOne_m1_min_scale_half_le {t lam : ℝ} {h : ℕ}
     ring
   simpa [a, b, hroot] using hmin.trans hsqrt
 
-/-- Combines the loss based on `p` with the orientation-one H bump, whose first
-coordinate is `√2 p`. -/
+/--
+Combines the loss based on `p` with the orientation-one H bump, whose first
+coordinate is `√2 p`.
+-/
 theorem aux_caseOne_m1_sqrt_loss_bump (t p : ℝ) (ht : 0 < t) :
     Real.sqrt (1 + t⁻¹ * |p|) * scaledBracketBump 2 t (-Real.sqrt 2 * p) ≤
       scaledBracketBumpReal (3 / 2 : ℝ) t (Real.sqrt 2 * p) := by
@@ -6509,10 +6710,12 @@ theorem aux_caseOne_m1_integral_le_of_pointwise
             scaledBracketBumpReal (3 / 2 : ℝ) t₁ (Real.sqrt 2 * w₁)) :=
       mul_le_mul_of_nonneg_left hM1 hK
 
-/-- The rho-difference estimate applied to one orientation-one H occurrence.
+/--
+The rho-difference estimate applied to one orientation-one H occurrence.
 The supplied `hminloss` is exactly the scale-ratio consequence of membership in
 the H-package distance ball; the conclusion is in the M₁ coordinates shared by
-the five-slot case-one package. -/
+the five-slot case-one package.
+-/
 theorem aux_caseOne_m1_orientation_one_rho_occurrence {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (hzero : ι.1.1 ≠ 0) (hpositive : 0 < ι.1.1)
@@ -6753,8 +6956,10 @@ theorem aux_caseOne_m1_hminloss_of_distanceBall {n : ℕ}
   intro p
   convert aux_caseOne_m1_min_scale_half_le ht hlambda_pos hscale p using 1; ring_nf
 
-/-- The orientation-one occurrence bound with the dyadic loss obtained directly
-from its membership in the H-kernel Gaussian package. -/
+/--
+The orientation-one occurrence bound with the dyadic loss obtained directly
+from its membership in the H-kernel Gaussian package.
+-/
 theorem aux_caseOne_m1_orientation_one_rho_occurrence_of_package {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
@@ -6796,8 +7001,10 @@ theorem aux_caseOne_m1_orientation_one_rho_occurrence_of_package {n : ℕ}
       (lambda := lambda) (hlambda := hlambda))
     (ht₀lambda := ht₀lambda) (w₀ := w₀) (w₁ := w₁)
 
-/-- Integrability of a finite multiset sum follows from integrability of its
-occurrences. -/
+/--
+Integrability of a finite multiset sum follows from integrability of its
+occurrences.
+-/
 theorem aux_caseOne_integrable_multiset_sum {α : Type*} (P : Multiset α)
     (g : α → ℝ → ℝ) (hg : ∀ q ∈ P, Integrable (g q)) :
     Integrable (fun x : ℝ => (P.map fun q => g q x).sum) := by
@@ -6883,8 +7090,10 @@ theorem aux_caseOne_multiset_sum_le_scaled {α : Type*} (P : Multiset α)
           add_le_add (h a (by simp)) (ih hP)
         _ = D * (g a + (P.map g).sum) := by ring
 
-/-- Cancellation plus an H-package estimate reduces the positive-band N bound
-to the finite sum of its occurrence integrals. -/
+/--
+Cancellation plus an H-package estimate reduces the positive-band N bound
+to the finite sum of its occurrence integrals.
+-/
 theorem aux_caseOne_outer_from_occurrences {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (w₀ w₁ : ℝ)
@@ -6936,9 +7145,11 @@ theorem aux_caseOne_outer_from_occurrences {n : ℕ}
       mul_le_mul_of_nonneg_left hsum aux_C_hKernelEstimateGaussianDomination_nonneg
     _ = C_hKernelEstimateGaussianDomination * D * (P.map S).sum := by ring
 
-/-- Each one-dimensional slice of an H-package bracket product is integrable.
+/--
+Each one-dimensional slice of an H-package bracket product is integrable.
 This is the only integrability input needed to pass from the pointwise H bound
-to the finite sum of occurrence integrals. -/
+to the finite sum of occurrence integrals.
+-/
 theorem aux_caseOne_kernelBracketProduct_integrable
     (q : SequencePair × Fin 2) (j : ℤ) (w₁ : ℝ)
     (hq₀ : SpacedSequence (q.1 0)) (hq₁ : SpacedSequence (q.1 1)) :
@@ -6989,8 +7200,10 @@ theorem aux_caseOne_kernelBracketProduct_integrable
     simp [aux_kernelBracketProduct, t₀, t₁, hfirst, hsecond,
       ← aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq]
 
-/-- We use the explicit six-occurrence H-package so its multiplicities agree
-with the range-30 witness decoder. -/
+/--
+We use the explicit six-occurrence H-package so its multiplicities agree
+with the range-30 witness decoder.
+-/
 theorem aux_caseOne_HPackage_explicit {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) :
     aux_HKernelGaussianBound γ i (aux_hKernelGaussianMultiset γ i) := by
@@ -7014,8 +7227,10 @@ theorem aux_caseOne_HPackage_explicit {n : ℕ} (γ : GeometricParameters n)
     · linarith [hsp.1]
     · convert hsp.2 using 1; ring_nf
 
-/-- The orientation-one M₁ product is exactly slot zero of the shared
-five-slot occurrence package. -/
+/--
+The orientation-one M₁ product is exactly slot zero of the shared
+five-slot occurrence package.
+-/
 theorem aux_caseOne_m1_slot_zero
     (lam : ℤ → ℝ) (q : SequencePair × Fin 2) (j : ℤ) (w₀ w₁ : ℝ)
     (hqu : q.2 = 1) :
@@ -7050,8 +7265,10 @@ theorem aux_caseOne_twoBump_nonneg :
   norm_num [C_twoBumpEstimate]
   exact Real.rpow_nonneg (by norm_num) _
 
-/-- Both orientation branches of one H-kernel occurrence have the same exact
-five-slot majorant and the coefficient needed for the doubled Case 1 constant. -/
+/--
+Both orientation branches of one H-kernel occurrence have the same exact
+five-slot majorant and the coefficient needed for the doubled Case 1 constant.
+-/
 theorem aux_caseOne_occurrence_uniform {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
@@ -7256,9 +7473,11 @@ theorem aux_caseOne_multiset_slot_sum_reindex {n : ℕ} (γ : GeometricParameter
   rw [caseOne_sum_range30_reindex γ ι i (aux_caseOneSlotProduct j v)]
   simp_rw [aux_caseOneExactSlotTerm_eq_caseOneSlotProduct]
 
-/-- The raw rho-difference times any one H-package bracket product is integrable.
+/--
+The raw rho-difference times any one H-package bracket product is integrable.
 For this bookkeeping step a uniform boundedness consequence of the positive
-rho estimate is sufficient. -/
+rho estimate is sufficient.
+-/
 theorem aux_caseOne_raw_occurrence_integrable {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1)
@@ -7357,9 +7576,11 @@ theorem aux_caseOne_raw_occurrence_integrable {n : ℕ}
         nMultiplierRho γ hkn ι i j w₀| * B p‖ ≤ M * B p
     simpa only [Real.norm_eq_abs, abs_of_nonneg hfnon] using hle
 
-/-- Cancellation, the explicit six-term H package, and the two orientation
+/--
+Cancellation, the explicit six-term H package, and the two orientation
 occurrence estimates give a 30-slot real-bracket majorant before Gaussian
-domination is applied to its slots. -/
+domination is applied to its slots.
+-/
 theorem aux_caseOne_preGaussian_bound {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (hpositive : 0 < ι.1.1) (w₀ w₁ : ℝ) :
@@ -7594,23 +7815,23 @@ theorem aux_caseOne_slot_sum_gaussian_majorant {n : ℕ}
       rw [Finset.mul_sum]
 
 /--
-\begin{proposition}\label{Gauss domination case 1}
-The conclusion of [`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`] holds in
-the case $\iota=(h,0)$, $h>0$, with the constant in \eqref{Gaussian domination main estimate}
-equal to
-\begin{equation}\label{auto:Gaussian-domination-case-one-constant}
-C_{\mathrm{Gauss\ domination\ case\ 1}}
-=2\cdot2^7\pi e^{2\pi}
-\tilde C_{\mathrm{standard\ bump\ properties},0,2}
-C_{\mathrm{mean\ four\ scale\ Gaussian\ kernel},2}
-C_{\mathrm{H\ kernel\ estimate\ Gaussian\ domination}}
+**Proposition (Gaussian domination, near case).**
+
+The conclusion of Proposition [`Codex.gaussianDominationCombined`] holds in the case $\iota=(h,0)$,
+$h>0$, with the constant in (`Gaussian domination main estimate`) equal to
+
+$$
+C_{\text{Gaussian domination, near case}}
+=2^8\pi e^{2\pi}
+\tilde C_{\text{standard bump},0,2}
+C_{\text{mean value four scale Gaussian kernel estimate},2}
+C_{\text{Kernel estimate for Gaussian domination}}
 \max\bigl(
-C_{\mathrm{two\ bump\ estimate},\tfrac32,\tfrac32}+4,
-4C_{\mathrm{bump\ triangle},-\tfrac12,\tfrac12,\tfrac32,\tfrac32}
-C_{\mathrm{two\ bump\ estimate},\tfrac32,\tfrac32}
+C_{\text{two bump estimate},\tfrac32,\tfrac32}+4,
+4C_{\text{bump triangle},-\tfrac12,\tfrac12,\tfrac32,\tfrac32}
+C_{\text{two bump estimate},\tfrac32,\tfrac32}
 \bigr).
-\end{equation}
-\end{proposition}
+$$
 -/
 theorem gaussDominationCase1 {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (i : Fin γ.k)
@@ -7872,7 +8093,7 @@ theorem fourScaleGaussianRho_integral_eq_zero
       hsupp muMinus muPlus nu
   have hfInt : Integrable f := hfCont.integrable_of_hasCompactSupport hfSupp
   have hrhoInt : Integrable rho := by
-    exact Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hrho
+    exact Codex.aux_memW0_integrable_of_addHaar hrho
   have hFourierEq : FourierTransform.fourier f = fun x : ℝ => rho (-x) := by
     funext x
     simpa [f, rho, fourScaleGaussianRho] using
@@ -8311,8 +8532,10 @@ theorem scratch_caseTwo_orthogonal_decay_two (x y lam t : ℝ)
       | exact aux_scaledBracketBump_nonneg 2 ht _
   exact hraw'.trans (mul_le_mul_of_nonneg_right hcoef hnon)
 
-/-- The required scalar orthogonal split in the Case-2 coordinates.  The
-constant `9` is within the permitted harmless loss from the blueprint's `8`. -/
+/--
+The required scalar orthogonal split in the Case-2 coordinates.  The
+constant `9` is within the permitted harmless loss from the blueprint's `8`.
+-/
 theorem scratch_caseTwo_orthogonal_split (v₀ v₁ lam t : ℝ)
     (hlam : 0 < lam) (ht : 0 < t) :
     scaledBracketBump 2 lam v₀ * scaledBracketBump 2 t (v₀ - v₁) ≤
@@ -8406,8 +8629,10 @@ theorem scratch_caseTwo_orthogonal_split (v₀ v₁ lam t : ℝ)
       scaledBracketBump 2 lam z * scaledBracketBump 2 t u) := by
       field_simp [hcne]
 
-/-- The three-bump part of a Case-2 orientation-zero occurrence, before the
-orthogonal-coordinate split. -/
+/--
+The three-bump part of a Case-2 orientation-zero occurrence, before the
+orthogonal-coordinate split.
+-/
 theorem scratch_caseTwo_u0_threeBump_raw (v₀ v₁ lam t₀ t₁ : ℝ)
     (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
     (∫ p : ℝ, scaledBracketBump 2 lam p *
@@ -8534,8 +8759,10 @@ theorem scratch_caseTwo_u0_threeBump_raw (v₀ v₁ lam t₀ t₁ : ℝ)
       dsimp [Ktri]
       ring
 
-/-- The complete orientation-zero Case-2 occurrence bound.  It retains the
-inverse-scale factor supplied by the diagonal derivative estimate. -/
+/--
+The complete orientation-zero Case-2 occurrence bound.  It retains the
+inverse-scale factor supplied by the diagonal derivative estimate.
+-/
 theorem scratch_caseTwo_u0_occurrence (v₀ v₁ lam t₀ t₁ : ℝ)
     (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
     (∫ p : ℝ, scaledBracketBump 2 lam p *
@@ -8821,7 +9048,7 @@ theorem scratch_nMultiplierRho_negative_integral_zero {n : ℕ}
     simp [f, phiHat, r, h, a, muMinus, muPlus, lamMinus, lamPlus,
       nMultiplierRhoComplex, fourScaleGaussianRho, hzero, not_lt_of_ge hnegative.le]
   have hrhoComplexInt : Integrable (nMultiplierRhoComplex γ hkn ι i j) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    Codex.aux_memW0_integrable_of_addHaar
       (nMultiplierRhoComplex_memW0 γ hkn ι i j)
   have hinvInt : Integrable (FourierTransformInv.fourierInv f) := by
     rw [hinvEq]
@@ -9123,8 +9350,10 @@ theorem scratch_integrable_mul_fderiv_from_package
   filter_upwards [] with p
   exact hpoint p
 
-/-- Combines a pair of orientation-specific Case-2 occurrence estimates without losing
-multiset multiplicities. -/
+/--
+Combines a pair of orientation-specific Case-2 occurrence estimates without losing
+multiset multiplicities.
+-/
 theorem scratch_caseTwo_occurrence_by_orientation
     {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
     (ι : MultiplierIndex γ) (i : Fin γ.k) (j : ℤ) (v : RealPlane)
@@ -9152,8 +9381,10 @@ theorem scratch_caseTwo_occurrence_by_orientation
     apply Fin.ext
     simpa using hq1
 
-/-- The source-ready finite package assembly after the Case-2 integration-by-parts
-representation has been established. -/
+/--
+The source-ready finite package assembly after the Case-2 integration-by-parts
+representation has been established.
+-/
 theorem scratch_caseTwo_outer_scaled_from_occurrences {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (v : RealPlane)
@@ -9185,8 +9416,10 @@ theorem scratch_caseTwo_outer_scaled_from_occurrences {n : ℕ}
       mul_le_mul_of_nonneg_left hsum aux_C_hKernelDerivativeEstimateGaussianDomination_nonneg
     _ = C_hKernelDerivativeEstimateGaussianDomination * D * (P.map S).sum := by ring
 
-/-- Algebraic conversion of the decaying-primitive integration-by-parts identity into the
-diagonal-derivative representation used by the derivative H package. -/
+/--
+Algebraic conversion of the decaying-primitive integration-by-parts identity into the
+diagonal-derivative representation used by the derivative H package.
+-/
 theorem scratch_caseTwo_representation_from_parts {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (v : RealPlane) (rho : ℝ → ℝ)
@@ -9223,8 +9456,10 @@ theorem scratch_caseTwo_representation_from_parts {n : ℕ}
       rw [integral_neg]
       ring
 
-/-- A cubic bracket tail makes the original rho-times-H term integrable whenever the
-translated H slice is integrable. -/
+/--
+A cubic bracket tail makes the original rho-times-H term integrable whenever the
+translated H slice is integrable.
+-/
 theorem scratch_caseTwo_decay_mul_integrable
     {rho g : ℝ → ℝ} {A s : ℝ}
     (hrhoCont : Continuous rho) (hA : 0 ≤ A) (hs : 0 < s)
@@ -9244,8 +9479,10 @@ theorem scratch_caseTwo_decay_mul_integrable
   exact scratch_integrable_mul_of_continuous_bound hrhoCont
     (mul_nonneg hA (inv_nonneg.mpr hs.le)) hbound hg
 
-/-- The derivative H package supplies the final integrability input of Iic integration
-by parts, once every primitive-weighted occurrence has been shown integrable. -/
+/--
+The derivative H package supplies the final integrability input of Iic integration
+by parts, once every primitive-weighted occurrence has been shown integrable.
+-/
 theorem scratch_caseTwo_primitive_fderiv_integrable {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) (v : RealPlane)
     (P : Multiset (SequencePair × Fin 2)) (hP : aux_HKernelDerivativeGaussianBound γ i P)
@@ -9271,8 +9508,10 @@ theorem scratch_caseTwo_primitive_fderiv_integrable {n : ℕ}
   intro q hq
   simpa [B] using hint q hq
 
-/-- Translation converts the centered two-coordinate bracket slice used by the existing
-Case-1 integrability lemma into the arbitrary `v-p` slice needed in Case 2. -/
+/--
+Translation converts the centered two-coordinate bracket slice used by the existing
+Case-1 integrability lemma into the arbitrary `v-p` slice needed in Case 2.
+-/
 theorem scratch_caseTwo_translate_integrable
     (B : RealPlane → ℝ) (v : RealPlane)
     (hcentered : Integrable (fun p : ℝ =>
@@ -9842,10 +10081,12 @@ def caseTwoMaxScale (q : SequencePair × Fin 2) : ℤ → ℝ :=
 def caseTwoLambdaMaxScale (lam : ℤ → ℝ) (q : SequencePair × Fin 2) : ℤ → ℝ :=
   fun j => max (lam j) (q.1 1 j)
 
-/-- Five padded slots per occurrence.  For an orientation-zero occurrence, slots `0,1,2`
+/--
+Five padded slots per occurrence.  For an orientation-zero occurrence, slots `0,1,2`
 are exactly the three terms of the three-bump/orthogonal estimate.  For an orientation-one
 occurrence, slot `0` is its one two-bump term.  Every other slot is harmless repetition of
-the original nonnegative kernel product. -/
+the original nonnegative kernel product.
+-/
 def caseTwoExactSlotOf (lam : ℤ → ℝ) (q : SequencePair × Fin 2) (r : Fin 5) :
     SequencePair × Fin 2 :=
   if _hq : q.2 = 0 then
@@ -9962,8 +10203,10 @@ theorem caseTwo_within_max {a q₀ q₁ : ℤ → ℝ} {d : ℕ}
   · exact (hq₀ j).1.trans (le_max_left _ _)
   · exact max_le (hq₀ j).2 (hq₁ j).2
 
-/-- The three Case 2 orientation-zero outputs, the orientation-one output, and padding all
-have pair distance at most `2(Δ+h)` once `λ` lies within `Δ+h` of the reference scale. -/
+/--
+The three Case 2 orientation-zero outputs, the orientation-one output, and padding all
+have pair distance at most `2(Δ+h)` once `λ` lies within `Δ+h` of the reference scale.
+-/
 theorem caseTwoExactSlotOf_distance_bound {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (lam : ℤ → ℝ) (h : ℕ)
     (hlam : WithinSequenceDistance (γ.scales i 1) lam (geometricDelta γ + h))
@@ -10193,8 +10436,10 @@ theorem caseTwo_sum_range30_reindex {n : ℕ} (γ : GeometricParameters n)
           (caseTwoOccurrence (aux_hKernelGaussianMultiset γ i)
             (Fin.cast (aux_hKernelGaussianMultiset_card γ i).symm kr.1)) kr.2)))
 
-/-- The unpadded Case 2 outputs: three from an orientation-zero occurrence and one from an
-orientation-one occurrence. -/
+/--
+The unpadded Case 2 outputs: three from an orientation-zero occurrence and one from an
+orientation-one occurrence.
+-/
 def caseTwoActiveSlots (lam : ℤ → ℝ) (q : SequencePair × Fin 2) :
     Multiset (SequencePair × Fin 2) :=
   if q.2 = 0 then
@@ -10206,9 +10451,11 @@ def caseTwoActivePackage (lam : ℤ → ℝ) (P : Multiset (SequencePair × Fin 
     Multiset (SequencePair × Fin 2) :=
   P.bind (caseTwoActiveSlots lam)
 
-/-- The manuscript's `14` count applies only when the H package has its two orientation-one
+/--
+The manuscript's `14` count applies only when the H package has its two orientation-one
 entries.  In the other canonical orientation all six occurrences are orientation zero, so the
-same construction has exactly `18` unpadded outputs. -/
+same construction has exactly `18` unpadded outputs.
+-/
 theorem caseTwoCanonicalActivePackage_card {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (lam : ℤ → ℝ) :
     (caseTwoActivePackage lam (aux_hKernelGaussianMultiset γ i)).card =
@@ -10354,7 +10601,7 @@ theorem scratch_caseTwoPrimitive_bound {n : ℕ} (γ : GeometricParameters n)
         (mul_nonneg (by positivity) hsecond)
     positivity
   have hrho : Integrable (nMultiplierRho γ hkn ι i j) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    Codex.aux_memW0_integrable_of_addHaar
       (nMultiplierRho_memW0 γ hkn ι i j)
   have hzero : ι.1.1 ≠ 0 := ne_of_lt hnegative
   have hdecay (x : ℝ) : |nMultiplierRho γ hkn ι i j x| ≤
@@ -10376,7 +10623,7 @@ theorem scratch_caseTwoPrimitive_continuous {n : ℕ} (γ : GeometricParameters 
   have hrhoCont : Continuous (nMultiplierRho γ hkn ι i j) :=
     (nMultiplierRho_memW0 γ hkn ι i j).1
   have hrhoInt : Integrable (nMultiplierRho γ hkn ι i j) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    Codex.aux_memW0_integrable_of_addHaar
       (nMultiplierRho_memW0 γ hkn ι i j)
   have hdiff : Differentiable ℝ (scratch_caseTwoPrimitive γ hkn ι i j) := by
     intro x
@@ -11161,7 +11408,7 @@ theorem scratch_caseTwo_representation {n : ℕ}
   have hrhoCont : Continuous rho := by
     simpa [rho] using (nMultiplierRho_memW0 γ hkn ι i j).1
   have hrhoInt : Integrable rho := by
-    simpa [rho] using Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    simpa [rho] using Codex.aux_memW0_integrable_of_addHaar
       (nMultiplierRho_memW0 γ hkn ι i j)
   have hg : ∀ p : ℝ, DifferentiableAt ℝ g p := by
     intro p
@@ -11709,20 +11956,20 @@ end ScratchCase2Cohesive
 end aux_caseTwo
 
 /--
-\begin{proposition}[Gaussian domination, far case]\label{Gauss domination case 2}
-The conclusion of [`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`] holds in
-the case $\iota=(h,0)$, $h<0$, with the constant in \eqref{Gaussian domination main estimate}
-equal to
-\begin{equation}\label{auto:Gaussian-domination-case-two-constant}
-C_{\mathrm{Gauss\ domination\ case\ 2}}
+**Proposition (Gaussian domination, far case).**
+
+The conclusion of Proposition [`Codex.gaussianDominationCombined`] holds in the case $\iota=(h,0)$,
+$h<0$, with the constant in (`Gaussian domination main estimate`) equal to
+
+$$
+C_{\text{Gaussian domination, far case}}
 =3\cdot2^7e^{2\pi}
-\tilde C_{\mathrm{standard\ bump\ properties},0,3}
-C_{\mathrm{four\ scale\ Gaussian\ kernel},3}
-C_{\mathrm{H\ kernel\ derivative\ estimate\ Gaussian\ domination}}
-C_{\mathrm{bump\ triangle},1,1,2,2}
-C_{\mathrm{two\ bump\ estimate},2,2}.
-\end{equation}
-\end{proposition}
+\tilde C_{\text{standard bump},0,3}
+C_{\text{four scale Gaussian kernel estimate},3}
+C_{\text{Kernel derivative estimate for Gaussian domination}}
+C_{\text{bump triangle},1,1,2,2}
+C_{\text{two bump estimate},2,2}.
+$$
 -/
 theorem gaussDominationCase2 {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ)
@@ -11737,12 +11984,6 @@ namespace aux_caseThree
 open MeasureTheory
 open scoped BigOperators ENNReal Real FourierTransform
 
-open Codex.Preliminaries.Notation
-open Codex.Preliminaries.Gaussians
-open Codex.Preliminaries.BumpsAndEstimates
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
 
 noncomputable def scratch_caseThreeLambdaMinus {n : ℕ} (γ : GeometricParameters n)
     (ι : MultiplierIndex γ) (i : Fin γ.k) : ℤ → ℝ :=
@@ -11767,8 +12008,10 @@ theorem scratch_caseThreeLambdaPlus_spaced {n : ℕ} (γ : GeometricParameters n
   funext j
   simp [scratch_caseThreeLambdaPlus]
 
-/-- The central-band four-scale representative has the `N = 2` two-scale decay needed
-for Gaussian domination case 3. -/
+/--
+The central-band four-scale representative has the `N = 2` two-scale decay needed
+for Gaussian domination case 3.
+-/
 theorem scratch_caseThree_nMultiplierRho_decay_bound {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (hzero : ι.1.1 = 0) (x : ℝ) :
@@ -11971,8 +12214,10 @@ theorem scratch_caseThree_integral_scale_pos (c : ℝ) (hc : 0 < c)
   simp only [smul_eq_mul, abs_of_pos (inv_pos.mpr hc)]
   field_simp [hc.ne']
 
-/-- The central-band orientation-one occurrence uses the maximum of its scale and the
-first H-package scale, at a harmless factor two. -/
+/--
+The central-band orientation-one occurrence uses the maximum of its scale and the
+first H-package scale, at a harmless factor two.
+-/
 theorem scratch_caseThree_u1_oneSlot (w0 w1 lam t0 t1 : ℝ)
     (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1) :
     (∫ p : ℝ, scaledBracketBump 2 lam p *
@@ -12304,8 +12549,10 @@ theorem scratch_caseThree_fourScale_nonneg :
     (mul_nonneg (mul_nonneg (by positivity) (by positivity)) hgauss)
     (mul_nonneg (by positivity) hsecond)
 
-/-- The direct central-band convolution is reduced to the six H-package occurrence
-integrals, retaining both four-scale rho terms. -/
+/--
+The direct central-band convolution is reduced to the six H-package occurrence
+integrals, retaining both four-scale rho terms.
+-/
 theorem scratch_caseThree_outer_raw {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (v : RealPlane) (hzero : ι.1.1 = 0) :
@@ -12434,9 +12681,6 @@ theorem scratch_caseThree_outer_raw {n : ℕ}
 
 open scoped BigOperators ENNReal Real FourierTransform
 
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
 open aux_caseTwo.ScratchCase2Witness
 
 /-!
@@ -12461,9 +12705,11 @@ def scratch_caseThreeLambdaMaxFirstScale (lam : ℤ → ℝ) (q : SequencePair �
     ℤ → ℝ :=
   fun j => max (lam j) (q.1 0 j)
 
-/-- The exact three-slot Case 3 occurrence decoder.  Unlike Case 2, an
+/--
+The exact three-slot Case 3 occurrence decoder.  Unlike Case 2, an
 orientation-one occurrence has the nontrivial first slot
-`(max λ q₀, q₁, 1)`; the other two slots are harmless padding. -/
+`(max λ q₀, q₁, 1)`; the other two slots are harmless padding.
+-/
 def scratch_caseThreeExactSlotOf (lam : ℤ → ℝ) (q : SequencePair × Fin 2) (r : Fin 3) :
     SequencePair × Fin 2 :=
   if _hq : q.2 = 0 then
@@ -12520,8 +12766,10 @@ theorem scratch_caseThreeExactSlotOf_spaced (lam : ℤ → ℝ) (hlam : SpacedSe
       · simpa [scratch_caseThreeExactSlotOf, hqu, hr0, aux_sequencePairOf] using hq 1
     · simpa [scratch_caseThreeExactSlotOf, hqu, hr0] using hq
 
-/-- Decode a natural number into an H occurrence, one of the two rho scales,
-and one of the three active/padded Case-2 output slots. -/
+/--
+Decode a natural number into an H occurrence, one of the two rho scales,
+and one of the three active/padded Case-2 output slots.
+-/
 def scratch_caseThreeSlotIndex (b : ℕ) : (Fin 6 × Fin 2) × Fin 3 :=
   ((⟨(b / 3 / 2) % 6, Nat.mod_lt _ (by norm_num)⟩,
     ⟨(b / 3) % 2, Nat.mod_lt _ (by norm_num)⟩),
@@ -12650,14 +12898,13 @@ theorem scratch_caseThree_sum_range36_reindex {n : ℕ} (γ : GeometricParameter
 
 open scoped BigOperators ENNReal Real FourierTransform
 
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
 
-/-- The lower central rho scale is within the exact `2 Δ` pair-distance budget
+/--
+The lower central rho scale is within the exact `2 Δ` pair-distance budget
 of each basic shifted H scale.  The slack comes from the `+1` in
 `geometricDelta`: the possible extra backwards shift is paid for by the
-same-index scale-pair distance. -/
+same-index scale-pair distance.
+-/
 theorem scratch_caseThree_lambdaMinus_hKernelShiftedScale_distance {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (l : ℤ)
     (hl : l.natAbs ≤ geometricDelta γ) (m r : Fin 2) :
@@ -12710,8 +12957,10 @@ theorem scratch_caseThree_lambdaMinus_hKernelShiftedScale_distance {n : ℕ}
       apply aux_spacedSequence_monotone (γ.scales_spaced i 1)
       omega
 
-/-- Both central Case 3 rho scales have the exact `2 Δ` comparison with every
-basic shifted H scale.  The `e = 0` case is `λ₋`; `e = 1` is `λ₊`. -/
+/--
+Both central Case 3 rho scales have the exact `2 Δ` comparison with every
+basic shifted H scale.  The `e = 0` case is `λ₋`; `e = 1` is `λ₊`.
+-/
 theorem scratch_caseThree_centralLambda_hKernelShiftedScale_distance {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (l : ℤ)
     (hl : l.natAbs ≤ geometricDelta γ) (e m r : Fin 2) :
@@ -12771,8 +13020,10 @@ theorem scratch_caseThree_centralLambda_spaced {n : ℕ}
   funext j
   ring_nf
 
-/-- The same exact `2 Δ` comparison is stable under the maximum scale used
-in the orientation-zero H package. -/
+/--
+The same exact `2 Δ` comparison is stable under the maximum scale used
+in the orientation-zero H package.
+-/
 theorem scratch_caseThree_centralLambda_hKernelMaxScale_distance {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) (l : ℤ)
     (hl : l.natAbs ≤ geometricDelta γ) (e m : Fin 2) :
@@ -12803,11 +13054,6 @@ theorem scratch_caseThree_centralLambda_hKernelMaxScale_distance {n : ℕ}
 
 open scoped BigOperators ENNReal Real FourierTransform
 
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.Preliminaries.Notation
-open Codex.Preliminaries.BumpsAndEstimates
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
 open aux_caseTwo.ScratchCase2Witness
 
 theorem scratch_caseThree_centralLambda_hKernel_coordinate_distance {n : ℕ}
@@ -12877,9 +13123,11 @@ theorem scratch_caseThree_centralLambda_hKernel_coordinate_distance {n : ℕ}
       · simpa [aux_sequencePairOf] using
           scratch_caseThree_centralLambda_hKernelShiftedScale_distance γ i l hl e 1 1
 
-/-- The corrected Case 3 decoder preserves a common pair-distance bound.  In
+/--
+The corrected Case 3 decoder preserves a common pair-distance bound.  In
 the orientation-one active branch this uses `(max λ q₀,q₁)`, rather than the
-Case 2 decoder's padded `q`. -/
+Case 2 decoder's padded `q`.
+-/
 theorem scratch_caseThreeExactSlotOf_distance_of_bounds
     (lam : ℤ → ℝ) (hlam : SpacedSequence lam) (q : SequencePair × Fin 2)
     (hq : ∀ s : Fin 2, SpacedSequence (q.1 s)) (R : ℕ)
@@ -13074,12 +13322,6 @@ theorem scratch_caseThreeScales_distance_bound {n : ℕ}
 open MeasureTheory
 open scoped BigOperators ENNReal Real FourierTransform
 
-open Codex.Preliminaries.Notation
-open Codex.Preliminaries.Gaussians
-open Codex.Preliminaries.BumpsAndEstimates
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
 
 noncomputable def scratch_caseThreeSlotTerm (lam : ℤ → ℝ)
     (q : SequencePair × Fin 2) (j : ℤ) (v : RealPlane) (r : Fin 3) : ℝ :=
@@ -13185,8 +13427,10 @@ theorem scratch_caseThree_u1_coefficient_le_u0 :
       mul_le_mul_of_nonneg_right hscalar htwo
     _ = 9 * C_bumpTriangle 1 1 2 2 * C_twoBumpEstimate 2 2 := by ring
 
-/-- A single H-package occurrence and a single central rho scale are bounded by its
-three exact Case-3 slots, uniformly in the occurrence orientation. -/
+/--
+A single H-package occurrence and a single central rho scale are bounded by its
+three exact Case-3 slots, uniformly in the occurrence orientation.
+-/
 theorem scratch_caseThree_occurrence_to_slots
     (lam : ℤ → ℝ) (hlam : SpacedSequence lam) (q : SequencePair × Fin 2)
     (hq : ∀ s : Fin 2, SpacedSequence (q.1 s))
@@ -13262,8 +13506,10 @@ theorem scratch_caseThree_occurrence_to_slots
       _ ≤ (9 * C_bumpTriangle 1 1 2 2 * C_twoBumpEstimate 2 2) * S :=
         mul_le_mul_of_nonneg_right scratch_caseThree_u1_coefficient_le_u0 hS
 
-/-- The two central rho scales for one H-package occurrence are controlled by
-the six decoder slots attached to that occurrence. -/
+/--
+The two central rho scales for one H-package occurrence are controlled by
+the six decoder slots attached to that occurrence.
+-/
 theorem scratch_caseThree_twoLambda_occurrence_to_slots
     (lamMinus lamPlus : ℤ → ℝ) (hminus : SpacedSequence lamMinus)
     (hplus : SpacedSequence lamPlus) (q : SequencePair × Fin 2)
@@ -13364,8 +13610,10 @@ theorem scratch_caseThree_multiset_slot_sum_reindex {n : ℕ}
     (fun s => aux_kernelBracketProduct s j v)]
   rfl
 
-/-- The central-band convolution is reduced to the fixed 36-slot Case-3
-decoder, before applying Gaussian domination to each slot. -/
+/--
+The central-band convolution is reduced to the fixed 36-slot Case-3
+decoder, before applying Gaussian domination to each slot.
+-/
 theorem scratch_caseThree_preGaussian_bound {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) (v : RealPlane) (hzero : ι.1.1 = 0) :
@@ -13764,9 +14012,11 @@ theorem scratch_caseThree_estimate_from_side_conditions {n : ℕ}
       rw [show ι.1.1.natAbs = 0 by simp [hzero]]
       norm_num only [Nat.cast_zero, neg_zero, zero_div, Real.rpow_zero, mul_one]
 
-/-- All analytic Case-3 fields, parametrized only by the finite decoder's
+/--
+All analytic Case-3 fields, parametrized only by the finite decoder's
 cardinality and distance side conditions.  Once the global cardinality cap is
-raised to the honest value 36, this instantiates directly. -/
+raised to the honest value 36, this instantiates directly.
+-/
 theorem scratch_caseThree_witness_of_side_conditions {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (hzero : ι.1.1 = 0)
@@ -13823,8 +14073,10 @@ theorem scratch_caseThree_card_le_of_cap
     scratch_caseThreeB.card ≤ C_gaussianDominationCombinedCard := by
   simpa [scratch_caseThreeB] using hcap
 
-/-- The complete Case-3 theorem, conditional only on raising the global finite
-cardinality cap to the honest value 36. -/
+/--
+The complete Case-3 theorem, conditional only on raising the global finite
+cardinality cap to the honest value 36.
+-/
 theorem scratch_gaussDominationCase3_of_cap {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1) (i : Fin γ.k)
     (ι : MultiplierIndex γ) (hzero : ι.1.1 = 0)
@@ -13862,20 +14114,20 @@ theorem scratch_gaussDominationCase3 {n : ℕ}
 end aux_caseThree
 
 /--
-\begin{proposition}[Gaussian domination, intermediate case]\label{Gauss domination case 3}
-The conclusion of [`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`] holds in
-the case $\iota=(0,l)$, $|l|\le\Delta_\gamma$, with the constant in \eqref{Gaussian domination
-main estimate} equal to
-\begin{equation}\label{auto:Gaussian-domination-case-three-constant}
-C_{\mathrm{Gauss\ domination\ case\ 3}}
+**Proposition (Gaussian domination, intermediate case).**
+
+The conclusion of Proposition [`Codex.gaussianDominationCombined`] holds in the case $\iota=(0,l)$,
+$|l|\le\Delta_\gamma$, with the constant in (`Gaussian domination main estimate`) equal to
+
+$$
+C_{\text{Gaussian domination, intermediate case}}
 =2^7e^{2\pi}
-\tilde C_{\mathrm{standard\ bump\ properties},0,2}
-C_{\mathrm{four\ scale\ Gaussian\ kernel},2}
-C_{\mathrm{H\ kernel\ estimate\ Gaussian\ domination}}
-C_{\mathrm{bump\ triangle},1,1,2,2}
-C_{\mathrm{two\ bump\ estimate},2,2}.
-\end{equation}
-\end{proposition}
+\tilde C_{\text{standard bump},0,2}
+C_{\text{four scale Gaussian kernel estimate},2}
+C_{\text{Kernel estimate for Gaussian domination}}
+C_{\text{bump triangle},1,1,2,2}
+C_{\text{two bump estimate},2,2}.
+$$
 -/
 theorem gaussDominationCase3 {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ)
@@ -13885,40 +14137,47 @@ theorem gaussDominationCase3 {n : ℕ} (γ : GeometricParameters n)
     γ hkn i ι hzero hvertical
 
 /--
-\begin{proposition}[Gaussian domination, combined]\label{Gaussian domination combined}
+**Proposition (Gaussian domination, combined).**
+
 Set
-\begin{equation}\label{Gaussian domination combined constants}
-C_{\mathrm{Gaussian\ domination\ combined},0}=36,\qquad
-C_{\mathrm{Gaussian\ domination\ combined},1}=2,\qquad
-C_{\mathrm{Gaussian\ domination\ combined},2}=2^{153}.
-\end{equation}
-\label{auto:Gaussian-domination-combined-distance-constant}
-\label{auto:Gaussian-domination-combined-majorant-constant}
+
+$$
+C_{\text{Gaussian domination, combined},0}=36,\qquad
+C_{\text{Gaussian domination, combined},1}=2,\qquad
+C_{\text{Gaussian domination, combined},2}=2^{153}.
+$$
+
 Let $\gamma=(k,u,a)\in\Gamma$ and assume $k\le n-1$. Let $i\in[k)$. For every $\iota\in\mathcal
 I_\gamma$ there exists a finite set $\mathcal B=\mathcal B_{\gamma,i,\iota}$ with
-\begin{equation}\label{auto:Gaussian-domination-index-cardinality}
-\#\mathcal B\le C_{\mathrm{Gaussian\ domination\ combined},0},
-\end{equation}
+
+$$
+\#\mathcal B\le C_{\text{Gaussian domination, combined},0},
+$$
+
 and, for every $b\in\mathcal B$, an element $u_b\in[2)$, and, for every $(b,m)\in\mathcal
-B\times\N^2$, a sequence pair $p_{b,m}\in{\rm A}^2$, such that
-\begin{equation}\label{Gaussian domination combined distance}
-\Delta(p_{b,m})\le C_{\mathrm{Gaussian\ domination\ combined},1}(\Delta_\gamma+|\iota_0|+|m|)
-\end{equation}
-and, for every $j\in\Z$ and $v\in\R^2$,
-\begin{equation}\label{Gaussian domination main estimate}
+B\times\mathbb{N}^2$, a sequence pair $p_{b,m}\in{\rm A}^2$, such that
+
+$$
+\Delta(p_{b,m})\le C_{\text{Gaussian domination, combined},1}(\Delta_\gamma+|\iota_0|+|m|)
+$$
+
+and, for every $j\in\mathbb{Z}$ and $v\in\mathbb{R}^2$,
+
+$$
 |(N_{\gamma,\iota})_{i,j}(v)|
 \le C 2^{-|\iota_0|/2}
-\sum_{m\in\N^2}2^{-|m|/2}
+\sum_{m\in\mathbb{N}^2}2^{-|m|/2}
 \sum_{b\in\mathcal B}G_{p_{b,m}(j),u_b}(v)
-\end{equation}
-holds with $C=C_{\mathrm{Gaussian\ domination\ combined},2}$.
-The nonnegative series on the right converges for every $v\in\R^2$ and has finite $L^1$ norm.
-\end{proposition}
+$$
 
-See also [`Codex.MainArgument.GaussianDomination.gaussDominationCase1`],
-[`Codex.MainArgument.GaussianDomination.gaussDominationCase2`],
-[`Codex.MainArgument.GaussianDomination.gaussDominationCase3`], and
-[`Codex.MainArgument.GaussianDomination.gaussDominationConstant`].
+holds with $C=C_{\text{Gaussian domination, combined},2}$.
+The nonnegative series on the right converges for every $v\in\mathbb{R}^2$ and has finite $L^1$
+norm.
+
+See also [`Codex.gaussDominationCase1`],
+[`Codex.gaussDominationCase2`],
+[`Codex.gaussDominationCase3`], and
+[`Codex.gaussDominationConstant`].
 -/
 theorem gaussianDominationCombined {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) :
@@ -13944,4 +14203,4 @@ theorem gaussianDominationCombined {n : ℕ} (γ : GeometricParameters n)
 
 end
 
-end Codex.MainArgument.GaussianDomination
+end Codex

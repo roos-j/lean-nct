@@ -14,7 +14,7 @@ modules so that the final reduction can prove the introductory theorem
 without creating an import cycle.
 -/
 
-namespace Codex.Reduction.TwistedAverages
+namespace Codex
 
 open MeasureTheory Set
 open scoped BigOperators ENNReal
@@ -85,4 +85,4 @@ noncomputable def twistedDyadicVariationEnergy {n : ℕ} (chi : ℝ → ℝ)
 
 end
 
-end Codex.Reduction.TwistedAverages
+end Codex

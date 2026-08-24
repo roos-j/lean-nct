@@ -14,7 +14,7 @@ The finite variation seminorms used in the reduction argument.
 
 @[expose] public section
 
-namespace Codex.Reduction.VariationSeminorms
+namespace Codex
 
 open MeasureTheory Set
 open scoped BigOperators ENNReal
@@ -22,15 +22,18 @@ open scoped BigOperators ENNReal
 /--
 For a map `a : I → B`, this is the finite `r`-variation seminorm with at most
 `J` jumps:
-\[
+
+$$
  \|a\|_{V_{r,J}(I; B)} = \sup_{0\le M\le J}\ \sup_{t_0<\cdots<t_M,\ t_j\in I}
  \Big(\sum_{j\in[M)} \|a(t_{j+1})-a(t_j)\|^r\Big)^{1/r}.
-\]
+$$
+
 The Lean implementation uses monotone chains with exactly `J + 1` entries.
 Repeated entries contribute zero, so for the intended range `1 ≤ r` this is
 equivalent to taking the displayed supremum over strict chains with at most
 `J` jumps. The value is encoded in `ℝ≥0∞`, so that the defining supremum is
-also meaningful when it is unbounded. -/
+also meaningful when it is unbounded.
+-/
 noncomputable def finiteVariationSeminorm {B : Type*} [SeminormedAddCommGroup B]
     {I : Set ℝ} (a : I → B) (r : ℝ) (J : ℕ) : ℝ≥0∞ :=
   ⨆ (t : {u : Fin (J + 1) → I // Monotone u}),
@@ -49,8 +52,10 @@ noncomputable def aux_logarithmicMeasure (α β : ℝ) : Measure ℝ :=
 noncomputable def aux_logarithmicL2 (α β : ℝ) (f : ℝ → ℝ) : ℝ≥0∞ :=
   eLpNorm f 2 (aux_logarithmicMeasure α β)
 
-/-- The finite-dimensional three-term Minkowski estimate used in
-`shortlongJumps`. -/
+/--
+The finite-dimensional three-term Minkowski estimate used in
+`shortlongJumps`.
+-/
 theorem aux_lrpow_three_le {M : ℕ} (r : ℝ) (hr : 1 ≤ r)
     (d u v w : Fin M → ℝ≥0∞)
     (h : ∀ j, d j ≤ u j + v j + w j) :
@@ -71,8 +76,10 @@ theorem aux_lrpow_three_le {M : ℕ} (r : ℝ) (hr : 1 ≤ r)
       simpa [Finset.sum_add_distrib] using
         (ENNReal.Lp_add_le (s := Finset.univ) (f := u) (g := v) hr)
 
-/-- A single monotone chain is one candidate in the defining variation
-supremum. -/
+/--
+A single monotone chain is one candidate in the defining variation
+supremum.
+-/
 theorem aux_chainVariation_le {B : Type*} [SeminormedAddCommGroup B]
     {I : Set ℝ} (a : I → B) (r : ℝ) (J : ℕ)
     (t : Fin (J + 1) → I) (ht : Monotone t) :
@@ -134,8 +141,10 @@ theorem aux_dyadicLocal_sum_le_variation_rpow {B : Type*} [SeminormedAddCommGrou
   have hp := ENNReal.rpow_le_rpow hc hpos
   simpa [c, ENNReal.rpow_inv_rpow hne] using hp
 
-/-- A monotone chain whose only nonzero increment is from the lower endpoint
-to a specified point of a dyadic interval. -/
+/--
+A monotone chain whose only nonzero increment is from the lower endpoint
+to a specified point of a dyadic interval.
+-/
 noncomputable def aux_dyadicPairChain (J : ℕ) (k : ℤ)
     (x : aux_dyadicInterval k) : Fin (J + 1) → aux_dyadicInterval k :=
   Fin.cases (aux_dyadicLowerPoint k) (fun _ ↦ x)
@@ -183,8 +192,10 @@ theorem aux_dyadicPair_sum {B : Type*} [SeminormedAddCommGroup B]
   rw [aux_dyadicPairChain_zero x]
   simp [aux_dyadicPairChain, aux_dyadicLowerPoint, ENNReal.zero_rpow_of_pos hr]
 
-/-- A dyadic lower-endpoint tail is bounded by the corresponding local
-variation whenever there is at least one available jump. -/
+/--
+A dyadic lower-endpoint tail is bounded by the corresponding local
+variation whenever there is at least one available jump.
+-/
 theorem aux_dyadicPair_le_variation_rpow {B : Type*} [SeminormedAddCommGroup B]
     {J : ℕ} (hJ : 0 < J) {k : ℤ} (a : ℝ → B) (r : ℝ) (hr : 1 ≤ r)
     (x : aux_dyadicInterval k) :
@@ -205,15 +216,19 @@ theorem aux_dyadicPair_le_variation_rpow {B : Type*} [SeminormedAddCommGroup B]
         simpa [c] using aux_dyadicPair_sum (M := M) (k := k) a r hrpos x] at hp
   simpa [ENNReal.rpow_inv_rpow hne] using hp
 
-/-- The dyadic interval index of a real number; values outside the positive
-half-line are immaterial to `shortlongJumps`. -/
+/--
+The dyadic interval index of a real number; values outside the positive
+half-line are immaterial to `shortlongJumps`.
+-/
 noncomputable def aux_dyadicIndex (x : ℝ) : ℤ :=
   if hx : 0 < x then
     (exists_mem_Ico_zpow hx (by norm_num : (1 : ℝ) < 2)).choose
   else 0
 
-/-- A positive point belongs to the dyadic interval indexed by
-`aux_dyadicIndex`. -/
+/--
+A positive point belongs to the dyadic interval indexed by
+`aux_dyadicIndex`.
+-/
 theorem aux_dyadicIndex_spec (x : ℝ) (hx : 0 < x) :
     (2 : ℝ) ^ aux_dyadicIndex x ≤ x ∧ x < (2 : ℝ) ^ (aux_dyadicIndex x + 1) := by
   rw [aux_dyadicIndex, dif_pos hx]
@@ -336,23 +351,26 @@ theorem aux_diagonal_sum_le {J : ℕ} {κ : Finset ℤ} (c : Fin J → ℤ)
       rw [Finset.sum_comm]
 
 /--
-\begin{lemma}\label{lem:shortlongjumps}
+**Lemma.**
+
 For every increasing sequence of positive real numbers $(t_j)_{j\in[J+1)}$,
-\begin{equation}\label{auto:short-long-variation-decomposition}
+
+$$
 \Big(\sum_{j\in[J)}\|a(t_{j+1})-a(t_j)\|^r\Big)^{1/r}
 \le
 2\Big(\sum_{k\in\kappa}\|a\|_{V_{r,J}([2^k,2^{k+1}];B)}^r\Big)^{1/r}
-+\|a\|_{V_{r,J}(2^\Z;B)},
-\end{equation}
-where $\kappa$ is the set of $k\in\Z$ such that $2^k\le t_j<2^{k+1}$ for some
-$j\in[J+1)$. Consequently,
-\begin{equation}\label{auto:global-short-long-variation-bound}
++\|a\|_{V_{r,J}(2^\mathbb{Z};B)},
+$$
+
+where $\kappa$ is the set of $k\in\mathbb{Z}$ such that $2^k\le t_j<2^{k+1}$ for some $j\in[J+1)$.
+Consequently,
+
+$$
 \|a\|_{V_{r,J}((0,\infty);B)}
 \le
-2\Big(\sum_{k\in\Z}\|a\|_{V_{r,J}([2^k,2^{k+1}];B)}^r\Big)^{1/r}
-+\|a\|_{V_{r,J}(2^\Z;B)}.
-\end{equation}
-\end{lemma}
+2\Big(\sum_{k\in\mathbb{Z}}\|a\|_{V_{r,J}([2^k,2^{k+1}];B)}^r\Big)^{1/r}
++\|a\|_{V_{r,J}(2^\mathbb{Z};B)}.
+$$
 -/
 theorem shortlongJumps {B : Type*} [SeminormedAddCommGroup B]
     (a : ℝ → B) (J : ℕ) (r : ℝ) (hr : 1 ≤ r) :
@@ -564,9 +582,11 @@ theorem shortlongJumps {B : Type*} [SeminormedAddCommGroup B]
         gcongr
         exact ENNReal.sum_le_tsum κ
 
-/-- Consecutive intervals cut out by a monotone finite chain are disjoint, so
+/--
+Consecutive intervals cut out by a monotone finite chain are disjoint, so
 their nonnegative integrals are bounded by the integral on the ambient
-interval. -/
+interval.
+-/
 theorem aux_sum_lintegral_Ioc_le {J : ℕ} {μ : Measure ℝ}
     (t : Fin (J + 1) → ℝ) (ht : Monotone t) (f : ℝ → ℝ≥0∞)
     {α β : ℝ} (hα : α ≤ t 0) (hβ : t (Fin.last J) ≤ β) :
@@ -595,8 +615,10 @@ theorem aux_sum_lintegral_Ioc_le {J : ℕ} {μ : Measure ℝ}
   have hright : x ≤ β := hx.2.trans ((ht hjle).trans hβ)
   exact ⟨hleft.le, hright⟩
 
-/-- On the interior of the ambient interval, ordinary and interval derivatives
-agree almost everywhere for the logarithmic measure. -/
+/--
+On the interior of the ambient interval, ordinary and interval derivatives
+agree almost everywhere for the logarithmic measure.
+-/
 theorem aux_deriv_eq_derivWithin_ae {α β : ℝ} (a : ℝ → ℝ) :
     deriv a =ᵐ[aux_logarithmicMeasure α β] derivWithin a (Set.Icc α β) := by
   apply (withDensity_absolutelyContinuous (volume.restrict (Set.Icc α β))
@@ -605,8 +627,10 @@ theorem aux_deriv_eq_derivWithin_ae {α β : ℝ} (a : ℝ → ℝ) :
   filter_upwards [self_mem_ae_restrict measurableSet_Ioo] with t ht
   exact (derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)).symm
 
-/-- On a positive subinterval, multiplying the derivative by the logarithmic
-density cancels the displayed factor of `t`. -/
+/--
+On a positive subinterval, multiplying the derivative by the logarithmic
+density cancels the displayed factor of `t`.
+-/
 theorem aux_log_local_integral_eq {α β x y : ℝ} (hα : 0 < α)
     (hx : x ∈ Set.Icc α β) (hy : y ∈ Set.Icc α β) (a : ℝ → ℝ) :
     (∫⁻ t in Set.Icc x y, ‖t * deriv a t‖ₑ ∂aux_logarithmicMeasure α β) =
@@ -629,8 +653,10 @@ theorem aux_log_local_integral_eq {α β x y : ℝ} (hα : 0 < α)
   · filter_upwards with t
     exact ENNReal.ofReal_ne_top.lt_top
 
-/-- The logarithmic mass of a subinterval is bounded by the elementary
-`(β - α) / α` estimate. -/
+/--
+The logarithmic mass of a subinterval is bounded by the elementary
+`(β - α) / α` estimate.
+-/
 theorem aux_log_measure_le {α β x y : ℝ} (hα : 0 < α)
     (hx : x ∈ Set.Icc α β) (hy : y ∈ Set.Icc α β) :
     aux_logarithmicMeasure α β (Set.Icc x y) ≤ ENNReal.ofReal ((β - α) / α) := by
@@ -692,8 +718,10 @@ theorem aux_half_mul_half_sq (C E : ℝ≥0∞) :
   rw [← ENNReal.rpow_mul, ← ENNReal.rpow_mul]
   norm_num
 
-/-- The squared fundamental-theorem/Cauchy--Schwarz estimate for one pair of
-points in the finite variation chain. -/
+/--
+The squared fundamental-theorem/Cauchy--Schwarz estimate for one pair of
+points in the finite variation chain.
+-/
 theorem aux_pair_sq_le {α β x y : ℝ} (hα : 0 < α) (hαβ : α < β)
     (hx : x ∈ Set.Icc α β) (hy : y ∈ Set.Icc α β) (hxy : x ≤ y)
     (a : ℝ → ℝ) (ha : ContDiffOn ℝ 1 a (Set.Icc α β)) :
@@ -811,9 +839,11 @@ theorem aux_chain_first_ftc {J : ℕ} {α β : ℝ} (hα : 0 < α) (hαβ : α <
     _ = (ENNReal.ofReal ((β - α) / α)) ^ ((2 : ℝ)⁻¹) *
         aux_logarithmicL2 α β (fun t ↦ t * deriv a t) := by rw [hELp]
 
-/-- The endpoint estimate for the square of a continuously differentiable
+/--
+The endpoint estimate for the square of a continuously differentiable
 function.  This is the common analytic input to the sign-sensitive variation
-bound below. -/
+bound below.
+-/
 theorem aux_square_endpoint_le_lintegral {α β x y : ℝ} (a : ℝ → ℝ)
     (ha : ContDiffOn ℝ 1 a (Set.Icc α β))
     (hx : x ∈ Set.Icc α β) (hy : y ∈ Set.Icc α β) (hxy : x ≤ y) :
@@ -839,8 +869,10 @@ theorem aux_square_endpoint_le_lintegral {α β x y : ℝ} (a : ℝ → ℝ)
   have htwo : ‖(2 : ℝ)‖ₑ = (2 : ℝ≥0∞) := by norm_num [enorm_eq_nnnorm]
   simp [enorm_mul, htwo]
 
-/-- The elementary same-sign algebraic estimate used after applying the FTC
-to `a^2`. -/
+/--
+The elementary same-sign algebraic estimate used after applying the FTC
+to `a^2`.
+-/
 theorem aux_same_sign_square_le (u v : ℝ) (huv : 0 ≤ u * v) :
     ‖u - v‖ₑ ^ (2 : ℕ) ≤ ‖u * u - v * v‖ₑ := by
   rw [show u * u - v * v = (u - v) * (u + v) by ring]
@@ -853,8 +885,10 @@ theorem aux_same_sign_square_le (u v : ℝ) (huv : 0 ≤ u * v) :
   apply ENNReal.coe_le_coe.mpr
   exact_mod_cast hsq
 
-/-- A coarse algebraic estimate used when an interval crosses a zero of the
-function. -/
+/--
+A coarse algebraic estimate used when an interval crosses a zero of the
+function.
+-/
 theorem aux_cross_square_le (u v : ℝ) :
     ‖u - v‖ₑ ^ (2 : ℕ) ≤
       2 * (‖u * u‖ₑ + ‖v * v‖ₑ) := by
@@ -867,14 +901,18 @@ theorem aux_cross_square_le (u v : ℝ) :
       nlinarith [sq_nonneg (u + v)]
     exact_mod_cast hreal)
 
-/-- Endpoint changes have zero Lebesgue mass, so `Icc` and `Ioc` give the
-same nonnegative integral. -/
+/--
+Endpoint changes have zero Lebesgue mass, so `Icc` and `Ioc` give the
+same nonnegative integral.
+-/
 theorem aux_lintegral_Icc_eq_Ioc (f : ℝ → ℝ≥0∞) (x y : ℝ) :
     (∫⁻ z in Set.Icc x y, f z) = ∫⁻ z in Set.Ioc x y, f z := by
   rw [Measure.restrict_congr_set Ioc_ae_eq_Icc]
 
-/-- Pairwise squared variation is controlled by the unweighted product
-integral.  The crossing case is split at an intermediate zero. -/
+/--
+Pairwise squared variation is controlled by the unweighted product
+integral.  The crossing case is split at an intermediate zero.
+-/
 theorem aux_pairwise_square_le_lintegral {α β x y : ℝ} (a : ℝ → ℝ)
     (ha : ContDiffOn ℝ 1 a (Set.Icc α β))
     (hx : x ∈ Set.Icc α β) (hy : y ∈ Set.Icc α β) (hxy : x ≤ y) :
@@ -959,8 +997,10 @@ theorem aux_restrict_logarithmicMeasure_Ioc {α β x y : ℝ}
   rw [aux_logarithmicMeasure, restrict_withDensity measurableSet_Ioc,
     Measure.restrict_restrict measurableSet_Ioc, inter_eq_left.mpr hsub]
 
-/-- Convert the ordinary product integral on an `Ioc` interval to its
-logarithmically weighted form. -/
+/--
+Convert the ordinary product integral on an `Ioc` interval to its
+logarithmically weighted form.
+-/
 theorem aux_log_weight_conversion_Ioc {α β x y : ℝ} (hx : 0 < x)
     (hsub : Set.Ioc x y ⊆ Set.Icc α β) (a d : ℝ → ℝ) :
     ∫⁻ z in Set.Ioc x y, ‖a z‖ₑ * ‖d z‖ₑ =
@@ -1093,20 +1133,21 @@ theorem aux_second_ftcCsR {J : ℕ} {α β : ℝ} (hα : 0 < α)
         aux_logarithmicL2 α β (fun t ↦ t * deriv a t) := by rfl
 
 /--
-\begin{lemma}\label{lem:ftccs-R} Let $0<\alpha < \beta$ and
-$a:[\alpha,\beta]\to \R$ be continuously differentiable.
+**Lemma.**
+
+Let $0<\alpha < \beta$ and $a:[\alpha,\beta]\to \mathbb{R}$ be continuously differentiable.
+
 Then
-\begin{equation}\label{ftccs1-R}
-\|a\|_{V_{2,J}([\alpha, \beta]; \R)} \le
-(\tfrac{\beta-\alpha}{\alpha})^{1/2}
+
+$$
+\|a\|_{V_{2,J}([\alpha, \beta]; \mathbb{R})} \le (\tfrac{\beta-\alpha}{\alpha})^{1/2}
 \|ta'(t)\|_{L^2(t\in [\alpha, \beta],\tfrac{dt}{t})},
-\end{equation}
-\begin{equation}\label{ftccs2-R}
-\|a\|_{V_{2,J}([\alpha, \beta]; \R)}^2 \le
-8 \|a\|_{L^2([\alpha, \beta],\tfrac{dt}{t})}
-\|ta'(t)\|_{L^2(t\in [\alpha, \beta],\tfrac{dt}{t})}.
-\end{equation}
-\end{lemma}
+$$
+
+$$
+\|a\|_{V_{2,J}([\alpha, \beta]; \mathbb{R})}^2 \le 8 \|a\|_{L^2([\alpha,
+\beta],\tfrac{dt}{t})}\|ta'(t)\|_{L^2(t\in [\alpha, \beta],\tfrac{dt}{t})}.
+$$
 -/
 theorem ftcCsR (J : ℕ) {α β : ℝ} (hα : 0 < α) (hαβ : α < β)
     (a : ℝ → ℝ) (ha : ContDiffOn ℝ 1 a (Set.Icc α β)) :
@@ -1123,4 +1164,4 @@ theorem ftcCsR (J : ℕ) {α β : ℝ} (hα : 0 < α) (hαβ : α < β)
     exact aux_chain_first_ftc hα hαβ a ha t.1 t.2
   · exact aux_second_ftcCsR hα a ha
 
-end Codex.Reduction.VariationSeminorms
+end Codex

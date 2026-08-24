@@ -15,17 +15,11 @@ set_option linter.style.header false
 Formalization of the ``Miscellany'' subsection of the reduction argument.
 -/
 
-namespace Codex.Reduction.Miscellany
+namespace Codex
 
 open MeasureTheory Set Filter Topology
 open scoped BigOperators ENNReal FourierTransform Real
 
-open Codex.Reduction.TwistedAverages
-open Codex.Reduction.VariationSeminorms
-open Codex.Reduction.WindowsAndPairs
-open Codex.Preliminaries.KKernels
-open Codex.Preliminaries.MKernels
-open Codex.Preliminaries.Notation
 
 
 noncomputable section
@@ -61,8 +55,10 @@ theorem aux_twistedAverageAtScale_oneRescaled {n : ℕ} (phi : ℝ → ℝ)
   congr 1
   field_simp [ht.ne', hlambda.ne']
 
-/-- Auxiliary order-preserving multiplication of a positive finite scale chain for
-`lem:rescaling`. -/
+/--
+Auxiliary order-preserving multiplication of a positive finite scale chain for
+`lem:rescaling`.
+-/
 def aux_scaleMul (lambda : ℝ) (hlambda : 0 < lambda)
     {J : ℕ} (t : {u : Fin (J + 1) → Set.Ioi (0 : ℝ) // StrictMono u}) :
     {u : Fin (J + 1) → Set.Ioi (0 : ℝ) // StrictMono u} :=
@@ -72,13 +68,16 @@ def aux_scaleMul (lambda : ℝ) (hlambda : 0 < lambda)
     exact mul_lt_mul_of_pos_left (t.2 hij) hlambda⟩
 
 /--
-\begin{lemma}[Rescaling]\label{lem:rescaling}Let $\phi\in L^1(\mathbb{R})$.
+**Lemma (Rescaling).**
+
+Let $\phi\in L^1(\mathbb{R})$.
+
 For all $r,q,\lambda>0$,
-\begin{equation}\label{auto:variation-rescaling-invariance}
-\|A_t({\phi_{(\lambda)}})\|_{V_{r,J}(t\in (0,\infty); L^q)} =
-\|A_t({\phi})\|_{V_{r,J}(t\in (0,\infty); L^q)}.
-\end{equation}
-\end{lemma}
+
+$$
+\|A_t({\phi_{(\lambda)}})\|_{V_{r,J}(t\in (0,\infty); L^q)} =  \|A_t({\phi})\|_{V_{r,J}(t\in
+(0,\infty); L^q)}.
+$$
 -/
 theorem rescaling {n : ℕ} (phi : ℝ → ℝ) (_hphi : Integrable phi)
     (f : Fin n → EuclideanSpace ℝ (Fin n) → ℝ)
@@ -149,10 +148,10 @@ theorem rescaling {n : ℕ} (phi : ℝ → ℝ) (_hphi : Integrable phi)
           2 volume) ^ r) ^ r⁻¹) t'
 
 /--
-\begin{lemma}\label{lem:norm_A_sum_le_sum}
+**Lemma.**
+
 If $\phi=\sum_j\phi_j$ in $L^2$, then
 $\|A(\phi,\mathbf f)\|_2\le\sum_j\|A(\phi_j,\mathbf f)\|_2$.
-\end{lemma}
 -/
 theorem aux_normASum_kernel_memW0 {n : ℕ} (hn : 2 ≤ n)
     (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ) :
@@ -488,9 +487,11 @@ theorem aux_normASum_twistedAverage_memLp {n : ℕ} (hn : 2 ≤ n)
   funext x
   simpa [K] using aux_normASum_twistedAverage_eq_E1Kernel chi f x
 
-/-- A twisted average of a square-integrable scalar kernel against a Schwartz
+/--
+A twisted average of a square-integrable scalar kernel against a Schwartz
 tuple is square-integrable.  This public interface is used by the final
-short/long-variation reduction. -/
+short/long-variation reduction.
+-/
 theorem aux_twistedAverage_memLp {n : ℕ} (hn : 2 ≤ n)
     (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
     (chi : ℝ → ℝ) (hchi : MemLp chi 2 volume) :
@@ -701,13 +702,14 @@ theorem aux_normASum_normASumLeSum {n : ℕ} (hn : 2 ≤ n) (phi : ℝ → ℝ)
 
 
 /--
-\begin{lemma}\label{lem:norm_A_sum_le_sum}
+**Lemma.**
+
 If $\phi=\sum_{j=1}^\infty \phi_j$ holds in $L^2$ (with $L^2$ functions $\phi, \phi_j$), then
-\begin{equation}\label{auto:twisted-average-series-triangle}
-\|A(\phi, \mathbf{f})\|_{L^2(\mathbb{R}^n)} \le
-\sum_{j=1}^\infty \|A({\phi_j}, \mathbf{f})\|_{L^2(\mathbb{R}^n)}.
-\end{equation}
-\end{lemma}
+
+$$
+\|A(\phi, \mathbf{f})\|_{L^2(\mathbb{R}^n)} \le \sum_{j=1}^\infty \|A({\phi_j},
+\mathbf{f})\|_{L^2(\mathbb{R}^n)}.
+$$
 -/
 theorem normASumLeSum {n : ℕ} (hn : 2 ≤ n) (phi : ℝ → ℝ) (phiJ : ℕ → ℝ → ℝ)
     (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
@@ -726,13 +728,13 @@ def aux_formPosFiber (d : ℕ)
     F (prismIndex (n := d + 1) (k := 1) (by omega) (by omega) i)
       (concatVector (d + 1) 1 (by omega)
         (fun _ : Fin 1 =>
-          r - Codex.Preliminaries.KKernels.coordinateSum x)
+          r - Codex.coordinateSum x)
         (eraseVector i x))
 
 theorem aux_formPosFiber_bounded (d : ℕ)
     (F : Fin (d + 1) → SchwartzMap (RealVector (d + 1)) ℝ)
     (x : RealVector (d + 1)) :
-    Codex.Reduction.BumpFunctions.aux_bounded (aux_formPosFiber d F x) := by
+    Codex.aux_bounded (aux_formPosFiber d F x) := by
   classical
   constructor
   · unfold aux_formPosFiber
@@ -746,9 +748,9 @@ theorem aux_formPosFiber_bounded (d : ℕ)
     · have hfun : (fun a : ℝ =>
           concatVector (d + 1) 1 (by omega)
             (fun _ : Fin 1 =>
-              a - Codex.Preliminaries.KKernels.coordinateSum x)
+              a - Codex.coordinateSum x)
             (eraseVector i x) j) =
-          fun a : ℝ => a - Codex.Preliminaries.KKernels.coordinateSum x := by
+          fun a : ℝ => a - Codex.coordinateSum x := by
           funext a
           simp [concatVector, hj]
       rw [hfun]
@@ -766,13 +768,13 @@ theorem aux_formPosFiber_bounded (d : ℕ)
           F (prismIndex (n := d + 1) (k := 1) (by omega) (by omega) i)
             (concatVector (d + 1) 1 (by omega)
               (fun _ : Fin 1 =>
-                r - Codex.Preliminaries.KKernels.coordinateSum x)
+                r - Codex.coordinateSum x)
               (eraseVector i x))‖ ≤
           ∏ i : Fin (d + 1),
             ‖F (prismIndex (n := d + 1) (k := 1) (by omega) (by omega) i)
               (concatVector (d + 1) 1 (by omega)
                 (fun _ : Fin 1 =>
-                  r - Codex.Preliminaries.KKernels.coordinateSum x)
+                  r - Codex.coordinateSum x)
                 (eraseVector i x))‖ := Finset.norm_prod_le _ _
       _ ≤ C := by
         dsimp [C]
@@ -781,7 +783,7 @@ theorem aux_formPosFiber_bounded (d : ℕ)
           exact norm_nonneg (F (prismIndex (n := d + 1) (k := 1) (by omega) (by omega) i)
             (concatVector (d + 1) 1 (by omega)
               (fun _ : Fin 1 =>
-                r - Codex.Preliminaries.KKernels.coordinateSum x)
+                r - Codex.coordinateSum x)
               (eraseVector i x)))
         · intro i _
           exact
@@ -790,7 +792,7 @@ theorem aux_formPosFiber_bounded (d : ℕ)
 theorem aux_formPosFiber_add_coordinateSum (d : ℕ)
     (F : Fin (d + 1) → SchwartzMap (RealVector (d + 1)) ℝ)
     (x : RealVector (d + 1)) (r : ℝ) :
-    aux_formPosFiber d F x (r + Codex.Preliminaries.KKernels.coordinateSum x) =
+    aux_formPosFiber d F x (r + Codex.coordinateSum x) =
       ∏ i : Fin (d + 1),
         F (prismIndex (n := d + 1) (k := 1) (by omega) (by omega) i)
           (concatVector (d + 1) 1 (by omega) (fun _ : Fin 1 => r)
@@ -813,11 +815,11 @@ theorem aux_formPos_mToK_one (Psi : MKernel 1) (u : RealVector 1 × ℝ) :
   · funext i
     have hi : i = (0 : Fin 1) := Fin.eq_zero i
     subst i
-    simp [mToKPoint, lastIndex, Codex.Preliminaries.KKernels.coordinateSum]
+    simp [mToKPoint, lastIndex, Codex.coordinateSum]
   · funext i
     have hi : i = (0 : Fin 1) := Fin.eq_zero i
     subst i
-    simp [mToKPoint, lastIndex, Codex.Preliminaries.KKernels.coordinateSum]
+    simp [mToKPoint, lastIndex, Codex.coordinateSum]
 
 /-- The one-prism product expanded into its two corners. -/
 theorem aux_formPos_prism_product (d : ℕ)
@@ -859,14 +861,14 @@ theorem aux_formPos_prism_product (d : ℕ)
 /-- The determinant-one fibre coordinate change used in `formPos`. -/
 def aux_formPosShear (d : ℕ) :
     RealVector (d + 1) × (ℝ × ℝ) → RealVector (d + 1) × (ℝ × ℝ) :=
-  fun q => (q.1, (q.2.2 + Codex.Preliminaries.KKernels.coordinateSum q.1,
-    q.2.1 + Codex.Preliminaries.KKernels.coordinateSum q.1))
+  fun q => (q.1, (q.2.2 + Codex.coordinateSum q.1,
+    q.2.1 + Codex.coordinateSum q.1))
 
 /-- The inverse determinant-one fibre coordinate change used in `formPos`. -/
 def aux_formPosShearInv (d : ℕ) :
     RealVector (d + 1) × (ℝ × ℝ) → RealVector (d + 1) × (ℝ × ℝ) :=
-  fun q => (q.1, (q.2.2 - Codex.Preliminaries.KKernels.coordinateSum q.1,
-    q.2.1 - Codex.Preliminaries.KKernels.coordinateSum q.1))
+  fun q => (q.1, (q.2.2 - Codex.coordinateSum q.1,
+    q.2.1 - Codex.coordinateSum q.1))
 
 theorem aux_formPosShearInv_shear (d : ℕ)
     (q : RealVector (d + 1) × (ℝ × ℝ)) :
@@ -908,23 +910,23 @@ theorem aux_formPosShear_measurePreserving (d : ℕ) :
     MeasurePreserving (aux_formPosShear d) volume volume := by
   let A := RealVector (d + 1)
   have hpair (x : A) : MeasurePreserving
-      (fun y : ℝ × ℝ => (y.2 + Codex.Preliminaries.KKernels.coordinateSum x,
-        y.1 + Codex.Preliminaries.KKernels.coordinateSum x)) volume volume := by
+      (fun y : ℝ × ℝ => (y.2 + Codex.coordinateSum x,
+        y.1 + Codex.coordinateSum x)) volume volume := by
     have hswap : MeasurePreserving (Prod.swap : ℝ × ℝ → ℝ × ℝ) volume volume := by
       simpa only [Measure.volume_eq_prod] using
         (aux_volume_preserving_prod_swap (volume : Measure ℝ) (volume : Measure ℝ))
     have htranslate : MeasurePreserving
-        (fun r : ℝ => r + Codex.Preliminaries.KKernels.coordinateSum x) volume volume :=
+        (fun r : ℝ => r + Codex.coordinateSum x) volume volume :=
       measurePreserving_add_right (volume : Measure ℝ)
-        (Codex.Preliminaries.KKernels.coordinateSum x)
+        (Codex.coordinateSum x)
     have hproduct : MeasurePreserving
-        (Prod.map (fun r : ℝ => r + Codex.Preliminaries.KKernels.coordinateSum x)
-          (fun r : ℝ => r + Codex.Preliminaries.KKernels.coordinateSum x)) volume volume := by
+        (Prod.map (fun r : ℝ => r + Codex.coordinateSum x)
+          (fun r : ℝ => r + Codex.coordinateSum x)) volume volume := by
       simpa only [Measure.volume_eq_prod] using htranslate.prod htranslate
     have hcomp := hproduct.comp hswap
     change MeasurePreserving (fun y : ℝ × ℝ =>
-      (y.2 + Codex.Preliminaries.KKernels.coordinateSum x,
-        y.1 + Codex.Preliminaries.KKernels.coordinateSum x)) volume volume
+      (y.2 + Codex.coordinateSum x,
+        y.1 + Codex.coordinateSum x)) volume volume
     convert hcomp using 1
     funext y
     rfl
@@ -932,8 +934,8 @@ theorem aux_formPosShear_measurePreserving (d : ℕ) :
     (μa := (volume : Measure A)) (μb := (volume : Measure A))
     (μc := (volume : Measure (ℝ × ℝ))) (μd := (volume : Measure (ℝ × ℝ)))
     (f := id) (g := fun x y =>
-      (y.2 + Codex.Preliminaries.KKernels.coordinateSum x,
-        y.1 + Codex.Preliminaries.KKernels.coordinateSum x))
+      (y.2 + Codex.coordinateSum x,
+        y.1 + Codex.coordinateSum x))
     (MeasurePreserving.id (volume : Measure A)) ?_ ?_
   · exact (((continuous_snd.comp continuous_snd).add
       ((aux_continuous_coordinateSum (d + 1)).comp continuous_fst)).prodMk
@@ -952,8 +954,8 @@ def aux_formPosRaw (d : ℕ) (Psi : MKernel 1)
     (F : Fin (d + 1) → SchwartzMap (RealVector (d + 1)) ℝ)
     (p : (RealVector 1 × RealVector 1) × RealVector (d + 1)) : ℝ :=
   mToK 1 (by omega) Psi
-      (p.1.2 - p.1.1, Codex.Preliminaries.KKernels.coordinateSum p.1.1 +
-        Codex.Preliminaries.KKernels.coordinateSum p.2) *
+      (p.1.2 - p.1.1, Codex.coordinateSum p.1.1 +
+        Codex.coordinateSum p.2) *
     ∏ h : Fin 1 → Fin 2, ∏ i : Fin (d + 1),
       F (prismIndex (n := d + 1) (k := 1) (by omega) (by omega) i)
         (prismPoint (n := d + 1) (k := 1) (by omega) (by omega) p.1 p.2 h i)
@@ -994,25 +996,31 @@ theorem aux_formPosTarget_piUnique (d : ℕ) (Psi : MKernel 1)
     rfl
 
 /--
-\begin{lemma}\label{lem:form_pos}
-(i) Let $\Psi\in W_0(\R^2)$ be real-valued and assume that
-\begin{equation}\label{eqn:hyp_form_pos}
-\int_{\R^2}g(u_0)g(u_1)\Psi(u)\,du\ge0
-\end{equation}
-for every bounded measurable $g:\R\to\R$. Then, for every $\F\in\mathfrak F$,
-\begin{equation}\label{auto:distributional-prism-positivity}
-\Lambda_1(\Psi)(\F)\ge0.
-\end{equation}
+**Lemma.**
 
-(ii) In particular, for every real-valued $\psi\in W_0(\R)$ and every $\F\in\mathfrak F$,
-\begin{equation}\label{form_pos_psipsi}
-\Lambda_1(\psi^{\otimes2})(\F)\ge0.
-\end{equation}
-\end{lemma}
+(i) Let $\Psi\in W_0(\mathbb{R}^2)$ be real-valued and assume that
+
+$$
+\int_{\mathbb{R}^2}g(u_0)g(u_1)\Psi(u)\,du\ge0
+$$
+
+for every bounded measurable $g:\mathbb{R}\to\mathbb{R}$. Then, for every $\mathbf{F}\in\mathfrak
+F$,
+
+$$
+\Lambda_1(\Psi)(\mathbf{F})\ge0.
+$$
+
+(ii) In particular, for every real-valued $\psi\in W_0(\mathbb{R})$ and every
+$\mathbf{F}\in\mathfrak F$,
+
+$$
+\Lambda_1(\psi^{\otimes2})(\mathbf{F})\ge0.
+$$
 -/
 theorem formPos {n : ℕ} (hn : 1 ≤ n) (Psi : MKernel 1) (hPsi : MemW0 Psi)
     (hquad : ∀ g : ℝ → ℝ,
-      Codex.Reduction.BumpFunctions.aux_bounded g →
+      Codex.aux_bounded g →
       0 ≤ ∫ u : RealVector 1 × RealVector 1, g (u.1 0) * g (u.2 0) * Psi u)
     (F : Fin n → SchwartzMap (RealVector n) ℝ) :
     0 ≤ prismForm n 1 (by omega) hn Psi (fun i x ↦ F i x) := by
@@ -1031,8 +1039,8 @@ theorem formPos {n : ℕ} (hn : 1 ≤ n) (Psi : MKernel 1) (hPsi : MemW0 Psi)
       dsimp [H]
       change Integrable (fun p :
           (RealVector 1 × RealVector 1) × RealVector (d + 1) =>
-        K (p.1.2 - p.1.1, Codex.Preliminaries.KKernels.coordinateSum p.1.1 +
-          Codex.Preliminaries.KKernels.coordinateSum p.2) *
+        K (p.1.2 - p.1.1, Codex.coordinateSum p.1.1 +
+          Codex.coordinateSum p.2) *
         ∏ h : Fin 1 → Fin 2, ∏ i : Fin (d + 1),
           F (prismIndex (n := d + 1) (k := 1) (by omega) (by omega) i)
             (prismPoint (n := d + 1) (k := 1) (by omega) (by omega) p.1 p.2 h i))
@@ -1111,7 +1119,7 @@ theorem formPos {n : ℕ} (hn : 1 ≤ n) (Psi : MKernel 1) (hPsi : MemW0 Psi)
       _ = ∫ q : RealVector (d + 1) × (ℝ × ℝ), Q q := hT.integral_comp' Q
       _ ≥ 0 := hnonneg
 
-/-- The tensor-square specialization in Lemma [`Codex.Reduction.Miscellany.formPos`]. -/
+/-- The tensor-square specialization in Lemma [`Codex.formPos`]. -/
 theorem aux_formPos_tensorSquare {n : ℕ} (hn : 1 ≤ n) (psi : ℝ → ℝ)
     (hpsi : MemW0 psi) (F : Fin n → SchwartzMap (RealVector n) ℝ) :
     0 ≤ prismForm n 1 (by omega) hn
@@ -1374,8 +1382,10 @@ theorem twistedAverageAtScale_hasDerivAt
   rw [hleft, hright]
   exact hraw
 
-/-- The scale derivative of a twisted average.  This is the differentiability
-interface used by the final short/long-variation argument. -/
+/--
+The scale derivative of a twisted average.  This is the differentiability
+interface used by the final short/long-variation argument.
+-/
 theorem aux_twistedAverageAtScale_hasDerivAt
     {n : ℕ} (phi : SchwartzMap ℝ ℝ)
     (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
@@ -1417,14 +1427,15 @@ theorem logarithmic_setIntegral_rescale (a : ℝ) (ha : 0 < a)
   field_simp [ha.ne']
 
 /--
-\begin{lemma} \label{lem:ftc_ATphi}
-Let $x\in \R^n$, $\phi$ a Schwartz function,  $t\in [2^k, 2^{k+1}]$, $k\in \Z$.
-Let $a(t)=A_t(\phi)(x)$. Then
-\begin{equation}\label{auto:average-logarithmic-derivative-identity}
-\|ta'(t)\|_{L^2(t\in [2^k, 2^{k+1}],\tfrac{dt}{t})}^2 =
-\int_{1}^2 |A_{2^k t}(T\phi)(x)|^2\,\tfrac{dt}{t}.
-\end{equation}
-\end{lemma}
+**Lemma.**
+
+Let $x\in \mathbb{R}^n$, $\phi$ a Schwartz function,  $t\in [2^k, 2^{k+1}]$, $k\in \mathbb{Z}$. Let
+$a(t)=A_t(\phi)(x)$. Then
+
+$$
+\|ta'(t)\|_{L^2(t\in [2^k, 2^{k+1}],\tfrac{dt}{t})}^2 = \int_{1}^2 |A_{2^k
+t}(T\phi)(x)|^2\,\tfrac{dt}{t}.
+$$
 -/
 theorem ftcATphi {n : ℕ} (phi : SchwartzMap ℝ ℝ)
     (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ)
@@ -1473,7 +1484,7 @@ theorem ftcATphi {n : ℕ} (phi : SchwartzMap ℝ ℝ)
       intro t ht
       rfl
 
-/-- The fixed constant in Lemma [`Codex.Reduction.Miscellany.phiJProperties`]. -/
+/-- The fixed constant in Lemma [`Codex.phiJProperties`]. -/
 noncomputable def C_phiJProperties : ℝ := 2 ^ 12 * C_uniPair
 
 /- Private Fourier-profile infrastructure for `phiJProperties`. -/
@@ -1596,9 +1607,9 @@ theorem aux_phiJ_theta_eq_zero_large (phi0 phi1 : SchwartzMap ℝ ℝ)
 theorem aux_phiJ_theta_support (phi0 phi1 : SchwartzMap ℝ ℝ)
     (hpair : uniPair phi0 phi1) :
     Function.support (aux_phiJ_theta phi0 phi1) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 6) := by
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 6) := by
   intro xi hxi
-  rw [Codex.Reduction.BumpFunctions.aux_annulusOne]
+  rw [Codex.aux_annulusOne]
   constructor
   · by_contra hnot
     push Not at hnot
@@ -1617,9 +1628,9 @@ theorem aux_phiJ_theta_support (phi0 phi1 : SchwartzMap ℝ ℝ)
 
 theorem aux_phiJ_theta_one_on_annulus (phi0 phi1 : SchwartzMap ℝ ℝ)
     (hpair : uniPair phi0 phi1) (xi : ℝ)
-    (hxi : xi ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 4)) :
+    (hxi : xi ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 4)) :
     aux_phiJ_theta phi0 phi1 xi = 1 := by
-  rw [Codex.Reduction.BumpFunctions.aux_annulusOne] at hxi
+  rw [Codex.aux_annulusOne] at hxi
   have hlow : 1 / 16 ≤ |xi| := by
     norm_num at hxi ⊢
     exact hxi.1
@@ -1694,7 +1705,7 @@ theorem aux_phiJ_profile_deriv_bound (c : ℝ) (N : ℕ)
   · have hderivSupp : Function.support (iteratedDeriv m (aux_phiJ_profile phi)) ⊆
         Set.Icc (-1 : ℝ) 1 :=
       (subset_tsupport _).trans
-        ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset
+        ((Codex.aux_tsupport_iteratedDeriv_subset
           (aux_phiJ_profile phi) m).trans hFtsupp)
     have hzero : iteratedDeriv m (aux_phiJ_profile phi) xi = 0 := by
       apply Function.notMem_support.mp
@@ -1837,7 +1848,7 @@ theorem aux_phiJ_thetaReal_deriv_bound_sharp (phi0 phi1 : SchwartzMap ℝ ℝ)
     (aux_phiJ_thetaReal_smooth phi0 phi1).of_le
       (show (m + 1 : WithTop ℕ∞) ≤ (↑(⊤ : ℕ∞) : WithTop ℕ∞) by
         exact WithTop.coe_le_coe.mpr le_top)
-  have hreal := Codex.Preliminaries.BumpsAndEstimates.aux_gaussianBumpEstimate_iteratedDeriv_ofReal
+  have hreal := Codex.aux_gaussianBumpEstimate_iteratedDeriv_ofReal
     m (aux_phiJ_thetaReal phi0 phi1) hsmooth xi
   calc
     |iteratedDeriv m (aux_phiJ_thetaReal phi0 phi1) xi| =
@@ -2133,7 +2144,7 @@ theorem aux_phiJ_qComplex_iteratedDeriv_bound
     hq.of_le (show (m + 1 : WithTop ℕ∞) ≤ (↑(⊤ : ℕ∞) : WithTop ℕ∞) by
       exact WithTop.coe_le_coe.mpr le_top)
   rw [show aux_phiJ_qComplex q = fun y : ℝ => (q y : ℂ) by rfl,
-    Codex.Preliminaries.BumpsAndEstimates.aux_gaussianBumpEstimate_iteratedDeriv_ofReal m q hqm x,
+    Codex.aux_gaussianBumpEstimate_iteratedDeriv_ofReal m q hqm x,
     Complex.norm_real, Real.norm_eq_abs]
   exact hbound m hm x
 
@@ -2228,11 +2239,11 @@ theorem aux_phiJ_p_smooth (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ) :
 
 theorem aux_phiJ_P_eq_ofReal (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
     (hsym : ∀ u : EuclideanSpace ℝ (Fin 2),
-      Psi u = Psi (Codex.Reduction.BumpFunctions.aux_swapTwo u)) :
+      Psi u = Psi (Codex.aux_swapTwo u)) :
     aux_phiJ_P Psi = fun xi => (aux_phiJ_p Psi xi : ℂ) := by
   funext xi
   obtain ⟨hreal, _⟩ :=
-    Codex.Reduction.BumpFunctions.fourierDiagonalRealEven
+    Codex.fourierDiagonalRealEven
       (Psi : EuclideanSpace ℝ (Fin 2) → ℝ) hsym
   rcases hreal xi with ⟨r, hr⟩
   change FourierTransform.fourier (fun u => (Psi u : ℂ))
@@ -2244,11 +2255,11 @@ theorem aux_phiJ_P_eq_ofReal (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ
 
 theorem aux_phiJ_p_nonneg (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
     (hsym : ∀ u : EuclideanSpace ℝ (Fin 2),
-      Psi u = Psi (Codex.Reduction.BumpFunctions.aux_swapTwo u))
-    (hpos : ∀ g : ℝ → ℝ, Codex.Reduction.BumpFunctions.aux_bounded g →
+      Psi u = Psi (Codex.aux_swapTwo u))
+    (hpos : ∀ g : ℝ → ℝ, Codex.aux_bounded g →
       0 ≤ ∫ u : EuclideanSpace ℝ (Fin 2), g (u 0) * g (u 1) * Psi u)
     (xi : ℝ) : 0 ≤ aux_phiJ_p Psi xi := by
-  exact Codex.Reduction.BumpFunctions.phiPosV2
+  exact Codex.phiPosV2
     (Psi : EuclideanSpace ℝ (Fin 2) → ℝ) hsym hpos xi
 
 theorem aux_phiJ_p_le_one (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
@@ -2262,10 +2273,10 @@ theorem aux_phiJ_p_le_one (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
 theorem aux_phiJ_P_support (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
     (hsupp : Function.support
       (FourierTransform.fourier (fun x : EuclideanSpace ℝ (Fin 2) => (Psi x : ℂ))) ⊆
-        Codex.Reduction.BumpFunctions.aux_productSet
-          (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3))) :
+        Codex.aux_productSet
+          (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3))) :
     Function.support (aux_phiJ_P Psi) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) := by
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) := by
   intro xi hxi
   have hfull : WithLp.toLp 2 ![xi, -xi] ∈ Function.support
       (FourierTransform.fourier (fun x : EuclideanSpace ℝ (Fin 2) => (Psi x : ℂ))) := by
@@ -2276,9 +2287,9 @@ theorem aux_phiJ_p_zero_of_not_ann3
     (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
     (hsupp : Function.support
       (FourierTransform.fourier (fun x : EuclideanSpace ℝ (Fin 2) => (Psi x : ℂ))) ⊆
-        Codex.Reduction.BumpFunctions.aux_productSet
-          (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)))
-    (xi : ℝ) (hx : xi ∉ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)) :
+        Codex.aux_productSet
+          (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)))
+    (xi : ℝ) (hx : xi ∉ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)) :
     aux_phiJ_p Psi xi = 0 := by
   have hzero : aux_phiJ_P Psi xi = 0 := by
     apply Function.notMem_support.mp
@@ -2288,22 +2299,22 @@ theorem aux_phiJ_p_zero_of_not_ann3
 
 theorem aux_phiJ_P_even (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
     (hsym : ∀ u : EuclideanSpace ℝ (Fin 2),
-      Psi u = Psi (Codex.Reduction.BumpFunctions.aux_swapTwo u)) (xi : ℝ) :
+      Psi u = Psi (Codex.aux_swapTwo u)) (xi : ℝ) :
     aux_phiJ_P Psi (-xi) = aux_phiJ_P Psi xi := by
   obtain ⟨_, heven⟩ :=
-    Codex.Reduction.BumpFunctions.fourierDiagonalRealEven
+    Codex.fourierDiagonalRealEven
       (Psi : EuclideanSpace ℝ (Fin 2) → ℝ) hsym
   simpa only [aux_phiJ_P, neg_neg] using heven xi
 
 theorem aux_phiJ_p_even (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
     (hsym : ∀ u : EuclideanSpace ℝ (Fin 2),
-      Psi u = Psi (Codex.Reduction.BumpFunctions.aux_swapTwo u)) (xi : ℝ) :
+      Psi u = Psi (Codex.aux_swapTwo u)) (xi : ℝ) :
     aux_phiJ_p Psi (-xi) = aux_phiJ_p Psi xi := by
   exact congrArg Complex.re (aux_phiJ_P_even Psi hsym xi)
 
 theorem aux_phiJ_p_deriv_bound (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
     (hsym : ∀ u : EuclideanSpace ℝ (Fin 2),
-      Psi u = Psi (Codex.Reduction.BumpFunctions.aux_swapTwo u))
+      Psi u = Psi (Codex.aux_swapTwo u))
     (hderiv : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
       ‖iteratedDeriv m (aux_phiJ_P Psi) xi‖ ≤ 1)
     (m : ℕ) (hm : m < 3) (xi : ℝ) :
@@ -2312,7 +2323,7 @@ theorem aux_phiJ_p_deriv_bound (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) �
     (aux_phiJ_p_smooth Psi).of_le
       (show (m + 1 : WithTop ℕ∞) ≤ (↑(⊤ : ℕ∞) : WithTop ℕ∞) by
         exact WithTop.coe_le_coe.mpr le_top)
-  have hreal := Codex.Preliminaries.BumpsAndEstimates.aux_gaussianBumpEstimate_iteratedDeriv_ofReal
+  have hreal := Codex.aux_gaussianBumpEstimate_iteratedDeriv_ofReal
     m (aux_phiJ_p Psi) hsmooth xi
   calc
     |iteratedDeriv m (aux_phiJ_p Psi) xi| =
@@ -2324,18 +2335,18 @@ theorem aux_phiJ_p_deriv_bound (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) �
     _ ≤ 1 := hderiv m hm xi
 
 theorem aux_phiJ_ann3_closed :
-    IsClosed (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)) := by
+    IsClosed (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)) := by
   change IsClosed {x : ℝ | 1 / ((2 : ℝ) ^ 3) ≤ |x| ∧ |x| ≤ ((2 : ℝ) ^ 3) * 1}
   exact (isClosed_le continuous_const continuous_abs).inter
     (isClosed_le continuous_abs continuous_const)
 
 theorem aux_phiJ_ann3_subset_interior_ann4 :
-    Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ⊆
-      interior (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 4)) := by
+    Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) ⊆
+      interior (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 4)) := by
   let O : Set ℝ := {x | (1 / 16 : ℝ) < |x| ∧ |x| < 16}
   have hOopen : IsOpen O :=
     (isOpen_lt continuous_const continuous_abs).inter (isOpen_lt continuous_abs continuous_const)
-  have hsub : O ⊆ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 4) := by
+  have hsub : O ⊆ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 4) := by
     intro x hx
     change 1 / ((2 : ℝ) ^ (4 : ℕ)) ≤ |x| ∧ |x| ≤ (2 : ℝ) ^ (4 : ℕ) * 1
     norm_num
@@ -2347,7 +2358,7 @@ theorem aux_phiJ_ann3_subset_interior_ann4 :
   exact ⟨lt_of_lt_of_le (by norm_num) hx.1, lt_of_le_of_lt hx.2 (by norm_num)⟩
 
 theorem aux_phiJ_ann6_compact :
-    IsCompact (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 6)) := by
+    IsCompact (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 6)) := by
   apply isCompact_Icc.of_isClosed_subset
   · change IsClosed {x : ℝ | 1 / ((2 : ℝ) ^ 6) ≤ |x| ∧ |x| ≤ ((2 : ℝ) ^ 6) * 1}
     exact (isClosed_le continuous_const continuous_abs).inter
@@ -2359,8 +2370,8 @@ theorem aux_phiJ_ann6_compact :
     · exact le_of_abs_le (by norm_num at hx ⊢; exact hx.2)
 
 theorem aux_phiJ_ann3_subset_ann6 :
-    Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 6) := by
+    Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) ⊆
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 6) := by
   intro x hx
   change 1 / ((2 : ℝ) ^ 3) ≤ |x| ∧ |x| ≤ ((2 : ℝ) ^ 3) * 1 at hx
   change 1 / ((2 : ℝ) ^ 6) ≤ |x| ∧ |x| ≤ ((2 : ℝ) ^ 6) * 1
@@ -2370,56 +2381,68 @@ theorem aux_phiJ_ann3_subset_ann6 :
   · nlinarith [hx.2]
 
 /--
-\begin{lemma}
-\label{lem:Phij_prop}
-Let $\Psi:\mathbb{R}^2\to\mathbb{R}$ be a non-zero Schwartz function such that
-for all $u=(u_0,u_1)\in\R^2$,
-\begin{equation}\label{auto:Phij-symmetry-assumption}
-\Psi(u_0,u_1)=\Psi(u_1,u_0).
-\end{equation}
-Assume also that for every bounded measurable $g:\R\to\R$,
-\begin{equation}\label{auto:Phij-positivity-assumption}
-\int_{\R^2}g(u_0)g(u_1)\Psi(u)\,du\ge0,
-\end{equation}
-and that
-\begin{equation}\label{auto:Phij-Fourier-support-assumption}
-\mathrm{supp}(\widehat{\Psi}) \subset \mathrm{Ann}_1(1, 2^3)^2
-\end{equation}
-and, for $a\in [3)$ and $\xi \in \R$,
-\begin{equation}\label{Phij_psi_der}
-\Big|\tfrac{d^a}{d\xi^{a}} \widehat{\Psi}(\xi,-\xi)\Big| \leq 1.
-\end{equation}
-Let $(\phi_0,\phi_1)$ be a universal pair. There exists a real even smooth function
-$\psi:\R\to \R$ such that
-\begin{enumerate}
-\item For all $\xi\in\R$,
-\begin{equation}\label{Phij_psi_diag}
-\widehat{\psi}(\xi)^2 =
-2 (\widehat{\phi_{0,-5}}-\widehat{\phi_{1,5}})(\xi)^2 - \widehat{\Psi}(\xi,-\xi).
-\end{equation}
-\item $\widehat{\psi}$ is supported in $\textup{Ann}_1(1,2^6)$.
-\item For all $a\in [3)$ and $\xi\in \R$,
-\begin{equation}\label{psi_decay}
-|\widehat{\psi}^{(a)}(\xi)|\le C_{\text{lem:Phij\_prop}},
-\end{equation}
-where
-\begin{equation}\label{auto:Phij-constant-definition}
-C_{\text{lem:Phij\_prop}}=2^{12}C_{\text{def:unipair}}.
-\end{equation}
-\end{enumerate}
-\end{lemma}
+**Lemma.**
 
-See also [`Codex.Reduction.Miscellany.phiJProperties`], [`Codex.Reduction.WindowsAndPairs.uniPair`].
+Let $\Psi:\mathbb{R}^2\to\mathbb{R}$ be a non-zero Schwartz function such that for all
+$u=(u_0,u_1)\in\mathbb{R}^2$,
+
+$$
+\Psi(u_0,u_1)=\Psi(u_1,u_0).
+$$
+
+Assume also that for every bounded measurable $g:\mathbb{R}\to\mathbb{R}$,
+
+$$
+\int_{\mathbb{R}^2}g(u_0)g(u_1)\Psi(u)\,du\ge0,
+$$
+
+and that
+
+$$
+\mathrm{supp}(\widehat{\Psi}) \subset \mathrm{Ann}_1(1, 2^3)^2
+$$
+
+and, for $a\in [3)$ and $\xi \in \mathbb{R}$,
+
+$$
+\Big|\tfrac{d^a}{d\xi^{a}} \widehat{\Psi}(\xi,-\xi)\Big| \leq 1.
+$$
+
+Let $(\phi_0,\phi_1)$ be a universal pair. There exists a real even smooth function
+$\psi:\mathbb{R}\to \mathbb{R}$ such that
+
+1. For all $\xi\in\mathbb{R}$,
+
+   $$
+\widehat{\psi}(\xi)^2 = 2 (\widehat{\phi_{0,-5}}-\widehat{\phi_{1,5}})(\xi)^2 -
+   \widehat{\Psi}(\xi,-\xi).
+   $$
+
+1. $\widehat{\psi}$ is supported in $\textup{Ann}_1(1,2^6)$.
+
+1. For all $a\in [3)$ and $\xi\in \mathbb{R}$,
+
+   $$
+   |\widehat{\psi}^{(a)}(\xi)|\le C_{\text{lem:Phij\_prop}},
+   $$
+
+   where
+
+   $$
+   C_{\text{lem:Phij\_prop}}=2^{12}C_{\text{Universal pair}}.
+   $$
+
+See also [`Codex.phiJProperties`], [`Codex.uniPair`].
 -/
 theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
     (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ) (hPsi : Psi ≠ 0)
     (hsym : ∀ u, Psi u = Psi (WithLp.toLp 2 ![u 1, u 0]))
-    (hpos : ∀ g : ℝ → ℝ, Codex.Reduction.BumpFunctions.aux_bounded g →
+    (hpos : ∀ g : ℝ → ℝ, Codex.aux_bounded g →
       0 ≤ ∫ u : EuclideanSpace ℝ (Fin 2), g (u 0) * g (u 1) * Psi u)
     (hsupp : Function.support
       (FourierTransform.fourier (fun x : EuclideanSpace ℝ (Fin 2) ↦ (Psi x : ℂ))) ⊆
-        Codex.Reduction.BumpFunctions.aux_productSet
-          (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)))
+        Codex.aux_productSet
+          (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)))
     (hderiv : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
       ‖iteratedDeriv m
         (fun z : ℝ ↦ FourierTransform.fourier
@@ -2434,16 +2457,16 @@ theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 p
               (WithLp.toLp 2 ![xi, -xi])) ∧
       (∀ x : ℝ, psi (-x) = psi x) ∧
       Function.support (FourierTransform.fourier (fun x : ℝ ↦ (psi x : ℂ))) ⊆
-        Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 6) ∧
+        Codex.aux_annulusOne 1 ((2 : ℝ) ^ 6) ∧
       (∀ m : ℕ, m < 3 → ∀ xi : ℝ,
         ‖iteratedDeriv m
           (FourierTransform.fourier (fun x : ℝ ↦ (psi x : ℂ))) xi‖ ≤
             C_phiJProperties) := by
   have _hPsi := hPsi
   have hsym' : ∀ u : EuclideanSpace ℝ (Fin 2),
-      Psi u = Psi (Codex.Reduction.BumpFunctions.aux_swapTwo u) := by
+      Psi u = Psi (Codex.aux_swapTwo u) := by
     intro u
-    simpa [Codex.Reduction.BumpFunctions.aux_swapTwo] using hsym u
+    simpa [Codex.aux_swapTwo] using hsym u
   have hPderiv : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
       ‖iteratedDeriv m (aux_phiJ_P Psi) xi‖ ≤ 1 := by
     intro m hm xi
@@ -2458,7 +2481,7 @@ theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 p
     change 0 ≤ (aux_phiJ_theta phi0 phi1 x).re
     rw [hEq]
     simpa using hr
-  have htheta_one : ∀ x ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 4),
+  have htheta_one : ∀ x ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 4),
       aux_phiJ_thetaReal phi0 phi1 x = 1 := by
     intro x hx
     have h := aux_phiJ_theta_one_on_annulus phi0 phi1 hpair x hx
@@ -2476,7 +2499,7 @@ theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 p
     intro x
     exact aux_phiJ_p_le_one Psi hPderiv x
   have hp_off : ∀ x : ℝ,
-      x ∉ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) →
+      x ∉ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) →
         aux_phiJ_p Psi x = 0 := by
     intro x hx
     exact aux_phiJ_p_zero_of_not_ann3 Psi hsupp x hx
@@ -2490,8 +2513,8 @@ theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 p
   have hrad : ∀ x : ℝ,
       0 ≤ 2 * (aux_phiJ_thetaReal phi0 phi1 x) ^ 2 - aux_phiJ_p Psi x := by
     intro x
-    by_cases hx : x ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)
-    · have hx4 : x ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 4) :=
+    by_cases hx : x ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)
+    · have hx4 : x ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 4) :=
         interior_subset (aux_phiJ_ann3_subset_interior_ann4 hx)
       rw [htheta_one x hx4]
       linarith [hp_le_one x]
@@ -2501,7 +2524,7 @@ theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 p
         (mul_nonneg (by norm_num : (0 : ℝ) ≤ 2)
           (sq_nonneg (aux_phiJ_thetaReal phi0 phi1 x)))
   have htheta_zero : ∀ x : ℝ,
-      x ∉ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 6) →
+      x ∉ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 6) →
         aux_phiJ_thetaReal phi0 phi1 x = 0 := by
     intro x hx
     have hzero : aux_phiJ_theta phi0 phi1 x = 0 := by
@@ -2514,28 +2537,28 @@ theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 p
   have hqcompact : HasCompactSupport
       (aux_phiJ_q (aux_phiJ_thetaReal phi0 phi1) (aux_phiJ_p Psi)) :=
     aux_phiJ_q_hasCompactSupport
-      (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3))
-      (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 6))
+      (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3))
+      (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 6))
       (aux_phiJ_thetaReal phi0 phi1) (aux_phiJ_p Psi)
       aux_phiJ_ann6_compact aux_phiJ_ann3_subset_ann6 htheta_zero hp_off
   have hqsmooth : ContDiff ℝ (⊤ : ℕ∞)
       (aux_phiJ_q (aux_phiJ_thetaReal phi0 phi1) (aux_phiJ_p Psi)) :=
     aux_phiJ_q_contDiff
-      (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3))
-      (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 4))
+      (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3))
+      (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 4))
       (aux_phiJ_thetaReal phi0 phi1) (aux_phiJ_p Psi)
       (aux_phiJ_thetaReal_smooth phi0 phi1) (aux_phiJ_p_smooth Psi)
       aux_phiJ_ann3_closed aux_phiJ_ann3_subset_interior_ann4
       htheta_one htheta_nonneg hp_off hp_le_one
   have hqsupport : Function.support
       (aux_phiJ_q (aux_phiJ_thetaReal phi0 phi1) (aux_phiJ_p Psi)) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 6) := by
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 6) := by
     intro x hx
     by_contra hnot
     exact Function.mem_support.mp hx
       (aux_phiJ_q_zero_outside
-        (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3))
-        (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 6))
+        (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3))
+        (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 6))
         (aux_phiJ_thetaReal phi0 phi1) (aux_phiJ_p Psi)
         aux_phiJ_ann3_subset_ann6 htheta_zero hp_off x hnot)
   have hqeven : ∀ x : ℝ,
@@ -2548,8 +2571,8 @@ theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 p
     intro m hm x
     simpa [C_phiJProperties] using
       (aux_phiJ_q_deriv_bound
-        (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3))
-        (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 4))
+        (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3))
+        (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 4))
         (aux_phiJ_thetaReal phi0 phi1) (aux_phiJ_p Psi) C_uniPair
         aux_phiJ_ann3_closed aux_phiJ_ann3_subset_interior_ann4
         htheta_one htheta_nonneg hp_off (aux_phiJ_p_smooth Psi)
@@ -2573,17 +2596,17 @@ theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 p
       (aux_phiJ_thetaReal phi0 phi1) (aux_phiJ_p Psi)
       (aux_phiJ_q (aux_phiJ_thetaReal phi0 phi1) (aux_phiJ_p Psi))
       (aux_phiJ_theta phi0 phi1) (aux_phiJ_P Psi)
-      (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 6)) C_phiJProperties
+      (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 6)) C_phiJProperties
       hqdef hrad hqcompact hqsmooth hqeven hqsupport hqderiv hthetaC hpC)
 
 /--
-\begin{lemma}[constant $C_{\text{lem:Phij\_prop}}$ \auto]\label{constant Phij proposition}
-\begin{equation}\label{constant Phij proposition bound}
-C_{\text{lem:Phij\_prop}}=2^{27}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:Phij\_prop}}$).**
 
-See also [`Codex.Reduction.Miscellany.phiJProperties`].
+$$
+C_{\text{lem:Phij\_prop}}=2^{27}.
+$$
+
+See also [`Codex.phiJProperties`].
 -/
 theorem constantPhiJProposition : C_phiJProperties = (2 : ℝ) ^ 27 := by
   unfold C_phiJProperties C_uniPair
@@ -2675,16 +2698,17 @@ theorem aux_bootstrap_energy_core {J : ℕ} (a : ℤ → ℝ≥0∞)
         ∑ j, a (qs.1 j) ^ 2 := by rfl
 
 /--
-\begin{lemma}[Bootstrapping]
-\label{lem:bootstrap}
-Let $\phi:\R\to \R$ be a Schwartz function.
+**Lemma (Bootstrapping).**
+
+Let $\phi:\mathbb{R}\to \mathbb{R}$ be a Schwartz function.
 Then
-    \begin{equation}\label{auto:dyadic-variation-bootstrap}
-    \|A_{t}(\phi)\|^2_{V_{2,J}(t\in 2^{\Z}; L^2)} \le
-    4 \cdot \sup \sum_{\ell\in [J)} \|A_{2^{k_{\ell}}}(\phi)\|^2_2
-    \end{equation}
-    where the supremum is over all sequences of integers $k_0<\cdots <k_{J-1}$.
-\end{lemma}
+
+$$
+\|A_{t}(\phi)\|^2_{V_{2,J}(t\in 2^{\mathbb{Z}}; L^2)} \le  4 \cdot \sup \sum_{\ell\in [J)}
+\|A_{2^{k_{\ell}}}(\phi)\|^2_2
+$$
+
+where the supremum is over all sequences of integers $k_0<\cdots <k_{J-1}$.
 -/
 theorem bootstrap {n : ℕ} (hn : 2 ≤ n) (phi : SchwartzMap ℝ ℝ)
     (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ) (J : ℕ) :
@@ -2709,4 +2733,4 @@ theorem bootstrap {n : ℕ} (hn : 2 ≤ n) (phi : SchwartzMap ℝ ℝ)
 
 end
 
-end Codex.Reduction.Miscellany
+end Codex

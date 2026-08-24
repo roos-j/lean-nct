@@ -12,14 +12,11 @@ set_option linter.style.header false
 Formalization of the ``$A$ to $\Lambda_1$'' reduction lemma.
 -/
 
-namespace Codex.Reduction.AToLambda
+namespace Codex
 
 open MeasureTheory
 open scoped BigOperators ENNReal
 
-open Codex.Reduction.TwistedAverages
-open Codex.Preliminaries.KKernels
-open Codex.Preliminaries.MKernels
 
 
 noncomputable section
@@ -719,23 +716,29 @@ theorem aux_aToLambda_explicit {d : ℕ} (phi : SchwartzMap ℝ ℝ)
       rw [rawTwistedSquareIntegrand_integral_eq_prismForm phi f]
 
 /--
-\begin{lemma}[$A$ to $\Lambda_1$]\label{A to Lambda}
-Let $\phi\in \mathcal{S}(\R)$.
-Let $\mathbf{f}=(f_0,\dots,f_{n-1})$ be functions in $\mathcal{S}(\R^n)$.
+**Lemma ($A$ to $\Lambda_1$).**
+
+Let $\phi\in \mathcal{S}(\mathbb{R})$.
+Let $\mathbf{f}=(f_0,\dots,f_{n-1})$ be functions in $\mathcal{S}(\mathbb{R}^n)$.
 Then
-\begin{equation}\label{auto:twisted-average-prism-identity}
+
+$$
 \|A(\phi, {\mathbf f})\|_2^2 = \Lambda_1(\phi^{\otimes 2})(\mathbf{F}),
-\end{equation}
-where for every $i\in[n)$ and $x\in\R^n$,
-\begin{equation}\label{auto:twisted-average-coordinate-transform}
+$$
+
+where for every $i\in[n)$ and $x\in\mathbb{R}^n$,
+
+$$
 F_i(x)=f_i(-x_{[1,i+1)},\Sigma(x),-x_{[i+1,n)}).
-\end{equation}
-Moreover, $F_i\in\mathcal S(\R^n)$ and
-\begin{equation}\label{auto:twisted-average-coordinate-transform-isometry}
+$$
+
+Moreover, $F_i\in\mathcal S(\mathbb{R}^n)$ and
+
+$$
 \|F_i\|_p=\|f_i\|_p
-\end{equation}
+$$
+
 for every $p\in[1,\infty]$.
-\end{lemma}
 -/
 theorem aToLambda {n : ℕ} (hn : 1 ≤ n) (phi : SchwartzMap ℝ ℝ)
     (f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ) :
@@ -754,10 +757,12 @@ theorem aToLambda {n : ℕ} (hn : 1 ≤ n) (phi : SchwartzMap ℝ ℝ)
         exact transformedFunctions_eLpNorm f i p
       · simpa using aux_aToLambda_explicit phi f
 
-/-- The canonical, scale-independent successor-dimensional form of the
+/--
+The canonical, scale-independent successor-dimensional form of the
 `A`-to-`Λ₁` identity.  Unlike `aToLambda`, this fixes
 `transformedFunctions f` explicitly, which is needed when the kernel varies
-under an integral or a parameterized family. -/
+under an integral or a parameterized family.
+-/
 theorem aToLambda_transformed {d : ℕ} (phi : SchwartzMap ℝ ℝ)
     (f : Fin (d + 1) → SchwartzMap (EuclideanSpace ℝ (Fin (d + 1))) ℝ) :
     eLpNorm (twistedAverage phi (fun i x ↦ f i x)) 2 volume ^ 2 =
@@ -847,4 +852,4 @@ theorem aToLambda_fin_sum {n J : ℕ} (hn : 1 ≤ n)
 
 end
 
-end Codex.Reduction.AToLambda
+end Codex

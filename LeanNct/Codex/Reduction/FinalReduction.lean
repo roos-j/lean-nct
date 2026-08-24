@@ -20,24 +20,11 @@ reduction-level twisted averages rather than `Introduction`, so that the final
 reduction remains on the acyclic side of the import graph.
 -/
 
-namespace Codex.Reduction.FinalReduction
+namespace Codex
 
 open MeasureTheory Set
 open scoped BigOperators ENNReal FourierTransform Real
 
-open Codex.Preliminaries.KKernels
-open Codex.Preliminaries.MKernels
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
-open Codex.Reduction.TwistedAverages
-open Codex.Reduction.AToLambda
-open Codex.Reduction.WindowsAndPairs
-open Codex.Reduction.BumpFunctions
-open Codex.Reduction.SmoothingDecomposition
-open Codex.Reduction.Miscellany
-open Codex.Reduction.OnDiagonalOffDiagonal
-open Codex.Reduction.VariationSeminorms
 
 
 noncomputable section
@@ -49,8 +36,10 @@ noncomputable def variationExponent (n : ℕ) : ℝ :=
 noncomputable def unitIntervalIndicator : ℝ → ℝ :=
   (Set.Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ)
 
-/-- A normalized tuple of real Schwartz functions in the coordinate model used by the
-reduction modules. -/
+/--
+A normalized tuple of real Schwartz functions in the coordinate model used by the
+reduction modules.
+-/
 abbrev ReductionNormalizedTuple (n : ℕ) :=
   {f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ //
     ∀ i, eLpNorm (f i) ((2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2)) volume = 1}
@@ -73,12 +62,14 @@ noncomputable def aux_dyadicJumpEnergy {n : ℕ} (chi : ℝ → ℝ)
     (k : aux_dyadicChain J) : ℝ≥0∞ :=
   twistedDyadicJumpEnergy chi (fun i x ↦ f i x) J k
 
-/-- The Fourier support/derivative hypotheses common to `mainAuxOne` and `mainAuxTwo`.
+/--
+The Fourier support/derivative hypotheses common to `mainAuxOne` and `mainAuxTwo`.
 This raw-function formulation also applies directly to the logarithmic derivative
-in `shortLongFtcReduction`. -/
+in `shortLongFtcReduction`.
+-/
 def aux_mainAuxiliaryFourierHypotheses (psi : ℝ → ℝ) : Prop :=
   Function.support (FourierTransform.fourier (fun x : ℝ ↦ (psi x : ℂ))) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) ∧
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) ∧
     ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
       ‖iteratedDeriv m (FourierTransform.fourier (fun x : ℝ ↦ (psi x : ℂ))) xi‖ ≤ 1
 
@@ -91,7 +82,7 @@ def aux_mainAuxiliaryTwoHypotheses (psi : SchwartzMap ℝ ℝ) : Prop :=
   aux_mainAuxiliaryHypotheses psi ∧
     ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
       ‖iteratedDeriv m (FourierTransform.fourier
-        (Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ (psi x : ℂ))) ) xi‖ ≤ 1
+        (Codex.aux_T (fun x : ℝ ↦ (psi x : ℂ))) ) xi‖ ≤ 1
 
 /-- The common finite-variation conclusion for a bump in the final reduction. -/
 def aux_variationBound {n : ℕ} (C : ℝ) (chi : ℝ → ℝ)
@@ -107,7 +98,7 @@ def aux_dyadicVariationBound {n : ℕ} (C : ℝ) (chi : ℝ → ℝ)
     aux_dyadicJumpEnergy chi f J k ≤
       ENNReal.ofReal C * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
 
-/-- The constant in Lemma [`Codex.Reduction.FinalReduction.mainAuxOne`]. -/
+/-- The constant in Lemma [`Codex.mainAuxOne`]. -/
 noncomputable def C_mainAuxOne (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 4 * C_inductPositiveTermsReductionWhitneyProduct n
 
@@ -233,7 +224,7 @@ theorem aux_mainAuxOne_scaledWindowSchwartz_support (psi : SchwartzMap ℝ ℝ)
       (FourierTransform.fourier
         (fun x : ℝ => (aux_mainAuxOne_scaledWindowSchwartz psi t
           (lt_of_lt_of_le zero_lt_one ht.1) x : ℂ))) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) := by
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) := by
   rcases hpsi with ⟨hsupp, hderiv⟩
   have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
   intro xi hxi
@@ -242,7 +233,7 @@ theorem aux_mainAuxOne_scaledWindowSchwartz_support (psi : SchwartzMap ℝ ℝ)
   have hbase : FourierTransform.fourier (fun x : ℝ => (psi x : ℂ)) (t * xi) ≠ 0 := by
     exact (mul_ne_zero_iff.mp hne).2
   have hmem := hsupp (Function.mem_support.mpr hbase)
-  unfold Codex.Reduction.BumpFunctions.aux_annulusOne at hmem ⊢
+  unfold Codex.aux_annulusOne at hmem ⊢
   change 1 / ((2 : ℝ) ^ 2) ≤ |t * xi| ∧ |t * xi| ≤ (2 : ℝ) ^ 2 * 1 at hmem
   change 1 / ((2 : ℝ) ^ 3) ≤ |xi| ∧ |xi| ≤ (2 : ℝ) ^ 3 * 1
   rw [abs_mul, abs_of_pos htpos] at hmem
@@ -321,8 +312,10 @@ theorem aux_mainAuxOne_scaledWindowSchwartz_deriv (psi : SchwartzMap ℝ ℝ)
           _ = 1 := by norm_num
       nlinarith
 
-/-- Extend the finite dyadic scales selected by a `TwistedDyadicChain` to a
-multiplicatively spaced bi-infinite sequence. -/
+/--
+Extend the finite dyadic scales selected by a `TwistedDyadicChain` to a
+multiplicatively spaced bi-infinite sequence.
+-/
 theorem aux_mainAuxOne_extend_dyadic_chain (J : ℕ) (hJ : 0 < J)
     (k : aux_dyadicChain J) :
     ∃ a : ℤ → ℝ, SpacedSequence a ∧
@@ -536,34 +529,41 @@ theorem aux_mainAuxOne_rescaled_sequence_bound {n : ℕ} (hn : 2 ≤ n)
       rfl
 
 /--
-\begin{lemma}\label{lem:main_aux1}
-Suppose that $\psi:\R\to\R$ is a Schwartz function with
-\begin{equation}\label{main_aux1_supp}
+**Lemma.**
+
+Suppose that $\psi:\mathbb{R}\to\mathbb{R}$ is a Schwartz function with
+
+$$
 {\rm supp}(\widehat\psi)\subset\mathrm{Ann}_1(1,2^2),
-\end{equation}
+$$
+
 and
-\begin{equation}\label{auto:main-auxiliary-one-Fourier-derivative-assumption}
+
+$$
 |\widehat\psi^{(m)}(\xi)|\le1,
 \qquad
 m\in[3),
 \quad
-\xi\in\R.
-\end{equation}
-Then for every $t\in[1,2]$, $J\ge1$, and every strictly increasing sequence
-of integers $(k_j)_{j\in[J)}$,
-\begin{equation}\label{main_aux1}
+\xi\in\mathbb{R}.
+$$
+
+Then for every $t\in[1,2]$, $J\ge1$, and every strictly increasing sequence of integers
+$(k_j)_{j\in[J)}$,
+
+$$
 \sum_{j\in[J)}\|A_{2^{k_j}t}(\psi)\|_2^2
 \le C_{\text{lem:main\_aux1}}J^{\alpha(n)},
-\end{equation}
-where
-\begin{equation}\label{auto:main-auxiliary-one-constant-definition}
-C_{\text{lem:main\_aux1}}
-=2^4C_{\text{P:induct-positive-terms-reduction-whitney-product}}.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.mainAuxOne`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitneyProduct`].
+where
+
+$$
+C_{\text{lem:main\_aux1}}
+=2^4C_{\text{induct positive terms - reduction variant, Whitney, product-type}}.
+$$
+
+See also [`Codex.mainAuxOne`],
+[`Codex.inductPositiveTermsReductionWhitneyProduct`].
 -/
 theorem mainAuxOne {n : ℕ} (hn : 2 ≤ n) (psi : SchwartzMap ℝ ℝ)
     (hpsi : aux_mainAuxiliaryHypotheses psi)
@@ -648,8 +648,10 @@ theorem mainAuxOne {n : ℕ} (hn : 2 ≤ n) (psi : SchwartzMap ℝ ℝ)
         ENNReal.ofReal ((J : ℝ) ^ variationExponent n) := by
       simpa [Fnorm] using hprefix
 
-/-- The sharp Whitney-product reduction estimate used for the first final-reduction
-constant. -/
+/--
+The sharp Whitney-product reduction estimate used for the first final-reduction
+constant.
+-/
 theorem aux_constantWhitneyProductReduction_sharp {n : ℕ} (hn : 2 ≤ n) :
     C_inductPositiveTermsReductionWhitneyProduct n <
       (1397 / 2048 : ℝ) * (2 : ℝ) ^ 569 := by
@@ -674,8 +676,10 @@ theorem aux_constantWhitneyProductReduction_sharp {n : ℕ} (hn : 2 ≤ n) :
             ring
         _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 569 := by rw [← pow_add]
 
-/-- The sharper form of the `mainAuxOne` constant estimate before its final
-relaxation to a pure power of two. -/
+/--
+The sharper form of the `mainAuxOne` constant estimate before its final
+relaxation to a pure power of two.
+-/
 theorem aux_constantMainAuxOne_sharp {n : ℕ} (hn : 2 ≤ n) :
     C_mainAuxOne n < (1397 / 2048 : ℝ) * (2 : ℝ) ^ 573 := by
   unfold C_mainAuxOne
@@ -692,13 +696,13 @@ theorem aux_constantMainAuxOne_sharp {n : ℕ} (hn : 2 ≤ n) :
         _ = (1397 / 2048 : ℝ) * (2 : ℝ) ^ 573 := by rw [← pow_add]
 
 /--
-\begin{lemma}[constant $C_{\text{lem:main\_aux1}}$ \auto]\label{constant main auxiliary one}
-\begin{equation}\label{constant main auxiliary one bound}
-C_{\text{lem:main\_aux1}}<2^{573}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:main\_aux1}}$).**
 
-See also [`Codex.Reduction.FinalReduction.mainAuxOne`].
+$$
+C_{\text{lem:main\_aux1}}<2^{573}.
+$$
+
+See also [`Codex.mainAuxOne`].
 -/
 theorem constantMainAuxiliaryOne {n : ℕ} (hn : 2 ≤ n) :
     C_mainAuxOne n < (2 : ℝ) ^ 573 := by
@@ -1743,15 +1747,15 @@ theorem aux_shortLong_finish {n : ℕ} (hn : 2 ≤ n)
   exact henergy.trans htarget
 
 theorem aux_shortLong_T_eq_tBump (phi : SchwartzMap ℝ ℝ) :
-    Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ phi x) = aux_tBump phi := by
+    Codex.aux_T (fun x : ℝ ↦ phi x) = aux_tBump phi := by
   funext x
-  unfold Codex.Reduction.BumpFunctions.aux_T
-    Codex.Reduction.BumpFunctions.multiplicationOperatorX aux_tBump
+  unfold Codex.aux_T
+    Codex.multiplicationOperatorX aux_tBump
   simp only [smul_eq_mul]
 
 theorem aux_shortLong_tBump_auxHyp (phi : SchwartzMap ℝ ℝ)
     (hTphi : aux_mainAuxiliaryFourierHypotheses
-      (Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ phi x))) :
+      (Codex.aux_T (fun x : ℝ ↦ phi x))) :
     ∃ tau : SchwartzMap ℝ ℝ, (tau : ℝ → ℝ) = aux_tBump phi ∧
       aux_mainAuxiliaryHypotheses tau := by
   let psi : SchwartzMap ℝ ℝ :=
@@ -1768,7 +1772,7 @@ theorem aux_shortLong_tBump_auxHyp (phi : SchwartzMap ℝ ℝ)
   refine ⟨tau, htau, ?_⟩
   · unfold aux_mainAuxiliaryHypotheses
     rw [show (fun x : ℝ ↦ tau x) =
-      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ phi x) by
+      Codex.aux_T (fun x : ℝ ↦ phi x) by
         exact htau.trans (aux_shortLong_T_eq_tBump phi).symm]
     exact hTphi
 
@@ -1900,27 +1904,29 @@ theorem aux_shortLong_local_finset_bound {n : ℕ} (hn : 2 ≤ n)
 
 
 /--
-\begin{lemma}[Long and short variation]\label{lem:shortlongftc_reduction}
-Let $J\ge 1$ and $\phi$ a Schwartz function.
-Assume that the function $T\phi(s) = (s \phi(s))'$ satisfies
-\eqref{main_aux1_supp} and
-\eqref{auto:main-auxiliary-one-Fourier-derivative-assumption}.
-Suppose that $A\in (0,\infty)$ is such that
-\begin{equation}\label{shortlongftc_reduction1}
-\|A_{t}(\phi)\|^2_{V_{2,J}(t\in 2^\mathbb{Z}; L^2)} \le A
-\end{equation}
-Then
-\begin{equation}\label{shortlongftc_reduction2}
-\|A_{t}(\phi)\|_{V_{2,J}(t\in (0,\infty); L^2)}^2
-\le 2^4 C_{\text{lem:main\_aux1}} J^{\alpha(n)} + 2A.
-\end{equation}
-\end{lemma}
+**Lemma (Long and short variation).**
 
-See also [`Codex.Reduction.FinalReduction.mainAuxOne`].
+Let $J\ge 1$ and $\phi$ a Schwartz function.
+Assume that the function $T\phi(s) = (s \phi(s))'$ satisfies (`main_aux1_supp`) and
+(`auto:main-auxiliary-one-Fourier-derivative-assumption`).
+Suppose that $A\in (0,\infty)$ is such that
+
+$$
+\|A_{t}(\phi)\|^2_{V_{2,J}(t\in 2^\mathbb{Z}; L^2)} \le A
+$$
+
+Then
+
+$$
+\|A_{t}(\phi)\|_{V_{2,J}(t\in (0,\infty); L^2)}^2 \le 2^4 C_{\text{lem:main\_aux1}} J^{\alpha(n)} +
+2A.
+$$
+
+See also [`Codex.mainAuxOne`].
 -/
 theorem shortLongFtcReduction {n : ℕ} (hn : 2 ≤ n) (phi : SchwartzMap ℝ ℝ)
     (hTphi : aux_mainAuxiliaryFourierHypotheses
-      (Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ phi x)))
+      (Codex.aux_T (fun x : ℝ ↦ phi x)))
     (f : ReductionNormalizedTuple n) (J : ℕ) (hJ : 0 < J) (A : ℝ)
     (hApos : 0 < A) (hA : aux_dyadicVariationBound A (fun x ↦ phi x) f.1) :
     aux_variationBound (16 * C_mainAuxOne n + 2 * A) (fun x ↦ phi x) f.1 := by
@@ -1930,7 +1936,7 @@ theorem shortLongFtcReduction {n : ℕ} (hn : 2 ≤ n) (phi : SchwartzMap ℝ �
   intro J hJ kappa hcard
   exact aux_shortLong_local_finset_bound hn phi f tau htau htauHyp J hJ kappa hcard
 
-/-- The constant in Lemma [`Codex.Reduction.FinalReduction.mainBumpOneLongOne`]. -/
+/-- The constant in Lemma [`Codex.mainBumpOneLongOne`]. -/
 noncomputable def C_mainBumpOneLongOne (n : ℕ) : ℝ :=
   (2 * C_uniPair) ^ 2 * C_mainAuxOne n
 
@@ -1996,7 +2002,7 @@ theorem aux_mainBumpOneLongOne_window_profile_deriv_bound (c : ℝ) (N : ℕ)
   · have hderivSupp : Function.support (iteratedDeriv m F) ⊆
         Set.Icc (-1 : ℝ) 1 :=
       (subset_tsupport _).trans
-        ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset F m).trans
+        ((Codex.aux_tsupport_iteratedDeriv_subset F m).trans
           hFtsupp)
     have hzero : iteratedDeriv m F xi = 0 := by
       apply Function.notMem_support.mp
@@ -2036,7 +2042,7 @@ theorem aux_mainBumpOneLongOne_psi_hypotheses (phi0 phi1 : SchwartzMap ℝ ℝ)
         FourierTransform.fourier (fun x : ℝ => (phi0 x : ℂ)) xi -
           FourierTransform.fourier (fun x : ℝ => (phi1 x : ℂ)) xi ≠ 0 :=
       (mul_ne_zero_iff.mp hne).2
-    rw [Codex.Reduction.BumpFunctions.aux_annulusOne]
+    rw [Codex.aux_annulusOne]
     constructor
     · by_contra hnot
       push Not at hnot
@@ -2204,22 +2210,25 @@ theorem aux_mainBumpOneLongOne_eLpNorm_sq_const_mul {X : Type*} [MeasurableSpace
   rw [hnorm, mul_pow, ← ENNReal.ofReal_pow hc]
 
 /--
-\begin{lemma}\label{lem:mainbump1_long1}
+**Lemma.**
+
 For every $J\ge1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
-\begin{equation}\label{mainbump1_long1}
+
+$$
 \sum_{j\in[J)}\|A_{2^{k_j}}(\phi_0)-A_{2^{k_j}}(\phi_1)\|_2^2
 \le C_{\text{lem:mainbump1\_long1}}J^{\alpha(n)},
-\end{equation}
-where
-\begin{equation}\label{auto:main-bump-one-long-one-constant-definition}
-C_{\text{lem:mainbump1\_long1}}
-=(2C_{\text{def:unipair}})^2C_{\text{lem:main\_aux1}}.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.mainBumpOneLongOne`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`],
-[`Codex.Reduction.FinalReduction.mainAuxOne`].
+where
+
+$$
+C_{\text{lem:mainbump1\_long1}}
+=(2C_{\text{Universal pair}})^2C_{\text{lem:main\_aux1}}.
+$$
+
+See also [`Codex.mainBumpOneLongOne`],
+[`Codex.uniPair`],
+[`Codex.mainAuxOne`].
 -/
 theorem mainBumpOneLongOne {n : ℕ} (hn : 2 ≤ n)
     (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
@@ -2320,14 +2329,13 @@ theorem mainBumpOneLongOne {n : ℕ} (hn : 2 ≤ n)
       simp [C_mainBumpOneLongOne, c]
 
 /--
-\begin{lemma}[constant $C_{\text{lem:mainbump1\_long1}}$ \auto]
-\label{constant main bump one long one}
-\begin{equation}\label{constant main bump one long one bound}
-C_{\text{lem:mainbump1\_long1}}<2^{605}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:mainbump1\_long1}}$).**
 
-See also [`Codex.Reduction.FinalReduction.mainBumpOneLongOne`].
+$$
+C_{\text{lem:mainbump1\_long1}}<2^{605}.
+$$
+
+See also [`Codex.mainBumpOneLongOne`].
 -/
 theorem constantMainBumpOneLongOne {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpOneLongOne n < (2 : ℝ) ^ 605 := by
@@ -2343,7 +2351,7 @@ theorem constantMainBumpOneLongOne {n : ℕ} (hn : 2 ≤ n) :
         _ = (2 : ℝ) ^ (32 + 573) := by rw [← pow_add]
         _ = (2 : ℝ) ^ 605 := by norm_num
 
-/-- The constant in Lemma [`Codex.Reduction.FinalReduction.mainBumpOneLongTwo`]. -/
+/-- The constant in Lemma [`Codex.mainBumpOneLongTwo`]. -/
 noncomputable def C_mainBumpOneLongTwo (n : ℕ) : ℝ :=
   2 * C_inductPositiveTermsReductionNonWhitneySkip n
 
@@ -2638,19 +2646,21 @@ theorem aux_mainBumpOneLongTwo_chain_pairEnergy_eq {n : ℕ} (a : ℤ → ℝ) (
   exact aux_mainBumpOneLongTwo_chain_pair_eq a J k ha phi0 phi1 f j
 
 /--
-\begin{lemma}\label{lem:mainbump1_long2}
-For every $J\ge 1$ and every strictly increasing sequence of integers $(m_j)_{j\in[J+1)}$,
-\begin{equation}\label{mainbump1_long2}
-\sum_{j\in[J)} \|
-A_{2^{m_{j}}}(\phi_0)-A_{2^{m_{j+1}}}(\phi_1) \|_{2}^2
-\le C_{\text{lem:mainbump1\_long2}} J^{\alpha(n)},
-\end{equation}
-where
-$C_{\text{lem:mainbump1\_long2}}=2 C_{\text{P:induct-positive-terms-reduction-non-whitney-skip}}$.
-\end{lemma}
+**Lemma.**
 
-See also [`Codex.Reduction.FinalReduction.mainBumpOneLongTwo`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionNonWhitneySkip`].
+For every $J\ge 1$ and every strictly increasing sequence of integers $(m_j)_{j\in[J+1)}$,
+
+$$
+\sum_{j\in[J)} \|
+A_{2^{m_{j}}}(\phi_0)-A_{2^{m_{j+1}}}(\phi_1) \|_{2}^2  \le C_{\text{lem:mainbump1\_long2}}
+J^{\alpha(n)},
+$$
+
+where $C_{\text{lem:mainbump1\_long2}}=2 C_{\text{induct positive terms - reduction variant,
+non-Whitney, skip terms}}$.
+
+See also [`Codex.mainBumpOneLongTwo`],
+[`Codex.inductPositiveTermsReductionNonWhitneySkip`].
 -/
 theorem mainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n)
     (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
@@ -2830,14 +2840,13 @@ theorem mainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n)
             ring
 
 /--
-\begin{lemma}[constant $C_{\text{lem:mainbump1\_long2}}$ \auto]
-\label{constant main bump one long two}
-\begin{equation}\label{constant main bump one long two bound}
-C_{\text{lem:mainbump1\_long2}}<\tfrac89 2^{543}<2^{543}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:mainbump1\_long2}}$).**
 
-See also [`Codex.Reduction.FinalReduction.mainBumpOneLongTwo`].
+$$
+C_{\text{lem:mainbump1\_long2}}<\tfrac89 2^{543}<2^{543}.
+$$
+
+See also [`Codex.mainBumpOneLongTwo`].
 -/
 theorem constantMainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpOneLongTwo n < (8 / 9 : ℝ) * (2 : ℝ) ^ 543 := by
@@ -2855,7 +2864,7 @@ theorem constantMainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n) :
         _ = (8 / 9 : ℝ) * (2 : ℝ) ^ (1 + 542) := by rw [← pow_add]
         _ = (8 / 9 : ℝ) * (2 : ℝ) ^ 543 := by norm_num
 
-/-- The constant in Lemma [`Codex.Reduction.FinalReduction.mainBumpOneLong`]. -/
+/-- The constant in Lemma [`Codex.mainBumpOneLong`]. -/
 noncomputable def C_mainBumpOneLong (n : ℕ) : ℝ :=
   2 * (C_mainBumpOneLongOne n + C_mainBumpOneLongTwo n)
 
@@ -2955,20 +2964,21 @@ theorem aux_mainBumpOneLong_shifted_dyadic_chain {J : ℕ}
   simp [qfun]
 
 /--
-\begin{lemma}\label{lem:mainbump1_long}
-Let $J\ge 1$. Then
-\begin{equation}\label{mainbump1_long}
-\|A_{t}(\phi_0)\|^2_{V_{2,J}(t\in 2^\mathbb{Z}; L^2)}
-\le C_{\text{lem:mainbump1\_long}} J^{\alpha(n)},
-\end{equation}
-where
-$C_{\text{lem:mainbump1\_long}}=2(C_{\text{lem:mainbump1\_long2}}
-+ C_{\text{lem:mainbump1\_long1}})$.
-\end{lemma}
+**Lemma.**
 
-See also [`Codex.Reduction.FinalReduction.mainBumpOneLong`],
-[`Codex.Reduction.FinalReduction.mainBumpOneLongTwo`],
-[`Codex.Reduction.FinalReduction.mainBumpOneLongOne`].
+Let $J\ge 1$. Then
+
+$$
+\|A_{t}(\phi_0)\|^2_{V_{2,J}(t\in 2^\mathbb{Z}; L^2)}  \le C_{\text{lem:mainbump1\_long}}
+J^{\alpha(n)},
+$$
+
+where $C_{\text{lem:mainbump1\_long}}=2(C_{\text{lem:mainbump1\_long2}} +
+C_{\text{lem:mainbump1\_long1}})$.
+
+See also [`Codex.mainBumpOneLong`],
+[`Codex.mainBumpOneLongTwo`],
+[`Codex.mainBumpOneLongOne`].
 -/
 theorem mainBumpOneLong {n : ℕ} (hn : 2 ≤ n)
     (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
@@ -3099,14 +3109,13 @@ theorem aux_mainBumpOneLong_one_sharp {n : ℕ} (hn : 2 ≤ n) :
           rw [← pow_add]
 
 /--
-\begin{lemma}[constant $C_{\text{lem:mainbump1\_long}}$ \auto]
-\label{constant main bump one long}
-\begin{equation}\label{constant main bump one long bound}
-C_{\text{lem:mainbump1\_long}}<\tfrac{11}{16}2^{606}<2^{606}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:mainbump1\_long}}$).**
 
-See also [`Codex.Reduction.FinalReduction.mainBumpOneLong`].
+$$
+C_{\text{lem:mainbump1\_long}}<\tfrac{11}{16}2^{606}<2^{606}.
+$$
+
+See also [`Codex.mainBumpOneLong`].
 -/
 theorem constantMainBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpOneLong n < (11 / 16 : ℝ) * (2 : ℝ) ^ 606 := by
@@ -3140,7 +3149,7 @@ theorem constantMainBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
       set_option exponentiation.threshold 1000 in
         ring
 
-/-- The constant in Lemma [`Codex.Reduction.FinalReduction.mainBumpOne`]. -/
+/-- The constant in Lemma [`Codex.mainBumpOne`]. -/
 noncomputable def C_mainBumpOne (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 4 * (3 * C_uniPair) ^ 2 * C_mainAuxOne n +
     2 * C_mainBumpOneLong n
@@ -3148,8 +3157,8 @@ noncomputable def C_mainBumpOne (n : ℕ) : ℝ :=
 /-! Private Fourier and scalar-normalization infrastructure for `mainBumpOne`. -/
 
 theorem aux_mainBumpOne_T_cast_eq (f : ℝ → ℝ) (hf : ContDiff ℝ 1 f) :
-    (fun x : ℝ ↦ (Codex.Reduction.SmoothingDecomposition.aux_T f x : ℂ)) =
-      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ (f x : ℂ)) := by
+    (fun x : ℝ ↦ (Codex.aux_sd_T f x : ℂ)) =
+      Codex.aux_T (fun x : ℝ ↦ (f x : ℂ)) := by
   funext x
   have hdiff : DifferentiableAt ℝ (fun y : ℝ => y * f y) x := by
     exact ((contDiff_id.mul hf).contDiffAt).differentiableAt (by norm_num)
@@ -3158,19 +3167,19 @@ theorem aux_mainBumpOne_T_cast_eq (f : ℝ → ℝ) (hf : ContDiff ℝ 1 f) :
         ((deriv (fun y : ℝ => y * f y) x : ℝ) : ℂ) := by
     simpa using ((hasDerivAt_const x Complex.ofRealCLM).clm_apply hdiff.hasDerivAt).deriv
   have hfun : (fun y : ℝ => ((y * f y : ℝ) : ℂ)) =
-      Codex.Reduction.BumpFunctions.multiplicationOperatorX
+      Codex.multiplicationOperatorX
         (fun y : ℝ => (f y : ℂ)) := by
     funext y
-    simp [Codex.Reduction.BumpFunctions.multiplicationOperatorX]
-  unfold Codex.Reduction.SmoothingDecomposition.aux_T
-    Codex.Reduction.BumpFunctions.aux_T
+    simp [Codex.multiplicationOperatorX]
+  unfold Codex.aux_sd_T
+    Codex.aux_T
   rw [← hfun, hcast]
 
 theorem aux_mainBumpOne_T_fourier_formula (phi : SchwartzMap ℝ ℝ)
     (m : ℕ) (xi : ℝ) :
     iteratedDeriv m
       (FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ))) xi =
+        (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ))) xi =
       - ((m : ℂ) * iteratedDeriv m
             (FourierTransform.fourier (fun x : ℝ ↦ (phi x : ℂ))) xi +
           (xi : ℂ) * iteratedDeriv (m + 1)
@@ -3183,7 +3192,7 @@ theorem aux_mainBumpOne_T_fourier_formula (phi : SchwartzMap ℝ ℝ)
   have hsmooth : ContDiff ℝ 1 (fun x : ℝ => phi x) := by
     exact phi.smooth 1
   rw [aux_mainBumpOne_T_cast_eq _ hsmooth, ← hphiC]
-  simpa using Codex.Reduction.BumpFunctions.fourierDerivativeMul phiC m xi
+  simpa using Codex.fourierDerivativeMul phiC m xi
 
 theorem aux_mainBumpOne_deriv_eq_zero_of_eq_one_on_Icc
     (F : ℝ → ℂ) (x : ℝ) (hx : |x| < 1 / 2)
@@ -3206,14 +3215,14 @@ theorem aux_mainBumpOne_T_fourier_support_window (phi : SchwartzMap ℝ ℝ)
     (hwin : cnWindow C_uniPair N_uniPair phi) :
     Function.support
       (FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ))) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+        (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ))) ⊆
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
   intro xi hxi
   have hne : FourierTransform.fourier
       (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ)) xi ≠ 0 :=
+        (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ)) xi ≠ 0 :=
     Function.mem_support.mp hxi
-  rw [Codex.Reduction.BumpFunctions.aux_annulusOne]
+  rw [Codex.aux_annulusOne]
   constructor
   · by_contra hnot
     push Not at hnot
@@ -3242,7 +3251,7 @@ theorem aux_mainBumpOne_T_fourier_support_window (phi : SchwartzMap ℝ ℝ)
           (FourierTransform.fourier (fun x : ℝ => (phi x : ℂ))) ⊆ Set.Icc (-1 : ℝ) 1 :=
         closure_minimal hwin.2.2.1 isClosed_Icc
       exact (subset_tsupport _).trans
-        ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset _ 1).trans
+        ((Codex.aux_tsupport_iteratedDeriv_subset _ 1).trans
           htsupp)
     have hderiv' : iteratedDeriv 1
         (FourierTransform.fourier (fun x : ℝ => (phi x : ℂ))) xi = 0 := by
@@ -3258,12 +3267,12 @@ theorem aux_mainBumpOne_T_fourier_support_window (phi : SchwartzMap ℝ ℝ)
 
 theorem aux_mainBumpOne_T_const_mul (c : ℝ) (f : ℝ → ℝ)
     (hf : ContDiff ℝ 1 f) :
-    Codex.Reduction.SmoothingDecomposition.aux_T (fun x ↦ c * f x) =
-      fun x ↦ c * Codex.Reduction.SmoothingDecomposition.aux_T f x := by
+    Codex.aux_sd_T (fun x ↦ c * f x) =
+      fun x ↦ c * Codex.aux_sd_T f x := by
   funext x
   have hdiff : DifferentiableAt ℝ (fun y : ℝ => y * f y) x := by
     exact ((contDiff_id.mul hf).contDiffAt).differentiableAt (by norm_num)
-  unfold Codex.Reduction.SmoothingDecomposition.aux_T
+  unfold Codex.aux_sd_T
   rw [show (fun y : ℝ => y * (c * f y)) = fun y => c * (y * f y) by
       funext y
       ring]
@@ -3279,7 +3288,7 @@ theorem aux_mainBumpOne_window_profile_deriv_zero_outside
     closure_minimal (by simpa [F] using hwin.2.2.1) isClosed_Icc
   have hderivSupp : Function.support (iteratedDeriv m F) ⊆ Set.Icc (-1 : ℝ) 1 :=
     (subset_tsupport _).trans
-      ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset F m).trans
+      ((Codex.aux_tsupport_iteratedDeriv_subset F m).trans
         hFtsupp)
   change iteratedDeriv m F xi = 0
   apply Function.notMem_support.mp
@@ -3291,7 +3300,7 @@ theorem aux_mainBumpOne_T_fourier_deriv_bound_window
     (m : ℕ) (hm : m < 3) (xi : ℝ) :
     ‖iteratedDeriv m
       (FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ))) xi‖ ≤
+        (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ))) xi‖ ≤
       3 * C_uniPair := by
   let F : ℝ → ℂ := FourierTransform.fourier (fun x : ℝ => (phi x : ℂ))
   have hmle : m ≤ 2 := by omega
@@ -3346,11 +3355,11 @@ theorem aux_mainBumpOne_psi_apply (phi : SchwartzMap ℝ ℝ) (x : ℝ) :
 theorem aux_mainBumpOne_psi_T_fourier (phi : SchwartzMap ℝ ℝ)
     (xi : ℝ) :
     FourierTransform.fourier (fun x : ℝ ↦
-      (Codex.Reduction.SmoothingDecomposition.aux_T
+      (Codex.aux_sd_T
         (fun y ↦ aux_mainBumpOne_psi phi y) x : ℂ)) xi =
       (((3 * C_uniPair)⁻¹ : ℝ) : ℂ) *
         FourierTransform.fourier (fun x : ℝ ↦
-          (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ)) xi := by
+          (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ)) xi := by
   have hsmooth : ContDiff ℝ 1 (fun x : ℝ => phi x) := phi.smooth 1
   have hT := aux_mainBumpOne_T_const_mul (3 * C_uniPair)⁻¹ (fun x : ℝ => phi x)
     hsmooth
@@ -3363,7 +3372,7 @@ theorem aux_mainBumpOne_psi_T_fourier (phi : SchwartzMap ℝ ℝ)
 theorem aux_mainBumpOne_psi_T_hypotheses (phi : SchwartzMap ℝ ℝ)
     (hwin : cnWindow C_uniPair N_uniPair phi) :
     aux_mainAuxiliaryFourierHypotheses
-      (Codex.Reduction.SmoothingDecomposition.aux_T
+      (Codex.aux_sd_T
         (fun x ↦ aux_mainBumpOne_psi phi x)) := by
   let c : ℝ := 3 * C_uniPair
   have hc : 0 < c := by
@@ -3374,36 +3383,36 @@ theorem aux_mainBumpOne_psi_T_hypotheses (phi : SchwartzMap ℝ ℝ)
     have hne := Function.mem_support.mp hxi
     rw [aux_mainBumpOne_psi_T_fourier] at hne
     have hrawne : FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ)) xi ≠ 0 :=
+        (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ)) xi ≠ 0 :=
       (mul_ne_zero_iff.mp hne).2
     exact aux_mainBumpOne_T_fourier_support_window phi hwin
       (Function.mem_support.mpr hrawne)
   · intro m hm xi
     change ‖iteratedDeriv m
       (fun z : ℝ => FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T
+        (Codex.aux_sd_T
           (fun y ↦ aux_mainBumpOne_psi phi y) x : ℂ)) z) xi‖ ≤ 1
     have hformula :
         (fun z : ℝ => FourierTransform.fourier (fun x : ℝ ↦
-          (Codex.Reduction.SmoothingDecomposition.aux_T
+          (Codex.aux_sd_T
             (fun y ↦ aux_mainBumpOne_psi phi y) x : ℂ)) z) =
           fun z => (((3 * C_uniPair)⁻¹ : ℝ) : ℂ) *
             FourierTransform.fourier (fun x : ℝ ↦
-              (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ)) z := by
+              (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ)) z := by
       funext z
       exact aux_mainBumpOne_psi_T_fourier phi z
     rw [hformula, iteratedDeriv_const_mul_field]
     have hraw := aux_mainBumpOne_T_fourier_deriv_bound_window phi hwin m hm xi
     change ‖(((3 * C_uniPair)⁻¹ : ℝ) : ℂ) * iteratedDeriv m
       (FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ))) xi‖ ≤ 1
+        (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ))) xi‖ ≤ 1
     calc
       ‖(((3 * C_uniPair)⁻¹ : ℝ) : ℂ) * iteratedDeriv m
           (FourierTransform.fourier (fun x : ℝ ↦
-            (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ))) xi‖ =
+            (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ))) xi‖ =
           (3 * C_uniPair)⁻¹ * ‖iteratedDeriv m
             (FourierTransform.fourier (fun x : ℝ ↦
-              (Codex.Reduction.SmoothingDecomposition.aux_T (fun y ↦ phi y) x : ℂ))) xi‖ := by
+              (Codex.aux_sd_T (fun y ↦ phi y) x : ℂ))) xi‖ := by
             rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hc)]
       _ ≤ (3 * C_uniPair)⁻¹ * (3 * C_uniPair) := by
             exact mul_le_mul_of_nonneg_left hraw (inv_nonneg.mpr hc.le)
@@ -3584,24 +3593,27 @@ theorem aux_mainBumpOne_C_long_pos (n : ℕ) :
     (aux_mainBumpOneLong_two_nonneg n))
 
 /--
-\begin{lemma}\label{lem:mainbump1}
+**Lemma.**
+
 Let $J\ge1$. Then
-\begin{equation}\label{mainbump1}
+
+$$
 \|A_t(\phi_0)\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
 \le C_{\text{lem:mainbump1}}J^{\alpha(n)},
-\end{equation}
-where
-\begin{equation}\label{auto:main-bump-one-constant-definition}
-C_{\text{lem:mainbump1}}
-=2^4(3C_{\text{def:unipair}})^2C_{\text{lem:main\_aux1}}
-+2C_{\text{lem:mainbump1\_long}}.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.mainBumpOne`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`],
-[`Codex.Reduction.FinalReduction.mainAuxOne`],
-[`Codex.Reduction.FinalReduction.mainBumpOneLong`].
+where
+
+$$
+C_{\text{lem:mainbump1}}
+=2^4(3C_{\text{Universal pair}})^2C_{\text{lem:main\_aux1}}
++2C_{\text{lem:mainbump1\_long}}.
+$$
+
+See also [`Codex.mainBumpOne`],
+[`Codex.uniPair`],
+[`Codex.mainAuxOne`],
+[`Codex.mainBumpOneLong`].
 -/
 theorem mainBumpOne {n : ℕ} (hn : 2 ≤ n)
     (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
@@ -3615,16 +3627,16 @@ theorem mainBumpOne {n : ℕ} (hn : 2 ≤ n)
   have hpsi_eq : psi = aux_mainBumpOne_psi phi0 := by
     rfl
   have hTpsi : aux_mainAuxiliaryFourierHypotheses
-      (Codex.Reduction.SmoothingDecomposition.aux_T (fun x ↦ psi x)) := by
+      (Codex.aux_sd_T (fun x ↦ psi x)) := by
     rw [hpsi_eq]
     exact aux_mainBumpOne_psi_T_hypotheses phi0 hpair.1
   have hTpsiBump : aux_mainAuxiliaryFourierHypotheses
-      (Codex.Reduction.BumpFunctions.aux_T (fun x ↦ psi x)) := by
-    have hreal : Codex.Reduction.BumpFunctions.aux_T (fun x ↦ psi x) =
-        Codex.Reduction.SmoothingDecomposition.aux_T (fun x ↦ psi x) := by
+      (Codex.aux_T (fun x ↦ psi x)) := by
+    have hreal : Codex.aux_T (fun x ↦ psi x) =
+        Codex.aux_sd_T (fun x ↦ psi x) := by
       funext x
-      unfold Codex.Reduction.BumpFunctions.aux_T
-        Codex.Reduction.SmoothingDecomposition.aux_T
+      unfold Codex.aux_T
+        Codex.aux_sd_T
       rfl
     rw [hreal]
     exact hTpsi
@@ -3667,13 +3679,13 @@ theorem mainBumpOne {n : ℕ} (hn : 2 ≤ n)
   exact hrescaled
 
 /--
-\begin{lemma}[constant $C_{\text{lem:mainbump1}}$ \auto]\label{constant main bump one}
-\begin{equation}\label{constant main bump one bound}
-C_{\text{lem:mainbump1}}<\tfrac78 2^{610}<2^{610}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:mainbump1}}$).**
 
-See also [`Codex.Reduction.FinalReduction.mainBumpOne`].
+$$
+C_{\text{lem:mainbump1}}<\tfrac78 2^{610}<2^{610}.
+$$
+
+See also [`Codex.mainBumpOne`].
 -/
 theorem constantMainBumpOne {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpOne n < (7 / 8 : ℝ) * (2 : ℝ) ^ 610 := by
@@ -3692,7 +3704,7 @@ theorem constantMainBumpOne {n : ℕ} (hn : 2 ≤ n) :
       set_option exponentiation.threshold 1000 in
         norm_num [C_uniPair]
 
-/-- The constant in Lemma [`Codex.Reduction.FinalReduction.mainAuxTwo`]. -/
+/-- The constant in Lemma [`Codex.mainAuxTwo`]. -/
 noncomputable def C_mainAuxTwo (n : ℕ) : ℝ :=
   24 * C_mainAuxOne n
 
@@ -3727,8 +3739,10 @@ theorem aux_mainAuxTwo_chain_to_dyadicChain (J : ℕ) (hJ : 0 < J)
   intro j
   simp only [qfun, Fin.lastCases_castSucc]
 
-/-- The first auxiliary estimate, together with `bootstrap`, gives the dyadic
-variation estimate required by the short-long reduction. -/
+/--
+The first auxiliary estimate, together with `bootstrap`, gives the dyadic
+variation estimate required by the short-long reduction.
+-/
 theorem aux_mainAuxTwo_dyadic {n : ℕ} (hn : 2 ≤ n)
     (psi : SchwartzMap ℝ ℝ) (hpsi : aux_mainAuxiliaryTwoHypotheses psi)
     (f : ReductionNormalizedTuple n) :
@@ -3770,9 +3784,9 @@ theorem aux_mainAuxTwo_dyadic {n : ℕ} (hn : 2 ≤ n)
 /-- Complexification commutes with the logarithmic-derivative operator. -/
 theorem aux_mainAuxTwo_T_cast_eq (f : SchwartzMap ℝ ℝ) :
     (fun x : ℝ ↦
-      ((Codex.Reduction.BumpFunctions.aux_T
+      ((Codex.aux_T
         (fun y : ℝ ↦ (f y : ℝ)) : ℝ → ℝ) x : ℂ)) =
-      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ (f x : ℂ)) := by
+      Codex.aux_T (fun x : ℝ ↦ (f x : ℂ)) := by
   funext x
   have hf : ContDiff ℝ 1 (fun y : ℝ ↦ f y) := by
     simpa using f.smooth 1
@@ -3783,28 +3797,30 @@ theorem aux_mainAuxTwo_T_cast_eq (f : SchwartzMap ℝ ℝ) :
         ((deriv (fun y : ℝ ↦ y * f y) x : ℝ) : ℂ) := by
     simpa using ((hasDerivAt_const x Complex.ofRealCLM).clm_apply hdiff.hasDerivAt).deriv
   have hfun : (fun y : ℝ ↦ ((y * f y : ℝ) : ℂ)) =
-      Codex.Reduction.BumpFunctions.multiplicationOperatorX
+      Codex.multiplicationOperatorX
         (fun y : ℝ ↦ (f y : ℂ)) := by
     funext y
-    simp [Codex.Reduction.BumpFunctions.multiplicationOperatorX]
+    simp [Codex.multiplicationOperatorX]
   have hfunreal :
-      Codex.Reduction.BumpFunctions.multiplicationOperatorX
+      Codex.multiplicationOperatorX
         (fun y : ℝ ↦ (f y : ℝ)) = fun y : ℝ ↦ y * f y := by
     funext y
-    simp [Codex.Reduction.BumpFunctions.multiplicationOperatorX]
-  unfold Codex.Reduction.BumpFunctions.aux_T
+    simp [Codex.multiplicationOperatorX]
+  unfold Codex.aux_T
   rw [hfunreal, ← hfun, hcast]
 
-/-- The Fourier support assumption for `psi` is stable under the logarithmic
-derivative. -/
+/--
+The Fourier support assumption for `psi` is stable under the logarithmic
+derivative.
+-/
 theorem aux_mainAuxTwo_T_hyp (psi : SchwartzMap ℝ ℝ)
     (hpsi : aux_mainAuxiliaryTwoHypotheses psi) :
     aux_mainAuxiliaryFourierHypotheses
-      (Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ psi x)) := by
+      (Codex.aux_T (fun x : ℝ ↦ psi x)) := by
   have hTderiv : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
       ‖iteratedDeriv m (FourierTransform.fourier
         (fun x : ℝ ↦
-          ((Codex.Reduction.BumpFunctions.aux_T
+          ((Codex.aux_T
             (fun y : ℝ ↦ (psi y : ℝ)) : ℝ → ℝ) x : ℂ))) xi‖ ≤ 1 := by
     intro m hm xi
     rw [aux_mainAuxTwo_T_cast_eq psi]
@@ -3812,21 +3828,21 @@ theorem aux_mainAuxTwo_T_hyp (psi : SchwartzMap ℝ ℝ)
   refine ⟨?_, hTderiv⟩
   let F : ℝ → ℂ := FourierTransform.fourier (fun x : ℝ ↦ (psi x : ℂ))
   have hFsupp : Function.support F ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
     simpa [F, aux_mainAuxiliaryTwoHypotheses, aux_mainAuxiliaryHypotheses,
       aux_mainAuxiliaryFourierHypotheses] using hpsi.1.1
   have hannulus_closed : IsClosed
-      (Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2)) := by
-    unfold Codex.Reduction.BumpFunctions.aux_annulusOne
+      (Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2)) := by
+    unfold Codex.aux_annulusOne
     exact (isClosed_le continuous_const continuous_abs).inter
       (isClosed_le continuous_abs continuous_const)
   have hFtsupp : tsupport F ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) :=
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) :=
     closure_minimal hFsupp hannulus_closed
   have hderivSupp : Function.support (iteratedDeriv 1 F) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) :=
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) :=
     (subset_tsupport _).trans
-      ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset F 1).trans
+      ((Codex.aux_tsupport_iteratedDeriv_subset F 1).trans
         hFtsupp)
   intro xi hxi
   apply hderivSupp
@@ -3840,38 +3856,42 @@ theorem aux_mainAuxTwo_T_hyp (psi : SchwartzMap ℝ ℝ)
     simp [psiC, SchwartzMap.postcompCLM_apply]
   have hformula :
       FourierTransform.fourier
-        (Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ (psi x : ℂ))) xi =
+        (Codex.aux_T (fun x : ℝ ↦ (psi x : ℂ))) xi =
         -((xi : ℂ) * iteratedDeriv 1 F xi) := by
     unfold F
     rw [← hpsiC]
     change FourierTransform.fourier
-      (Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ psiC x)) xi = _
+      (Codex.aux_T (fun x : ℝ ↦ psiC x)) xi = _
     simpa [F] using
-      (Codex.Reduction.BumpFunctions.fourierDerivativeMul psiC 0 xi)
+      (Codex.fourierDerivativeMul psiC 0 xi)
   rw [aux_mainAuxTwo_T_cast_eq psi, hformula, hzero]
   simp
 
 /--
-\begin{lemma}\label{lem:main_aux2}
-Let $\psi$ satisfy \eqref{main_aux1_supp} and
-\eqref{auto:main-auxiliary-one-Fourier-derivative-assumption}. Assume also that
-\begin{equation}\label{auto:main-auxiliary-two-Fourier-derivative-assumption}
+**Lemma.**
+
+Let $\psi$ satisfy (`main_aux1_supp`) and (`auto:main-auxiliary-one-Fourier-derivative-assumption`).
+Assume also that
+
+$$
 |\widehat{T\psi}^{(m)}(\xi)|\le1,
 \qquad
 m\in[3),
 \quad
-\xi\in\R.
-\end{equation}
+\xi\in\mathbb{R}.
+$$
+
 Then
-\begin{equation}\label{main_aux2}
+
+$$
 \|A_t(\psi)\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
 \le C_{\text{lem:main\_aux2}}J^{\alpha(n)},
-\end{equation}
-where $C_{\text{lem:main\_aux2}}=24C_{\text{lem:main\_aux1}}$.
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.mainAuxTwo`],
-[`Codex.Reduction.FinalReduction.mainAuxOne`].
+where $C_{\text{lem:main\_aux2}}=24C_{\text{lem:main\_aux1}}$.
+
+See also [`Codex.mainAuxTwo`],
+[`Codex.mainAuxOne`].
 -/
 theorem mainAuxTwo {n : ℕ} (hn : 2 ≤ n) (psi : SchwartzMap ℝ ℝ)
     (hpsi : aux_mainAuxiliaryTwoHypotheses psi)
@@ -3886,14 +3906,13 @@ theorem mainAuxTwo {n : ℕ} (hn : 2 ≤ n) (psi : SchwartzMap ℝ ℝ)
     ring
 
 /--
-\begin{lemma}[constant $C_{\text{lem:main\_aux2}}$ \auto]
-\label{constant main auxiliary two}
-\begin{equation}\label{constant main auxiliary two bound}
-C_{\text{lem:main\_aux2}}<2^{578}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:main\_aux2}}$).**
 
-See also [`Codex.Reduction.FinalReduction.mainAuxTwo`].
+$$
+C_{\text{lem:main\_aux2}}<2^{578}.
+$$
+
+See also [`Codex.mainAuxTwo`].
 -/
 theorem constantMainAuxiliaryTwo {n : ℕ} (hn : 2 ≤ n) :
     C_mainAuxTwo n < (2 : ℝ) ^ 578 := by
@@ -3916,7 +3935,7 @@ theorem constantMainAuxiliaryTwo {n : ℕ} (hn : 2 ≤ n) :
         _ = (2 : ℝ) ^ (2 + 576) := by rw [← pow_add]
         _ = (2 : ℝ) ^ 578 := by norm_num
 
-/-- The constant in Lemma [`Codex.Reduction.FinalReduction.mainBumpTwo`]. -/
+/-- The constant in Lemma [`Codex.mainBumpTwo`]. -/
 noncomputable def C_mainBumpTwo (n : ℕ) : ℝ :=
   C_mainAuxTwo n * C_absDerivFourierTPhiThreeLe 2 ^ 2
 
@@ -3953,10 +3972,10 @@ theorem aux_mainBumpTwo_phiThree_fourier_support (b : windowBasedBumpFunctions)
     (k : ℤ) :
     Function.support (FourierTransform.fourier
       (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ))) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
   intro xi hxi
   have hmem := aux_mainBumpTwo_phiThree_fourier_support_small b k hxi
-  unfold Codex.Reduction.BumpFunctions.aux_annulusOne
+  unfold Codex.aux_annulusOne
   rcases hmem with hmem | hmem
   · constructor
     · rw [abs_of_nonpos (by linarith [hmem.2])]
@@ -3988,7 +4007,7 @@ theorem aux_mainBumpTwo_phiThree_deriv_zero_outside
       isClosed_Icc
   have hderivSupp : Function.support (iteratedDeriv m F) ⊆ Set.Icc (-1 : ℝ) 1 :=
     (subset_tsupport _).trans
-      ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset F m).trans
+      ((Codex.aux_tsupport_iteratedDeriv_subset F m).trans
         hFtsupp)
   change iteratedDeriv m F xi = 0
   apply Function.notMem_support.mp
@@ -4024,7 +4043,7 @@ theorem aux_mainBumpTwo_phiThree_T_fourier_formula
     (b : windowBasedBumpFunctions) (k : ℤ) (m : ℕ) (xi : ℝ) :
     iteratedDeriv m
       (FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T
+        (Codex.aux_sd_T
           (windowBasedBumpFunctions.phiThree b k) x : ℂ))) xi =
       - ((m : ℂ) * iteratedDeriv m
             (FourierTransform.fourier
@@ -4038,7 +4057,7 @@ theorem aux_mainBumpTwo_phiThree_T_fourier_formula
 theorem aux_mainBumpTwo_phiThree_T_fourier_support_small
     (b : windowBasedBumpFunctions) (k : ℤ) :
     Function.support (FourierTransform.fourier (fun x : ℝ ↦
-      (Codex.Reduction.SmoothingDecomposition.aux_T
+      (Codex.aux_sd_T
         (windowBasedBumpFunctions.phiThree b k) x : ℂ))) ⊆ aux_frequencyAnnulus := by
   intro xi hxi
   have hne := Function.mem_support.mp hxi
@@ -4057,7 +4076,7 @@ theorem aux_mainBumpTwo_phiThree_T_fourier_support_small
       aux_mainBumpTwo_frequencyAnnulus_closed
   have hderivSupp : Function.support (iteratedDeriv 1 F) ⊆ aux_frequencyAnnulus :=
     (subset_tsupport _).trans
-      ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset F 1).trans
+      ((Codex.aux_tsupport_iteratedDeriv_subset F 1).trans
         hFtsupp)
   apply hderivSupp
   exact Function.mem_support.mpr hderiv
@@ -4067,10 +4086,10 @@ theorem aux_mainBumpTwo_phiThree_T_deriv_zero_outside
     (hxi : xi ∉ Set.Icc (-1 : ℝ) 1) :
     iteratedDeriv m
       (FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T
+        (Codex.aux_sd_T
           (windowBasedBumpFunctions.phiThree b k) x : ℂ))) xi = 0 := by
   let F : ℝ → ℂ := FourierTransform.fourier (fun x : ℝ ↦
-    (Codex.Reduction.SmoothingDecomposition.aux_T
+    (Codex.aux_sd_T
       (windowBasedBumpFunctions.phiThree b k) x : ℂ))
   have hFtsupp : tsupport F ⊆ Set.Icc (-1 : ℝ) 1 :=
     closure_minimal
@@ -4079,7 +4098,7 @@ theorem aux_mainBumpTwo_phiThree_T_deriv_zero_outside
       isClosed_Icc
   have hderivSupp : Function.support (iteratedDeriv m F) ⊆ Set.Icc (-1 : ℝ) 1 :=
     (subset_tsupport _).trans
-      ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset F m).trans
+      ((Codex.aux_tsupport_iteratedDeriv_subset F m).trans
         hFtsupp)
   change iteratedDeriv m F xi = 0
   apply Function.notMem_support.mp
@@ -4090,7 +4109,7 @@ theorem aux_mainBumpTwo_phiThree_T_deriv_bound (b : windowBasedBumpFunctions)
     (k : ℤ) (m : ℕ) (hm : m < 3) (xi : ℝ) :
     ‖iteratedDeriv m
       (FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T
+        (Codex.aux_sd_T
           (windowBasedBumpFunctions.phiThree b k) x : ℂ))) xi‖ ≤
       C_absDerivFourierTPhiThreeLe 2 := by
   by_cases hxi : xi ∈ Set.Icc (-1 : ℝ) 1
@@ -4144,11 +4163,11 @@ theorem aux_mainBumpTwo_phiThree_smooth (b : windowBasedBumpFunctions)
 theorem aux_mainBumpTwo_psi_T_fourier (b : windowBasedBumpFunctions) (k : ℤ)
     (xi : ℝ) :
     FourierTransform.fourier (fun x : ℝ ↦
-      (Codex.Reduction.SmoothingDecomposition.aux_T
+      (Codex.aux_sd_T
         (fun y ↦ aux_mainBumpTwo_psi b k y) x : ℂ)) xi =
       (((C_absDerivFourierTPhiThreeLe 2)⁻¹ : ℝ) : ℂ) *
         FourierTransform.fourier (fun x : ℝ ↦
-          (Codex.Reduction.SmoothingDecomposition.aux_T
+          (Codex.aux_sd_T
             (windowBasedBumpFunctions.phiThree b k) x : ℂ)) xi := by
   rw [show (fun y : ℝ ↦ aux_mainBumpTwo_psi b k y) =
       fun y ↦ (C_absDerivFourierTPhiThreeLe 2)⁻¹ *
@@ -4207,14 +4226,14 @@ theorem aux_mainBumpTwo_psi_hypotheses (b : windowBasedBumpFunctions)
     rw [← aux_mainBumpOne_T_cast_eq _ hsmooth]
     change ‖iteratedDeriv m
       (fun z : ℝ => FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T
+        (Codex.aux_sd_T
           (fun y ↦ aux_mainBumpTwo_psi b k y) x : ℂ)) z) xi‖ ≤ 1
     have hformula :
         (fun z : ℝ => FourierTransform.fourier (fun x : ℝ ↦
-          (Codex.Reduction.SmoothingDecomposition.aux_T
+          (Codex.aux_sd_T
             (fun y ↦ aux_mainBumpTwo_psi b k y) x : ℂ)) z) =
           fun z => ((c⁻¹ : ℝ) : ℂ) * FourierTransform.fourier (fun x : ℝ ↦
-            (Codex.Reduction.SmoothingDecomposition.aux_T
+            (Codex.aux_sd_T
               (windowBasedBumpFunctions.phiThree b k) x : ℂ)) z := by
       funext z
       simpa [c] using aux_mainBumpTwo_psi_T_fourier b k z
@@ -4222,16 +4241,16 @@ theorem aux_mainBumpTwo_psi_hypotheses (b : windowBasedBumpFunctions)
     have hraw := aux_mainBumpTwo_phiThree_T_deriv_bound b k m hm xi
     change ‖((c⁻¹ : ℝ) : ℂ) * iteratedDeriv m
       (FourierTransform.fourier (fun x : ℝ ↦
-        (Codex.Reduction.SmoothingDecomposition.aux_T
+        (Codex.aux_sd_T
           (windowBasedBumpFunctions.phiThree b k) x : ℂ))) xi‖ ≤ 1
     calc
       ‖((c⁻¹ : ℝ) : ℂ) * iteratedDeriv m
           (FourierTransform.fourier (fun x : ℝ ↦
-            (Codex.Reduction.SmoothingDecomposition.aux_T
+            (Codex.aux_sd_T
               (windowBasedBumpFunctions.phiThree b k) x : ℂ))) xi‖ =
           c⁻¹ * ‖iteratedDeriv m
             (FourierTransform.fourier (fun x : ℝ ↦
-              (Codex.Reduction.SmoothingDecomposition.aux_T
+              (Codex.aux_sd_T
                 (windowBasedBumpFunctions.phiThree b k) x : ℂ))) xi‖ := by
             rw [norm_mul, Complex.norm_real, Real.norm_eq_abs,
               abs_of_pos (inv_pos.mpr hc)]
@@ -4291,22 +4310,25 @@ theorem aux_mainBumpTwo_variationBound_of_oneRescaled {n : ℕ} (lambda : ℝ)
       hA J hJ t'
 
 /--
-\begin{lemma}\label{lem:mainbump2}
+**Lemma.**
+
 For all $k\ge-2$,
-\begin{equation}\label{mainbump2}
+
+$$
 \|A_t(\varphi_{0,k})\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
 \le C_{\text{lem:mainbump2}}2^{-2k}J^{\alpha(n)},
-\end{equation}
+$$
+
 where
-\begin{equation}\label{auto:main-bump-two-constant-definition}
+
+$$
 C_{\text{lem:mainbump2}}
 =C_{\text{lem:main\_aux2}}C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},2}^2.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.mainBumpTwo`],
-[`Codex.Reduction.FinalReduction.mainAuxTwo`],
-[`Codex.Reduction.SmoothingDecomposition.absDerivFourierTPhiThreeLe`].
+See also [`Codex.mainBumpTwo`],
+[`Codex.mainAuxTwo`],
+[`Codex.absDerivFourierTPhiThreeLe`].
 -/
 theorem mainBumpTwo {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
@@ -4386,13 +4408,13 @@ theorem aux_mainBumpTwo_C_absDerivFourierTPhiThreeLe_two_sharp :
       C_uniPair]
 
 /--
-\begin{lemma}[constant $C_{\text{lem:mainbump2}}$ \auto]\label{constant main bump two}
-\begin{equation}\label{constant main bump two bound}
-C_{\text{lem:mainbump2}}<\tfrac{27}{32}2^{658}<2^{658}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:mainbump2}}$).**
 
-See also [`Codex.Reduction.FinalReduction.mainBumpTwo`].
+$$
+C_{\text{lem:mainbump2}}<\tfrac{27}{32}2^{658}<2^{658}.
+$$
+
+See also [`Codex.mainBumpTwo`].
 -/
 theorem constantMainBumpTwo {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpTwo n < (27 / 32 : ℝ) * (2 : ℝ) ^ 658 := by
@@ -4437,7 +4459,7 @@ theorem constantMainBumpTwo {n : ℕ} (hn : 2 ≤ n) :
       set_option exponentiation.threshold 1000 in
         ring
 
-/-- The constant in Lemma [`Codex.Reduction.FinalReduction.leftBump`]. -/
+/-- The constant in Lemma [`Codex.leftBump`]. -/
 noncomputable def C_leftBump (n : ℕ) : ℝ :=
   C_mainAuxTwo n * ((2 : ℝ) ^ 14 * C_uniPair) ^ 2
 
@@ -4512,7 +4534,7 @@ theorem aux_leftBump_psi_hypotheses (b : windowBasedBumpFunctions) :
     rw [← aux_mainBumpOne_T_cast_eq _ hsmooth]
     change ‖iteratedDeriv m
       (fun z : ℝ => FourierTransform.fourier (fun x : ℝ =>
-        (Codex.Reduction.SmoothingDecomposition.aux_T
+        (Codex.aux_sd_T
           (fun y => aux_leftBump_psi b y) x : ℂ)) z) xi‖ ≤ 1
     have hsmoothTheta : ContDiff ℝ 1
         (windowBasedBumpFunctions.thetaTilde b) := by
@@ -4524,10 +4546,10 @@ theorem aux_leftBump_psi_hypotheses (b : windowBasedBumpFunctions) :
       exact (thetaTildeSchwartz b).smooth 1
     have hformula :
         (fun z : ℝ => FourierTransform.fourier (fun x : ℝ =>
-          (Codex.Reduction.SmoothingDecomposition.aux_T
+          (Codex.aux_sd_T
             (fun y => aux_leftBump_psi b y) x : ℂ)) z) =
           fun z => ((c⁻¹ : ℝ) : ℂ) * FourierTransform.fourier
-            (fun x : ℝ => (Codex.Reduction.SmoothingDecomposition.aux_T
+            (fun x : ℝ => (Codex.aux_sd_T
               (windowBasedBumpFunctions.thetaTilde b) x : ℂ)) z := by
       funext z
       rw [show (fun y : ℝ => aux_leftBump_psi b y) =
@@ -4540,16 +4562,16 @@ theorem aux_leftBump_psi_hypotheses (b : windowBasedBumpFunctions) :
     have hraw := tThetaTildeFourier_deriv_bound b m hm xi
     change ‖((c⁻¹ : ℝ) : ℂ) * iteratedDeriv m
       (FourierTransform.fourier (fun x : ℝ =>
-        (Codex.Reduction.SmoothingDecomposition.aux_T
+        (Codex.aux_sd_T
           (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) xi‖ ≤ 1
     calc
       ‖((c⁻¹ : ℝ) : ℂ) * iteratedDeriv m
           (FourierTransform.fourier (fun x : ℝ =>
-            (Codex.Reduction.SmoothingDecomposition.aux_T
+            (Codex.aux_sd_T
               (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) xi‖ =
           c⁻¹ * ‖iteratedDeriv m
             (FourierTransform.fourier (fun x : ℝ =>
-              (Codex.Reduction.SmoothingDecomposition.aux_T
+              (Codex.aux_sd_T
                 (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) xi‖ := by
             rw [norm_mul, Complex.norm_real, Real.norm_eq_abs,
               abs_of_pos (inv_pos.mpr hc)]
@@ -4582,17 +4604,17 @@ theorem aux_leftBump_phiOne_eq_scaled_thetaTilde (b : windowBasedBumpFunctions)
       simp [hy, hy']
   have hleft :
       (∫ y : ℝ, aux_indicator (Set.Ici 0) y *
-        Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+        Codex.aux_realRescaled a
           (windowBasedBumpFunctions.theta b) (x - y)) =
         a⁻¹ * ∫ y : ℝ, g (a⁻¹ * y) := by
     calc
       (∫ y : ℝ, aux_indicator (Set.Ici 0) y *
-          Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+          Codex.aux_realRescaled a
             (windowBasedBumpFunctions.theta b) (x - y)) =
           ∫ y : ℝ, a⁻¹ * g (a⁻¹ * y) := by
             apply integral_congr_ae
             filter_upwards [] with y
-            dsimp [g, Codex.Reduction.SmoothingDecomposition.aux_realRescaled]
+            dsimp [g, Codex.aux_realRescaled]
             rw [hind]
             ring_nf
       _ = a⁻¹ * ∫ y : ℝ, g (a⁻¹ * y) := by
@@ -4600,13 +4622,13 @@ theorem aux_leftBump_phiOne_eq_scaled_thetaTilde (b : windowBasedBumpFunctions)
   have hchange := Measure.integral_comp_inv_mul_left g a
   rw [abs_of_pos ha, smul_eq_mul] at hchange
   change (∫ y : ℝ, aux_indicator (Set.Ici 0) y *
-      Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+      Codex.aux_realRescaled a
         (windowBasedBumpFunctions.theta b) (x - y)) =
     a * (a⁻¹ * ∫ y : ℝ, aux_indicator (Set.Ici 0) y *
       windowBasedBumpFunctions.theta b (a⁻¹ * x - y))
   calc
     (∫ y : ℝ, aux_indicator (Set.Ici 0) y *
-        Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+        Codex.aux_realRescaled a
           (windowBasedBumpFunctions.theta b) (x - y)) =
         a⁻¹ * ∫ y : ℝ, g (a⁻¹ * y) := hleft
     _ = a⁻¹ * (a * ∫ y : ℝ, g y) := by rw [hchange]
@@ -4618,22 +4640,25 @@ theorem aux_leftBump_phiOne_eq_scaled_thetaTilde (b : windowBasedBumpFunctions)
 
 
 /--
-\begin{lemma}\label{lem:leftbump}
+**Lemma.**
+
 For every $k\le-1$,
-\begin{equation}\label{leftbump}
+
+$$
 \|A_t(\varphi_{1,k})\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
 \le C_{\text{lem:leftbump}}2^{2k}J^{\alpha(n)},
-\end{equation}
-where
-\begin{equation}\label{auto:left-bump-constant-definition}
-C_{\text{lem:leftbump}}
-=C_{\text{lem:main\_aux2}}(2^{14}C_{\text{def:unipair}})^2.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.leftBump`],
-[`Codex.Reduction.FinalReduction.mainAuxTwo`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`].
+where
+
+$$
+C_{\text{lem:leftbump}}
+=C_{\text{lem:main\_aux2}}(2^{14}C_{\text{Universal pair}})^2.
+$$
+
+See also [`Codex.leftBump`],
+[`Codex.mainAuxTwo`],
+[`Codex.uniPair`].
 -/
 theorem leftBump {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
@@ -4700,13 +4725,13 @@ theorem leftBump {n : ℕ} (hn : 2 ≤ n)
 
 
 /--
-\begin{lemma}[constant $C_{\text{lem:leftbump}}$ \auto]\label{constant left bump}
-\begin{equation}\label{constant left bump bound}
-C_{\text{lem:leftbump}}<\tfrac{33}{64}2^{636}<2^{636}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:leftbump}}$).**
 
-See also [`Codex.Reduction.FinalReduction.leftBump`].
+$$
+C_{\text{lem:leftbump}}<\tfrac{33}{64}2^{636}<2^{636}.
+$$
+
+See also [`Codex.leftBump`].
 -/
 theorem constantLeftBump {n : ℕ} (hn : 2 ≤ n) :
     C_leftBump n < (33 / 64 : ℝ) * (2 : ℝ) ^ 636 := by
@@ -4867,9 +4892,9 @@ noncomputable def aux_leftBumpOneShort_integralM
 
 noncomputable def aux_leftBumpOneShort_scaleK
     (s : ℝ) (psi : SchwartzMap ℝ ℝ) (t : ℝ) : KKernel 1 :=
-  fun z => t⁻¹ * Codex.Reduction.BumpFunctions.aux_realRescaled (s * t)
+  fun z => t⁻¹ * Codex.aux_bf_realRescaled (s * t)
       (fun x => psi x) (z.1 0 + z.2) *
-    Codex.Reduction.BumpFunctions.aux_realRescaled (s * t)
+    Codex.aux_bf_realRescaled (s * t)
       (fun x => psi x) z.2
 
 theorem aux_leftBumpOneShort_mToK_integralM_eq_setIntegral
@@ -4900,9 +4925,9 @@ theorem aux_leftBumpOneShort_scaleK_eq_mToK_tensor
             aux_mainAuxOne_windowSchwartz psi (s * t) (mul_pos hs ht) (y.2 0)) z := by
   funext z
   unfold aux_leftBumpOneShort_scaleK
-  rw [Codex.Reduction.AToLambda.aux_aToLambda.mToK_oneTensorSquare_eq]
+  rw [Codex.aux_aToLambda.mToK_oneTensorSquare_eq]
   rw [aux_mainAuxOne_windowSchwartz_apply, aux_mainAuxOne_windowSchwartz_apply]
-  simp only [Codex.Reduction.BumpFunctions.aux_realRescaled, aux_windowRescale]
+  simp only [Codex.aux_bf_realRescaled, aux_windowRescale]
   ring
 
 theorem aux_leftBumpOneShort_prism_scaleK_eq_tensor
@@ -4935,13 +4960,13 @@ theorem aux_leftBumpOneShort_energy_eq_scaleK_prism
       ENNReal.ofReal
         (prismBrascampLiebForm (d + 1) 1 (by omega) (by omega)
           (aux_leftBumpOneShort_scaleK s psi t)
-          (fun i x => Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f i x)) := by
+          (fun i x => Codex.aux_aToLambda.transformedFunctions f i x)) := by
   rw [← aux_mainAuxOne_twistedAverage_window psi (s * t) (mul_pos hs ht)]
   rw [aToLambda_transformed]
   rw [← ENNReal.ofReal_mul (inv_nonneg.mpr ht.le)]
   congr 1
   exact (aux_leftBumpOneShort_prism_scaleK_eq_tensor d s hs psi t ht
-    (Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f)).symm
+    (Codex.aux_aToLambda.transformedFunctions f)).symm
 
 
 theorem aux_leftBumpOneShort_prism_parameter_integrable
@@ -4984,10 +5009,10 @@ theorem aux_leftBumpOneShort_prism_scaleK_nonnegative
   apply aux_prism_one_rankOne_nonnegative (d + 1) (by omega) 1 (by norm_num)
     (aux_mainAuxOne_windowSchwartz psi (s * t) (mul_pos hs ht)) F
   · exact mToK_memW0 (d + 1) 1 (by omega) (by omega) _
-      (Codex.Reduction.AToLambda.aux_aToLambda.oneTensorSquare_memW0
+      (Codex.aux_aToLambda.oneTensorSquare_memW0
         (aux_mainAuxOne_windowSchwartz psi (s * t) (mul_pos hs ht)))
   · intro u
-    rw [Codex.Reduction.AToLambda.aux_aToLambda.mToK_oneTensorSquare_eq]
+    rw [Codex.aux_aToLambda.mToK_oneTensorSquare_eq]
     ring
 
 theorem aux_leftBumpOneShort_scaleK_triple_integrable
@@ -4997,8 +5022,8 @@ theorem aux_leftBumpOneShort_scaleK_triple_integrable
       ((volume.restrict (Set.Icc (1 : ℝ) 2)).prod volume) := by
   let μ : Measure ℝ := volume.restrict (Set.Icc (1 : ℝ) 2)
   let H : ℝ × EuclideanSpace ℝ (Fin 2) → ℝ := fun q =>
-    Codex.Reduction.BumpFunctions.aux_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
-      Codex.Reduction.BumpFunctions.aux_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹
+    Codex.aux_bf_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
+      Codex.aux_bf_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹
   have hH : Integrable H (μ.prod volume) := by
     simpa [μ, H] using
       (integralFctKernelAtScale_triple_integrable psi s hs).re
@@ -5039,8 +5064,10 @@ theorem aux_leftBumpOneShort_scaleK_triple_integrable
   simp
   ring
 
-/-- The parameterized version of the absolute-integrability core for a first prism.
-The scale parameter is carried inertly through the standard prism coordinates. -/
+/--
+The parameterized version of the absolute-integrability core for a first prism.
+The scale parameter is carried inertly through the standard prism coordinates.
+-/
 theorem aux_leftBumpOneShort_parameterized_prismIntegrand
     (d : ℕ) (μ : Measure ℝ) [SFinite μ]
     (K : ℝ → KKernel 1)
@@ -5260,7 +5287,7 @@ theorem aux_leftBumpOneShort_scaleK_prism_joint_integrable
   exact aux_leftBumpOneShort_parameterized_prismIntegrand d
     (volume.restrict (Set.Icc (1 : ℝ) 2)) (aux_leftBumpOneShort_scaleK s psi)
     (by
-      unfold aux_leftBumpOneShort_scaleK Codex.Reduction.BumpFunctions.aux_realRescaled
+      unfold aux_leftBumpOneShort_scaleK Codex.aux_bf_realRescaled
       fun_prop) F (aux_leftBumpOneShort_scaleK_prism_core_integrable d s hs psi F)
 
 /-- Continuous `A`-to-`Λ₁` for the integral kernel used in the two short estimates. -/
@@ -5274,9 +5301,9 @@ theorem aux_leftBumpOneShort_continuous_aToLambda_integralFct
       ENNReal.ofReal
         (prismForm (d + 1) 1 (by omega) (by omega)
           (aux_leftBumpOneShort_integralM s psi)
-          (fun i x => Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f i x)) := by
+          (fun i x => Codex.aux_aToLambda.transformedFunctions f i x)) := by
   let F : Fin (d + 1) → SchwartzMap (RealVector (d + 1)) ℝ :=
-    Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f
+    Codex.aux_aToLambda.transformedFunctions f
   have hInt := aux_leftBumpOneShort_scaleK_prism_joint_integrable d s hs psi F
   have hPint := aux_leftBumpOneShort_prism_parameter_integrable
     (aux_leftBumpOneShort_scaleK s psi) F hInt
@@ -5309,8 +5336,6 @@ theorem aux_leftBumpOneShort_continuous_aToLambda_integralFct
 
 /-! ### First short-variation Whitney normalization -/
 
-open Codex.Preliminaries.Notation
-open Codex.MainArgument.MainInduction
 
 theorem aux_leftBumpOneShort_bracket_inv_mul_le (t x : ℝ) (ht : 1 ≤ t) :
     bracketBump (t⁻¹ * x) ≤ t * bracketBump x := by
@@ -5328,7 +5353,7 @@ theorem aux_leftBumpOneShort_bracket_inv_mul_le (t x : ℝ) (ht : 1 ≤ t) :
 theorem aux_leftBumpOneShort_phiFour_rescaled_bound
     (b : windowBasedBumpFunctions) (k : ℤ) (t u : ℝ)
     (ht : t ∈ Set.Icc (1 : ℝ) 2) :
-    |Codex.Reduction.BumpFunctions.aux_realRescaled t
+    |Codex.aux_bf_realRescaled t
         (windowBasedBumpFunctions.phiFour b k) u| ≤
       (2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2 *
         bracketBump (u - t * (2 : ℝ) ^ (-k)) ^ 2 := by
@@ -5506,9 +5531,9 @@ theorem aux_leftBumpOneShort_offcenter_rhs_le_whitney (v : RealPlane) :
 theorem aux_leftBumpOneShort_integrand_bound
     (b : windowBasedBumpFunctions) (k : ℤ) (t : ℝ)
     (ht : t ∈ Set.Icc (1 : ℝ) 2) (v : RealPlane) :
-    |Codex.Reduction.BumpFunctions.aux_realRescaled t
+    |Codex.aux_bf_realRescaled t
         (windowBasedBumpFunctions.phiFour b k) v.1 *
-      Codex.Reduction.BumpFunctions.aux_realRescaled t
+      Codex.aux_bf_realRescaled t
         (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| ≤
       ((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) ^ 2 *
         (bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 *
@@ -5525,9 +5550,9 @@ theorem aux_leftBumpOneShort_integrand_bound
   have hB1 : 0 ≤ bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2 := by positivity
   rw [abs_mul, abs_mul, abs_of_nonneg htinv]
   calc
-    |Codex.Reduction.BumpFunctions.aux_realRescaled t
+    |Codex.aux_bf_realRescaled t
           (windowBasedBumpFunctions.phiFour b k) v.1| *
-        |Codex.Reduction.BumpFunctions.aux_realRescaled t
+        |Codex.aux_bf_realRescaled t
           (windowBasedBumpFunctions.phiFour b k) v.2| * t⁻¹ ≤
         (((2 : ℝ) ^ (k + 1) * C_thetaPrimitive 2) *
           bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2) *
@@ -5577,16 +5602,16 @@ theorem aux_leftBumpOneShort_kernel_decay
     exact ((h0.inv₀ h0ne).pow 2).mul ((h1.inv₀ h1ne).pow 2)
   have hBint : IntegrableOn B (Set.Icc (1 : ℝ) 2) := hBcont.integrableOn_Icc
   have hint : ∫ t : ℝ in Set.Icc (1 : ℝ) 2,
-      |Codex.Reduction.BumpFunctions.aux_realRescaled t
+      |Codex.aux_bf_realRescaled t
           (windowBasedBumpFunctions.phiFour b k) v.1 *
-        Codex.Reduction.BumpFunctions.aux_realRescaled t
+        Codex.aux_bf_realRescaled t
           (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| ≤
       A ^ 2 * ∫ t : ℝ in Set.Icc (1 : ℝ) 2, B t := by
     calc
       ∫ t : ℝ in Set.Icc (1 : ℝ) 2,
-          |Codex.Reduction.BumpFunctions.aux_realRescaled t
+          |Codex.aux_bf_realRescaled t
               (windowBasedBumpFunctions.phiFour b k) v.1 *
-            Codex.Reduction.BumpFunctions.aux_realRescaled t
+            Codex.aux_bf_realRescaled t
               (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| ≤
           ∫ t : ℝ in Set.Icc (1 : ℝ) 2, A ^ 2 * B t := by
             apply MeasureTheory.setIntegral_mono_of_nonneg
@@ -5603,29 +5628,29 @@ theorem aux_leftBumpOneShort_kernel_decay
   have hoff := thetaTOffcenter k hk v.1 v.2
   change |Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
       ∫ t : ℝ in Set.Icc 1 2,
-        Codex.Reduction.BumpFunctions.aux_realRescaled t
+        Codex.aux_bf_realRescaled t
           (windowBasedBumpFunctions.phiFour b k) v.1 *
-        Codex.Reduction.BumpFunctions.aux_realRescaled t
+        Codex.aux_bf_realRescaled t
           (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| ≤ _
   calc
     |Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
         ∫ t : ℝ in Set.Icc 1 2,
-          Codex.Reduction.BumpFunctions.aux_realRescaled t
+          Codex.aux_bf_realRescaled t
             (windowBasedBumpFunctions.phiFour b k) v.1 *
-          Codex.Reduction.BumpFunctions.aux_realRescaled t
+          Codex.aux_bf_realRescaled t
             (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| =
         Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
           |∫ t : ℝ in Set.Icc 1 2,
-            Codex.Reduction.BumpFunctions.aux_realRescaled t
+            Codex.aux_bf_realRescaled t
               (windowBasedBumpFunctions.phiFour b k) v.1 *
-            Codex.Reduction.BumpFunctions.aux_realRescaled t
+            Codex.aux_bf_realRescaled t
               (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| := by
               rw [abs_mul, abs_of_nonneg hc]
     _ ≤ Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
         ∫ t : ℝ in Set.Icc 1 2,
-          |Codex.Reduction.BumpFunctions.aux_realRescaled t
+          |Codex.aux_bf_realRescaled t
               (windowBasedBumpFunctions.phiFour b k) v.1 *
-            Codex.Reduction.BumpFunctions.aux_realRescaled t
+            Codex.aux_bf_realRescaled t
               (windowBasedBumpFunctions.phiFour b k) v.2 * t⁻¹| :=
       mul_le_mul_of_nonneg_left abs_integral_le_integral_abs hc
     _ ≤ Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2) *
@@ -5782,8 +5807,8 @@ theorem aux_leftBumpOneShort_integralFct_plane_fourier_support
       (fun v : RealPlane => integralFctKernel (fun x : ℝ => psi x)
         (WithLp.toLp 2 ![v.1, v.2]))) ⊆
       {v : EuclideanSpace ℝ (Fin 2) |
-        v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
-        v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)} := by
+        v 0 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+        v 1 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)} := by
   have hbase := integralFct psi hband 0
   have hcoord : (fun u : EuclideanSpace ℝ (Fin 2) =>
       (integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![u 0, u 1]) : ℂ)) =
@@ -5796,7 +5821,7 @@ theorem aux_leftBumpOneShort_integralFct_plane_fourier_support
         (aux_integralFctKernelAtScale ((2 : ℝ) ^ (0 : ℤ))
           (fun x : ℝ => psi x) u : ℂ))) := by
     simpa [aux_planeFourier, hcoord, aux_integralFctKernelAtScale,
-      Codex.Preliminaries.Notation.rescaled] using hz
+      Codex.rescaled] using hz
   exact hbase.2.2.2 (hbase.2.2.1 hz')
 
 theorem aux_leftBumpOneShort_integralFct_plane_fourier_support_smul
@@ -5809,8 +5834,8 @@ theorem aux_leftBumpOneShort_integralFct_plane_fourier_support_smul
       (fun v : RealPlane => c * integralFctKernel (fun x : ℝ => psi x)
         (WithLp.toLp 2 ![v.1, v.2]))) ⊆
       {v : EuclideanSpace ℝ (Fin 2) |
-        v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
-        v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)} := by
+        v 0 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+        v 1 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)} := by
   intro z hz
   have hne := Function.mem_support.mp hz
   rw [aux_leftBumpOneShort_planeFourier_const_mul] at hne
@@ -5826,7 +5851,7 @@ theorem aux_leftBumpOneShort_phiFourSchwartz_support
     (b : windowBasedBumpFunctions) (k : ℤ) :
     Function.support (FourierTransform.fourier
       (fun x : ℝ => (phiFourSchwartz b k x : ℂ))) ⊆
-        Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+        Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
   intro xi hxi
   have hraw : xi ∈ Function.support (FourierTransform.fourier
       (fun x : ℝ => (windowBasedBumpFunctions.phiFour b k x : ℂ))) := by
@@ -5843,7 +5868,7 @@ theorem aux_leftBumpOneShort_integralFct_base_symmetric
     integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.1, v.2]) =
       integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.2, v.1]) := by
   have hsym := (integralFct psi hband 0).1
-  simpa [aux_integralFctKernelAtScale, Codex.Preliminaries.Notation.rescaled,
+  simpa [aux_integralFctKernelAtScale, Codex.rescaled,
     aux_swapTwo] using hsym (WithLp.toLp 2 ![v.1, v.2])
 
 theorem aux_leftBumpOneShort_integralFct_base_positive
@@ -5851,17 +5876,17 @@ theorem aux_leftBumpOneShort_integralFct_base_positive
     (hband : Function.support (FourierTransform.fourier
       (fun x : ℝ => (psi x : ℂ))) ⊆
         Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1)
-    (g : ℝ → ℝ) (hg : Codex.Reduction.BumpFunctions.aux_bounded g) :
+    (g : ℝ → ℝ) (hg : Codex.aux_bounded g) :
     0 ≤ ∫ u : EuclideanSpace ℝ (Fin 2),
       g (u 0) * g (u 1) * integralFctKernel (fun x : ℝ => psi x) u := by
   have hpos := (integralFct psi hband 0).2.1 g hg
-  simpa [aux_integralFctKernelAtScale, Codex.Preliminaries.Notation.rescaled] using hpos
+  simpa [aux_integralFctKernelAtScale, Codex.rescaled] using hpos
 
 noncomputable def aux_leftBumpOneShort_integralFctWhitneyData
     (psi : SchwartzMap ℝ ℝ)
     (hann : Function.support (FourierTransform.fourier
       (fun x : ℝ => (psi x : ℂ))) ⊆
-        Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2))
+        Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2))
     (hband : Function.support (FourierTransform.fourier
       (fun x : ℝ => (psi x : ℂ))) ⊆
         Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1)
@@ -5872,8 +5897,8 @@ noncomputable def aux_leftBumpOneShort_integralFctWhitneyData
       (fun v : RealPlane =>
         c * integralFctKernel (fun x : ℝ => psi x) (WithLp.toLp 2 ![v.1, v.2]))) ⊆
         {v : EuclideanSpace ℝ (Fin 2) |
-          v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
-          v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)})
+          v 0 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+          v 1 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)})
     (hdiag : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
       ‖iteratedDeriv m
         (fun z : ℝ => aux_planeFourier
@@ -5976,7 +6001,7 @@ noncomputable def aux_leftBumpOneShort_whitneyData
     Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2)
   have hann : Function.support (FourierTransform.fourier
       (fun x : ℝ => (psi x : ℂ))) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
     dsimp [psi]
     exact aux_leftBumpOneShort_phiFourSchwartz_support b k
   have hband : Function.support (FourierTransform.fourier
@@ -5996,8 +6021,8 @@ noncomputable def aux_leftBumpOneShort_whitneyData
       (fun v : RealPlane => c * integralFctKernel (fun x : ℝ => psi x)
         (WithLp.toLp 2 ![v.1, v.2]))) ⊆
       {v : EuclideanSpace ℝ (Fin 2) |
-        v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
-        v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)} :=
+        v 0 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+        v 1 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)} :=
     aux_leftBumpOneShort_integralFct_plane_fourier_support_smul psi hband c
   have hdecay : ∀ v : RealPlane,
       |c * integralFctKernel (fun x : ℝ => psi x)
@@ -6571,16 +6596,16 @@ theorem aux_leftBumpOneShort_prismForm_const_mul
       ∫ x : RealVector (n - 1 + 1),
         (c * ∫ p : RealVector (1 - 1),
           M (mToKPoint 1 (by omega)
-            (y.2 - y.1, Codex.Preliminaries.KKernels.coordinateSum y.1 +
-              Codex.Preliminaries.KKernels.coordinateSum x) p)) *
+            (y.2 - y.1, Codex.coordinateSum y.1 +
+              Codex.coordinateSum x) p)) *
           ∏ h : Fin 1 → Fin 2, ∏ i : Fin (n - 1 + 1),
             F (prismIndex (by omega) hn i)
               (prismPoint (by omega) hn y x h i)) =
       fun y => c * ∫ x : RealVector (n - 1 + 1),
         (∫ p : RealVector (1 - 1),
           M (mToKPoint 1 (by omega)
-            (y.2 - y.1, Codex.Preliminaries.KKernels.coordinateSum y.1 +
-              Codex.Preliminaries.KKernels.coordinateSum x) p)) *
+            (y.2 - y.1, Codex.coordinateSum y.1 +
+              Codex.coordinateSum x) p)) *
           ∏ h : Fin 1 → Fin 2, ∏ i : Fin (n - 1 + 1),
             F (prismIndex (by omega) hn i)
               (prismPoint (by omega) hn y x h i) by
@@ -6608,7 +6633,7 @@ theorem aux_leftBumpOneShort_zero_energy_sum
         (prismForm (d + 1) 1 (by omega) (by omega)
           (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi)
           (fun i x =>
-            Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1 i x))) :
+            Codex.aux_aToLambda.transformedFunctions f.1 i x))) :
     ∑ j : Fin J, ENNReal.ofReal P * E j = 0 := by
   apply Finset.sum_eq_zero
   intro j _
@@ -6748,18 +6773,18 @@ theorem aux_leftBumpOneShort_scaled_integralM_prefix
         (prismForm (d + 1) 1 (by omega) (by omega)
           (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi)
           (fun i x =>
-            Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1 i x))) :
+            Codex.aux_aToLambda.transformedFunctions f.1 i x))) :
     ∑ j : Fin J, ENNReal.ofReal P * E j ≤
       ENNReal.ofReal (D * C_inductPositiveTermsReductionWhitney (d + 1)) *
         ENNReal.ofReal ((J : ℝ) ^ variationExponent (d + 1)) := by
   classical
   let F : Fin (d + 1) → SchwartzMap (RealVector (d + 1)) ℝ :=
-    Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1
+    Codex.aux_aToLambda.transformedFunctions f.1
   let Fnorm : NormalizedFunctionTuple (d + 1) := ⟨F, by
     intro i
     dsimp [F]
     convert
-      (Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions_eLpNorm f.1 i
+      (Codex.aux_aToLambda.transformedFunctions_eLpNorm f.1 i
         ((2 : ℝ≥0∞) ^ (i.val + min (d + 1 - i.val) 2))).trans (f.2 i) using 1;
       norm_num⟩
   let M : KernelSequence 1 := aux_whitneySequence Psi.kernel a
@@ -6881,33 +6906,36 @@ theorem aux_leftBumpOneShort_scaled_integralM_prefix
 
 /--
 The first short-variation constant in Lemma
-[`Codex.Reduction.FinalReduction.leftBumpOneShortOne`].
+[`Codex.leftBumpOneShortOne`].
 -/
 noncomputable def C_leftBumpOneShortOne (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 2 * C_inductPositiveTermsReductionWhitney n * C_thetaPrimitive 2 ^ 2 *
     C_thetaTOffcenter
 
 /--
-\begin{lemma}\label{lem:leftbump1_short1}
-Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing
-sequence of integers $(k_j)_{j\in[J)}$,
-\begin{equation}\label{auto:left-bump-one-short-one-bound}
+**Lemma.**
+
+Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing sequence of integers
+$(k_j)_{j\in[J)}$,
+
+$$
 \sum_{j\in[J)}2^{-(1+\gamma)k}\int_1^2
 \|A_{2^{k_j}t}(\varphi_{4,k})\|_2^2\,\tfrac{dt}{t}
 \le C_{\text{lem:leftbump1\_short1}}J^{\alpha(n)},
-\end{equation}
-where
-\begin{equation}\label{auto:left-bump-one-short-one-constant-definition}
-C_{\text{lem:leftbump1\_short1}}
-=2^2C_{\text{P:induct-positive-terms-reduction-whitney}}
-C_{\text{lem:theta\_prim},2}^2C_{\text{lem:thetat\_offcenter}}.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.leftBumpOneShortOne`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitney`],
-[`Codex.Reduction.SmoothingDecomposition.thetaPrimitive`],
-[`Codex.Reduction.BumpFunctions.thetaTOffcenter`].
+where
+
+$$
+C_{\text{lem:leftbump1\_short1}}
+=2^2C_{\text{induct positive terms - reduction variant, Whitney}}
+C_{\text{lem:theta\_prim},2}^2C_{\text{lem:thetat\_offcenter}}.
+$$
+
+See also [`Codex.leftBumpOneShortOne`],
+[`Codex.inductPositiveTermsReductionWhitney`],
+[`Codex.thetaPrimitive`],
+[`Codex.thetaTOffcenter`].
 -/
 theorem leftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n)
@@ -6941,7 +6969,7 @@ theorem leftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n)
           (prismForm (d + 1) 1 (by omega) (by omega)
             (aux_leftBumpOneShort_integralM (a (j : ℤ)) (phiFourSchwartz b k))
             (fun i x =>
-              Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1 i x)) := by
+              Codex.aux_aToLambda.transformedFunctions f.1 i x)) := by
       intro j
       dsimp [E]
       rw [← ha_restrict j]
@@ -6995,15 +7023,14 @@ theorem leftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n)
               rw [hconst]
 
 /--
-\begin{lemma}[constant $C_{\text{lem:leftbump1\_short1}}$ \auto]
-\label{constant left bump one short one}
-\begin{equation}\label{constant left bump one short one bound}
+**Lemma (constant $C_{\text{lem:leftbump1\_short1}}$).**
+
+$$
 C_{\text{lem:leftbump1\_short1}}
 <2^{628}.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.leftBumpOneShortOne`].
+See also [`Codex.leftBumpOneShortOne`].
 -/
 theorem constantLeftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOneShortOne n <
@@ -7041,20 +7068,19 @@ theorem constantLeftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n) :
 
 /--
 The second short-variation auxiliary constant in Lemma
-[`Codex.Reduction.FinalReduction.leftBumpOneShortTwo`].
+[`Codex.leftBumpOneShortTwo`].
 -/
 noncomputable def C_leftBumpOneShortTwoAuxiliary : ℝ :=
   max (C_thetaPrimitive 2) (max (C_thetaDecay 2) (C_thetaDecay 3))
 
 /--
 The second short-variation constant in Lemma
-[`Codex.Reduction.FinalReduction.leftBumpOneShortTwo`].
+[`Codex.leftBumpOneShortTwo`].
 -/
 noncomputable def C_leftBumpOneShortTwo (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 4 * C_inductPositiveTermsReductionWhitney n * C_thetaTOffcenter *
     C_leftBumpOneShortTwoAuxiliary ^ 2
 
-open Codex.Preliminaries.BumpsAndEstimates
 
 theorem aux_leftBumpOneShortTwo_product_deriv_bound
     (p q : ℝ → ℂ) (hp : ContDiff ℝ 2 p) (hq : ContDiff ℝ 2 q)
@@ -7471,21 +7497,21 @@ theorem aux_leftBumpOneShortTwo_integralFct_plane_diagonal_eq
   rw [show t * -z = -(t * z) by ring]
   have hpsi (x : ℝ) :
       (tBumpSchwartz (phiFourSchwartz b k) x : ℂ) =
-        ((Codex.Reduction.BumpFunctions.aux_T
+        ((Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k) x : ℝ) : ℂ) := by
     rw [tBumpSchwartz_apply]
-    unfold Codex.Reduction.SmoothingDecomposition.aux_T
-      Codex.Reduction.BumpFunctions.aux_T
-      Codex.Reduction.BumpFunctions.multiplicationOperatorX
+    unfold Codex.aux_sd_T
+      Codex.aux_T
+      Codex.multiplicationOperatorX
     congr 1
   have hpair := phiFour_T_fourier_pair_eq b k (t * z)
   simpa only [aux_leftBumpOneShortTwo_amplitude, aux_leftBumpOneShortTwo_fourier, hpsi] using
     (show
       FourierTransform.fourier
-          (fun x : ℝ => ((Codex.Reduction.BumpFunctions.aux_T
+          (fun x : ℝ => ((Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k) x : ℝ) : ℂ)) (t * z) *
         FourierTransform.fourier
-          (fun x : ℝ => ((Codex.Reduction.BumpFunctions.aux_T
+          (fun x : ℝ => ((Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k) x : ℝ) : ℂ)) (-(t * z)) *
           ((t⁻¹ : ℝ) : ℂ) =
         (aux_leftBumpOneShortTwo_amplitude b k (t * z) *
@@ -7702,26 +7728,26 @@ theorem aux_leftBumpOneShortTwo_normalizer_pos :
 
 theorem aux_leftBumpOneShortTwo_tBump_eq_aux_T (phi : SchwartzMap ℝ ℝ) :
     (fun x : ℝ => tBumpSchwartz phi x) =
-      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ => phi x) := by
+      Codex.aux_T (fun x : ℝ => phi x) := by
   funext x
   rw [tBumpSchwartz_apply]
-  unfold Codex.Reduction.SmoothingDecomposition.aux_T
-    Codex.Reduction.BumpFunctions.aux_T
-    Codex.Reduction.BumpFunctions.multiplicationOperatorX
+  unfold Codex.aux_sd_T
+    Codex.aux_T
+    Codex.multiplicationOperatorX
   congr 1
 
 theorem aux_leftBumpOneShortTwo_rescaled_bound
     (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
     (t u : ℝ) (ht : t ∈ Set.Icc (1 : ℝ) 2)
     (hTformula : ∀ x : ℝ,
-      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+      Codex.aux_T (windowBasedBumpFunctions.phiFour b k) x =
         (2 : ℝ) ^ k *
-          (Codex.Reduction.BumpFunctions.aux_T
+          (Codex.aux_T
             (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
             (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
               (x - (2 : ℝ) ^ (-k)))) :
-    |Codex.Reduction.BumpFunctions.aux_realRescaled t
-        (Codex.Reduction.BumpFunctions.aux_T
+    |Codex.aux_bf_realRescaled t
+        (Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k)) u| ≤
       4 * C_leftBumpOneShortTwoAuxiliary *
         bracketBump (u - t * (2 : ℝ) ^ (-k)) ^ 2 := by
@@ -7745,13 +7771,13 @@ theorem aux_leftBumpOneShortTwo_rescaled_bound
     aux_leftBumpOneShort_bracket_inv_mul_le t x ht.1
   have hbrsq : bracketBump (t⁻¹ * x) ^ 2 ≤ (t * bracketBump x) ^ 2 :=
     pow_le_pow_left₀ (by rw [bracketBump]; positivity) hbr 2
-  have htilde : |Codex.Reduction.BumpFunctions.aux_T
+  have htilde : |Codex.aux_T
       (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x)| ≤
       C * (t * bracketBump x) ^ 2 := by
     have hbase := (thetaPrimitive b 2 (by omega) (by norm_num [N_uniPair])).2.2.2
       (t⁻¹ * x)
     calc
-      |Codex.Reduction.BumpFunctions.aux_T
+      |Codex.aux_T
           (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x)| ≤
           C_thetaPrimitive 2 * bracketBump (t⁻¹ * x) ^ 2 := hbase
       _ ≤ C * bracketBump (t⁻¹ * x) ^ 2 :=
@@ -7768,19 +7794,19 @@ theorem aux_leftBumpOneShortTwo_rescaled_bound
         mul_le_mul_of_nonneg_right hthetale (by positivity)
       _ ≤ C * (t * bracketBump x) ^ 2 :=
         mul_le_mul_of_nonneg_left hbrsq hC
-  have hsum : |Codex.Reduction.BumpFunctions.aux_T
+  have hsum : |Codex.aux_T
       (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x) +
       (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b (t⁻¹ * x)| ≤
       (1 + (2 : ℝ) ^ (-k)) * (C * (t * bracketBump x) ^ 2) := by
     calc
-      |Codex.Reduction.BumpFunctions.aux_T
+      |Codex.aux_T
           (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x) +
           (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b (t⁻¹ * x)| ≤
-          |Codex.Reduction.BumpFunctions.aux_T
+          |Codex.aux_T
             (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x)| +
             |(2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b (t⁻¹ * x)| :=
         abs_add_le _ _
-      _ = |Codex.Reduction.BumpFunctions.aux_T
+      _ = |Codex.aux_T
             (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x)| +
           (2 : ℝ) ^ (-k) * |windowBasedBumpFunctions.theta b (t⁻¹ * x)| := by
         rw [abs_mul, abs_of_nonneg hpinv]
@@ -7803,14 +7829,14 @@ theorem aux_leftBumpOneShortTwo_rescaled_bound
       _ ≤ 1 := by nlinarith [ht.2]
   have hcoeff : (2 : ℝ) ^ k * t + t ≤ 4 := by
     nlinarith [hpt, ht.2]
-  change |t⁻¹ * Codex.Reduction.BumpFunctions.aux_T
+  change |t⁻¹ * Codex.aux_T
       (windowBasedBumpFunctions.phiFour b k) (t⁻¹ * u)| ≤
       4 * C * bracketBump x ^ 2
   rw [hTformula, harg, abs_mul, abs_of_nonneg htinv,
     abs_mul, abs_of_nonneg hp]
   calc
     t⁻¹ * ((2 : ℝ) ^ k *
-        |Codex.Reduction.BumpFunctions.aux_T
+        |Codex.aux_T
           (windowBasedBumpFunctions.thetaTilde b) (t⁻¹ * x) +
           (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b (t⁻¹ * x)|) ≤
         t⁻¹ * ((2 : ℝ) ^ k *
@@ -7838,17 +7864,17 @@ theorem aux_leftBumpOneShortTwo_integrand_bound
     (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
     (t : ℝ) (ht : t ∈ Set.Icc (1 : ℝ) 2) (v : RealPlane)
     (hTformula : ∀ x : ℝ,
-      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+      Codex.aux_T (windowBasedBumpFunctions.phiFour b k) x =
         (2 : ℝ) ^ k *
-          (Codex.Reduction.BumpFunctions.aux_T
+          (Codex.aux_T
             (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
             (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
               (x - (2 : ℝ) ^ (-k)))) :
-    |Codex.Reduction.BumpFunctions.aux_realRescaled t
-        (Codex.Reduction.BumpFunctions.aux_T
+    |Codex.aux_bf_realRescaled t
+        (Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k)) v.1 *
-      Codex.Reduction.BumpFunctions.aux_realRescaled t
-        (Codex.Reduction.BumpFunctions.aux_T
+      Codex.aux_bf_realRescaled t
+        (Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| ≤
       (4 * C_leftBumpOneShortTwoAuxiliary) ^ 2 *
         (bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 *
@@ -7863,11 +7889,11 @@ theorem aux_leftBumpOneShortTwo_integrand_bound
   have hB0 : 0 ≤ bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 := by positivity
   rw [abs_mul, abs_mul, abs_of_nonneg htinv]
   calc
-    |Codex.Reduction.BumpFunctions.aux_realRescaled t
-          (Codex.Reduction.BumpFunctions.aux_T
+    |Codex.aux_bf_realRescaled t
+          (Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k)) v.1| *
-        |Codex.Reduction.BumpFunctions.aux_realRescaled t
-          (Codex.Reduction.BumpFunctions.aux_T
+        |Codex.aux_bf_realRescaled t
+          (Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k)) v.2| * t⁻¹ ≤
         ((4 * C_leftBumpOneShortTwoAuxiliary) *
           bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2) *
@@ -7885,21 +7911,23 @@ theorem aux_leftBumpOneShortTwo_integrand_bound
         (bracketBump (v.1 - t * (2 : ℝ) ^ (-k)) ^ 2 *
           bracketBump (v.2 - t * (2 : ℝ) ^ (-k)) ^ 2) := by ring
 
-/-- The fully normalized physical Whitney decay for the short-two kernel,
-conditional only on the public logarithmic-derivative formula for `phiFour`. -/
+/--
+The fully normalized physical Whitney decay for the short-two kernel,
+conditional only on the public logarithmic-derivative formula for `phiFour`.
+-/
 theorem aux_leftBumpOneShortTwo_kernel_decay
     (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
     (v : RealPlane)
     (hTformula : ∀ x : ℝ,
-      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+      Codex.aux_T (windowBasedBumpFunctions.phiFour b k) x =
         (2 : ℝ) ^ k *
-          (Codex.Reduction.BumpFunctions.aux_T
+          (Codex.aux_T
             (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
             (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
               (x - (2 : ℝ) ^ (-k)))) :
     |Real.rpow 2 ((k : ℝ) / 2) *
       integralFctKernel
-        (Codex.Reduction.BumpFunctions.aux_T
+        (Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k))
         (WithLp.toLp 2 ![v.1, v.2])| ≤
       (16 * C_leftBumpOneShortTwoAuxiliary ^ 2 * C_thetaTOffcenter) *
@@ -7929,20 +7957,20 @@ theorem aux_leftBumpOneShortTwo_kernel_decay
     exact ((h0.inv₀ h0ne).pow 2).mul ((h1.inv₀ h1ne).pow 2)
   have hBint : IntegrableOn B (Set.Icc (1 : ℝ) 2) := hBcont.integrableOn_Icc
   have hint : ∫ t : ℝ in Set.Icc (1 : ℝ) 2,
-      |Codex.Reduction.BumpFunctions.aux_realRescaled t
-          (Codex.Reduction.BumpFunctions.aux_T
+      |Codex.aux_bf_realRescaled t
+          (Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k)) v.1 *
-        Codex.Reduction.BumpFunctions.aux_realRescaled t
-          (Codex.Reduction.BumpFunctions.aux_T
+        Codex.aux_bf_realRescaled t
+          (Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| ≤
       A ^ 2 * ∫ t : ℝ in Set.Icc (1 : ℝ) 2, B t := by
     calc
       ∫ t : ℝ in Set.Icc (1 : ℝ) 2,
-          |Codex.Reduction.BumpFunctions.aux_realRescaled t
-              (Codex.Reduction.BumpFunctions.aux_T
+          |Codex.aux_bf_realRescaled t
+              (Codex.aux_T
                 (windowBasedBumpFunctions.phiFour b k)) v.1 *
-            Codex.Reduction.BumpFunctions.aux_realRescaled t
-              (Codex.Reduction.BumpFunctions.aux_T
+            Codex.aux_bf_realRescaled t
+              (Codex.aux_T
                 (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| ≤
           ∫ t : ℝ in Set.Icc (1 : ℝ) 2, A ^ 2 * B t := by
             apply MeasureTheory.setIntegral_mono_of_nonneg
@@ -7959,37 +7987,37 @@ theorem aux_leftBumpOneShortTwo_kernel_decay
   have hoff := thetaTOffcenter k hk v.1 v.2
   change |Real.rpow 2 ((k : ℝ) / 2) *
       ∫ t : ℝ in Set.Icc 1 2,
-        Codex.Reduction.BumpFunctions.aux_realRescaled t
-          (Codex.Reduction.BumpFunctions.aux_T
+        Codex.aux_bf_realRescaled t
+          (Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k)) v.1 *
-        Codex.Reduction.BumpFunctions.aux_realRescaled t
-          (Codex.Reduction.BumpFunctions.aux_T
+        Codex.aux_bf_realRescaled t
+          (Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| ≤ _
   calc
     |Real.rpow 2 ((k : ℝ) / 2) *
         ∫ t : ℝ in Set.Icc 1 2,
-          Codex.Reduction.BumpFunctions.aux_realRescaled t
-            (Codex.Reduction.BumpFunctions.aux_T
+          Codex.aux_bf_realRescaled t
+            (Codex.aux_T
               (windowBasedBumpFunctions.phiFour b k)) v.1 *
-          Codex.Reduction.BumpFunctions.aux_realRescaled t
-            (Codex.Reduction.BumpFunctions.aux_T
+          Codex.aux_bf_realRescaled t
+            (Codex.aux_T
               (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| =
         Real.rpow 2 ((k : ℝ) / 2) *
           |∫ t : ℝ in Set.Icc 1 2,
-            Codex.Reduction.BumpFunctions.aux_realRescaled t
-              (Codex.Reduction.BumpFunctions.aux_T
+            Codex.aux_bf_realRescaled t
+              (Codex.aux_T
                 (windowBasedBumpFunctions.phiFour b k)) v.1 *
-            Codex.Reduction.BumpFunctions.aux_realRescaled t
-              (Codex.Reduction.BumpFunctions.aux_T
+            Codex.aux_bf_realRescaled t
+              (Codex.aux_T
                 (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| := by
               rw [abs_mul, abs_of_nonneg hc]
     _ ≤ Real.rpow 2 ((k : ℝ) / 2) *
         ∫ t : ℝ in Set.Icc 1 2,
-          |Codex.Reduction.BumpFunctions.aux_realRescaled t
-              (Codex.Reduction.BumpFunctions.aux_T
+          |Codex.aux_bf_realRescaled t
+              (Codex.aux_T
                 (windowBasedBumpFunctions.phiFour b k)) v.1 *
-            Codex.Reduction.BumpFunctions.aux_realRescaled t
-              (Codex.Reduction.BumpFunctions.aux_T
+            Codex.aux_bf_realRescaled t
+              (Codex.aux_T
                 (windowBasedBumpFunctions.phiFour b k)) v.2 * t⁻¹| := by
               exact mul_le_mul_of_nonneg_left abs_integral_le_integral_abs hc
     _ ≤ Real.rpow 2 ((k : ℝ) / 2) *
@@ -8025,16 +8053,16 @@ theorem aux_leftBumpOneShortTwo_normalized_decay
     (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
     (v : RealPlane)
     (hTformula : ∀ x : ℝ,
-      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+      Codex.aux_T (windowBasedBumpFunctions.phiFour b k) x =
         (2 : ℝ) ^ k *
-          (Codex.Reduction.BumpFunctions.aux_T
+          (Codex.aux_T
             (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
             (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
               (x - (2 : ℝ) ^ (-k)))) :
     |(aux_leftBumpOneShortTwo_normalizer)⁻¹ *
       Real.rpow 2 ((k : ℝ) / 2) *
       integralFctKernel
-        (Codex.Reduction.BumpFunctions.aux_T
+        (Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k))
         (WithLp.toLp 2 ![v.1, v.2])| ≤
       ∑ u : Fin 2,
@@ -8047,31 +8075,31 @@ theorem aux_leftBumpOneShortTwo_normalized_decay
   have hD : 0 < D := aux_leftBumpOneShortTwo_normalizer_pos
   have hraw : |Real.rpow 2 ((k : ℝ) / 2) *
       integralFctKernel
-        (Codex.Reduction.BumpFunctions.aux_T
+        (Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k))
         (WithLp.toLp 2 ![v.1, v.2])| ≤ D * S := by
     dsimp [D, S, aux_leftBumpOneShortTwo_normalizer]
     exact aux_leftBumpOneShortTwo_kernel_decay b k hk v hTformula
   change |D⁻¹ * Real.rpow 2 ((k : ℝ) / 2) *
       integralFctKernel
-        (Codex.Reduction.BumpFunctions.aux_T
+        (Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k))
         (WithLp.toLp 2 ![v.1, v.2])| ≤ S
   calc
     |D⁻¹ * Real.rpow 2 ((k : ℝ) / 2) *
         integralFctKernel
-          (Codex.Reduction.BumpFunctions.aux_T
+          (Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k))
           (WithLp.toLp 2 ![v.1, v.2])| =
         |D⁻¹ * (Real.rpow 2 ((k : ℝ) / 2) *
           integralFctKernel
-            (Codex.Reduction.BumpFunctions.aux_T
+            (Codex.aux_T
               (windowBasedBumpFunctions.phiFour b k))
             (WithLp.toLp 2 ![v.1, v.2]))| := by
       rw [mul_assoc]
     _ = D⁻¹ * |Real.rpow 2 ((k : ℝ) / 2) *
         integralFctKernel
-          (Codex.Reduction.BumpFunctions.aux_T
+          (Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k))
           (WithLp.toLp 2 ![v.1, v.2])| := by
       rw [abs_mul, abs_of_pos (inv_pos.mpr hD)]
@@ -8083,29 +8111,31 @@ theorem aux_leftBumpOneShortTwo_tPhiFourSchwartz_support
     (b : windowBasedBumpFunctions) (k : ℤ) :
     Function.support (FourierTransform.fourier
       (fun x : ℝ => (tBumpSchwartz (phiFourSchwartz b k) x : ℂ))) ⊆
-        Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+        Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
   intro xi hxi
   have heq : (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x) =
-      Codex.Reduction.BumpFunctions.aux_T
+      Codex.aux_T
         (windowBasedBumpFunctions.phiFour b k) := by
     rw [aux_leftBumpOneShortTwo_tBump_eq_aux_T]
     congr 1
   have hraw : xi ∈ Function.support (FourierTransform.fourier
       (fun x : ℝ =>
-        ((Codex.Reduction.BumpFunctions.aux_T
+        ((Codex.aux_T
           (fun y : ℝ => (windowBasedBumpFunctions.phiFour b k y : ℝ)) x : ℝ) : ℂ))) := by
     simpa only [heq] using hxi
   exact (thetaPrimitive b 2 (by omega) (by norm_num [N_uniPair])).1.2
     ((phiFourSupport b k).2 hraw)
 
-/-- Full short-two Whitney packaging, conditional only on nonvanishing and the
-same phase-cancelled diagonal Fourier derivative estimate as the blueprint. -/
+/--
+Full short-two Whitney packaging, conditional only on nonvanishing and the
+same phase-cancelled diagonal Fourier derivative estimate as the blueprint.
+-/
 noncomputable def aux_leftBumpOneShortTwo_whitneyData
     (b : windowBasedBumpFunctions) (k : ℤ) (hk : k ≤ -1)
     (hTformula : ∀ x : ℝ,
-      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) x =
+      Codex.aux_T (windowBasedBumpFunctions.phiFour b k) x =
         (2 : ℝ) ^ k *
-          (Codex.Reduction.BumpFunctions.aux_T
+          (Codex.aux_T
             (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
             (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
               (x - (2 : ℝ) ^ (-k))))
@@ -8113,7 +8143,7 @@ noncomputable def aux_leftBumpOneShortTwo_whitneyData
       (aux_leftBumpOneShortTwo_normalizer)⁻¹ *
         Real.rpow 2 ((k : ℝ) / 2) *
         integralFctKernel
-          (Codex.Reduction.BumpFunctions.aux_T
+          (Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k))
           (WithLp.toLp 2 ![v.1, v.2])) ≠ 0)
     (hdiag : ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
@@ -8132,7 +8162,7 @@ noncomputable def aux_leftBumpOneShortTwo_whitneyData
     Real.rpow 2 ((k : ℝ) / 2)
   have hann : Function.support (FourierTransform.fourier
       (fun x : ℝ => (psi x : ℂ))) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
     dsimp [psi]
     exact aux_leftBumpOneShortTwo_tPhiFourSchwartz_support b k
   have hband : Function.support (FourierTransform.fourier
@@ -8140,13 +8170,13 @@ noncomputable def aux_leftBumpOneShortTwo_whitneyData
       Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1 := by
     intro xi hxi
     have heq : (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x) =
-        Codex.Reduction.BumpFunctions.aux_T
+        Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k) := by
       rw [aux_leftBumpOneShortTwo_tBump_eq_aux_T]
       congr 1
     have hraw : xi ∈ Function.support (FourierTransform.fourier
         (fun x : ℝ =>
-          ((Codex.Reduction.BumpFunctions.aux_T
+          ((Codex.aux_T
             (fun y : ℝ => (windowBasedBumpFunctions.phiFour b k y : ℝ)) x : ℝ) : ℂ))) := by
       simpa only [psi, heq] using hxi
     simpa [aux_frequencyAnnulus] using (phiFourSupport b k).2 hraw
@@ -8159,8 +8189,8 @@ noncomputable def aux_leftBumpOneShortTwo_whitneyData
       (fun v : RealPlane => c * integralFctKernel (fun x : ℝ => psi x)
         (WithLp.toLp 2 ![v.1, v.2]))) ⊆
       {v : EuclideanSpace ℝ (Fin 2) |
-        v 0 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
-        v 1 ∈ Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3)} :=
+        v 0 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) ∧
+        v 1 ∈ Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3)} :=
     aux_leftBumpOneShort_integralFct_plane_fourier_support_smul psi hband c
   have hdecay : ∀ v : RealPlane,
       |c * integralFctKernel (fun x : ℝ => psi x)
@@ -8170,7 +8200,7 @@ noncomputable def aux_leftBumpOneShortTwo_whitneyData
             scaledBracketBumpReal (3 / 2 : ℝ) 1 ((W u v).2) := by
     intro v
     have heq : (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x) =
-        Codex.Reduction.BumpFunctions.aux_T
+        Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k) := by
       rw [aux_leftBumpOneShortTwo_tBump_eq_aux_T]
       congr 1
@@ -8178,7 +8208,7 @@ noncomputable def aux_leftBumpOneShortTwo_whitneyData
       aux_leftBumpOneShortTwo_normalized_decay b k hk v hTformula
   apply aux_leftBumpOneShort_integralFctWhitneyData psi hann hband c hc
   · have heq : (fun x : ℝ => tBumpSchwartz (phiFourSchwartz b k) x) =
-        Codex.Reduction.BumpFunctions.aux_T
+        Codex.aux_T
           (windowBasedBumpFunctions.phiFour b k) := by
         rw [aux_leftBumpOneShortTwo_tBump_eq_aux_T]
         congr 1
@@ -8189,32 +8219,37 @@ noncomputable def aux_leftBumpOneShortTwo_whitneyData
 
 
 /--
-\begin{lemma}\label{lem:leftbump1_short2}
-Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing
-sequence of integers $(k_j)_{j\in[J)}$,
-\begin{equation}\label{auto:left-bump-one-short-two-bound}
+**Lemma.**
+
+Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing sequence of integers
+$(k_j)_{j\in[J)}$,
+
+$$
 \sum_{j\in[J)}2^{(1-\gamma)k}\int_1^2
 \|A_{2^{k_j}t}(T\varphi_{4,k})\|_2^2\,\tfrac{dt}{t}
 \le C_{\text{lem:leftbump1\_short2}}J^{\alpha(n)},
-\end{equation}
-where, with
-\begin{equation}\label{auto:left-bump-one-short-two-auxiliary-constant}
-C=\max\bigl(C_{\text{lem:theta\_prim},2},
-C_{\text{lem:theta\_decay},2},C_{\text{lem:theta\_decay},3}\bigr),
-\end{equation}
-we have
-\begin{equation}\label{auto:left-bump-one-short-two-constant-definition}
-C_{\text{lem:leftbump1\_short2}}
-=2^4C_{\text{P:induct-positive-terms-reduction-whitney}}
-C_{\text{lem:thetat\_offcenter}}C^2.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.leftBumpOneShortTwo`],
-[`Codex.Reduction.SmoothingDecomposition.thetaPrimitive`],
-[`Codex.Reduction.SmoothingDecomposition.thetaDecay`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitney`],
-[`Codex.Reduction.BumpFunctions.thetaTOffcenter`].
+where, with
+
+$$
+C=\max\bigl(C_{\text{lem:theta\_prim},2},C_{\text{lem:theta\_decay},2},C_{\text{lem:theta\_decay},3}
+\bigr),
+$$
+
+we have
+
+$$
+C_{\text{lem:leftbump1\_short2}}
+=2^4C_{\text{induct positive terms - reduction variant, Whitney}}
+C_{\text{lem:thetat\_offcenter}}C^2.
+$$
+
+See also [`Codex.leftBumpOneShortTwo`],
+[`Codex.thetaPrimitive`],
+[`Codex.thetaDecay`],
+[`Codex.inductPositiveTermsReductionWhitney`],
+[`Codex.thetaTOffcenter`].
 -/
 theorem leftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n)
@@ -8226,7 +8261,7 @@ theorem leftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n)
           ENNReal.ofReal t⁻¹ *
             eLpNorm
               (twistedAverageAtScale ((2 : ℝ) ^ (ell.1 j.castSucc) * t)
-                (Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k))
+                (Codex.aux_T (windowBasedBumpFunctions.phiFour b k))
                 (fun i x ↦ f.1 i x))
               2 volume ^ 2 ≤
       ENNReal.ofReal (C_leftBumpOneShortTwo n) *
@@ -8246,7 +8281,7 @@ theorem leftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n)
         ENNReal.ofReal t⁻¹ *
           eLpNorm
             (twistedAverageAtScale ((2 : ℝ) ^ (ell.1 j.castSucc) * t)
-              (Codex.Reduction.BumpFunctions.aux_T
+              (Codex.aux_T
                 (windowBasedBumpFunctions.phiFour b k))
               (fun i x => f.1 i x))
             2 volume ^ 2
@@ -8264,7 +8299,7 @@ theorem leftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n)
           (prismForm (d + 1) 1 (by omega) (by omega)
             (aux_leftBumpOneShort_integralM (a (j : ℤ)) psi)
             (fun i x =>
-              Codex.Reduction.AToLambda.aux_aToLambda.transformedFunctions f.1 i x)) := by
+              Codex.aux_aToLambda.transformedFunctions f.1 i x)) := by
       intro j
       dsimp [E]
       rw [← ha_restrict j]
@@ -8282,10 +8317,10 @@ theorem leftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n)
       rw [hsum]
       exact bot_le
     · have hTformula : ∀ x : ℝ,
-        Codex.Reduction.BumpFunctions.aux_T
+        Codex.aux_T
             (windowBasedBumpFunctions.phiFour b k) x =
           (2 : ℝ) ^ k *
-            (Codex.Reduction.BumpFunctions.aux_T
+            (Codex.aux_T
               (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
               (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
                 (x - (2 : ℝ) ^ (-k))) := by
@@ -8317,15 +8352,14 @@ theorem leftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n)
               rw [hconst]
 
 /--
-\begin{lemma}[constant $C_{\text{lem:leftbump1\_short2}}$ \auto]
-\label{constant left bump one short two}
-\begin{equation}\label{constant left bump one short two bound}
+**Lemma (constant $C_{\text{lem:leftbump1\_short2}}$).**
+
+$$
 C_{\text{lem:leftbump1\_short2}}
 <2^{630}.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.leftBumpOneShortTwo`].
+See also [`Codex.leftBumpOneShortTwo`].
 -/
 theorem constantLeftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOneShortTwo n < (2 : ℝ) ^ 630 := by
@@ -8397,7 +8431,7 @@ theorem constantLeftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n) :
           set_option exponentiation.threshold 1000 in
             ring
 
-/-- The long-variation constant in Lemma [`Codex.Reduction.FinalReduction.leftBumpOneLong`]. -/
+/-- The long-variation constant in Lemma [`Codex.leftBumpOneLong`]. -/
 noncomputable def C_leftBumpOneLong (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 6 * C_inductPositiveTermsReductionWhitney n * C_thetaPrimitive 2 ^ 2
 
@@ -8772,10 +8806,10 @@ theorem aux_leftBumpOneLong_phiFour_plane_formula (b : windowBasedBumpFunctions)
 theorem aux_leftBumpOneLong_phiFour_support (b : windowBasedBumpFunctions) (k : ℤ) :
     Function.support (FourierTransform.fourier
       (fun x : ℝ => (phiFourSchwartz b k x : ℂ))) ⊆
-      Codex.Reduction.BumpFunctions.aux_annulusOne 1 ((2 : ℝ) ^ 3) := by
+      Codex.aux_annulusOne 1 ((2 : ℝ) ^ 3) := by
   intro xi hxi
   have h := aux_leftBumpOneShort_phiFourSchwartz_support b k hxi
-  unfold Codex.Reduction.BumpFunctions.aux_annulusOne at h ⊢
+  unfold Codex.aux_annulusOne at h ⊢
   constructor <;> nlinarith [h.1, h.2]
 
 theorem aux_leftBumpOneLong_diagonal_bound (b : windowBasedBumpFunctions)
@@ -9295,23 +9329,26 @@ theorem aux_leftBumpOneLong_final_scalar (n : ℕ) (k : ℤ) :
   ring
 
 /--
-\begin{lemma}\label{lem:leftbump1_long}
+**Lemma.**
+
 Let $\gamma=\frac12$. For every $k\le-1$,
-\begin{equation}\label{auto:left-bump-one-long-bound}
+
+$$
 \|A_t(\varphi_{4,k})\|_{V_{2,J}(t\in2^\mathbb Z;L^2)}^2
 \le C_{\text{lem:leftbump1\_long}}2^{\gamma k}J^{\alpha(n)},
-\end{equation}
-where
-\begin{equation}\label{auto:left-bump-one-long-constant-definition}
-C_{\text{lem:leftbump1\_long}}
-=2^6C_{\text{P:induct-positive-terms-reduction-whitney}}
-C_{\text{lem:theta\_prim},2}^2.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.FinalReduction.leftBumpOneLong`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitney`],
-[`Codex.Reduction.SmoothingDecomposition.thetaPrimitive`].
+where
+
+$$
+C_{\text{lem:leftbump1\_long}}
+=2^6C_{\text{induct positive terms - reduction variant, Whitney}}
+C_{\text{lem:theta\_prim},2}^2.
+$$
+
+See also [`Codex.leftBumpOneLong`],
+[`Codex.inductPositiveTermsReductionWhitney`],
+[`Codex.thetaPrimitive`].
 -/
 theorem leftBumpOneLong {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
@@ -9401,14 +9438,13 @@ theorem aux_leftBumpOneLong_sharp {n : ℕ} (hn : 2 ≤ n) :
           rw [← pow_add, ← pow_add]
 
 /--
-\begin{lemma}[constant $C_{\text{lem:leftbump1\_long}}$ \auto]
-\label{constant left bump one long}
-\begin{equation}\label{constant left bump one long bound}
-C_{\text{lem:leftbump1\_long}}<2^{625}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:leftbump1\_long}}$).**
 
-See also [`Codex.Reduction.FinalReduction.leftBumpOneLong`].
+$$
+C_{\text{lem:leftbump1\_long}}<2^{625}.
+$$
+
+See also [`Codex.leftBumpOneLong`].
 -/
 theorem constantLeftBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOneLong n < (2 : ℝ) ^ 625 := by
@@ -9420,12 +9456,12 @@ theorem constantLeftBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
       · positivity
       · norm_num
 
-/-- The constant in Lemma [`Codex.Reduction.FinalReduction.leftBumpOne`]. -/
+/-- The constant in Lemma [`Codex.leftBumpOne`]. -/
 noncomputable def C_leftBumpOne (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 7 * Real.sqrt (C_leftBumpOneShortOne n) *
       Real.sqrt (C_leftBumpOneShortTwo n) + 2 * C_leftBumpOneLong n
 
-/-- Lemma [`Codex.Reduction.FinalReduction.leftBumpOne`]. -/
+/-- Lemma [`Codex.leftBumpOne`]. -/
 theorem aux_leftBumpOne_logarithmic_setIntegral_rescale (a : ℝ) (ha : 0 < a)
     (g : ℝ → ℝ) :
     (∫ t : ℝ in Set.Icc a (a * 2), |g t| ^ 2 * t⁻¹) =
@@ -10364,7 +10400,7 @@ theorem aux_leftBumpOne_whitney_nonneg (n : ℕ) :
   have hnonWhitney : 0 ≤ C_inductPositiveTermsReductionNonWhitney := by
     unfold C_inductPositiveTermsReductionNonWhitney
     apply add_nonneg
-    · norm_num [C_oneScaleEstimateWindow, WindowsAndPairs.C_uniPair]
+    · norm_num [C_oneScaleEstimateWindow, Codex.C_uniPair]
     · exact mul_nonneg (mul_nonneg (mul_nonneg (by positivity) (by positivity))
         (by positivity)) hdiagonal
   have hskip : 0 ≤ C_inductPositiveTermsReductionNonWhitneySkip n := by
@@ -10386,7 +10422,7 @@ theorem aux_leftBumpOne_short_one_nonneg (n : ℕ) : 0 ≤ C_leftBumpOneShortOne
 
 theorem aux_leftBumpOne_short_two_aux_nonneg : 0 ≤ C_leftBumpOneShortTwoAuxiliary := by
   unfold C_leftBumpOneShortTwoAuxiliary
-  exact le_max_of_le_left (by norm_num [C_thetaPrimitive, WindowsAndPairs.C_uniPair])
+  exact le_max_of_le_left (by norm_num [C_thetaPrimitive, Codex.C_uniPair])
 
 theorem aux_leftBumpOne_short_two_nonneg (n : ℕ) : 0 ≤ C_leftBumpOneShortTwo n := by
   unfold C_leftBumpOneShortTwo
@@ -10401,10 +10437,10 @@ theorem aux_leftBumpOne_long_nonneg (n : ℕ) : 0 ≤ C_leftBumpOneLong n := by
     (sq_nonneg _)
 
 theorem aux_leftBumpOne_T_eq_tBump (phi : SchwartzMap ℝ ℝ) :
-    Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ phi x) = aux_tBump phi := by
+    Codex.aux_T (fun x : ℝ ↦ phi x) = aux_tBump phi := by
   funext x
-  unfold Codex.Reduction.BumpFunctions.aux_T
-    Codex.Reduction.BumpFunctions.multiplicationOperatorX aux_tBump
+  unfold Codex.aux_T
+    Codex.multiplicationOperatorX aux_tBump
   simp only [smul_eq_mul]
 
 theorem aux_leftBumpOne_leftBumpOne_local_finset_bound {n : ℕ} (hn : 2 ≤ n)
@@ -10448,10 +10484,10 @@ theorem aux_leftBumpOne_leftBumpOne_local_finset_bound {n : ℕ} (hn : 2 ≤ n)
   let P : ℝ≥0∞ := ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
   let w1 : ℝ≥0∞ := ENNReal.ofReal (Real.rpow 2 (-(3 : ℝ) * (k : ℝ) / 2))
   let w2 : ℝ≥0∞ := ENNReal.ofReal (Real.rpow 2 ((k : ℝ) / 2))
-  have hTtau : Codex.Reduction.BumpFunctions.aux_T
+  have hTtau : Codex.aux_T
       (windowBasedBumpFunctions.phiFour b k) = (tau : ℝ → ℝ) := by
     calc
-      Codex.Reduction.BumpFunctions.aux_T (windowBasedBumpFunctions.phiFour b k) =
+      Codex.aux_T (windowBasedBumpFunctions.phiFour b k) =
           aux_tBump phi := by
             rw [← hphi]
             exact aux_leftBumpOne_T_eq_tBump phi
@@ -10936,13 +10972,13 @@ theorem aux_leftBumpOne_variationBound_neg {n : ℕ} (A : ℝ) (phi : ℝ → �
       hA J hJ t
 
 theorem aux_leftBumpOne_conv_Ici_one_eq_conv_Ici_zero_shift (g : ℝ → ℝ) (x : ℝ) :
-    Codex.Reduction.SmoothingDecomposition.aux_realConvolution
-      (Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 1)) g x =
-      Codex.Reduction.SmoothingDecomposition.aux_realConvolution
-        (Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0)) g (x - 1) := by
-  unfold Codex.Reduction.SmoothingDecomposition.aux_realConvolution
+    Codex.aux_realConvolution
+      (Codex.aux_indicator (Set.Ici 1)) g x =
+      Codex.aux_realConvolution
+        (Codex.aux_indicator (Set.Ici 0)) g (x - 1) := by
+  unfold Codex.aux_realConvolution
   let G : ℝ → ℝ := fun y =>
-    Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 1) y * g (x - y)
+    Codex.aux_indicator (Set.Ici 1) y * g (x - y)
   have hemb : MeasurableEmbedding (fun z : ℝ => (1 : ℝ) + z) := by
     apply Continuous.measurableEmbedding
     · fun_prop
@@ -10951,17 +10987,17 @@ theorem aux_leftBumpOne_conv_Ici_one_eq_conv_Ici_zero_shift (g : ℝ → ℝ) (x
   have hmp := measurePreserving_add_left (volume : Measure ℝ) (1 : ℝ)
   have h := hmp.integral_comp hemb G
   calc
-    (∫ y : ℝ, Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 1) y *
+    (∫ y : ℝ, Codex.aux_indicator (Set.Ici 1) y *
         g (x - y)) = ∫ z : ℝ, G (1 + z) := h.symm
     _ = ∫ z : ℝ,
-        Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) z *
+        Codex.aux_indicator (Set.Ici 0) z *
           g ((x - 1) - z) := by
       apply integral_congr_ae
       filter_upwards [] with z
       dsimp [G]
-      have hind : Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 1) (1 + z) =
-          Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) z := by
-        unfold Codex.Reduction.SmoothingDecomposition.aux_indicator
+      have hind : Codex.aux_indicator (Set.Ici 1) (1 + z) =
+          Codex.aux_indicator (Set.Ici 0) z := by
+        unfold Codex.aux_indicator
         by_cases hz : 0 ≤ z <;> simp [hz]
       rw [hind]
       congr 1
@@ -10969,39 +11005,39 @@ theorem aux_leftBumpOne_conv_Ici_one_eq_conv_Ici_zero_shift (g : ℝ → ℝ) (x
 
 theorem aux_leftBumpOne_conv_Ici_zero_rescaled_theta_eq (b : windowBasedBumpFunctions)
     (a x : ℝ) (ha : 0 < a) :
-    Codex.Reduction.SmoothingDecomposition.aux_realConvolution
-      (Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0))
-      (Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+    Codex.aux_realConvolution
+      (Codex.aux_indicator (Set.Ici 0))
+      (Codex.aux_realRescaled a
         (windowBasedBumpFunctions.theta b)) x =
       a * aux_oneRescaled a (windowBasedBumpFunctions.thetaTilde b) x := by
   let g : ℝ → ℝ := fun z =>
-    Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) z *
+    Codex.aux_indicator (Set.Ici 0) z *
       windowBasedBumpFunctions.theta b (a⁻¹ * x - z)
   have hind (y : ℝ) :
-      Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) (a⁻¹ * y) =
-        Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y := by
+      Codex.aux_indicator (Set.Ici 0) (a⁻¹ * y) =
+        Codex.aux_indicator (Set.Ici 0) y := by
     have hmem : a⁻¹ * y ∈ Set.Ici (0 : ℝ) ↔ y ∈ Set.Ici (0 : ℝ) := by
       change 0 ≤ a⁻¹ * y ↔ 0 ≤ y
       exact mul_nonneg_iff_of_pos_left (inv_pos.mpr ha)
-    unfold Codex.Reduction.SmoothingDecomposition.aux_indicator
+    unfold Codex.aux_indicator
     by_cases hy : y ∈ Set.Ici (0 : ℝ)
     · have hy' : a⁻¹ * y ∈ Set.Ici (0 : ℝ) := hmem.mpr hy
       simp [hy, hy']
     · have hy' : a⁻¹ * y ∉ Set.Ici (0 : ℝ) := fun h => hy (hmem.mp h)
       simp [hy, hy']
   have hleft :
-      (∫ y : ℝ, Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
-        Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+      (∫ y : ℝ, Codex.aux_indicator (Set.Ici 0) y *
+        Codex.aux_realRescaled a
           (windowBasedBumpFunctions.theta b) (x - y)) =
         a⁻¹ * ∫ y : ℝ, g (a⁻¹ * y) := by
     calc
-      (∫ y : ℝ, Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
-          Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+      (∫ y : ℝ, Codex.aux_indicator (Set.Ici 0) y *
+          Codex.aux_realRescaled a
             (windowBasedBumpFunctions.theta b) (x - y)) =
           ∫ y : ℝ, a⁻¹ * g (a⁻¹ * y) := by
             apply integral_congr_ae
             filter_upwards [] with y
-            dsimp [g, Codex.Reduction.SmoothingDecomposition.aux_realRescaled]
+            dsimp [g, Codex.aux_realRescaled]
             rw [hind]
             ring_nf
       _ = a⁻¹ * ∫ y : ℝ, g (a⁻¹ * y) := by
@@ -11009,21 +11045,21 @@ theorem aux_leftBumpOne_conv_Ici_zero_rescaled_theta_eq (b : windowBasedBumpFunc
   have hchange := Measure.integral_comp_inv_mul_left g a
   rw [abs_of_pos ha, smul_eq_mul] at hchange
   change (∫ y : ℝ,
-      Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
-      Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+      Codex.aux_indicator (Set.Ici 0) y *
+      Codex.aux_realRescaled a
         (windowBasedBumpFunctions.theta b) (x - y)) =
     a * (a⁻¹ * ∫ y : ℝ,
-      Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
+      Codex.aux_indicator (Set.Ici 0) y *
         windowBasedBumpFunctions.theta b (a⁻¹ * x - y))
   calc
-    (∫ y : ℝ, Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
-        Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+    (∫ y : ℝ, Codex.aux_indicator (Set.Ici 0) y *
+        Codex.aux_realRescaled a
           (windowBasedBumpFunctions.theta b) (x - y)) =
         a⁻¹ * ∫ y : ℝ, g (a⁻¹ * y) := hleft
     _ = a⁻¹ * (a * ∫ y : ℝ, g y) := by rw [hchange]
     _ = ∫ y : ℝ, g y := by field_simp [ha.ne']
     _ = a * (a⁻¹ * ∫ y : ℝ,
-        Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0) y *
+        Codex.aux_indicator (Set.Ici 0) y *
           windowBasedBumpFunctions.theta b (a⁻¹ * x - y)) := by
           dsimp [g]
           field_simp [ha.ne']
@@ -11038,9 +11074,9 @@ theorem aux_leftBumpOne_phiTwo_eq_neg_oneRescaled_phiFour (b : windowBasedBumpFu
     dsimp [a]
     positivity
   rw [show windowBasedBumpFunctions.phiTwo b k x =
-      -Codex.Reduction.SmoothingDecomposition.aux_realConvolution
-        (Codex.Reduction.SmoothingDecomposition.aux_indicator (Set.Ici 0))
-        (Codex.Reduction.SmoothingDecomposition.aux_realRescaled a
+      -Codex.aux_realConvolution
+        (Codex.aux_indicator (Set.Ici 0))
+        (Codex.aux_realRescaled a
           (windowBasedBumpFunctions.theta b)) (x - 1) by
           dsimp [windowBasedBumpFunctions.phiTwo, a]
           rw [aux_leftBumpOne_conv_Ici_one_eq_conv_Ici_zero_shift]
@@ -11132,22 +11168,23 @@ theorem aux_leftBumpOne_leftBumpOne {n : ℕ} (hn : 2 ≤ n)
   exact hneg
 
 /--
-\begin{lemma}\label{lem:leftbump1}
+**Lemma.**
+
 Let $\gamma=\frac12$. For every $k\le -1$,
-\begin{equation}\label{leftbump1}
-\|A_{t}(\varphi_{2,k})\|_{V_{2,J}(t\in(0,\infty);L^2)}^2
-\le C_{\text{lem:leftbump1}} 2^{\gamma k} J^{\alpha(n)},
-\end{equation}
-where
-$C_{\text{lem:leftbump1}}
+
+$$
+\|A_{t}(\varphi_{2,k})\|_{V_{2,J}(t\in(0,\infty);L^2)}^2  \le C_{\text{lem:leftbump1}} 2^{\gamma k}
+J^{\alpha(n)},
+$$
+
+where  $C_{\text{lem:leftbump1}}
 =2^7C_{\text{lem:leftbump1\_short1}}^{1/2}C_{\text{lem:leftbump1\_short2}}^{1/2}
 +2C_{\text{lem:leftbump1\_long}}$.
-\end{lemma}
 
-See also [`Codex.Reduction.FinalReduction.leftBumpOne`],
-[`Codex.Reduction.FinalReduction.leftBumpOneShortOne`],
-[`Codex.Reduction.FinalReduction.leftBumpOneShortTwo`],
-[`Codex.Reduction.FinalReduction.leftBumpOneLong`].
+See also [`Codex.leftBumpOne`],
+[`Codex.leftBumpOneShortOne`],
+[`Codex.leftBumpOneShortTwo`],
+[`Codex.leftBumpOneLong`].
 -/
 theorem leftBumpOne {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
@@ -11156,7 +11193,7 @@ theorem leftBumpOne {n : ℕ} (hn : 2 ≤ n)
       (windowBasedBumpFunctions.phiTwo b k) f.1 := by
   exact aux_leftBumpOne_leftBumpOne hn b f k hk
 
-/-- The numerical estimate in Lemma [`Codex.Reduction.FinalReduction.constantLeftBumpOne`]. -/
+/-- The numerical estimate in Lemma [`Codex.constantLeftBumpOne`]. -/
 theorem aux_leftBumpOne_whitney_sharp {n : ℕ} (hn : 2 ≤ n) :
     C_inductPositiveTermsReductionWhitney n <
       (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
@@ -11205,7 +11242,7 @@ theorem aux_leftBumpOne_short_two_sharp {n : ℕ} (hn : 2 ≤ n) :
   have hAuxpos : 0 < C_leftBumpOneShortTwoAuxiliary := by
     unfold C_leftBumpOneShortTwoAuxiliary
     exact lt_of_lt_of_le
-      (by norm_num [C_thetaPrimitive, WindowsAndPairs.C_uniPair])
+      (by norm_num [C_thetaPrimitive, Codex.C_uniPair])
       (le_max_left _ _)
   unfold C_leftBumpOneShortTwo
   calc
@@ -11304,19 +11341,19 @@ theorem aux_leftBumpOne_constant_sharp {n : ℕ} (hn : 2 ≤ n) :
       · positivity
 
 /--
-\begin{lemma}[constant $C_{\text{lem:leftbump1}}$ \auto]\label{constant left bump one}
-\begin{equation}\label{constant left bump one bound}
-C_{\text{lem:leftbump1}}<\tfrac{23}{32}2^{636}<2^{636}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:leftbump1}}$).**
 
-See also [`Codex.Reduction.FinalReduction.leftBumpOne`].
+$$
+C_{\text{lem:leftbump1}}<\tfrac{23}{32}2^{636}<2^{636}.
+$$
+
+See also [`Codex.leftBumpOne`].
 -/
 theorem constantLeftBumpOne {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOne n < (23 / 32 : ℝ) * (2 : ℝ) ^ 636 := by
   exact aux_leftBumpOne_constant_sharp hn
 
-/-- The final constant in the proof of Theorem [`Codex.RealToErgodic.aux_main_twisted_theorem`]. -/
+/-- The final constant in the proof of Theorem [`Codex.aux_main_twisted_theorem`]. -/
 noncomputable def C_mainTwistedTheorem (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 2 *
     (C_mainBumpOne n + (2 : ℝ) ^ 6 * C_mainBumpTwo n + C_leftBump n +
@@ -12148,9 +12185,6 @@ theorem aux_mainTwisted_mainBumpOne_energy {n J : ℕ} (hn : 2 ≤ n)
 
 open Filter Finset MeasureTheory
 open scoped BigOperators ENNReal NNReal Real
-open Codex.Reduction.TwistedAverages
-open Codex.Reduction.SmoothingDecomposition
-open Codex.Reduction.OnDiagonalOffDiagonal
 
 theorem aux_mainTwisted_weighted_tsum_sq_of_sq_le {J : ℕ}
     (a : ℕ → Fin J → ℝ≥0∞) (u : ℕ → ℝ≥0∞) (e : ℕ → Fin J → ℝ≥0∞)
@@ -12765,8 +12799,8 @@ theorem aux_mainTwisted_low_high_phiZero_energy {n : ℕ} (hn : 2 ≤ n)
 
 /--
 The fixed-constant reduction-side form of Theorem
-[`Codex.RealToErgodic.aux_main_twisted_theorem`].
-It is stated over the shared [`Codex.Reduction.TwistedAverages`] definitions to
+[`Codex.aux_main_twisted_theorem`].
+It is stated over the shared `Codex` twisted-average definitions to
 keep imports acyclic.
 -/
 theorem mainTwistedTheoremReductionBound {n : ℕ} (hn : 2 ≤ n) :
@@ -12891,4 +12925,4 @@ theorem mainTwistedTheoremReduction {n : ℕ} (hn : 2 ≤ n) :
 
 end
 
-end Codex.Reduction.FinalReduction
+end Codex

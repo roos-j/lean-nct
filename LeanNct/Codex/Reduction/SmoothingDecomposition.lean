@@ -14,19 +14,18 @@ Formalization of the ``A smoothing decomposition'' subsection of the reduction
 argument.
 -/
 
-namespace Codex.Reduction.SmoothingDecomposition
+namespace Codex
 
 open MeasureTheory Filter Set
 open scoped BigOperators FourierTransform Real ENNReal DomAddAct Convolution
 
-open Codex.Preliminaries.Notation
-open Codex.Reduction.WindowsAndPairs
-open Codex.Reduction.BumpFunctions
 
 
 noncomputable section
-/-- The raw one-dimensional, $L^1$-normalized rescaling used throughout
-Definition [`Codex.Reduction.SmoothingDecomposition.windowBasedBumpFunctions`]. -/
+/--
+The raw one-dimensional, $L^1$-normalized rescaling used throughout
+Definition [`Codex.windowBasedBumpFunctions`].
+-/
 noncomputable def aux_realRescaled (t : ℝ) (f : ℝ → ℝ) : ℝ → ℝ :=
   fun x ↦ t⁻¹ * f (t⁻¹ * x)
 
@@ -43,15 +42,17 @@ def aux_frequencyAnnulus : Set ℝ :=
   Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1
 
 /-- The one-dimensional annulus convention shared with the integral-kernel estimates. -/
-abbrev aux_annulusOne (r R : ℝ) : Set ℝ :=
-  Codex.Reduction.BumpFunctions.aux_annulusOne r R
+abbrev aux_sd_annulusOne (r R : ℝ) : Set ℝ :=
+  Codex.aux_annulusOne r R
 
 /-- The raw operator $T f=(x f(x))'$ needed in the Fourier estimates below. -/
-noncomputable def aux_T (f : ℝ → ℝ) : ℝ → ℝ :=
+noncomputable def aux_sd_T (f : ℝ → ℝ) : ℝ → ℝ :=
   fun x ↦ deriv (fun y ↦ y * f y) x
 
-/-- Uniform convergence of a sequence of real functions, expressed directly through
-the epsilon--$N$ condition. -/
+/--
+Uniform convergence of a sequence of real functions, expressed directly through
+the epsilon--$N$ condition.
+-/
 def aux_uniformlyConverges (f : ℕ → ℝ → ℝ) (g : ℝ → ℝ) : Prop :=
   ∀ ε > 0, ∃ N : ℕ, ∀ n ≥ N, ∀ x : ℝ, |f n x - g x| < ε
 
@@ -64,29 +65,40 @@ noncomputable def aux_integerIntervalSum (f : ℤ → ℝ → ℝ) (a b : ℤ) :
   fun x ↦ ∑ j ∈ Finset.Icc a b, f j x
 
 /--
-\begin{definition}[Window-based bump functions]\label{defn:window based bump functions}
+**Definition (Window-based bump functions).**
+
 Let $(\phi_0,\phi_1)$ be a universal pair.
 Define
-\begin{equation}\label{eqn:thetadef}
+
+$$
 {\theta}={\phi_0}-{(\phi_0)}_{(2)}.
-\end{equation}
+$$
+
 Define for $k\in\mathbb{Z}$,
-\begin{equation}\label{eqn:varphi0kdef}
+
+$$
 \varphi_{0,k} = (\mathbf{1}_{[0,1)}\ast\phi_0 - \phi_0)\ast \theta_{(2^{k})}
-\end{equation}
-\begin{equation}\label{eqn:varphi1kdef}\varphi_{1,k} = \mathbf{1}_{[0,\infty)}\ast\theta_{(2^k)}
-\end{equation}
-\begin{equation}\label{eqn:varphi2kdef}\varphi_{2,k} = -\mathbf{1}_{[1,\infty)}\ast\theta_{(2^k)}
-\end{equation}
-\begin{equation}\label{eqn:varphi3def}
+$$
+
+$$
+\varphi_{1,k} = \mathbf{1}_{[0,\infty)}\ast\theta_{(2^k)}
+$$
+
+$$
+\varphi_{2,k} = -\mathbf{1}_{[1,\infty)}\ast\theta_{(2^k)}
+$$
+
+$$
 \varphi_{3,k} = 2^{k}(\varphi_{0,k})_{(2^{-k})}
-\end{equation}
+$$
+
 Let
-\begin{equation}\label{eqn:varphi4kdef}
+
+$$
 \varphi_{4,k}(u)=2^k\widetilde{\theta}(u-2^{-k}),
-\end{equation}
+$$
+
 where $\widetilde{\theta}=\mathbf{1}_{[0,\infty)}*\theta$ (a primitive of $\theta$).
-\end{definition}
 -/
 structure windowBasedBumpFunctions where
   phi0 : SchwartzMap ℝ ℝ
@@ -95,39 +107,43 @@ structure windowBasedBumpFunctions where
 
 namespace windowBasedBumpFunctions
 
-/-- The function $\theta=\phi_0-(\phi_0)_{(2)}$ from
-\eqref{eqn:thetadef}. -/
+/--
+The function $\theta=\phi_0-(\phi_0)_{(2)}$ from
+(`eqn:thetadef`).
+-/
 noncomputable def theta (b : windowBasedBumpFunctions) : ℝ → ℝ :=
   fun x ↦ b.phi0 x - aux_realRescaled 2 (fun y ↦ b.phi0 y) x
 
-/-- The primitive $\widetilde\theta=\mathbf 1_{[0,\infty)}*\theta$ fixed in
-Definition [`Codex.Reduction.SmoothingDecomposition.windowBasedBumpFunctions`]. -/
+/--
+The primitive $\widetilde\theta=\mathbf 1_{[0,\infty)}*\theta$ fixed in
+Definition [`Codex.windowBasedBumpFunctions`].
+-/
 noncomputable def thetaTilde (b : windowBasedBumpFunctions) : ℝ → ℝ :=
   aux_realConvolution (aux_indicator (Set.Ici 0)) (theta b)
 
-/-- The function $\varphi_{0,k}$ from \eqref{eqn:varphi0kdef}. -/
+/-- The function $\varphi_{0,k}$ from (`eqn:varphi0kdef`). -/
 noncomputable def phiZero (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℝ :=
   aux_realConvolution
     (fun x ↦
       aux_realConvolution (aux_indicator (Set.Ico 0 1)) (fun y ↦ b.phi0 y) x - b.phi0 x)
     (aux_realRescaled ((2 : ℝ) ^ k) (theta b))
 
-/-- The function $\varphi_{1,k}$ from \eqref{eqn:varphi1kdef}. -/
+/-- The function $\varphi_{1,k}$ from (`eqn:varphi1kdef`). -/
 noncomputable def phiOne (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℝ :=
   aux_realConvolution (aux_indicator (Set.Ici 0))
     (aux_realRescaled ((2 : ℝ) ^ k) (theta b))
 
-/-- The function $\varphi_{2,k}$ from \eqref{eqn:varphi2kdef}. -/
+/-- The function $\varphi_{2,k}$ from (`eqn:varphi2kdef`). -/
 noncomputable def phiTwo (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℝ :=
   fun x ↦ -aux_realConvolution (aux_indicator (Set.Ici 1))
     (aux_realRescaled ((2 : ℝ) ^ k) (theta b)) x
 
-/-- The function $\varphi_{3,k}$ from \eqref{eqn:varphi3def}. -/
+/-- The function $\varphi_{3,k}$ from (`eqn:varphi3def`). -/
 noncomputable def phiThree (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℝ :=
   fun x ↦ ((2 : ℝ) ^ k) *
     aux_realRescaled ((2 : ℝ) ^ (-k)) (phiZero b k) x
 
-/-- The function $\varphi_{4,k}$ from \eqref{eqn:varphi4kdef}. -/
+/-- The function $\varphi_{4,k}$ from (`eqn:varphi4kdef`). -/
 noncomputable def phiFour (b : windowBasedBumpFunctions) (k : ℤ) : ℝ → ℝ :=
   fun u ↦ ((2 : ℝ) ^ k) * thetaTilde b (u - (2 : ℝ) ^ (-k))
 
@@ -141,12 +157,14 @@ noncomputable def smoothingPartialSum (b : windowBasedBumpFunctions) (N : ℕ) :
 
 end windowBasedBumpFunctions
 
-/-- The constant in Lemma [`Codex.Reduction.SmoothingDecomposition.thetaDecay`]. -/
+/-- The constant in Lemma [`Codex.thetaDecay`]. -/
 def C_thetaDecay (N : ℕ) : ℝ :=
   (2 : ℝ) ^ (2 * N + 2) * C_uniPair
 
-/-- The four explicit constants in Lemma
-[`Codex.Reduction.SmoothingDecomposition.absDerivFourierPhiThreeLe`]. -/
+/--
+The four explicit constants in Lemma
+[`Codex.absDerivFourierPhiThreeLe`].
+-/
 def C_absDerivFourierPhiThreeLe : ℕ → ℝ
   | 0 => 4
   | 1 => 28 * C_uniPair + 4
@@ -154,11 +172,11 @@ def C_absDerivFourierPhiThreeLe : ℕ → ℝ
   | 3 => 69 * (2 : ℝ) ^ 4 * C_uniPair ^ 2 + 47 * 2 * 5 ^ 2 * C_uniPair + 2 ^ 11
   | _ + 4 => 0
 
-/-- The constants in Lemma [`Codex.Reduction.SmoothingDecomposition.absDerivFourierTPhiThreeLe`]. -/
+/-- The constants in Lemma [`Codex.absDerivFourierTPhiThreeLe`]. -/
 def C_absDerivFourierTPhiThreeLe (m : ℕ) : ℝ :=
   m * C_absDerivFourierPhiThreeLe m + C_absDerivFourierPhiThreeLe (m + 1)
 
-/-- The constant in Lemma [`Codex.Reduction.SmoothingDecomposition.thetaPrimitive`]. -/
+/-- The constant in Lemma [`Codex.thetaPrimitive`]. -/
 def C_thetaPrimitive (N : ℕ) : ℝ :=
   (2 : ℝ) ^ (5 * N + 6) * C_uniPair
 
@@ -178,7 +196,7 @@ theorem aux_realRescaled_thetaBasic (f : ℝ → ℝ) (ell : ℤ) :
   rw [zpow_add₀ (by norm_num : (2 : ℝ) ≠ 0)]
   field_simp [aux_two_zpow_ne_zero]
 
-theorem aux_sum_Ico_int_telescope {A : Type*} [AddCommGroup A] (f : ℤ → A)
+theorem aux_sd_sum_Ico_int_telescope {A : Type*} [AddCommGroup A] (f : ℤ → A)
     (a : ℤ) (N : ℕ) :
     (∑ r ∈ Finset.Ico a (a + (N : ℤ)), (f r - f (r + 1))) =
       f a - f (a + (N : ℤ)) := by
@@ -196,7 +214,7 @@ theorem aux_sum_Icc_int_telescope {A : Type*} [AddCommGroup A] (f : ℤ → A)
     (∑ r ∈ Finset.Icc a (a + (N : ℤ)), (f r - f (r + 1))) =
       f a - f (a + (N : ℤ) + 1) := by
   rw [← Finset.Ico_add_one_right_eq_Icc]
-  have h := aux_sum_Ico_int_telescope f a (N + 1)
+  have h := aux_sd_sum_Ico_int_telescope f a (N + 1)
   convert h using 1 <;> push_cast <;> ring_nf
 
 theorem aux_bumpBasic_partial_sum_eq (f : ℝ → ℝ) (m : ℤ) (N : ℕ) :
@@ -395,20 +413,23 @@ theorem aux_bumpBasic_fourier_theta_support (f : SchwartzMap ℝ ℝ)
     ring
 
 /--
-\begin{lemma}\label{lem:bumpbasic}\lean{bumpBasic}\leanok
-Let $\theta$ be as in \eqref{eqn:thetadef}.\\
+**Lemma.**
+
+Let $\theta$ be as in (`eqn:thetadef`).\\
 
 (i) We have
-\begin{equation}\label{auto:theta-Fourier-support}
+
+$$
 \mathrm{supp}\;\widehat{\theta} \subset [-1,-2^{-2}]\cup [2^{-2},1]
-\end{equation}
+$$
 
 (ii) For every $m\in\mathbb{Z}$
-\begin{equation}\label{auto:theta-telescoping-sum}
+
+$$
 \sum_{\ell=m}^\infty \theta_{(2^\ell)} = (\phi_0)_{(2^m)}
-\end{equation}
+$$
+
 and the series converges uniformly.
-\end{lemma}
 -/
 theorem bumpBasic (b : windowBasedBumpFunctions) :
     Function.support (FourierTransform.fourier
@@ -581,7 +602,7 @@ theorem aux_char_translation_integral_norm_tendsto {f : ℝ → ℝ}
     Tendsto (fun p : ℝ => ∫ x : ℝ, ‖f (x - p) - f x‖) (nhds 0) (nhds 0) := by
   simpa using (aux_char_translation_integral_norm_continuous hf).tendsto 0
 
-theorem aux_integrable_shear_difference
+theorem aux_sd_integrable_shear_difference
     (f psi : ℝ → ℝ) (hf : Integrable f) (hfm : Measurable f)
     (hpsi : Integrable psi) (hpsim : Measurable psi) (t : ℝ) :
     Integrable (fun z : ℝ × ℝ =>
@@ -677,7 +698,7 @@ theorem aux_realConvolution_swap (f g : ℝ → ℝ) (x : ℝ) :
     _ = ∫ p : ℝ, f (x - p) * g p :=
       integral_sub_left_eq_self (fun p : ℝ => f (x - p) * g p) volume x
 
-theorem aux_translation_difference_bound
+theorem aux_sd_translation_difference_bound
     (f : ℝ → ℝ) (hf : Integrable f) (p : ℝ) :
     (∫ x : ℝ, ‖f (x - p) - f x‖) ≤ 2 * ∫ x : ℝ, ‖f x‖ := by
   have hshift : Integrable (fun x : ℝ => f (x - p)) := hf.comp_sub_right p
@@ -711,7 +732,7 @@ theorem aux_raw_approximate_identity_L1
         ‖psi y * (f (x - t * y) - f x)‖) := by
     filter_upwards [] with t
     have hintegrable :=
-      (aux_integrable_shear_difference f psi hf hfm hpsi hpsim t).integral_norm_prod_right
+      (aux_sd_integrable_shear_difference f psi hf hfm hpsi hpsim t).integral_norm_prod_right
     exact hintegrable.aestronglyMeasurable
   have hbound : ∀ᶠ t : ℝ in nhdsWithin 0 (Set.Ioi 0), ∀ᵐ y : ℝ,
       ‖∫ x : ℝ, ‖psi y * (f (x - t * y) - f x)‖‖ ≤ B y := by
@@ -727,7 +748,7 @@ theorem aux_raw_approximate_identity_L1
     calc
       ‖psi y‖ * (∫ x : ℝ, ‖f (x - t * y) - f x‖) ≤
           ‖psi y‖ * (2 * ∫ x : ℝ, ‖f x‖) := by
-        exact mul_le_mul_of_nonneg_left (aux_translation_difference_bound f hf _) (norm_nonneg _)
+        exact mul_le_mul_of_nonneg_left (aux_sd_translation_difference_bound f hf _) (norm_nonneg _)
       _ = B y := by
         dsimp [B]
         ring
@@ -760,7 +781,7 @@ theorem aux_raw_approximate_identity_L1
   · filter_upwards [self_mem_nhdsWithin] with t ht
     have hD : Integrable (fun z : ℝ × ℝ =>
         psi z.2 * (f (z.1 - t * z.2) - f z.1)) :=
-      aux_integrable_shear_difference f psi hf hfm hpsi hpsim t
+      aux_sd_integrable_shear_difference f psi hf hfm hpsi hpsim t
     have hleft : Integrable (fun x : ℝ =>
         |aux_realConvolution f (aux_realRescaled t psi) x - f x|) := by
       have hslice : Integrable (fun x : ℝ => ∫ y : ℝ,
@@ -878,7 +899,7 @@ theorem aux_raw_approximate_identity_error_integrable
       aux_realConvolution f (aux_realRescaled t psi) x - f x) := by
   have hD : Integrable (fun z : ℝ × ℝ =>
       psi z.2 * (f (z.1 - t * z.2) - f z.1)) :=
-    aux_integrable_shear_difference f psi hf hfm hpsi hpsim t
+    aux_sd_integrable_shear_difference f psi hf hfm hpsi hpsim t
   have hSlice : Integrable (fun x : ℝ => ∫ y : ℝ,
       psi y * (f (x - t * y) - f x)) := by
     simpa only [Measure.volume_eq_prod] using hD.integral_prod_left
@@ -961,14 +982,16 @@ theorem aux_phi0_integral_one (b : windowBasedBumpFunctions) :
   exact_mod_cast hcomplex
 
 /--
-\begin{lemma}\label{lem:chardecomp}
-With $\phi_0,\theta$ defined as in \eqref{eqn:thetadef}, the identity
- \begin{equation}\label{auto:indicator-smoothing-decomposition}
- \mathbf{1}_{[0,1]} = \mathbf{1}_{[0,1]}* \phi_0 +
- \sum_{\ell=-\infty}^{-1} \mathbf{1}_{[0,1]} * \theta_{(2^\ell)}
- \end{equation}
+**Lemma.**
+
+With $\phi_0,\theta$ defined as in (`eqn:thetadef`), the identity
+
+$$
+\mathbf{1}_{[0,1]} = \mathbf{1}_{[0,1]}* \phi_0 +  \sum_{\ell=-\infty}^{-1} \mathbf{1}_{[0,1]} *
+\theta_{(2^\ell)}
+$$
+
 holds in $L^2$.
-\end{lemma}
 -/
 theorem charDecomp (b : windowBasedBumpFunctions) :
     aux_convergesInL2
@@ -1767,15 +1790,16 @@ theorem aux_smoothing_Ico_approximate_identity (b : windowBasedBumpFunctions) :
   rw [hx]
 
 /--
-\begin{lemma}[Smoothing decomposition]\label{lem:smoothingdecomp}
+**Lemma (Smoothing decomposition).**
+
 The identity
-\begin{equation}\label{eq:seriesexpansion}
-\mathbf{1}_{[0,1]} = \phi_0 + \sum_{k=-2}^\infty \varphi_{0,k} +
-\sum_{k=-\infty}^{-1} \varphi_{1,k}+
-\sum_{k=-\infty}^{-1}\varphi_{2,k}.
-\end{equation}
+
+$$
+\mathbf{1}_{[0,1]} = \phi_0 + \sum_{k=-2}^\infty \varphi_{0,k}  + \sum_{k=-\infty}^{-1}
+\varphi_{1,k}+ \sum_{k=-\infty}^{-1}\varphi_{2,k}.
+$$
+
 holds in the $L^2$ sense.
-\end{lemma}
 -/
 theorem smoothingDecomp (b : windowBasedBumpFunctions) :
     aux_convergesInL2 (windowBasedBumpFunctions.smoothingPartialSum b)
@@ -1859,7 +1883,7 @@ theorem aux_thetaDecay_phi0 (b : windowBasedBumpFunctions) (N : ℕ)
     · exact hwin.2.2.2.2 xi hxi k (hk.trans hNwindow)
     · have hderivSupp : Function.support (iteratedDeriv k g) ⊆ Set.Icc (-1 : ℝ) 1 :=
         (subset_tsupport _).trans
-          ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset g k).trans
+          ((Codex.aux_tsupport_iteratedDeriv_subset g k).trans
             hgsupp)
       have hzero : iteratedDeriv k g xi = 0 := by
         apply Function.notMem_support.mp
@@ -1877,7 +1901,7 @@ theorem aux_thetaDecay_phi0 (b : windowBasedBumpFunctions) (N : ℕ)
     dsimp [g]
     exact hphiCont.fourierInv_fourier_eq hphiInt hgInt
   have hdecay :=
-    Codex.Preliminaries.BumpsAndEstimates.aux_fourierProfile_decay_pos N hN_one
+    Codex.aux_fourierProfile_decay_pos N hN_one
       g C_uniPair (by norm_num [C_uniPair]) hgCont hgsupp hgprofile u
   rw [hinv, Complex.norm_real, Real.norm_eq_abs] at hdecay
   exact hdecay
@@ -1895,19 +1919,22 @@ theorem aux_thetaDecay_bracket_half (u : ℝ) :
   nlinarith [abs_nonneg u]
 
 /--
-\begin{lemma}\label{lem:theta_decay}
-Let $1\le N\le3$. Then
-\begin{equation}\label{auto:theta-decay}
-|\theta(u)|\le C_{\text{lem:theta\_decay},N}\langle u\rangle^N,
-\end{equation}
-where
-\begin{equation}\label{auto:theta-decay-constant-definition}
-C_{\text{lem:theta\_decay},N}=2^{2N+2}C_{\text{def:unipair}}.
-\end{equation}
-\end{lemma}
+**Lemma.**
 
-See also [`Codex.Reduction.SmoothingDecomposition.thetaDecay`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`].
+Let $1\le N\le3$. Then
+
+$$
+|\theta(u)|\le C_{\text{lem:theta\_decay},N}\langle u\rangle^N,
+$$
+
+where
+
+$$
+C_{\text{lem:theta\_decay},N}=2^{2N+2}C_{\text{Universal pair}}.
+$$
+
+See also [`Codex.thetaDecay`],
+[`Codex.uniPair`].
 -/
 theorem thetaDecay (b : windowBasedBumpFunctions) (N : ℕ)
     (hN_one : 1 ≤ N) (hN_three : N ≤ 3) :
@@ -1981,14 +2008,15 @@ theorem thetaDecay (b : windowBasedBumpFunctions) (N : ℕ)
     _ ≤ C_thetaDecay N * bracketBump u ^ N := hfinalcoeff
 
 /--
-\begin{lemma}[constant $C_{\text{lem:theta\_decay},N}$ \auto]\label{constant theta decay}
-For $1\le N\le3$,
-\begin{equation}\label{constant theta decay bound}
-C_{\text{lem:theta\_decay},N}\le2^{2N+17}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:theta\_decay},N}$).**
 
-See also [`Codex.Reduction.SmoothingDecomposition.thetaDecay`].
+For $1\le N\le3$,
+
+$$
+C_{\text{lem:theta\_decay},N}\le2^{2N+17}.
+$$
+
+See also [`Codex.thetaDecay`].
 -/
 theorem constantThetaDecay (N : ℕ) (hN_one : 1 ≤ N) (hN_three : N ≤ 3) :
     C_thetaDecay N ≤ (2 : ℝ) ^ (2 * N + 17) := by
@@ -2007,13 +2035,14 @@ theorem aux_smoothing_fourier_real_const_mul (c : ℝ) (f : ℝ → ℝ) (xi : �
   ring
 
 /--
-\begin{lemma}\label{lem:ft_phi3_eq}
+**Lemma.**
+
 For $k\in\mathbb{Z}$ and $\xi\in\mathbb{R}$,
-\begin{equation}\label{auto:varphi-three-Fourier-transform}
-\widehat{\varphi_{3,k}}(\xi) = 2^k(\widehat{\mathbf{1}_{[0,1)}}-1)(2^{-k}\xi)
-\widehat{\phi_0}(2^{-k}\xi)\widehat{\theta}(\xi)
-\end{equation}
-\end{lemma}
+
+$$
+\widehat{\varphi_{3,k}}(\xi) =
+2^k(\widehat{\mathbf{1}_{[0,1)}}-1)(2^{-k}\xi)\widehat{\phi_0}(2^{-k}\xi)\widehat{\theta}(\xi)
+$$
 -/
 theorem fourierPhiThreeEq (b : windowBasedBumpFunctions) (k : ℤ) (ξ : ℝ) :
     FourierTransform.fourier
@@ -2134,7 +2163,7 @@ theorem icoC_moment (q : ℕ) :
 theorem icoC_fourier_deriv_bound (q : ℕ) (x : ℝ) :
     ‖iteratedDeriv q (FourierTransform.fourier icoC) x‖ ≤
       (2 * Real.pi) ^ q / (q + 1 : ℝ) := by
-  apply (Codex.Preliminaries.BumpsAndEstimates.aux_norm_iteratedDeriv_fourier_le_moment
+  apply (Codex.aux_norm_iteratedDeriv_fourier_le_moment
     icoC q ?_ ?_ x).trans_eq ?_
   · exact icoC_measurable.aestronglyMeasurable
   · intro j hj
@@ -2347,8 +2376,6 @@ noncomputable section
 
 open MeasureTheory Filter Set
 open scoped BigOperators FourierTransform Real ENNReal
-open Codex.Reduction.WindowsAndPairs
-open Codex.Reduction.SmoothingDecomposition
 
 
 def F (b : windowBasedBumpFunctions) : ℝ → ℂ :=
@@ -2375,7 +2402,7 @@ theorem F_deriv_bound (b : windowBasedBumpFunctions) (m : ℕ)
   · exact hwin.2.2.2.2 x hx m (by simpa [N_uniPair] using hm)
   · have hderivSupp : Function.support (iteratedDeriv m (F b)) ⊆ Set.Icc (-1 : ℝ) 1 :=
       (subset_tsupport _).trans
-        ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset (F b) m).trans
+        ((Codex.aux_tsupport_iteratedDeriv_subset (F b) m).trans
           hFtsupp)
     have hzero : iteratedDeriv m (F b) x = 0 := by
       apply Function.notMem_support.mp
@@ -2575,7 +2602,6 @@ noncomputable section
 
 open MeasureTheory Filter Set
 open scoped BigOperators FourierTransform Real ENNReal
-open Codex.Reduction.WindowsAndPairs
 
 
 def D (c : ℝ) : ℕ → ℝ
@@ -2892,8 +2918,6 @@ noncomputable section
 
 open MeasureTheory Filter Set
 open scoped BigOperators FourierTransform Real ENNReal
-open Codex.Reduction.WindowsAndPairs
-open Codex.Reduction.SmoothingDecomposition
 
 
 def F (b : windowBasedBumpFunctions) : ℝ → ℂ :=
@@ -2955,34 +2979,43 @@ end aux_phiThreeSmall
 
 
 /--
-\begin{lemma}\label{lem:abs_deriv_ft_phi3_le}
-Let $m\in[4)$, $k\in\Z$, and $|\xi|\le1$. Then
-\begin{equation}\label{auto:varphi-three-Fourier-derivative-bound}
+**Lemma.**
+
+Let $m\in[4)$, $k\in\mathbb{Z}$, and $|\xi|\le1$. Then
+
+$$
 |\widehat{\varphi_{3,k}}^{(m)}(\xi)|
 \le C_{\text{lem:abs\_deriv\_ft\_phi3\_le},m},
-\end{equation}
-where for $m=0$,
-\begin{equation}\label{auto:varphi-three-Fourier-derivative-constant}
-C_{\text{lem:abs\_deriv\_ft\_phi3\_le},0}=4,
-\end{equation}
-for $m=1$,
-\begin{equation}\label{auto:varphi-three-Fourier-derivative-constant-one}
-C_{\text{lem:abs\_deriv\_ft\_phi3\_le},1}=28C_{\text{def:unipair}}+4,
-\end{equation}
-for $m=2$,
-\begin{equation}\label{auto:varphi-three-Fourier-derivative-constant-two}
-C_{\text{lem:abs\_deriv\_ft\_phi3\_le},2}=96C_{\text{def:unipair}}^2+140C_{\text{def:unipair}}+86,
-\end{equation}
-and, for $m=3$,
-\begin{equation}\label{auto:varphi-three-Fourier-derivative-constant-three}
-C_{\text{lem:abs\_deriv\_ft\_phi3\_le},3}=
-69\cdot2^4C_{\text{def:unipair}}^2+
-47\cdot2\cdot5^2C_{\text{def:unipair}}+2^{11}.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.SmoothingDecomposition.absDerivFourierPhiThreeLe`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`].
+where for $m=0$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_phi3\_le},0}=4,
+$$
+
+for $m=1$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_phi3\_le},1}=28C_{\text{Universal pair}}+4,
+$$
+
+for $m=2$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_phi3\_le},2}=96C_{\text{Universal pair}}^2+140C_{\text{Universal
+pair}}+86,
+$$
+
+and, for $m=3$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_phi3\_le},3}=69\cdot2^4C_{\text{Universal
+pair}}^2+47\cdot2\cdot5^2C_{\text{Universal pair}}+2^{11}.
+$$
+
+See also [`Codex.absDerivFourierPhiThreeLe`],
+[`Codex.uniPair`].
 -/
 theorem absDerivFourierPhiThreeLe (b : windowBasedBumpFunctions) (m : ℕ)
     (hm : m < 4) (k : ℤ) (ξ : ℝ) (hξ : |ξ| ≤ 1) :
@@ -3044,27 +3077,33 @@ theorem absDerivFourierPhiThreeLe (b : windowBasedBumpFunctions) (m : ℕ)
     interval_cases m <;> norm_num [C_absDerivFourierPhiThreeLe, C_uniPair]
 
 /--
-\begin{lemma}[constant $C_{\text{lem:abs\_deriv\_ft\_phi3\_le},m}$ \auto]
-\label{constant phi three derivative}
-For $m=0$,
-\begin{equation}\label{constant phi three derivative bound}
-C_{\text{lem:abs\_deriv\_ft\_phi3\_le},0}=2^2.
-\end{equation}
-For $m=1$,
-\begin{equation}\label{auto:constant-phi-three-derivative-one}
-C_{\text{lem:abs\_deriv\_ft\_phi3\_le},1}<2^{20}.
-\end{equation}
-For $m=2$,
-\begin{equation}\label{auto:constant-phi-three-derivative-two}
-C_{\text{lem:abs\_deriv\_ft\_phi3\_le},2}<2^{37}.
-\end{equation}
-For $m=3$,
-\begin{equation}\label{auto:constant-phi-three-derivative-three}
-C_{\text{lem:abs\_deriv\_ft\_phi3\_le},3}<2^{41}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:abs\_deriv\_ft\_phi3\_le},m}$).**
 
-See also [`Codex.Reduction.SmoothingDecomposition.absDerivFourierPhiThreeLe`].
+For $m=0$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_phi3\_le},0}=2^2.
+$$
+
+For $m=1$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_phi3\_le},1}<2^{20}.
+$$
+
+For $m=2$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_phi3\_le},2}<2^{37}.
+$$
+
+For $m=3$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_phi3\_le},3}<2^{41}.
+$$
+
+See also [`Codex.absDerivFourierPhiThreeLe`].
 -/
 theorem constantPhiThreeDerivative :
     C_absDerivFourierPhiThreeLe 0 = (2 : ℝ) ^ 2 ∧
@@ -3425,8 +3464,8 @@ theorem phiThreeSchwartz_apply (b : windowBasedBumpFunctions) (k : ℤ) (x : ℝ
   simp
 
 theorem aux_TphiThree_aux_T_cast_eq (f : ℝ → ℝ) (hf : ContDiff ℝ 1 f) :
-    (fun x : ℝ ↦ (aux_T f x : ℂ)) =
-      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ (f x : ℂ)) := by
+    (fun x : ℝ ↦ (aux_sd_T f x : ℂ)) =
+      Codex.aux_T (fun x : ℝ ↦ (f x : ℂ)) := by
   funext x
   have hdiff : DifferentiableAt ℝ (fun y : ℝ => y * f y) x := by
     exact ((contDiff_id.mul hf).contDiffAt).differentiableAt (by norm_num)
@@ -3435,50 +3474,58 @@ theorem aux_TphiThree_aux_T_cast_eq (f : ℝ → ℝ) (hf : ContDiff ℝ 1 f) :
         ((deriv (fun y : ℝ => y * f y) x : ℝ) : ℂ) := by
     simpa using ((hasDerivAt_const x Complex.ofRealCLM).clm_apply hdiff.hasDerivAt).deriv
   have hfun : (fun y : ℝ => ((y * f y : ℝ) : ℂ)) =
-      Codex.Reduction.BumpFunctions.multiplicationOperatorX
+      Codex.multiplicationOperatorX
         (fun y : ℝ => (f y : ℂ)) := by
     funext y
-    simp [Codex.Reduction.BumpFunctions.multiplicationOperatorX]
-  unfold aux_T Codex.Reduction.BumpFunctions.aux_T
+    simp [Codex.multiplicationOperatorX]
+  unfold aux_sd_T Codex.aux_T
   rw [← hfun, hcast]
 
 /--
-\begin{lemma}\label{lem:abs_deriv_ft_Tphi3_le}
-Let $m\in[3)$, $k\in\Z$, and $|\xi|\le1$. Then
-\begin{equation}\label{auto:T-varphi-three-Fourier-derivative-bound}
+**Lemma.**
+
+Let $m\in[3)$, $k\in\mathbb{Z}$, and $|\xi|\le1$. Then
+
+$$
 |\widehat{T\varphi_{3,k}}^{(m)}(\xi)|
 \le C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},m},
-\end{equation}
+$$
+
 where
-\begin{equation}\label{auto:T-varphi-three-Fourier-derivative-constant}
+
+$$
 C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},m}
 =mC_{\text{lem:abs\_deriv\_ft\_phi3\_le},m}
 +C_{\text{lem:abs\_deriv\_ft\_phi3\_le},m+1}.
-\end{equation}
-More explicitly,
-\begin{equation}\label{auto:T-varphi-three-Fourier-derivative-constant-zero-exact}
-C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},0}=28C_{\text{def:unipair}}+4,
-\end{equation}
-\begin{equation}\label{auto:T-varphi-three-Fourier-derivative-constant-one-exact}
-C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},1}=96C_{\text{def:unipair}}^2+168C_{\text{def:unipair}}+90,
-\end{equation}
-and
-\begin{equation}\label{auto:T-varphi-three-Fourier-derivative-constant-two-exact}
-C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},2}=
-81\cdot2^4C_{\text{def:unipair}}^2+
-263\cdot2\cdot5C_{\text{def:unipair}}+555\cdot2^2.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.SmoothingDecomposition.absDerivFourierTPhiThreeLe`],
-[`Codex.Reduction.SmoothingDecomposition.absDerivFourierPhiThreeLe`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`].
+More explicitly,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},0}=28C_{\text{Universal pair}}+4,
+$$
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},1}=96C_{\text{Universal pair}}^2+168C_{\text{Universal
+pair}}+90,
+$$
+
+and
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},2}=81\cdot2^4C_{\text{Universal
+pair}}^2+263\cdot2\cdot5C_{\text{Universal pair}}+555\cdot2^2.
+$$
+
+See also [`Codex.absDerivFourierTPhiThreeLe`],
+[`Codex.absDerivFourierPhiThreeLe`],
+[`Codex.uniPair`].
 -/
 theorem absDerivFourierTPhiThreeLe (b : windowBasedBumpFunctions) (m : ℕ)
     (hm : m < 3) (k : ℤ) (ξ : ℝ) (hξ : |ξ| ≤ 1) :
     ‖iteratedDeriv m
       (FourierTransform.fourier
-        (fun x : ℝ ↦ (aux_T (windowBasedBumpFunctions.phiThree b k) x : ℂ))) ξ‖ ≤
+        (fun x : ℝ ↦ (aux_sd_T (windowBasedBumpFunctions.phiThree b k) x : ℂ))) ξ‖ ≤
       C_absDerivFourierTPhiThreeLe m := by
   rcases aux_TphiThree_phiThree_schwartz b k with ⟨Phi, hPhi⟩
   have hphi_fun : (fun x : ℝ ↦ (windowBasedBumpFunctions.phiThree b k x : ℂ)) = Phi := by
@@ -3493,10 +3540,10 @@ theorem absDerivFourierTPhiThreeLe (b : windowBasedBumpFunctions) (m : ℕ)
     change ContDiff ℝ 1 (fun x : ℝ => windowBasedBumpFunctions.phiThree b k x)
     rw [hreal]
     exact Complex.reCLM.contDiff.comp (Phi.smooth 1)
-  have hT : (fun x : ℝ ↦ (aux_T (windowBasedBumpFunctions.phiThree b k) x : ℂ)) =
-      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ ↦ Phi x) := by
+  have hT : (fun x : ℝ ↦ (aux_sd_T (windowBasedBumpFunctions.phiThree b k) x : ℂ)) =
+      Codex.aux_T (fun x : ℝ ↦ Phi x) := by
     rw [aux_TphiThree_aux_T_cast_eq _ hsmooth, hphi_fun]
-  rw [hT, Codex.Reduction.BumpFunctions.fourierDerivativeMul]
+  rw [hT, Codex.fourierDerivativeMul]
   have hm1 : m + 1 < 4 := by omega
   have h0 := absDerivFourierPhiThreeLe b m (by omega) k ξ hξ
   have h1 := absDerivFourierPhiThreeLe b (m + 1) hm1 k ξ hξ
@@ -3528,30 +3575,34 @@ theorem absDerivFourierTPhiThreeLe (b : windowBasedBumpFunctions) (m : ℕ)
       rw [C_absDerivFourierTPhiThreeLe]
 
 /--
-\begin{lemma}[constant $C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},m}$ \auto]
-\label{constant T phi three derivative}
-For $m=0$,
-\begin{equation}\label{constant T phi three derivative bound}
-C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},0}<2^{20}.
-\end{equation}
-For $m=1$,
-\begin{equation}\label{auto:constant-T-phi-three-derivative-one}
-C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},1}<2^{37}.
-\end{equation}
-For $m=2$,
-\begin{equation}\label{auto:constant-T-phi-three-derivative-two}
-C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},2}<2^{41}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},m}$).**
 
-See also [`Codex.Reduction.SmoothingDecomposition.absDerivFourierTPhiThreeLe`].
+For $m=0$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},0}<2^{20}.
+$$
+
+For $m=1$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},1}<2^{37}.
+$$
+
+For $m=2$,
+
+$$
+C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},2}<2^{41}.
+$$
+
+See also [`Codex.absDerivFourierTPhiThreeLe`].
 -/
 theorem constantTPhiThreeDerivative :
     C_absDerivFourierTPhiThreeLe 0 < (2 : ℝ) ^ 20 ∧
     C_absDerivFourierTPhiThreeLe 1 < (2 : ℝ) ^ 37 ∧
     C_absDerivFourierTPhiThreeLe 2 < (2 : ℝ) ^ 41 := by
   norm_num [C_absDerivFourierTPhiThreeLe,
-    C_absDerivFourierPhiThreeLe, WindowsAndPairs.C_uniPair]
+    C_absDerivFourierPhiThreeLe, Codex.C_uniPair]
 
 /-- Auxiliary bounds for the physical-side primitive in `thetaPrimitive`. -/
 theorem aux_thetaPrimitive_bracket_le_two_of_abs_le_twice (x z : ℝ)
@@ -3589,7 +3640,7 @@ theorem aux_thetaPrimitive_phi0_decay_three (b : windowBasedBumpFunctions) (u : 
     · exact hwin.2.2.2.2 xi hxi k (by simpa [N_uniPair] using hk)
     · have hderivSupp : Function.support (iteratedDeriv k g) ⊆ Set.Icc (-1 : ℝ) 1 :=
         (subset_tsupport _).trans
-          ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset g k).trans
+          ((Codex.aux_tsupport_iteratedDeriv_subset g k).trans
             hgsupp)
       have hzero : iteratedDeriv k g xi = 0 := by
         apply Function.notMem_support.mp
@@ -3609,7 +3660,7 @@ theorem aux_thetaPrimitive_phi0_decay_three (b : windowBasedBumpFunctions) (u : 
     dsimp [g]
     exact hphiCont.fourierInv_fourier_eq hphiInt hgInt
   have hdecay :=
-    Codex.Preliminaries.BumpsAndEstimates.aux_fourierProfile_decay_pos 3 (by omega)
+    Codex.aux_fourierProfile_decay_pos 3 (by omega)
       g C_uniPair (by norm_num [C_uniPair]) hgCont hgsupp hgprofile u
   rw [hinv, Complex.norm_real, Real.norm_eq_abs] at hdecay
   exact hdecay
@@ -4116,11 +4167,11 @@ theorem aux_thetaPrimitive_x_theta_fourier_zero_of_not_annulus
   exact hresult
 
 theorem aux_thetaPrimitive_T_tilde_eq (b : windowBasedBumpFunctions) :
-    aux_T (windowBasedBumpFunctions.thetaTilde b) =
+    aux_sd_T (windowBasedBumpFunctions.thetaTilde b) =
       fun x : ℝ => windowBasedBumpFunctions.thetaTilde b x +
         x * windowBasedBumpFunctions.theta b x := by
   funext x
-  unfold aux_T
+  unfold aux_sd_T
   have hd := ((hasDerivAt_id x).mul
     (aux_thetaPrimitive_tilde_hasDerivAt b x)).deriv
   have hfun : id * windowBasedBumpFunctions.thetaTilde b =
@@ -4132,7 +4183,7 @@ theorem aux_thetaPrimitive_T_tilde_eq (b : windowBasedBumpFunctions) :
 
 theorem aux_thetaPrimitive_T_tilde_fourier_support (b : windowBasedBumpFunctions) :
     Function.support (FourierTransform.fourier
-      (fun x : ℝ => (aux_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) ⊆
+      (fun x : ℝ => (aux_sd_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) ⊆
       aux_frequencyAnnulus := by
   intro xi hmem
   by_contra hxi
@@ -4174,7 +4225,7 @@ theorem aux_thetaPrimitive_T_tilde_fourier_support (b : windowBasedBumpFunctions
       simp)
 
 theorem aux_thetaPrimitive_frequencyAnnulus_subset_annulusOne :
-    aux_frequencyAnnulus ⊆ aux_annulusOne 1 ((2 : ℝ) ^ 2) := by
+    aux_frequencyAnnulus ⊆ aux_sd_annulusOne 1 ((2 : ℝ) ^ 2) := by
   intro xi hxi
   change 1 / ((2 : ℝ) ^ 2) ≤ |xi| ∧ |xi| ≤ (2 : ℝ) ^ 2 * 1
   rcases hxi with hxi | hxi
@@ -4205,7 +4256,7 @@ theorem aux_thetaPrimitive_tilde_decay_N (b : windowBasedBumpFunctions) (N : ℕ
 
 theorem aux_thetaPrimitive_T_tilde_decay_N (b : windowBasedBumpFunctions) (N : ℕ)
     (hN_two : 2 ≤ N) (hN_uni : N < N_uniPair) (u : ℝ) :
-    |aux_T (windowBasedBumpFunctions.thetaTilde b) u| ≤
+    |aux_sd_T (windowBasedBumpFunctions.thetaTilde b) u| ≤
       C_thetaPrimitive N * bracketBump u ^ N := by
   have hN : N = 2 := by
     simp only [N_uniPair] at hN_uni
@@ -4242,49 +4293,56 @@ theorem aux_thetaPrimitive_T_tilde_decay_N (b : windowBasedBumpFunctions) (N : �
       gcongr <;> norm_num [C_uniPair]
 
 /--
-\begin{lemma}\label{lem:theta_prim}
+**Lemma.**
+
 Let $\widetilde\theta$ be the primitive of $\theta$ fixed above. Then
-\begin{equation}\label{thetaprim_supp}
+
+$$
 \operatorname{supp}(\widehat{\widetilde\theta})
 \subset[-1,-2^{-2}]\cup[2^{-2},1]
 \subset\operatorname{Ann}_1(1,2^2),
-\end{equation}
-\begin{equation}\label{Tthetaprim_supp}
+$$
+
+$$
 \operatorname{supp}(\widehat{T\widetilde\theta})
 \subset[-1,-2^{-2}]\cup[2^{-2},1]
 \subset\operatorname{Ann}_1(1,2^2).
-\end{equation}
-For $2\le N<N_{\text{def:unipair}}$,
-\begin{equation}\label{thetaprim_decay}
+$$
+
+For $2\le N<N_{\text{Universal pair}}$,
+
+$$
 |\widetilde\theta(u)|
 \le C_{\text{lem:theta\_prim},N}\langle u\rangle^N,
-\end{equation}
-\begin{equation}\label{Thetaprim_decay}
+$$
+
+$$
 |T\widetilde\theta(u)|
 \le C_{\text{lem:theta\_prim},N}\langle u\rangle^N,
-\end{equation}
-where
-\begin{equation}\label{auto:theta-primitive-constant-definition}
-C_{\text{lem:theta\_prim},N}
-=2^{5N+6}C_{\text{def:unipair}}.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.WindowsAndPairs.uniPair`],
-[`Codex.Reduction.SmoothingDecomposition.thetaPrimitive`].
+where
+
+$$
+C_{\text{lem:theta\_prim},N}
+=2^{5N+6}C_{\text{Universal pair}}.
+$$
+
+See also [`Codex.uniPair`],
+[`Codex.thetaPrimitive`].
 -/
 theorem thetaPrimitive (b : windowBasedBumpFunctions) (N : ℕ)
     (hN_two : 2 ≤ N) (hN_uni : N < N_uniPair) :
     (Function.support (FourierTransform.fourier
       (fun x : ℝ ↦ (windowBasedBumpFunctions.thetaTilde b x : ℂ))) ⊆ aux_frequencyAnnulus ∧
-      aux_frequencyAnnulus ⊆ aux_annulusOne 1 ((2 : ℝ) ^ 2)) ∧
+      aux_frequencyAnnulus ⊆ aux_sd_annulusOne 1 ((2 : ℝ) ^ 2)) ∧
     (Function.support (FourierTransform.fourier
-      (fun x : ℝ ↦ (aux_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) ⊆
+      (fun x : ℝ ↦ (aux_sd_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) ⊆
         aux_frequencyAnnulus ∧
-      aux_frequencyAnnulus ⊆ aux_annulusOne 1 ((2 : ℝ) ^ 2)) ∧
+      aux_frequencyAnnulus ⊆ aux_sd_annulusOne 1 ((2 : ℝ) ^ 2)) ∧
     (∀ u : ℝ, |windowBasedBumpFunctions.thetaTilde b u| ≤
       C_thetaPrimitive N * bracketBump u ^ N) ∧
-    ∀ u : ℝ, |aux_T (windowBasedBumpFunctions.thetaTilde b) u| ≤
+    ∀ u : ℝ, |aux_sd_T (windowBasedBumpFunctions.thetaTilde b) u| ≤
       C_thetaPrimitive N * bracketBump u ^ N := by
   exact ⟨⟨aux_thetaPrimitive_tilde_fourier_support b,
       aux_thetaPrimitive_frequencyAnnulus_subset_annulusOne⟩,
@@ -4294,19 +4352,22 @@ theorem thetaPrimitive (b : windowBasedBumpFunctions) (N : ℕ)
     aux_thetaPrimitive_T_tilde_decay_N b N hN_two hN_uni⟩
 
 /--
-\begin{lemma}[constant $C_{\text{lem:theta\_prim},N}$ \auto]\label{constant theta primitive}
-For $2\le N<N_{\text{def:unipair}}$,
-\begin{equation}\label{constant theta primitive bound}
-C_{\text{lem:theta\_prim},N}\le2^{5N+21}.
-\end{equation}
-In particular,
-\begin{equation}\label{auto:constant-theta-primitive-two}
-C_{\text{lem:theta\_prim},2}\le2^{31}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:theta\_prim},N}$).**
 
-See also [`Codex.Reduction.SmoothingDecomposition.thetaPrimitive`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`].
+For $2\le N<N_{\text{Universal pair}}$,
+
+$$
+C_{\text{lem:theta\_prim},N}\le2^{5N+21}.
+$$
+
+In particular,
+
+$$
+C_{\text{lem:theta\_prim},2}\le2^{31}.
+$$
+
+See also [`Codex.thetaPrimitive`],
+[`Codex.uniPair`].
 -/
 theorem constantThetaPrimitive (N : ℕ) (hN_two : 2 ≤ N) (hN_uni : N < N_uniPair) :
     C_thetaPrimitive N ≤ (2 : ℝ) ^ (5 * N + 21) ∧
@@ -4387,22 +4448,22 @@ theorem aux_phiFour_sum_scaled_translated_support
   · exact ((hg.comp_sub_right a).ofReal.const_mul _)
 
 theorem aux_phiFour_TthetaTilde_integrable (b : windowBasedBumpFunctions) :
-    Integrable (aux_T (windowBasedBumpFunctions.thetaTilde b)) := by
+    Integrable (aux_sd_T (windowBasedBumpFunctions.thetaTilde b)) := by
   rw [aux_thetaPrimitive_T_tilde_eq]
   exact (aux_thetaPrimitive_tilde_integrable b).add
     (aux_thetaPrimitive_x_theta_integrable b)
 
 theorem aux_phiFour_T_eq (b : windowBasedBumpFunctions) (k : ℤ) :
-    aux_T (windowBasedBumpFunctions.phiFour b k) =
+    aux_sd_T (windowBasedBumpFunctions.phiFour b k) =
       fun x : ℝ => (2 : ℝ) ^ k *
-        (aux_T (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+        (aux_sd_T (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
           (2 : ℝ) ^ (-k) *
             windowBasedBumpFunctions.theta b (x - (2 : ℝ) ^ (-k))) := by
   funext x
   change deriv (fun y : ℝ => y * ((2 : ℝ) ^ k *
       windowBasedBumpFunctions.thetaTilde b (y - (2 : ℝ) ^ (-k)))) x =
     (2 : ℝ) ^ k *
-      (aux_T (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+      (aux_sd_T (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
         (2 : ℝ) ^ (-k) *
           windowBasedBumpFunctions.theta b (x - (2 : ℝ) ^ (-k)))
   have hshift : HasDerivAt (fun y : ℝ => y - (2 : ℝ) ^ (-k)) 1 x := by
@@ -4525,29 +4586,31 @@ theorem phiFour_fourier_pair_eq (b : windowBasedBumpFunctions) (k : ℤ)
 
 /-- The explicit logarithmic-derivative formula for `phiFour`. -/
 theorem phiFour_T_eq (b : windowBasedBumpFunctions) (k : ℤ) :
-    aux_T (windowBasedBumpFunctions.phiFour b k) =
+    aux_sd_T (windowBasedBumpFunctions.phiFour b k) =
       fun x : ℝ => (2 : ℝ) ^ k *
-        (aux_T (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
+        (aux_sd_T (windowBasedBumpFunctions.thetaTilde b) (x - (2 : ℝ) ^ (-k)) +
           (2 : ℝ) ^ (-k) *
             windowBasedBumpFunctions.theta b (x - (2 : ℝ) ^ (-k))) :=
   aux_phiFour_T_eq b k
 
 
 /--
-\begin{lemma}\label{lem:phi4_supp} We have
+**Lemma.**
+
+We have
+
 (a) $\textup{supp}(\widehat{\varphi_{4,k}})
 \subset  [-1,-2^{-2}]\cup [2^{-2},1]$\\
 
 (b) $\textup{supp}(\widehat{T\varphi_{4,k}})
 \subset  [-1,-2^{-2}]\cup [2^{-2},1]$
-\end{lemma}
 -/
 theorem phiFourSupport (b : windowBasedBumpFunctions) (k : ℤ) :
     Function.support (FourierTransform.fourier
       (fun x : ℝ ↦ (windowBasedBumpFunctions.phiFour b k x : ℂ))) ⊆
         aux_frequencyAnnulus ∧
     Function.support (FourierTransform.fourier
-      (fun x : ℝ ↦ (aux_T (windowBasedBumpFunctions.phiFour b k) x : ℂ))) ⊆
+      (fun x : ℝ ↦ (aux_sd_T (windowBasedBumpFunctions.phiFour b k) x : ℂ))) ⊆
         aux_frequencyAnnulus := by
   have hprim := thetaPrimitive b 2 (by omega) (by norm_num [N_uniPair])
   constructor
@@ -4562,7 +4625,7 @@ theorem phiFourSupport (b : windowBasedBumpFunctions) (k : ℤ) :
     have hsum := aux_phiFour_sum_scaled_translated_support
       ((2 : ℝ) ^ k) ((2 : ℝ) ^ k * (2 : ℝ) ^ (-k))
       ((2 : ℝ) ^ (-k))
-      (aux_T (windowBasedBumpFunctions.thetaTilde b))
+      (aux_sd_T (windowBasedBumpFunctions.thetaTilde b))
       (windowBasedBumpFunctions.theta b)
       aux_frequencyAnnulus
       (aux_phiFour_TthetaTilde_integrable b)
@@ -4570,12 +4633,12 @@ theorem phiFourSupport (b : windowBasedBumpFunctions) (k : ℤ) :
       hprim.2.1.1 htheta
     have hform :
         (fun x : ℝ => ((2 : ℝ) ^ k *
-          (aux_T (windowBasedBumpFunctions.thetaTilde b)
+          (aux_sd_T (windowBasedBumpFunctions.thetaTilde b)
             (x - (2 : ℝ) ^ (-k)) +
             (2 : ℝ) ^ (-k) * windowBasedBumpFunctions.theta b
               (x - (2 : ℝ) ^ (-k))) : ℝ)) =
         fun x : ℝ => (2 : ℝ) ^ k *
-          aux_T (windowBasedBumpFunctions.thetaTilde b)
+          aux_sd_T (windowBasedBumpFunctions.thetaTilde b)
             (x - (2 : ℝ) ^ (-k)) +
           ((2 : ℝ) ^ k * (2 : ℝ) ^ (-k)) *
             windowBasedBumpFunctions.theta b (x - (2 : ℝ) ^ (-k)) := by
@@ -4786,7 +4849,7 @@ theorem thetaTildeFourier_support (b : windowBasedBumpFunctions) :
 /-- Fourier support of the logarithmic derivative of thetaTilde. -/
 theorem tThetaTildeFourier_support (b : windowBasedBumpFunctions) :
     Function.support (FourierTransform.fourier
-      (fun x : ℝ => (aux_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) ⊆
+      (fun x : ℝ => (aux_sd_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) ⊆
       aux_frequencyAnnulus :=
   aux_thetaPrimitive_T_tilde_fourier_support b
 
@@ -4969,7 +5032,7 @@ theorem aux_thetaTildeFourier_deriv_zero_outside
   have hderivSupp : Function.support
       (iteratedDeriv m (aux_thetaTildeFourier b)) ⊆ aux_frequencyAnnulus :=
     (subset_tsupport _).trans
-      ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset
+      ((Codex.aux_tsupport_iteratedDeriv_subset
         (aux_thetaTildeFourier b) m).trans htsupp)
   apply Function.notMem_support.mp
   intro hmem
@@ -5131,7 +5194,7 @@ theorem thetaTildeFourier_deriv_bound (b : windowBasedBumpFunctions)
 noncomputable def aux_TthetaTildeFourier (b : windowBasedBumpFunctions) :
     ℝ → ℂ :=
   FourierTransform.fourier
-    (fun x : ℝ => (aux_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))
+    (fun x : ℝ => (aux_sd_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))
 
 theorem aux_TthetaTildeFourier_formula (b : windowBasedBumpFunctions)
     (m : ℕ) (xi : ℝ) :
@@ -5154,9 +5217,9 @@ theorem aux_TthetaTildeFourier_formula (b : windowBasedBumpFunctions)
     exact (thetaTildeSchwartz b).smooth 1
   change iteratedDeriv m
       (FourierTransform.fourier
-        (fun x : ℝ => (aux_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) xi = _
+        (fun x : ℝ => (aux_sd_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) xi = _
   rw [aux_TphiThree_aux_T_cast_eq _ hsmooth]
-  have hmain := Codex.Reduction.BumpFunctions.fourierDerivativeMul Phi m xi
+  have hmain := Codex.fourierDerivativeMul Phi m xi
   rw [hPhi] at hmain
   simpa [aux_thetaTildeFourier, Nat.add_comm, add_comm] using hmain
 
@@ -5175,7 +5238,7 @@ theorem aux_TthetaTildeFourier_deriv_zero_outside
   have hderivSupp : Function.support
       (iteratedDeriv m (aux_TthetaTildeFourier b)) ⊆ aux_frequencyAnnulus :=
     (subset_tsupport _).trans
-      ((Codex.Preliminaries.BumpsAndEstimates.aux_tsupport_iteratedDeriv_subset
+      ((Codex.aux_tsupport_iteratedDeriv_subset
         (aux_TthetaTildeFourier b) m).trans htsupp)
   apply Function.notMem_support.mp
   intro hmem
@@ -5244,7 +5307,7 @@ theorem aux_TthetaTildeFourier_deriv_bound (b : windowBasedBumpFunctions)
 theorem tThetaTildeFourier_deriv_bound (b : windowBasedBumpFunctions)
     (m : ℕ) (hm : m < 3) (xi : ℝ) :
     ‖iteratedDeriv m (FourierTransform.fourier
-      (fun x : ℝ => (aux_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) xi‖ ≤
+      (fun x : ℝ => (aux_sd_T (windowBasedBumpFunctions.thetaTilde b) x : ℂ))) xi‖ ≤
       (2 : ℝ) ^ 14 * C_uniPair := by
   simpa [aux_TthetaTildeFourier] using
     aux_TthetaTildeFourier_deriv_bound b m hm xi
@@ -5256,8 +5319,10 @@ noncomputable def phiFourSchwartz (b : windowBasedBumpFunctions) (k : ℤ) :
   ((2 : ℝ) ^ k) •
     aux_translateSchwartz ((2 : ℝ) ^ (-k)) (aux_thetaTildeSchwartz b)
 
-/-- `phiFourSchwartz` has exactly the raw function used in the smoothing
-decomposition as its coercion. -/
+/--
+`phiFourSchwartz` has exactly the raw function used in the smoothing
+decomposition as its coercion.
+-/
 theorem phiFourSchwartz_apply (b : windowBasedBumpFunctions) (k : ℤ) (x : ℝ) :
     phiFourSchwartz b k x = windowBasedBumpFunctions.phiFour b k x := by
   simp only [phiFourSchwartz, smul_apply, aux_translateSchwartz,
@@ -5271,22 +5336,24 @@ noncomputable def tBumpSchwartz (phi : SchwartzMap ℝ ℝ) : SchwartzMap ℝ �
 
 /-- The coercion of `tBumpSchwartz` is the raw logarithmic derivative. -/
 theorem tBumpSchwartz_apply (phi : SchwartzMap ℝ ℝ) (x : ℝ) :
-    tBumpSchwartz phi x = aux_T (fun u : ℝ ↦ phi u) x := by
+    tBumpSchwartz phi x = aux_sd_T (fun u : ℝ ↦ phi u) x := by
   change SchwartzMap.derivCLM ℝ ℝ
       (SchwartzMap.smulLeftCLM ℝ (fun u : ℝ ↦ u) phi) x = _
-  simp only [SchwartzMap.derivCLM_apply, aux_T]
+  simp only [SchwartzMap.derivCLM_apply, aux_sd_T]
   congr 1
   funext z
   rw [SchwartzMap.smulLeftCLM_apply_apply (by fun_prop)]
   simp only [smul_eq_mul]
 
-/-- The Fourier transform of `T phiFour`, with its translation phase explicit.
-The paired form below removes this phase for the short-variation estimates. -/
+/--
+The Fourier transform of `T phiFour`, with its translation phase explicit.
+The paired form below removes this phase for the short-variation estimates.
+-/
 theorem phiFour_T_fourier_eq (b : windowBasedBumpFunctions) (k : ℤ)
     (xi : ℝ) :
     FourierTransform.fourier
       (fun x : ℝ =>
-        ((Codex.Reduction.BumpFunctions.aux_T
+        ((Codex.aux_T
           (fun y : ℝ => windowBasedBumpFunctions.phiFour b k y) x : ℝ) : ℂ)) xi =
       (Real.fourierChar (-(xi * (2 : ℝ) ^ (-k)))).1 *
         (2 * Real.pi * Complex.I * (xi : ℂ) *
@@ -5296,7 +5363,7 @@ theorem phiFour_T_fourier_eq (b : windowBasedBumpFunctions) (k : ℤ)
             iteratedDeriv 1 (FourierTransform.fourier
               (fun x : ℝ => (windowBasedBumpFunctions.thetaTilde b x : ℂ))) xi) := by
   change FourierTransform.fourier
-      (fun x : ℝ => (aux_T (windowBasedBumpFunctions.phiFour b k) x : ℂ)) xi = _
+      (fun x : ℝ => (aux_sd_T (windowBasedBumpFunctions.phiFour b k) x : ℂ)) xi = _
   let Phi : SchwartzMap ℝ ℂ :=
     (phiFourSchwartz b k).postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
   have hPhi : (Phi : ℝ → ℂ) = fun x : ℝ =>
@@ -5311,10 +5378,10 @@ theorem phiFour_T_fourier_eq (b : windowBasedBumpFunctions) (k : ℤ)
     rw [← hfun]
     exact (phiFourSchwartz b k).smooth 1
   have hT : (fun x : ℝ =>
-      (aux_T (windowBasedBumpFunctions.phiFour b k) x : ℂ)) =
-      Codex.Reduction.BumpFunctions.aux_T (fun x : ℝ => Phi x) := by
+      (aux_sd_T (windowBasedBumpFunctions.phiFour b k) x : ℂ)) =
+      Codex.aux_T (fun x : ℝ => Phi x) := by
     rw [aux_TphiThree_aux_T_cast_eq _ hreal, hPhi]
-  have hmain := Codex.Reduction.BumpFunctions.fourierDerivativeMul Phi 0 xi
+  have hmain := Codex.fourierDerivativeMul Phi 0 xi
   rw [← hT, hPhi] at hmain
   simp only [Nat.cast_zero, zero_mul, zero_add, iteratedDeriv_zero,
     iteratedDeriv_one] at hmain
@@ -5396,11 +5463,11 @@ theorem phiFour_T_fourier_pair_eq (b : windowBasedBumpFunctions) (k : ℤ)
     (xi : ℝ) :
     FourierTransform.fourier
       (fun x : ℝ =>
-        ((Codex.Reduction.BumpFunctions.aux_T
+        ((Codex.aux_T
           (fun y : ℝ => windowBasedBumpFunctions.phiFour b k y) x : ℝ) : ℂ)) xi *
       FourierTransform.fourier
         (fun x : ℝ =>
-          ((Codex.Reduction.BumpFunctions.aux_T
+          ((Codex.aux_T
             (fun y : ℝ => windowBasedBumpFunctions.phiFour b k y) x : ℝ) : ℂ)) (-xi) =
       (2 * Real.pi * Complex.I * (xi : ℂ) *
           FourierTransform.fourier
@@ -5446,4 +5513,4 @@ theorem phiFour_T_fourier_pair_eq (b : windowBasedBumpFunctions) (k : ℤ)
 
 end
 
-end Codex.Reduction.SmoothingDecomposition
+end Codex

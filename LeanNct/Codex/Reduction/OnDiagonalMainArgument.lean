@@ -14,22 +14,11 @@ reduction argument.  The shared data package below is also used by the next
 subsection, which passes from these estimates to the off-diagonal estimates.
 -/
 
-namespace Codex.Reduction.OnDiagonalMainArgument
+namespace Codex
 
 open MeasureTheory Set
 open scoped BigOperators ENNReal FourierTransform Real
 
-open Codex
-open Codex.Preliminaries.Notation
-open Codex.Preliminaries.BumpsAndEstimates
-open Codex.Preliminaries.Gaussians
-open Codex.Preliminaries.KKernels
-open Codex.Preliminaries.MKernels
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
-open Codex.MainArgument.MainInduction
-open Codex.MainArgument.GaussianDomination
 
 
 noncomputable section
@@ -53,7 +42,7 @@ structure ReductionScaleTriple (a : ℤ → ℝ) where
 The hypotheses on \(a\), \(\mathcal P\), and \((M_j)_j\) shared by the
 reduction variants of the on-diagonal propositions.  It directly packages
 the hypotheses preceding Proposition
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`].
+[`Codex.increaseDataBracketDomination`].
 -/
 structure ReductionData where
   a : ℤ → ℝ
@@ -87,7 +76,7 @@ noncomputable def rhoGaussianUpperScale (a : ℤ → ℝ) (h : ℕ) (j : ℤ) : 
 
 /--
 The kernel \(\rho_{h,j}\) of Lemma
-[`Codex.Reduction.OnDiagonalMainArgument.rhoKernelsReduction`], expressed
+[`Codex.rhoKernelsReduction`], expressed
 through the existing four-scale Gaussian kernel construction.
 -/
 noncomputable def rhoKernel (n : ℕ) (a : ℤ → ℝ) (h : ℕ) (j : ℤ) : ℝ → ℝ :=
@@ -120,8 +109,10 @@ noncomputable def gaussianExpansionPair (beta : SequencePair) (m : Fin 2 → ℕ
 noncomputable def gaussianExpansionWeight (m : Fin 2 → ℕ) : ℝ :=
   Real.rpow 2 (-((m 0 + m 1 : ℕ) : ℝ) / 6)
 
-/-- The numerical constant in Lemma
-[`Codex.Reduction.OnDiagonalMainArgument.rhoKernelsReduction`]. -/
+/--
+The numerical constant in Lemma
+[`Codex.rhoKernelsReduction`].
+-/
 noncomputable def C_rhoKernelsReduction : ℝ :=
   (2 : ℝ) ^ (21 : ℕ) *
     (C_meanFourScaleGaussianKernel 2 + C_fourScaleGaussianKernel 2)
@@ -459,28 +450,37 @@ theorem aux_rho_kernels_reduction {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
           aux_diagonalSquareRoot_scaledBracketBumpReal_two_eq] using htarget
 
 /--
-\begin{lemma}[$\rho$ kernels - reduction variant]
-\label{lem:rho-kernels-reduction} Let $a\in A$. For $h\in\N$ with $h\ge1$ and $j\in\Z$,
-define
-\begin{equation}\label{auto:rho-lambda-scales}
+**Lemma ($\rho$ kernels - reduction variant).**
+
+Let $a\in A$. For $h\in\mathbb{N}$ with $h\ge1$ and $j\in\mathbb{Z}$, define
+
+$$
 \lambda_{h,j}^-=2^{h-1}a(j),
-\end{equation}
-and, for $j\in\Z$, define
-\begin{equation}\label{auto:rho-lambda-zero-scale}
+$$
+
+and, for $j\in\mathbb{Z}$, define
+
+$$
 \lambda_{0,j}^-=a(j-1).
-\end{equation}
-For $h\in\N$ and $j\in\Z$, define
-\begin{equation}\label{auto:rho-lambda-upper-scale}
+$$
+
+For $h\in\mathbb{N}$ and $j\in\mathbb{Z}$, define
+
+$$
 \lambda_{h,j}^+=2^ha(j).
-\end{equation}
-For $h\in\N$ and $j\in\Z$, also define
-\begin{equation}\label{auto:rho-mu-scales}
+$$
+
+For $h\in\mathbb{N}$ and $j\in\mathbb{Z}$, also define
+
+$$
 \mu_{h,j}^-=2^ha(j-1),
 \qquad
 \mu_{h,j}^+=2^ha(j).
-\end{equation}
+$$
+
 Let \(\rho_{h,j}\) be the function whose Fourier transform is
-\begin{equation}\label{auto:rho-kernel-Fourier-transform}
+
+$$
 \widehat{\rho_{h,j}}(\zeta)
 =
 \bigl(
@@ -489,45 +489,45 @@ Let \(\rho_{h,j}\) be the function whose Fourier transform is
 \widehat\Phi(\lambda_{h,j}^+\zeta)
 \bigr)
 \bigl(
-\g(\mu_{h,j}^-\zeta)
+\mathfrak{g}(\mu_{h,j}^-\zeta)
 -
-\g(\mu_{h,j}^+\zeta)
+\mathfrak{g}(\mu_{h,j}^+\zeta)
 \bigr)^{-\nu/2}.
-\end{equation}
+$$
 
 Then \(\rho_{h,j}\in W_0(\mathbb R)\). Moreover, if \(h\geq1\), then, with $\lambda=2^ha(j)$,
-\begin{equation}
-    \label{E:increase-data-rho-mean-estimate}
+
+$$
     |\rho_{h,j}(x+p)-\rho_{h,j}(x)|
     \leq
-    C_{\text{lem:rho-kernels-reduction}}
+    C_{\text{\$ rho\$ kernels - reduction variant}}
     \min(1,\lambda^{-1}|p|)
     \left(
     \langle x+p\rangle_{(\lambda)}^2
     +
     \langle x\rangle_{(\lambda)}^2
     \right),
-\end{equation}
-and if $h\in \N$, then
-\begin{equation}
-    \label{E:increase-data-rho-zero-estimate}
+$$
+
+and if $h\in \mathbb{N}$, then
+
+$$
     |\rho_{h,j}(x)|
     \leq
-    C_{\text{lem:rho-kernels-reduction}}
+    C_{\text{\$ rho\$ kernels - reduction variant}}
     \big(
     \langle x\rangle_{(\lambda_{h,j}^-)}^2
     +
     \langle x\rangle_{(\lambda_{h,j}^+)}^2
     \big),
-\end{equation}
-where $C_{\text{lem:rho-kernels-reduction}} =
-2^{21} (C_{\text{mean four scale Gaussian kernel},2}+
-C_{\text{four scale Gaussian kernel},2})$.
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.rhoKernelsReduction`],
-[`Codex.Preliminaries.BumpsAndEstimates.meanFourScaleGaussianKernel`],
-[`Codex.Preliminaries.BumpsAndEstimates.fourScaleGaussianKernel`].
+where $C_{\text{\$ rho\$ kernels - reduction variant}} = 2^{21} (C_{\text{mean value four scale
+Gaussian kernel estimate},2}+C_{\text{four scale Gaussian kernel estimate},2})$.
+
+See also [`Codex.rhoKernelsReduction`],
+[`Codex.meanFourScaleGaussianKernel`],
+[`Codex.fourScaleGaussianKernel`].
 -/
 theorem rhoKernelsReduction {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
     (ha : SpacedSequence a) (h : ℕ) (j : ℤ) :
@@ -544,15 +544,14 @@ theorem rhoKernelsReduction {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
   exact aux_rho_kernels_reduction hn a ha h j
 
 /--
-\begin{lemma}[constant $C_{\text{lem:rho-kernels-reduction}}$ \auto]
-\label{constant rho kernels reduction}
-\begin{equation}\label{constant rho kernels reduction bound}
-C_{\text{lem:rho-kernels-reduction}}
-<2^{66}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{\$ rho\$ kernels - reduction variant}}$).**
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.rhoKernelsReduction`].
+$$
+C_{\text{\$ rho\$ kernels - reduction variant}}
+<2^{66}.
+$$
+
+See also [`Codex.rhoKernelsReduction`].
 -/
 theorem constantRhoKernelsReduction : C_rhoKernelsReduction < (2 : ℝ) ^ (66 : ℕ) := by
   have hmean : C_meanFourScaleGaussianKernel 2 < 20397963318112 :=
@@ -566,8 +565,10 @@ theorem constantRhoKernelsReduction : C_rhoKernelsReduction < (2 : ℝ) ^ (66 : 
       mul_lt_mul_of_pos_left (add_lt_add hmean hfour) (by positivity)
     _ < (2 : ℝ) ^ 66 := by norm_num
 
-/-- The sharper numerical form of `constantRhoKernelsReduction` needed by the
-subsequent reduction constants. -/
+/--
+The sharper numerical form of `constantRhoKernelsReduction` needed by the
+subsequent reduction constants.
+-/
 theorem aux_rhoKernelsReduction_lt_numeric :
     C_rhoKernelsReduction < (44114430494276321280 : ℝ) := by
   have hmean : C_meanFourScaleGaussianKernel 2 < (20397963318112 : ℝ) :=
@@ -582,8 +583,10 @@ theorem aux_rhoKernelsReduction_lt_numeric :
       mul_lt_mul_of_pos_left (add_lt_add hmean hfour) (by positivity)
     _ = 44114430494276321280 := by norm_num
 
-/-- The precise fractional power-of-two consequence of the rho-kernel
-constant estimate used in `constantIncreaseDataBracketDomination`. -/
+/--
+The precise fractional power-of-two consequence of the rho-kernel
+constant estimate used in `constantIncreaseDataBracketDomination`.
+-/
 theorem aux_rhoKernelsReduction_lt_three_fifths_two_pow_66 :
     C_rhoKernelsReduction < (3 / 5 : ℝ) * (2 : ℝ) ^ (66 : ℕ) := by
   calc
@@ -592,28 +595,29 @@ theorem aux_rhoKernelsReduction_lt_three_fifths_two_pow_66 :
     _ < (3 / 5 : ℝ) * (2 : ℝ) ^ (66 : ℕ) := by norm_num
 
 /--
-\begin{lemma}[affine diagonal cancellation - reduction variant]
-\label{lem:affine-diagonal-cancellation-reduction}
+**Lemma (affine diagonal cancellation - reduction variant).**
+
 Let \(M\in W_0(\mathbb R^2)\) satisfy for every \(\xi\in\mathbb R\)
-\begin{equation}\label{auto:affine-diagonal-cancellation-assumption}
+
+$$
 \widehat M(\xi,-\xi)=0
-\end{equation}
+$$
+
  Then for every \(x\in\mathbb R\),
-\begin{equation}
-    \label{E:affine-diagonal-cancellation}
+
+$$
     \int_{\mathbb R}M(x+q,q)\,dq=0
-\end{equation}
-\end{lemma}
+$$
 -/
 theorem affineDiagonalCancellationReduction (M : RealPlane → ℝ) (hM : MemW0 M)
     (hcancel : ∀ ξ : ℝ, aux_fourierPlane M (ξ, -ξ) = 0) (x : ℝ) :
     ∫ q : ℝ, M (x + q, q) = 0 := by
   let L : ℝ → ℝ := fun u => ∫ p : ℝ, M (u + p, p)
   have hS : MemW0 (fun q : RealPlane => M (aux_diagonalShear q)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hM
+    Codex.aux_memW0_comp_continuousLinearEquiv hM
       aux_diagonalShear
   have hL : MemW0 L := by
-    have hslice := Codex.Preliminaries.KKernels.aux_memW0_integral_slice_of_addHaar hS
+    have hslice := Codex.aux_memW0_integral_slice_of_addHaar hS
     have hslice_eq :
         (fun u : ℝ => ∫ v : ℝ, M (aux_diagonalShear (u, v))) = L := by
       funext u
@@ -621,7 +625,7 @@ theorem affineDiagonalCancellationReduction (M : RealPlane → ℝ) (hM : MemW0 
     rw [hslice_eq] at hslice
     exact hslice
   have hLInt : Integrable (fun u : ℝ => (L u : ℂ)) :=
-    (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hL).ofReal
+    (Codex.aux_memW0_integrable_of_addHaar hL).ofReal
   have hLCont : Continuous (fun u : ℝ => (L u : ℂ)) :=
     Complex.continuous_ofReal.comp hL.1
   have hFourierZero (ξ : ℝ) :
@@ -659,9 +663,11 @@ theorem affineDiagonalCancellationReduction (M : RealPlane → ℝ) (hM : MemW0 
     exact_mod_cast hzeroC
   simpa [L] using hzero
 
-/-- The coordinate-change form of diagonal cancellation used in the reduction
+/--
+The coordinate-change form of diagonal cancellation used in the reduction
 bracket estimates.  It permits subtraction at an arbitrary reference value
-of the one-dimensional kernel. -/
+of the one-dimensional kernel.
+-/
 theorem aux_reduction_diagonal_convolution_cancellation
     {rho : ℝ → ℝ} (hrho : MemW0 rho) (M : RealPlane → ℝ) (hM : MemW0 M)
     (hcancel : ∀ x : ℝ, ∫ q : ℝ, M (x + q, q) = 0) (x y c : ℝ) :
@@ -671,21 +677,21 @@ theorem aux_reduction_diagonal_convolution_cancellation
     Measure.prod.instIsAddHaarMeasure _ _
   let F : RealPlane → ℝ := fun z => M (aux_diagonalShear z)
   have hF : MemW0 F := by
-    exact Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hM
+    exact Codex.aux_memW0_comp_continuousLinearEquiv hM
       aux_diagonalShear
   let P : RealPlane × ℝ → ℝ := fun z => F z.1 * rho z.2
   have hP : MemW0 P := by
     simpa [P] using hF.aux_mul_prod hrho
   have hshift : MemW0 (P ∘ aux_lMultiplierAtScale_largeScaleShear) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP
+    Codex.aux_memW0_comp_continuousLinearEquiv hP
       aux_lMultiplierAtScale_largeScaleShear
   have hplain : MemW0 (P ∘ aux_lMultiplierAtScale_largeScaleReorder) :=
-    Codex.Preliminaries.KKernels.aux_memW0_comp_continuousLinearEquiv hP
+    Codex.aux_memW0_comp_continuousLinearEquiv hP
       aux_lMultiplierAtScale_largeScaleReorder
   let K : RealPlane × ℝ → ℝ := fun z =>
     F (z.1.1, z.2) * (rho (z.1.2 - z.2) - rho z.1.2)
   have hKmem : MemW0 K := by
-    have hsub := Codex.Preliminaries.KKernels.aux_memW0_sub hshift hplain
+    have hsub := Codex.aux_memW0_sub hshift hplain
     convert hsub using 1
     funext z
     rcases z with ⟨⟨u, v⟩, q⟩
@@ -695,10 +701,10 @@ theorem aux_reduction_diagonal_convolution_cancellation
   have hFslice_mem : MemW0 (fun q : ℝ => F (x, q)) :=
     hF.aux_memW0_slice_of_addHaar x
   have hFslice : Integrable (fun q : ℝ => F (x, q)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar hFslice_mem
+    Codex.aux_memW0_integrable_of_addHaar hFslice_mem
   have hB : Integrable (fun q : ℝ => F (x, q) * rho y) := hFslice.mul_const _
   have hKslice : Integrable (fun q : ℝ => K ((x, y), q)) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    Codex.aux_memW0_integrable_of_addHaar
       (hKmem.aux_memW0_slice_of_addHaar (x, y))
   have hA : Integrable (fun q : ℝ => F (x, q) * rho (y - q)) := by
     have hsum := hKslice.add hB
@@ -736,8 +742,10 @@ theorem aux_reduction_diagonal_convolution_cancellation
       dsimp [F, aux_diagonalShear]
       ring
 
-/-- The rotated-coordinate cancellation formula for `reductionNKernel`, used
-to gain the small mean-difference factor when the reduction scale is positive. -/
+/--
+The rotated-coordinate cancellation formula for `reductionNKernel`, used
+to gain the small mean-difference factor when the reduction scale is positive.
+-/
 theorem aux_reductionNKernel_caseOne_cancellation {n : ℕ} (hn : 2 ≤ n)
     (D : ReductionData) (h : ℕ) (j : ℤ) (w₀ w₁ : ℝ) :
     reductionNKernel n D h j (w₀ - w₁, w₀ + w₁) =
@@ -773,14 +781,18 @@ theorem aux_reductionNKernel_caseOne_cancellation {n : ℕ} (hn : 2 ≤ n)
           dsimp [A]
           ring_nf
 
-/-- The identity orientation in the coordinates used for the bracket
-domination proof. -/
+/--
+The identity orientation in the coordinates used for the bracket
+domination proof.
+-/
 theorem aux_reduction_W_zero_coordinates (w₀ w₁ : ℝ) :
     W 0 (w₀ - w₁, w₀ + w₁) = (w₀ - w₁, w₀ + w₁) := by
   simp [W]
 
-/-- The rotated orientation in the coordinates used for the bracket
-domination proof. -/
+/--
+The rotated orientation in the coordinates used for the bracket
+domination proof.
+-/
 theorem aux_reduction_W_one_coordinates (w₀ w₁ : ℝ) :
     W 1 (w₀ - w₁, w₀ + w₁) = (Real.sqrt 2 * w₀, Real.sqrt 2 * w₁) := by
   rw [W, if_neg (by decide)]
@@ -794,8 +806,10 @@ theorem aux_reduction_W_one_coordinates (w₀ w₁ : ℝ) :
       exact Real.sq_sqrt (by norm_num)]
     ring
 
-/-- The elementary one-third power bound used to turn a mean-difference
-factor into the (2^{-h/3}) gain in bracket domination. -/
+/--
+The elementary one-third power bound used to turn a mean-difference
+factor into the (2^{-h/3}) gain in bracket domination.
+-/
 theorem aux_reduction_min_le_rpow_one_third {x : ℝ} (hx : 0 ≤ x) :
     min 1 x ≤ Real.rpow x (1 / 3 : ℝ) := by
   by_cases hxone : x ≤ 1
@@ -814,8 +828,10 @@ theorem aux_reduction_min_le_rpow_one_third {x : ℝ} (hx : 0 ≤ x) :
       (by norm_num : (0 : ℝ) ≤ (1 / 3 : ℝ))
     simpa using h
 
-/-- The one-sided scale condition in `increaseDataBracketDomination` gives
-the dyadic ratio required by the positive-height one-third-loss estimate. -/
+/--
+The one-sided scale condition in `increaseDataBracketDomination` gives
+the dyadic ratio required by the positive-height one-third-loss estimate.
+-/
 theorem aux_reduction_positive_scale_ratio (t a : ℝ) (h : ℕ)
     (_ht : 0 ≤ t) (ha : 0 < a) (hta : t ≤ a) :
     t / ((2 : ℝ) ^ h * a) ≤ Real.rpow 2 (-(h : ℝ)) := by
@@ -880,8 +896,10 @@ theorem aux_reduction_min_scale_third_le {t lam : ℝ} {h : ℕ}
   rw [← hcroot]
   exact hmin.trans hroot
 
-/-- The (1/3)-power loss lowers the exponent (3/2) to the required
-(7/6) in the reduction bracket majorant. -/
+/--
+The (1/3)-power loss lowers the exponent (3/2) to the required
+(7/6) in the reduction bracket majorant.
+-/
 theorem aux_reduction_one_third_times_bump_eq (t x : ℝ) (ht : 0 < t) :
     Real.rpow (1 + t⁻¹ * |x|) (1 / 3 : ℝ) *
       scaledBracketBumpReal (3 / 2 : ℝ) t x =
@@ -1021,8 +1039,10 @@ theorem aux_reduction_min_one_subadd (a b : ℝ) (ha0 : 0 ≤ a) (hb0 : 0 ≤ b)
     rw [min_eq_right ha', min_eq_right hb']
     exact min_le_right _ _
 
-/-- In the horizontal orientation, the mean-difference factor can be charged
-to either of the two translated bracket bumps. -/
+/--
+In the horizontal orientation, the mean-difference factor can be charged
+to either of the two translated bracket bumps.
+-/
 theorem aux_reduction_min_split (lam p w1 : ℝ) (hlam : 0 < lam) :
     min 1 (lam⁻¹ * |p|) ≤
       min 1 ((2 * lam)⁻¹ * |-w1 - p|) +
@@ -1303,8 +1323,10 @@ theorem aux_reduction_bracket_product_integrable
     rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hleft hright)]
     exact mul_le_mul_of_nonneg_right hle hright
 
-/-- The stationary (`α = 0`) post-loss occurrence in the positive-height
-rotated case is controlled in exact `W 1` coordinates. -/
+/--
+The stationary (`α = 0`) post-loss occurrence in the positive-height
+rotated case is controlled in exact `W 1` coordinates.
+-/
 theorem aux_reduction_orientation_one_alpha_zero (w₀ w₁ lam t₀ t₁ : ℝ)
     (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
     (∫ p : ℝ,
@@ -1370,8 +1392,10 @@ theorem aux_reduction_orientation_one_alpha_zero (w₀ w₁ lam t₀ t₁ : ℝ)
       norm_num
       nlinarith [htarget]
 
-/-- The translated (`α = 1`) post-loss occurrence in the positive-height
-rotated case is controlled in exact `W 1` coordinates. -/
+/--
+The translated (`α = 1`) post-loss occurrence in the positive-height
+rotated case is controlled in exact `W 1` coordinates.
+-/
 theorem aux_reduction_orientation_one_alpha_one (w₀ w₁ lam t₀ t₁ : ℝ)
     (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) (ht₀lam : t₀ ≤ lam) :
     (∫ p : ℝ,
@@ -1493,8 +1517,10 @@ theorem aux_reduction_orientation_one_alpha_one (w₀ w₁ lam t₀ t₁ : ℝ)
       rw [hp6, hp9]
       nlinarith [htarget]
 
-/-- The reduction-exponent two-bump convolution estimate in a symmetric
-max-scale form. -/
+/--
+The reduction-exponent two-bump convolution estimate in a symmetric
+max-scale form.
+-/
 theorem aux_reduction_two_bump_seven_six (x0 x1 t0 t1 : ℝ)
     (ht0 : 0 < t0) (ht1 : 0 < t1) :
     (∫ p : ℝ, scaledBracketBumpReal (7 / 6 : ℝ) t0 (x0 - p) *
@@ -1605,8 +1631,10 @@ theorem aux_reduction_fixed_scaling_w0 (s x : ℝ) (hs : 0 < s) :
     field_simp [hsqrt.ne']
   simpa [harg] using h
 
-/-- The elementary coordinate dichotomy behind the two mixed orientation-zero
-bracket estimates. -/
+/--
+The elementary coordinate dichotomy behind the two mixed orientation-zero
+bracket estimates.
+-/
 theorem aux_reduction_mixed_dichotomy (w0 w1 : ℝ) :
     |w0 + w1| ≤ 3 * |w1| ∨
       |Real.sqrt 2 * w0| ≤ 3 * |w0 - w1| := by
@@ -1640,8 +1668,10 @@ theorem aux_reduction_three_rpow_seven_six_le_four :
   rw [← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 3)]
   norm_num [Real.rpow_natCast]
 
-/-- The first mixed coordinate estimate used in the positive-height
-orientation-zero convolution bound. -/
+/--
+The first mixed coordinate estimate used in the positive-height
+orientation-zero convolution bound.
+-/
 theorem aux_reduction_mixed_zero_bound (w0 w1 lam t : ℝ)
     (hlam : 0 < lam) (ht : 0 < t) :
     scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 - w1) *
@@ -1702,8 +1732,10 @@ theorem aux_reduction_mixed_zero_bound (w0 w1 lam t : ℝ)
     _ ≤ 4 * (2 * (X + Z)) := mul_le_mul_of_nonneg_left hinside (by norm_num)
     _ = 8 * (X + Z) := by ring
 
-/-- The second mixed coordinate estimate used in the positive-height
-orientation-zero convolution bound. -/
+/--
+The second mixed coordinate estimate used in the positive-height
+orientation-zero convolution bound.
+-/
 theorem aux_reduction_mixed_one_bound (w0 w1 lam t : ℝ)
     (hlam : 0 < lam) (ht : 0 < t) :
     scaledBracketBumpReal (7 / 6 : ℝ) lam (w0 + w1) *
@@ -1765,8 +1797,10 @@ theorem aux_reduction_mixed_one_bound (w0 w1 lam t : ℝ)
     _ ≤ 4 * (2 * (X + Z)) := mul_le_mul_of_nonneg_left hinside (by norm_num)
     _ = 8 * (X + Z) := by ring
 
-/-- Integrability needed to split the two positive-height orientation-zero
-rho contributions. -/
+/--
+Integrability needed to split the two positive-height orientation-zero
+rho contributions.
+-/
 theorem aux_reduction_orientation_zero_alpha1_integrable (w0 w1 lam t0 t1 : ℝ)
     (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1) :
     Integrable (fun p : ℝ =>
@@ -2124,8 +2158,10 @@ theorem aux_reduction_orientation_zero_alpha1_integral_bound (w0 w1 lam t0 t1 : 
     _ = (∫ p : ℝ, g0 p) + ∫ p : ℝ, g1 p := integral_add hg0 hg1
     _ ≤ _ := add_le_add hI0 hI1 |>.trans hsum
 
-/-- The entire positive-height orientation-zero post-loss convolution.  Its
-five output products are exactly slots `0,1,2,3,4` of the tagged witness. -/
+/--
+The entire positive-height orientation-zero post-loss convolution.  Its
+five output products are exactly slots `0,1,2,3,4` of the tagged witness.
+-/
 theorem aux_reduction_orientation_zero_total_integral_bound (w0 w1 lam t0 t1 : ℝ)
     (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1)
     (ht0lam : t0 ≤ lam) (ht1lam : t1 ≤ lam) :
@@ -2207,8 +2243,10 @@ theorem aux_reduction_orientation_zero_total_integral_bound (w0 w1 lam t0 t1 : �
           scaledBracketBumpReal (7 / 6 : ℝ) lam (Real.sqrt 2 * w0) *
             scaledBracketBumpReal (7 / 6 : ℝ) t0 (Real.sqrt 2 * w1)) := by ring
 
-/-- Integrability of the two combined post-loss occurrences in the
-positive-height orientation-one case. -/
+/--
+Integrability of the two combined post-loss occurrences in the
+positive-height orientation-one case.
+-/
 theorem aux_reduction_orientation_one_total_integrable (w₀ w₁ lam t₀ t₁ : ℝ)
     (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
     Integrable (fun p : ℝ =>
@@ -2281,8 +2319,10 @@ theorem aux_reduction_orientation_one_total_integrable (w₀ w₁ lam t₀ t₁ 
     _ = (A + lam⁻¹) * scaledBracketBumpReal (7 / 6 : ℝ) t₀
         (Real.sqrt 2 * p) * D := by ring
 
-/-- The stationary summand of the positive-height `W 1` profile is
-integrable; it is extracted from the already integrable combined profile. -/
+/--
+The stationary summand of the positive-height `W 1` profile is
+integrable; it is extracted from the already integrable combined profile.
+-/
 theorem aux_reduction_orientation_one_alpha_zero_integrable
     (w₀ w₁ lam t₀ t₁ : ℝ) (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
     Integrable (fun p : ℝ =>
@@ -2337,8 +2377,10 @@ theorem aux_reduction_orientation_one_alpha_zero_integrable
       mul_le_mul_of_nonneg_right (le_add_of_nonneg_right htrans) (mul_nonneg hmid hlast)
     _ = F p := by ring
 
-/-- The translated summand of the positive-height `W 1` profile is
-integrable; it is extracted from the same combined profile. -/
+/--
+The translated summand of the positive-height `W 1` profile is
+integrable; it is extracted from the same combined profile.
+-/
 theorem aux_reduction_orientation_one_alpha_one_integrable
     (w₀ w₁ lam t₀ t₁ : ℝ) (hlam : 0 < lam) (ht₀ : 0 < t₀) (ht₁ : 0 < t₁) :
     Integrable (fun p : ℝ =>
@@ -2402,8 +2444,10 @@ theorem aux_reduction_orientation_one_alpha_one_integrable
       mul_le_mul_of_nonneg_right (le_add_of_nonneg_left hA) (mul_nonneg hmid hlast)
     _ = F p := by ring
 
-/-- The combined positive-height orientation-zero post-loss profile is
-integrable; this is the companion of its explicit integral estimate. -/
+/--
+The combined positive-height orientation-zero post-loss profile is
+integrable; this is the companion of its explicit integral estimate.
+-/
 theorem aux_reduction_orientation_zero_total_integrable (w0 w1 lam t0 t1 : ℝ)
     (hlam : 0 < lam) (ht0 : 0 < t0) (ht1 : 0 < t1) :
     Integrable (fun p : ℝ =>
@@ -2461,9 +2505,11 @@ theorem aux_reduction_W_one_kernel_coordinates (w₁ p : ℝ) :
       aux_reduction_W_one_coordinates (-p) w₁
     _ = (-Real.sqrt 2 * p, Real.sqrt 2 * w₁) := by ring_nf
 
-/-- The common analytic core of the two positive-height occurrence bounds.
+/--
+The common analytic core of the two positive-height occurrence bounds.
 The supplied loss estimate has already lowered the two kernel bumps from
-`3/2` to `7/6`; this lemma only combines it with rho domination. -/
+`3/2` to `7/6`; this lemma only combines it with rho domination.
+-/
 theorem aux_reduction_rho_occurrence_of_loss {n : ℕ} (hn : 2 ≤ n)
     (D : ReductionData) (h : ℕ) (hh : 1 ≤ h) (j : ℤ)
     (t0 t1 x0 x1 w0 p : ℝ) (ht0 : 0 < t0) (ht1 : 0 < t1)
@@ -2611,8 +2657,10 @@ theorem aux_reduction_rho_occurrence_of_loss {n : ℕ} (hn : 2 ≤ n)
           _ = _ := by ring
       · exact mul_nonneg hC (mul_nonneg (by positivity) hr)
 
-/-- Positive-height rho domination for one horizontal (`W 0`) kernel
-occurrence, after expressing the diagonal translate in `(w₀,w₁)` coordinates. -/
+/--
+Positive-height rho domination for one horizontal (`W 0`) kernel
+occurrence, after expressing the diagonal translate in `(w₀,w₁)` coordinates.
+-/
 theorem aux_reduction_occurrence_zero_pointwise {n : ℕ} (hn : 2 ≤ n)
     (D : ReductionData) (h : ℕ) (hh : 1 ≤ h) (q : ReductionScaleTriple D.a)
     (j : ℤ) (w0 w1 p : ℝ) (hu : q.orientation = 0) :
@@ -2649,8 +2697,10 @@ theorem aux_reduction_occurrence_zero_pointwise {n : ℕ} (hn : 2 ≤ n)
     aux_scaledBracketBumpReal_neg]
   simpa [lam, t0, t1] using hcore
 
-/-- Positive-height rho domination for one rotated (`W 1`) kernel occurrence,
-in the exact square-root coordinates of the two duplicated output slots. -/
+/--
+Positive-height rho domination for one rotated (`W 1`) kernel occurrence,
+in the exact square-root coordinates of the two duplicated output slots.
+-/
 theorem aux_reduction_occurrence_one_pointwise {n : ℕ} (hn : 2 ≤ n)
     (D : ReductionData) (h : ℕ) (hh : 1 ≤ h) (q : ReductionScaleTriple D.a)
     (j : ℤ) (w0 w1 p : ℝ) (hu : q.orientation = 1) :
@@ -2699,9 +2749,11 @@ theorem aux_reduction_integrable_finset_sum {α : Type*} (Q : Finset α)
         intro q hqmem
         exact hf q (by simp [hqmem])
 
-/-- Pointwise finite kernel decay can be integrated occurrence by occurrence.
+/--
+Pointwise finite kernel decay can be integrated occurrence by occurrence.
 This packages the finite-sum/Fubini bookkeeping in the proof of
-`increaseDataBracketDomination`. -/
+`increaseDataBracketDomination`.
+-/
 theorem aux_reduction_finite_integral_bridge {α : Type*} (Q : Finset α)
     (C : ℝ) (rho H : ℝ → ℝ) (B : α → ℝ → ℝ)
     (_hC : 0 ≤ C) (hrho : ∀ p, 0 ≤ rho p) (hH : ∀ p, 0 ≤ H p)
@@ -2733,8 +2785,10 @@ theorem aux_reduction_finite_integral_bridge {α : Type*} (Q : Finset α)
         dsimp [S]
         exact integral_finsetSum Q hint]
 
-/-- Scale a finite family of occurrence estimates by a common nonnegative
-coefficient. -/
+/--
+Scale a finite family of occurrence estimates by a common nonnegative
+coefficient.
+-/
 theorem aux_reduction_finset_sum_le_scaled {α : Type*} (Q : Finset α)
     (f g : α → ℝ) (C : ℝ)
     (h : ∀ q ∈ Q, f q ≤ C * g q) :
@@ -2757,9 +2811,11 @@ noncomputable def aux_reductionBracketPrev (D : ReductionData) : ℤ → ℝ :=
 noncomputable def aux_reductionBracketMax
     (a b : ℤ → ℝ) : ℤ → ℝ := fun j => max (a j) (b j)
 
-/-- The coordinate orientation attached to one of the eight labeled bracket
+/--
+The coordinate orientation attached to one of the eight labeled bracket
 slots.  Labels, rather than decoded pairs, are retained so that coincident
-terms still occur with their manuscript multiplicities. -/
+terms still occur with their manuscript multiplicities.
+-/
 noncomputable def aux_reductionBracketOrientation
     (D : ReductionData) (h : ℕ) (b : ReductionScaleTriple D.a × Fin 8) : Fin 2 :=
   if h = 0 then
@@ -2775,10 +2831,12 @@ noncomputable def aux_reductionBracketOrientation
       | _ => 1
     else 1
 
-/-- The scale pair attached to one of the eight labeled bracket slots.  The
+/--
+The scale pair attached to one of the eight labeled bracket slots.  The
 cases are the two orientation cases in the proof of
 `increaseDataBracketDomination`; inactive slots repeat an already available
-nonnegative term. -/
+nonnegative term.
+-/
 noncomputable def aux_reductionBracketScales
     (D : ReductionData) (h : ℕ) (b : ReductionScaleTriple D.a × Fin 8) :
     SequencePair :=
@@ -2832,8 +2890,10 @@ theorem aux_reductionBracketPrev_spaced (D : ReductionData) :
   unfold aux_reductionBracketPrev
   convert shift_mem_A D.a_spaced (-1) using 1; ring_nf
 
-/-- Pointwise maxima of the scale sequences used in the bracket slots remain
-multiplicatively spaced. -/
+/--
+Pointwise maxima of the scale sequences used in the bracket slots remain
+multiplicatively spaced.
+-/
 theorem aux_reductionBracketMax_spaced {a b : ℤ → ℝ}
     (ha : SpacedSequence a) (hb : SpacedSequence b) :
     SpacedSequence (aux_reductionBracketMax a b) := by
@@ -2842,7 +2902,7 @@ theorem aux_reductionBracketMax_spaced {a b : ℤ → ℝ}
 /-- The enlarged base scale lies within the expected height budget. -/
 theorem aux_reductionBracketLambda_within (D : ReductionData) (h : ℕ) :
     WithinSequenceDistance D.a (aux_reductionBracketLambda D h) h := by
-  apply Codex.MainArgument.GaussianDomination.aux_withinSequenceDistance_of_sequenceDistance_le
+  apply Codex.aux_withinSequenceDistance_of_sequenceDistance_le
     D.a_spaced
   change SequenceDistance D.a (fun j => (2 : ℝ) ^ h * D.a j) ≤ (h : WithTop ℕ)
   simpa only [zpow_natCast, Int.natAbs_natCast] using
@@ -2863,8 +2923,10 @@ theorem aux_reductionBracketBase_within (D : ReductionData) (k : ℕ) :
   intro j
   constructor <;> exact aux_spacedSequence_monotone D.a_spaced (by omega)
 
-/-- Every scale occurring in one of the labeled bracket slots is a spaced
-sequence. -/
+/--
+Every scale occurring in one of the labeled bracket slots is a spaced
+sequence.
+-/
 theorem aux_reductionBracketScales_spaced (D : ReductionData) (h : ℕ)
     (b : ReductionScaleTriple D.a × Fin 8) :
     ∀ r : Fin 2, SpacedSequence (aux_reductionBracketScales D h b r) := by
@@ -2909,9 +2971,11 @@ theorem aux_reductionBracketScales_spaced (D : ReductionData) (h : ℕ)
           Fin.mk_one]
       all_goals assumption
 
-/-- Every tagged bracket scale stays within the distance budget required by
+/--
+Every tagged bracket scale stays within the distance budget required by
 the reduction witness.  The maximum cases use the common-distance maximum
-lemma, so the `h = 0` and positive-height slot tables are handled uniformly. -/
+lemma, so the `h = 0` and positive-height slot tables are handled uniformly.
+-/
 theorem aux_reductionBracketScales_distance (D : ReductionData) (h : ℕ)
     (b : ReductionScaleTriple D.a × Fin 8) :
     ∀ r : Fin 2,
@@ -2935,10 +2999,10 @@ theorem aux_reductionBracketScales_distance (D : ReductionData) (h : ℕ)
       SequenceDistance D.a (aux_reductionBracketPrev D) ≤ (1 : WithTop ℕ) := hprevzero
       _ ≤ ((1 + h : ℕ) : WithTop ℕ) := by norm_cast; omega
   have hleftwithin : WithinSequenceDistance D.a q.left 1 :=
-    Codex.MainArgument.GaussianDomination.aux_withinSequenceDistance_of_sequenceDistance_le
+    Codex.aux_withinSequenceDistance_of_sequenceDistance_le
       D.a_spaced q.left_distance
   have hrightwithin : WithinSequenceDistance D.a q.right 1 :=
-    Codex.MainArgument.GaussianDomination.aux_withinSequenceDistance_of_sequenceDistance_le
+    Codex.aux_withinSequenceDistance_of_sequenceDistance_le
       D.a_spaced q.right_distance
   have hmaxwithin : WithinSequenceDistance D.a
       (aux_reductionBracketMax q.left q.right) 1 :=
@@ -3017,9 +3081,11 @@ theorem aux_reductionBracketScales_distance (D : ReductionData) (h : ℕ)
           Fin.mk_one]
       all_goals assumption
 
-/-- The two components of every tagged bracket scale pair have the advertised
+/--
+The two components of every tagged bracket scale pair have the advertised
 pair-distance bound, by symmetry and the triangle inequality through the
-original base scale. -/
+original base scale.
+-/
 theorem aux_reductionBracketScales_pair_distance (D : ReductionData) (h : ℕ)
     (b : ReductionScaleTriple D.a × Fin 8) :
     sequencePairDistance (aux_reductionBracketScales D h b) ≤
@@ -3055,13 +3121,17 @@ theorem aux_reductionBracket_card (D : ReductionData) :
     _ ≤ C_increaseDataBracketDominationCard := by
       norm_num [C_increaseDataBracketDominationCard]
 
-/-- The pointwise constant in Proposition
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`]. -/
+/--
+The pointwise constant in Proposition
+[`Codex.increaseDataBracketDomination`].
+-/
 noncomputable def C_increaseDataBracketDomination : ℝ :=
   (2 : ℝ) ^ (10 : ℕ) * C_rhoKernelsReduction
 
-/-- The bracket product attached to one labeled occurrence in the reduction
-majorant. -/
+/--
+The bracket product attached to one labeled occurrence in the reduction
+majorant.
+-/
 noncomputable def aux_reductionBracketTerm (D : ReductionData) (h : ℕ)
     (b : ReductionScaleTriple D.a × Fin 8) (j : ℤ) (v : RealPlane) : ℝ :=
   scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketScales D h b 0 j)
@@ -3069,8 +3139,10 @@ noncomputable def aux_reductionBracketTerm (D : ReductionData) (h : ℕ)
     scaledBracketBumpReal (7 / 6 : ℝ) (aux_reductionBracketScales D h b 1 j)
       ((W (aux_reductionBracketOrientation D h b) v).2)
 
-/-- Every labeled bracket product is nonnegative, including the padding
-slots used to keep the finite carrier uniform. -/
+/--
+Every labeled bracket product is nonnegative, including the padding
+slots used to keep the finite carrier uniform.
+-/
 theorem aux_reductionBracketTerm_nonneg (D : ReductionData) (h : ℕ)
     (b : ReductionScaleTriple D.a × Fin 8) (j : ℤ) (v : RealPlane) :
     0 ≤ aux_reductionBracketTerm D h b j v := by
@@ -3081,16 +3153,20 @@ theorem aux_reductionBracketTerm_nonneg (D : ReductionData) (h : ℕ)
   · exact aux_scaledBracketBumpReal_nonneg _ _ _
       (aux_spacedSequence_pos (aux_reductionBracketScales_spaced D h b 1) j)
 
-/-- Keeping the three padding slots in a finite eight-slot table can only
-increase the sum of its first five entries. -/
+/--
+Keeping the three padding slots in a finite eight-slot table can only
+increase the sum of its first five entries.
+-/
 theorem aux_reductionBracket_five_le_sum (f : Fin 8 → ℝ)
     (h5 : 0 ≤ f 5) (h6 : 0 ≤ f 6) (h7 : 0 ≤ f 7) :
     f 0 + f 1 + f 2 + f 3 + f 4 ≤ ∑ slot : Fin 8, f slot := by
   simp [Fin.sum_univ_succ]
   nlinarith
 
-/-- Keeping the six padding slots in a finite eight-slot table can only
-increase the sum of its first two entries. -/
+/--
+Keeping the six padding slots in a finite eight-slot table can only
+increase the sum of its first two entries.
+-/
 theorem aux_reductionBracket_two_le_sum (f : Fin 8 → ℝ)
     (h2 : 0 ≤ f 2) (h3 : 0 ≤ f 3) (h4 : 0 ≤ f 4) (h5 : 0 ≤ f 5)
     (h6 : 0 ≤ f 6) (h7 : 0 ≤ f 7) :
@@ -3098,8 +3174,10 @@ theorem aux_reductionBracket_two_le_sum (f : Fin 8 → ℝ)
   simp [Fin.sum_univ_succ]
   nlinarith
 
-/-- The five output products from the positive-height orientation-zero
-convolution are dominated by the corresponding tagged-slot sum. -/
+/--
+The five output products from the positive-height orientation-zero
+convolution are dominated by the corresponding tagged-slot sum.
+-/
 theorem aux_reductionBracket_positive_slots_u0 (D : ReductionData) (h : ℕ)
     (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ)
     (hh : h ≠ 0) (hu : q.orientation = 0) :
@@ -3137,8 +3215,10 @@ theorem aux_reductionBracket_positive_slots_u0 (D : ReductionData) (h : ℕ)
     aux_reductionBracketOrientation, aux_reductionBracketMax, hh, hu,
     aux_reduction_W_zero_coordinates, aux_reduction_W_one_coordinates] using hactive
 
-/-- The two positive-height orientation-one occurrences are the first two
-tagged slots, and their duplicated sum is bounded by the full table. -/
+/--
+The two positive-height orientation-one occurrences are the first two
+tagged slots, and their duplicated sum is bounded by the full table.
+-/
 theorem aux_reductionBracket_positive_slots_u1 (D : ReductionData) (h : ℕ)
     (q : ReductionScaleTriple D.a) (j : ℤ) (w0 w1 : ℝ)
     (hh : h ≠ 0) (hu : q.orientation = 1) :
@@ -4607,9 +4687,11 @@ theorem aux_reductionBracket_zero_majorant {n : ℕ} (hn : 2 ≤ n)
         ∑ q ∈ D.triples, ∑ slot : Fin 8,
           aux_reductionBracketTerm D 0 (q, slot) j (w0 - w1, w0 + w1) := by rfl
 
-/-- The positive-height analytic bracket majorant.  Diagonal cancellation,
+/--
+The positive-height analytic bracket majorant.  Diagonal cancellation,
 the rho mean-difference gain, and the tagged positive-height slot table give
-the exact `2^{-h/3}` bound used to build the reduction witness. -/
+the exact `2^{-h/3}` bound used to build the reduction witness.
+-/
 theorem aux_reductionBracket_positive_majorant {n : ℕ} (hn : 2 ≤ n)
     (D : ReductionData) (h : ℕ) (hh : 1 ≤ h) (j : ℤ) (v : RealPlane) :
     |reductionNKernel n D h j v| ≤
@@ -4826,11 +4908,13 @@ theorem aux_reductionBracket_positive_majorant {n : ℕ} (hn : 2 ≤ n)
       have hneg : -(h : ℝ) / 3 = -((h : ℝ) / 3) := by ring
       rw [hneg]
 
-/-- A labeled finite family witnessing the conclusion of
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`].  The labels are
+/--
+A labeled finite family witnessing the conclusion of
+[`Codex.increaseDataBracketDomination`].  The labels are
 kept separate
 from their decoded orientations and scale pairs so that coincident generated
-bracket products retain their multiplicities, exactly as in the manuscript. -/
+bracket products retain their multiplicities, exactly as in the manuscript.
+-/
 structure aux_ReductionBracketDominationWitness {n : ℕ} (D : ReductionData)
     (h : ℕ) where
   B : Finset (ReductionScaleTriple D.a × Fin 8)
@@ -4849,8 +4933,10 @@ structure aux_ReductionBracketDominationWitness {n : ℕ} (D : ReductionData)
           scaledBracketBumpReal (7 / 6 : ℝ) (scales b 0 j) ((W (orientation b) v).1) *
             scaledBracketBumpReal (7 / 6 : ℝ) (scales b 1 j) ((W (orientation b) v).2)
 
-/-- Reassemble a pointwise analytic bound indexed by all labeled slots into
-the finite witness required by bracket domination. -/
+/--
+Reassemble a pointwise analytic bound indexed by all labeled slots into
+the finite witness required by bracket domination.
+-/
 theorem aux_reductionBracketWitness_of_analytic {n : ℕ} (D : ReductionData)
     (h : ℕ)
     (hmajorant : ∀ j : ℤ, ∀ v : RealPlane,
@@ -4884,90 +4970,96 @@ theorem aux_reductionBracketWitness_of_analytic {n : ℕ} (D : ReductionData)
     exact hmajorant j v
 
 /--
-\begin{proposition}[bracket domination - reduction variant]
-\label{lem:increase-data-bracket-domination}
+**Proposition (bracket domination - reduction variant).**
+
 Let \(a\in A\), and let
 $
-\mathcal P\subset B_{\dist}(a,1)^2\times[2)$ be such that $\#\mathcal P\leq5$.
-Assume additionally that
-\begin{equation}
-    \label{E:increase-data-one-sided-scales}
+\mathcal P\subset B_{\operatorname{dist}}(a,1)^2\times[2)$ be such that $\#\mathcal P\leq5$. Assume
+additionally that
+
+$$
     t_0(j)\leq a(j),
     \quad
     t_1(j)\leq a(j)
-\end{equation}
+$$
+
 for every \((t_0,t_1,u)\in\mathcal P\) and \(j\in\mathbb Z\).
 Suppose that \(M_j\in W_0(\mathbb R^2)\) satisfies
-\begin{equation}\label{auto:reduction-diagonal-cancellation}
+
+$$
 \widehat M_j(\xi,-\xi)=0
-\end{equation}
+$$
+
 and
-\begin{equation}\label{auto:reduction-kernel-decay}
+
+$$
 |M_j(v)|
 \leq
 \sum_{(t_0,t_1,u)\in\mathcal P}
 \langle(W_uv)_0\rangle_{(t_0(j))}^{3/2}
 \langle(W_uv)_1\rangle_{(t_1(j))}^{3/2}.
-\end{equation}
+$$
 
-Let $\lambda_{h,j}^-,\lambda_{h,j}^+$ be as in Lemma
-[`Codex.Reduction.OnDiagonalMainArgument.rhoKernelsReduction`].
-For $h\in\N$, $j\in \Z$, we define
+Let $\lambda_{h,j}^-,\lambda_{h,j}^+$ be as in Lemma [`Codex.rhoKernelsReduction`].
+For $h\in\mathbb{N}$, $j\in \mathbb{Z}$, we define
 $
 \sigma_{h,j} = s(2^{h} a,j)
 $
 and
-\begin{equation}\label{auto:increase-data-N-kernel}
+
+$$
 N_{h,j} =
 \mathcal F^{-1}\left((\xi,\eta) \mapsto
 (\widehat{\Phi_{(\lambda_{h,j}^-)}}-\widehat{\Phi_{(\lambda_{h,j}^+)}})(\xi+\eta)
 \widehat{\sigma_{h,j}}(\xi+\eta)^{-\nu} \widehat{M_j}(\xi,\eta)\right),
-\end{equation}
-
+$$
 
 Then for every \(h\in\mathbb N\), there exist a finite set
 \(\mathcal B_h\), numbers \(u_{h,b}\in[2)\), and pairs
-\begin{equation}\label{auto:increase-data-scale-pairs}
+
+$$
 \beta_{h,b}
 =
 (\beta_{h,b}^0,\beta_{h,b}^1)\in A^2,
 \qquad b\in\mathcal B_h,
-\end{equation}
+$$
+
 satisfying
-\begin{equation}
-    \label{E:increase-data-B-cardinality}
+
+$$
     \#\mathcal B_h
     \leq
-    C_{\text{lem:increase-data-bracket-domination},0},
-\end{equation}
-\begin{equation}
-    \label{E:increase-data-beta-base-distance}
-    \dist(a,\beta_{h,b}^\ell)
+    C_{\text{bracket domination - reduction variant},0},
+$$
+
+$$
+    \operatorname{dist}(a,\beta_{h,b}^\ell)
     \leq
      (1+h)
-\end{equation}
+$$
+
 for every \(b\in\mathcal B_h\) and \(\ell\in[2)\), and
-\begin{equation}
-    \label{E:increase-data-bracket-majorant}
-    |N_{h,j}(v)| \leq C_{\text{lem:increase-data-bracket-domination},1} 2^{-h/3}
-    \sum_{b\in\mathcal B_h} \langle(W_{u_{h,b}}v)_0 \rangle_{(\beta_{h,b}^0(j))}^{7/6}
-    \langle(W_{u_{h,b}}v)_1 \rangle_{(\beta_{h,b}^1(j))}^{7/6}
-\end{equation}
-where $C_{\text{lem:increase-data-bracket-domination},0}=2^6$,
-$C_{\text{lem:increase-data-bracket-domination},1}
+
+$$
+|N_{h,j}(v)| \leq C_{\text{bracket domination - reduction variant},1} 2^{-h/3} \sum_{b\in\mathcal
+    B_h} \langle(W_{u_{h,b}}v)_0 \rangle_{(\beta_{h,b}^0(j))}^{7/6} \langle(W_{u_{h,b}}v)_1
+    \rangle_{(\beta_{h,b}^1(j))}^{7/6}
+$$
+
+where $C_{\text{bracket domination - reduction variant},0}=2^6$, $C_{\text{bracket domination -
+reduction variant},1}
 =
-2^{10}C_{\text{lem:rho-kernels-reduction}}$.
+2^{10}C_{\text{\$ rho\$ kernels - reduction variant}}$.
 In particular,
-\begin{equation}
-    \label{E:increase-data-beta-pair-distance}
+
+$$
     \Delta(\beta_{h,b})
     \leq
     2(1+h).
-\end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`],
-[`Codex.Reduction.OnDiagonalMainArgument.rhoKernelsReduction`].
+See also [`Codex.increaseDataBracketDomination`],
+[`Codex.rhoKernelsReduction`].
 -/
 theorem increaseDataBracketDomination {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (h : ℕ) :
@@ -4981,15 +5073,14 @@ theorem increaseDataBracketDomination {n : ℕ} (hn : 2 ≤ n) (D : ReductionDat
     exact aux_reductionBracket_positive_majorant hn D h hh j v
 
 /--
-\begin{lemma}[constant $C_{\text{lem:increase-data-bracket-domination},1}$ \auto]
-\label{constant increase data bracket domination}
-\begin{equation}\label{constant increase data bracket domination bound}
-C_{\text{lem:increase-data-bracket-domination},1}
-<\tfrac35 2^{76}<2^{76}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{bracket domination - reduction variant},1}$).**
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`].
+$$
+C_{\text{bracket domination - reduction variant},1}
+<\tfrac35 2^{76}<2^{76}.
+$$
+
+See also [`Codex.increaseDataBracketDomination`].
 -/
 theorem constantIncreaseDataBracketDomination :
     C_increaseDataBracketDomination < (3 / 5 : ℝ) * (2 : ℝ) ^ (76 : ℕ) := by
@@ -5001,17 +5092,21 @@ theorem constantIncreaseDataBracketDomination :
         (by positivity)
     _ = (3 / 5 : ℝ) * (2 : ℝ) ^ (76 : ℕ) := by norm_num
 
-/-- The constant in Proposition
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataGaussianExpansion`]. -/
+/--
+The constant in Proposition
+[`Codex.increaseDataGaussianExpansion`].
+-/
 noncomputable def C_increaseDataGaussianExpansion : ℝ :=
   (2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ) *
     C_increaseDataBracketDomination
 
-/-- The label-preserving Gaussian expansion of the bracket witness from
-Proposition [`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`].
+/--
+The label-preserving Gaussian expansion of the bracket witness from
+Proposition [`Codex.increaseDataBracketDomination`].
 Keeping the original
 finite labels prevents coincident decoded scale pairs from losing their
-multiplicity. -/
+multiplicity.
+-/
 structure aux_ReductionGaussianExpansionWitness {n : ℕ} (D : ReductionData)
     (h : ℕ) where
   bracket : aux_ReductionBracketDominationWitness (n := n) D h
@@ -5042,8 +5137,10 @@ structure aux_ReductionGaussianExpansionWitness {n : ℕ} (D : ReductionData)
             (fun r => gaussianExpansionPair (bracket.scales b) m r j)
             (bracket.orientation b) v)
 
-/-- Coordinatewise dyadic dilation preserves the spaced-sequence condition in
-the Gaussian expansion of `increaseDataBracketDomination`. -/
+/--
+Coordinatewise dyadic dilation preserves the spaced-sequence condition in
+the Gaussian expansion of `increaseDataBracketDomination`.
+-/
 theorem aux_reductionGaussianExpansion_scales_in_A {n : ℕ}
     (D : ReductionData) (h : ℕ)
     (w : aux_ReductionBracketDominationWitness (n := n) D h)
@@ -5053,8 +5150,10 @@ theorem aux_reductionGaussianExpansion_scales_in_A {n : ℕ}
   change SpacedSequence (fun j => (2 : ℝ) ^ (m r) * w.scales b r j)
   exact smul_mem_A (w.scales_in_A b hb r) (pow_pos (by norm_num) _)
 
-/-- The dyadic Gaussian expansion adds at most the total dyadic exponent to
-the pair-distance budget from `increaseDataBracketDomination`. -/
+/--
+The dyadic Gaussian expansion adds at most the total dyadic exponent to
+the pair-distance budget from `increaseDataBracketDomination`.
+-/
 theorem aux_reductionGaussianExpansion_pair_distance {n : ℕ}
     (D : ReductionData) (h : ℕ)
     (w : aux_ReductionBracketDominationWitness (n := n) D h)
@@ -5098,8 +5197,10 @@ theorem aux_reductionGaussianExpansion_pair_distance {n : ℕ}
       norm_cast
       omega
 
-/-- Splits the two-coordinate Gaussian-expansion weight into its one-dimensional
-dyadic factors. -/
+/--
+Splits the two-coordinate Gaussian-expansion weight into its one-dimensional
+dyadic factors.
+-/
 theorem aux_reductionGaussianExpansion_weight_split (m : Fin 2 → ℕ) :
     gaussianExpansionWeight m =
       Real.rpow 2 (-((m 0 : ℕ) : ℝ) / 6) *
@@ -5114,8 +5215,10 @@ theorem aux_reductionGaussianExpansion_weight_split (m : Fin 2 → ℕ) :
       ring
     _ = _ := Real.rpow_add (by norm_num) _ _
 
-/-- A product of reduction-exponent bracket bumps is dominated by its
-label-preserving two-coordinate Gaussian expansion. -/
+/--
+A product of reduction-exponent bracket bumps is dominated by its
+label-preserving two-coordinate Gaussian expansion.
+-/
 theorem aux_reductionGaussianExpansion_pair_majorant
     (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
     (u : Fin 2) (j : ℤ) (v : RealPlane) :
@@ -5241,8 +5344,10 @@ theorem aux_reductionGaussianExpansion_pair_majorant
           twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v :=
       mul_le_mul_of_nonneg_right hcoeff hseriesnonneg
 
-/-- Pointwise convergence of the Gaussian expansion associated with one base
-scale pair. -/
+/--
+Pointwise convergence of the Gaussian expansion associated with one base
+scale pair.
+-/
 theorem aux_reductionGaussianExpansion_pair_summable
     (p : SequencePair) (hp : ∀ r : Fin 2, SpacedSequence (p r))
     (u : Fin 2) (j : ℤ) (v : RealPlane) :
@@ -5284,8 +5389,10 @@ theorem aux_reductionGaussianExpansion_pair_summable
   dsimp [f0, f1]
   ring_nf
 
-/-- The reduction Gaussian-expansion weights form a summable two-parameter
-geometric family. -/
+/--
+The reduction Gaussian-expansion weights form a summable two-parameter
+geometric family.
+-/
 theorem aux_reductionGaussianExpansion_weight_summable :
     Summable gaussianExpansionWeight := by
   let r : ℝ := Real.rpow 2 (-(1 / 6 : ℝ))
@@ -5325,7 +5432,7 @@ theorem aux_reductionGaussianExpansion_term_integrable
     (u : Fin 2) (j : ℤ) (m : Fin 2 → ℕ) :
     Integrable (fun v : RealPlane => gaussianExpansionWeight m *
       twoDimensionalGaussian (fun r => gaussianExpansionPair p m r j) u v) := by
-  apply (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+  apply (Codex.aux_memW0_integrable_of_addHaar
     (aux_twoDimensionalGaussian_memW0
       (fun r => gaussianExpansionPair p m r j) u ?_)).const_mul
   intro r
@@ -5335,8 +5442,10 @@ theorem aux_reductionGaussianExpansion_term_integrable
 section
 set_option linter.unusedDecidableInType false
 
-/-- Pointwise convergence for a finite, label-preserving family of Gaussian
-expansions. -/
+/--
+Pointwise convergence for a finite, label-preserving family of Gaussian
+expansions.
+-/
 theorem aux_reductionGaussianExpansion_finite_summable
     {α : Type*} [DecidableEq α] (B : Finset α) (p : α → SequencePair)
     (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
@@ -5363,8 +5472,10 @@ theorem aux_reductionGaussianExpansion_finite_summable
   dsimp [F]
   rw [Finset.mul_sum]
 
-/-- Integrability of the pointwise Gaussian expansion for a finite,
-label-preserving family. -/
+/--
+Integrability of the pointwise Gaussian expansion for a finite,
+label-preserving family.
+-/
 theorem aux_reductionGaussianExpansion_finite_integrable
     {α : Type*} [DecidableEq α] (B : Finset α) (p : α → SequencePair)
     (hp : ∀ b ∈ B, ∀ r : Fin 2, SpacedSequence (p b r))
@@ -5436,8 +5547,10 @@ theorem aux_reductionGaussianExpansion_finite_integrable
 
 end
 
-/-- Converts the tagged bracket witness into its Gaussian series majorant
-without collapsing coincident decoded scale pairs. -/
+/--
+Converts the tagged bracket witness into its Gaussian series majorant
+without collapsing coincident decoded scale pairs.
+-/
 theorem aux_reductionBracket_to_gaussian_estimate {n : ℕ} (D : ReductionData)
     (h : ℕ) (w : aux_ReductionBracketDominationWitness (n := n) D h)
     (hC : 0 ≤ C_increaseDataBracketDomination) (j : ℤ) (v : RealPlane) :
@@ -5522,46 +5635,48 @@ theorem aux_reductionBracket_to_gaussian_estimate {n : ℕ} (D : ReductionData)
       ring
 
 /--
-\begin{proposition}[Gaussian domination - reduction variant]
-\label{lem:increase-data-Gaussian-expansion}
-Let the notation and conclusions of Proposition~
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`] hold. For
+**Proposition (Gaussian domination - reduction variant).**
+
+Let the notation and conclusions of Proposition
+[`Codex.increaseDataBracketDomination`] hold. For
 \(b\in\mathcal B_h\) and
 \(m=(m_0,m_1)\in\mathbb N^2\), define
-\begin{equation}\label{auto:Gaussian-domination-rescaled-pairs}
+
+$$
 p_{h,b,m}
 =
 \left(
 2^{m_0}\beta_{h,b}^0,
 2^{m_1}\beta_{h,b}^1
 \right)\in A^2.
-\end{equation}
+$$
+
 Then
-\begin{equation}
-    \label{E:increase-data-p-distance}
+
+$$
     \Delta(p_{h,b,m})
     \leq
     2(1+h)
     +
     |m|,
-\end{equation}
+$$
+
 and
-\begin{equation}
-    \label{E:increase-data-Gaussian-majorant}
-    |N_{h,j}(v)| \leq C_{\text{lem:increase-data-Gaussian-expansion}} 2^{-h/3}
-    \sum_{b\in\mathcal B_h} \sum_{m\in\mathbb N^2}
-    2^{-|m|/6} G_{p_{h,b,m}(j),u_{h,b}}(v).
-\end{equation}
-where $ C_{\text{lem:increase-data-Gaussian-expansion}}
-    =
-    2^3C_{\text{Gaussian domination}}^2C_{\text{lem:increase-data-bracket-domination},1}.$
+
+$$
+|N_{h,j}(v)| \leq C_{\text{Gaussian domination - reduction variant}} 2^{-h/3} \sum_{b\in\mathcal
+    B_h} \sum_{m\in\mathbb N^2} 2^{-|m|/6} G_{p_{h,b,m}(j),u_{h,b}}(v).
+$$
+
+where $ C_{\text{Gaussian domination - reduction variant}}
+=
+2^3C_{\text{Gaussian domination}}^2C_{\text{bracket domination - reduction variant},1}.$
 The   series on the right-hand side converges for every
 \(v\in\mathbb R^2\) and in \(L^1(\mathbb R^2)\).
-\end{proposition}
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.increaseDataGaussianExpansion`],
-[`Codex.Preliminaries.BumpsAndEstimates.gaussianDomination`],
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`].
+See also [`Codex.increaseDataGaussianExpansion`],
+[`Codex.gaussianDomination`],
+[`Codex.increaseDataBracketDomination`].
 -/
 theorem increaseDataGaussianExpansion {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (h : ℕ) :
@@ -5590,15 +5705,14 @@ theorem increaseDataGaussianExpansion {n : ℕ} (hn : 2 ≤ n) (D : ReductionDat
       (fun b hb => w.scales_in_A b hb) w.orientation j
 
 /--
-\begin{lemma}[constant $C_{\text{lem:increase-data-Gaussian-expansion}}$ \auto]
-\label{constant increase data Gaussian expansion}
-\begin{equation}\label{constant increase data Gaussian expansion bound}
-C_{\text{lem:increase-data-Gaussian-expansion}}
-<\tfrac{123}{128}2^{91}<2^{91}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{Gaussian domination - reduction variant}}$).**
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.increaseDataGaussianExpansion`].
+$$
+C_{\text{Gaussian domination - reduction variant}}
+<\tfrac{123}{128}2^{91}<2^{91}.
+$$
+
+See also [`Codex.increaseDataGaussianExpansion`].
 -/
 theorem constantIncreaseDataGaussianExpansion :
     C_increaseDataGaussianExpansion < (123 / 128 : ℝ) * (2 : ℝ) ^ (91 : ℕ) := by
@@ -5631,7 +5745,7 @@ theorem constantIncreaseDataGaussianExpansion :
       gcongr
     _ < (123 / 128 : ℝ) * (2 : ℝ) ^ (91 : ℕ) := by norm_num
 
-/-- The constant in Lemma [`Codex.Reduction.OnDiagonalMainArgument.nReduction`]. -/
+/-- The constant in Lemma [`Codex.nReduction`]. -/
 noncomputable def C_nReduction : ℝ := (2 : ℝ) ^ (9 : ℕ) * C_rhoKernelsReduction
 
 /-- The `L¹` mass estimate for the reduction rho kernel used in `nReduction`. -/
@@ -5876,20 +5990,21 @@ theorem aux_reduction_diagonal_convolution_l1_bound
       rw [hKnorm]
 
 /--
-\begin{lemma}
-\label{lem:N-reduction} Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$, and
-$(N_{h,j})_{h\in \N,j\in \Z}$ be as in Proposition~
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`].
-Then for each $h\in \N$ and $j\in \Z$,   $N_{h,j}\in W_0(\R^2)$ and
-\begin{equation}
-    \label{E:diagonal-band-reduction-N-L1}
-    \|N_{h,j}\|_1\leq  C_{\text{lem:N-reduction}}
-\end{equation}
-with $C_{\text{lem:N-reduction}} = 2^9C_{\text{lem:rho-kernels-reduction}}$
-\end{lemma}
+**Lemma.**
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.nReduction`],
-[`Codex.Reduction.OnDiagonalMainArgument.rhoKernelsReduction`].
+Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \mathbb{Z}}$, and $(N_{h,j})_{h\in \mathbb{N},j\in
+\mathbb{Z}}$,  be as in Proposition [`Codex.increaseDataBracketDomination`].
+
+Then for each $h\in \mathbb{N}$ and $j\in \mathbb{Z}$,   $N_{h,j}\in W_0(\mathbb{R}^2)$ and
+
+$$
+    \|N_{h,j}\|_1\leq  C_{\text{lem:N-reduction}}
+$$
+
+with $C_{\text{lem:N-reduction}} = 2^9C_{\text{\$ rho\$ kernels - reduction variant}}$
+
+See also [`Codex.nReduction`],
+[`Codex.rhoKernelsReduction`].
 -/
 theorem nReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) (h : ℕ) (j : ℤ) :
     MemW0 (reductionNKernel n D h j) ∧
@@ -5941,14 +6056,14 @@ theorem nReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) (h : ℕ) (j : �
       simpa [C_nReduction] using hproduct
 
 /--
-\begin{lemma}[constant $C_{\text{lem:N-reduction}}$ \auto]\label{constant N reduction}
-\begin{equation}\label{constant N reduction bound}
+**Lemma (constant $C_{\text{lem:N-reduction}}$).**
+
+$$
 C_{\text{lem:N-reduction}}
 <\tfrac35 2^{75}<2^{75}.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.nReduction`].
+See also [`Codex.nReduction`].
 -/
 theorem constantNReduction : C_nReduction < (3 / 5 : ℝ) * (2 : ℝ) ^ (75 : ℕ) := by
   unfold C_nReduction
@@ -5958,8 +6073,10 @@ theorem constantNReduction : C_nReduction < (3 / 5 : ℝ) * (2 : ℝ) ^ (75 : �
       mul_lt_mul_of_pos_left aux_rhoKernelsReduction_lt_three_fifths_two_pow_66 (by positivity)
     _ = (3 / 5 : ℝ) * (2 : ℝ) ^ (75 : ℕ) := by ring
 
-/-- The coordinate identification used to view a one-coordinate kernel as a
-planar kernel. -/
+/--
+The coordinate identification used to view a one-coordinate kernel as a
+planar kernel.
+-/
 noncomputable def aux_reductionBasePlaneEquiv :
     (RealVector 1 × RealVector 1) ≃L[ℝ] RealPlane :=
   (ContinuousLinearEquiv.piUnique ℝ (fun _ : Fin 1 => ℝ)).prodCongr
@@ -6142,8 +6259,10 @@ theorem aux_reductionSigmaScalePair_spaced (D : ReductionData) (h : ℕ) (r : Fi
     positivity
   · exact inv_pos.mpr (Real.sqrt_pos.2 (by norm_num))
 
-/-- The Euclidean combination of the two auxiliary sigma scales recovers the
-original dilated scale. -/
+/--
+The Euclidean combination of the two auxiliary sigma scales recovers the
+original dilated scale.
+-/
 theorem aux_reductionSigmaScalePair_sqrt (D : ReductionData) (h : ℕ) (r : ℤ) :
     Real.sqrt ((aux_reductionSigmaScalePair D h 0 r) ^ 2 +
       (aux_reductionSigmaScalePair D h 1 r) ^ 2) = (2 : ℝ) ^ h * D.a r := by
@@ -6187,8 +6306,10 @@ theorem aux_reductionSequenceDistance_self_eq_zero (a : ℤ → ℝ) :
     simp
   · exact bot_le
 
-/-- The two-coordinate geometric data used to apply the positive-terms
-induction to one Gaussian summand. -/
+/--
+The two-coordinate geometric data used to apply the positive-terms
+induction to one Gaussian summand.
+-/
 noncomputable def aux_reductionGamma {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
     (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
@@ -6268,8 +6389,10 @@ theorem aux_reductionGamma_sMultiplier_last {n : ℕ} (hn : 2 ≤ n) (D : Reduct
   simp_rw [aux_reductionGamma_scales_last hn D h w b hb m]
   simp_rw [aux_reductionSigmaScalePair_sqrt]
 
-/-- The terminal sandwich kernel is the tensor-square extension of its first
-Gaussian factor by `reductionSigma`. -/
+/--
+The terminal sandwich kernel is the tensor-square extension of its first
+Gaussian factor by `reductionSigma`.
+-/
 theorem aux_reductionGamma_terminal_sandwich {n : ℕ} (hn : 2 ≤ n)
     (D : ReductionData) (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
     (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) (j : ℤ) :
@@ -6352,8 +6475,10 @@ theorem aux_reductionGamma_delta_le {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
   rw [Fin.sum_univ_two, hzero]
   omega
 
-/-- The positive-terms delta factor is controlled by the dyadic Gaussian
-expansion weight budget. -/
+/--
+The positive-terms delta factor is controlled by the dyadic Gaussian
+expansion weight budget.
+-/
 theorem aux_reductionGamma_delta_rpow_le {n : ℕ} (hn : 2 ≤ n)
     (D : ReductionData) (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
     (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
@@ -6420,8 +6545,10 @@ theorem aux_reductionGamma_k {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (b : ReductionScaleTriple D.a × Fin 8) (hb : b ∈ w.bracket.B) (m : Fin 2 → ℕ) :
     (aux_reductionGamma hn D h w b hb m).k = 2 := rfl
 
-/-- A square-moment summation bound for the dyadic Gaussian expansion
-weights, including the needed loss in `h`. -/
+/--
+A square-moment summation bound for the dyadic Gaussian expansion
+weights, including the needed loss in `h`.
+-/
 theorem aux_reductionDecay_sum (h : ℕ) :
     Summable (fun m : Fin 2 → ℕ => gaussianExpansionWeight m *
       ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) ^ (2 : ℕ)) ∧
@@ -6659,8 +6786,10 @@ theorem aux_reductionDecay_sum (h : ℕ) :
     _ ≤ 114300 := hpoly h
     _ ≤ (2 : ℝ) ^ (18 : ℕ) := by norm_num
 
-/-- The dyadic Gaussian expansion has the required one-quarter decay for
-every exponent at most two. -/
+/--
+The dyadic Gaussian expansion has the required one-quarter decay for
+every exponent at most two.
+-/
 theorem aux_reductionDecay_sum_rpow (h : ℕ) {q : ℝ} (hq : q ≤ 2) :
     Real.rpow 2 (-((h : ℝ) / 3)) *
       (∑' m : Fin 2 → ℕ, gaussianExpansionWeight m *
@@ -6733,8 +6862,10 @@ theorem aux_reductionDecay_sum_rpow (h : ℕ) {q : ℝ} (hq : q ≤ 2) :
       exact mul_le_mul_of_nonneg_left hcore (Real.rpow_nonneg (by norm_num) _)
     _ = (2 : ℝ) ^ (18 : ℕ) * Real.rpow 2 (-((h : ℝ) / 4)) := by ring
 
-/-- Summability of the polynomially weighted Gaussian expansion used for the
-finite-prefix estimates. -/
+/--
+Summability of the polynomially weighted Gaussian expansion used for the
+finite-prefix estimates.
+-/
 theorem aux_reductionDecay_summable (h : ℕ) {q : ℝ} (_hq0 : 0 ≤ q) (hq : q ≤ 2) :
     Summable (fun m : Fin 2 → ℕ => gaussianExpansionWeight m *
       Real.rpow ((h : ℝ) + 1 + (m 0 : ℝ) + (m 1 : ℝ)) q) := by
@@ -6764,13 +6895,15 @@ theorem aux_reductionDecay_summable (h : ℕ) {q : ℝ} (_hq0 : 0 ≤ q) (hq : q
     mul_nonneg (Real.rpow_nonneg (by norm_num) _)
       (Real.rpow_nonneg (by positivity) _)) hpoint hG
 
-/-- The constant in Proposition [`Codex.Reduction.OnDiagonalMainArgument.increaseDataReduction`]. -/
+/-- The constant in Proposition [`Codex.increaseDataReduction`]. -/
 noncomputable def C_increaseDataReduction : ℝ :=
   (2 : ℝ) ^ (22 : ℕ) * C_inductPositiveTermsTheorem *
     C_increaseDataGaussianExpansion * C_increaseDataBracketDominationCard
 
-/-- Expanding one tensor-square Gaussian majorant into its finite family of
-terminal sandwich kernels. -/
+/--
+Expanding one tensor-square Gaussian majorant into its finite family of
+terminal sandwich kernels.
+-/
 theorem aux_reductionGaussianTerm_tensor_eq_sum {n : ℕ} (hn : 2 ≤ n)
     (D : ReductionData) (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h)
     (N : ℕ) (j : ℤ) :
@@ -6932,8 +7065,10 @@ theorem aux_reduction_per_term_bound {n : ℕ} (hn : 2 ≤ n) (D : ReductionData
 
 set_option maxHeartbeats 800000 in
 -- The finite-prefix seminorm estimate combines several nontrivial tsum bounds.
-/-- The uniform finite-prefix estimate needed to pass from the Gaussian
-majorant to the original reduction kernel. -/
+/--
+The uniform finite-prefix estimate needed to pass from the Gaussian
+majorant to the original reduction kernel.
+-/
 theorem aux_reduction_partial_bound {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (h : ℕ) (w : aux_ReductionGaussianExpansionWitness (n := n) D h) (N : ℕ) :
     kernelSequenceSeminorm n 2 (by omega) hn
@@ -7046,32 +7181,31 @@ theorem aux_reduction_partial_bound {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
       ring_nf
 
 /--
-\begin{proposition}[increase data - reduction variant]
-\label{P:increase-data-reduction}
-Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$, and $(N_{h,j})_{h\in\N,j\in\Z}$
-be as in Proposition~
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`].
- For $j\in \Z$ and $y\in (\R^2)^2$ let
-    \begin{equation}\label{auto:increase-data-majorant-kernel}
-    \tilde{M}_{h,j}(y) = |N_{h,j}(y_0)| (\sigma_{h,j}^{\otimes2})(y_1).
-    \end{equation}
+**Proposition (increase data - reduction variant).**
 
-Then with $\mathbf{\tilde{M}}_h=(\tilde{M}_{h,j})_{j\in \Z}$,
-    \begin{equation}\label{auto:increase-data-majorant-bound}
-    \|\mathbf{\tilde{M}}_h\|_{\rm M(2)}\le C_{\text{P:increase-data-reduction}} 2^{-h/4}
-    \end{equation}
-    where $C_{\text{P:increase-data-reduction}} =
-    2^{22}C_{\text{induct positive terms theorem}}
-    C_{\text{lem:increase-data-Gaussian-expansion}}
-    C_{\text{lem:increase-data-bracket-domination},0}$
+Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \mathbb{Z}}$, and
+$(N_{h,j})_{h\in\mathbb{N},j\in\mathbb{Z}}$ be as in Proposition
+[`Codex.increaseDataBracketDomination`].
+ For $j\in \mathbb{Z}$ and $y\in (\mathbb{R}^2)^2$ let
 
+$$
+\tilde{M}_{h,j}(y) = |N_{h,j}(y_0)| (\sigma_{h,j}^{\otimes2})(y_1).
+$$
 
-\end{proposition}
+Then with $\mathbf{\tilde{M}}_h=(\tilde{M}_{h,j})_{j\in \mathbb{Z}}$,
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.increaseDataReduction`],
-[`Codex.MainArgument.MainInduction.inductPositiveTermsTheorem`],
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataGaussianExpansion`],
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataBracketDomination`].
+$$
+\|\mathbf{\tilde{M}}_h\|_{\rm M(2)}\le C_{\text{increase data - reduction variant}} 2^{-h/4}
+$$
+
+where $C_{\text{increase data - reduction variant}} = 2^{22}C_{\text{induct positive terms
+theorem}}C_{\text{Gaussian domination - reduction variant}}C_{\text{bracket domination -
+reduction variant},0}$
+
+See also [`Codex.increaseDataReduction`],
+[`Codex.inductPositiveTermsTheorem`],
+[`Codex.increaseDataGaussianExpansion`],
+[`Codex.increaseDataBracketDomination`].
 -/
 theorem increaseDataReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) (h : ℕ) :
     kernelSequenceSeminorm n 2 (by omega) hn
@@ -7136,15 +7270,14 @@ theorem increaseDataReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) (h : 
   simpa [A] using hmain
 
 /--
-\begin{lemma}[constant $C_{\text{P:increase-data-reduction}}$ \auto]
-\label{constant increase data reduction}
-\begin{equation}\label{constant increase data reduction bound}
-C_{\text{P:increase-data-reduction}}
-<\tfrac{31}{32}2^{477}<2^{477}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{increase data - reduction variant}}$).**
 
-See also [`Codex.Reduction.OnDiagonalMainArgument.increaseDataReduction`].
+$$
+C_{\text{increase data - reduction variant}}
+<\tfrac{31}{32}2^{477}<2^{477}.
+$$
+
+See also [`Codex.increaseDataReduction`].
 -/
 theorem constantIncreaseDataReduction :
     C_increaseDataReduction < (31 / 32 : ℝ) * (2 : ℝ) ^ (477 : ℕ) := by
@@ -7245,4 +7378,4 @@ theorem constantIncreaseDataReduction :
 
 end
 
-end Codex.Reduction.OnDiagonalMainArgument
+end Codex

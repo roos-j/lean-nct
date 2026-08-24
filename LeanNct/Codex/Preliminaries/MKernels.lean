@@ -15,34 +15,25 @@ This file formalizes the subsection ``M kernels'' of the manuscript.  We model
 first and second coordinates of every copy of `\mathbb R^2`.
 -/
 
-namespace Codex.Preliminaries.MKernels
+namespace Codex
 
 open MeasureTheory
 open scoped BigOperators ENNReal
 
-open Codex.Preliminaries.KKernels
 
 
 noncomputable section
-/--
-A raw `M` kernel on `$(\mathbb R^2)^k$`, in its canonical two-coordinate-vector model.
--/
+/-- A raw `M` kernel on `$(\mathbb R^2)^k$`, in its canonical two-coordinate-vector model. -/
 abbrev MKernel (k : ℕ) := RealVector k × RealVector k → ℝ
 
-/--
-The last index of a nonempty finite coordinate vector.
--/
+/-- The last index of a nonempty finite coordinate vector. -/
 def lastIndex (k : ℕ) (hk : 1 ≤ k) : Fin k := ⟨k - 1, by omega⟩
 
-/--
-The inclusion of `[k-1)` into `[k)` used in the coordinate formula for `K_k`.
--/
+/-- The inclusion of `[k-1)` into `[k)` used in the coordinate formula for `K_k`. -/
 def aux_predecessorIndex (k : ℕ) (hk : 1 ≤ k) : Fin (k - 1) → Fin k :=
   fun i => ⟨i.1, by omega⟩
 
-/--
-Auxiliary deletion of one coordinate when its positive ambient dimension is explicit.
--/
+/-- Auxiliary deletion of one coordinate when its positive ambient dimension is explicit. -/
 def aux_eraseVector (k : ℕ) (hk : 1 ≤ k) (i : Fin k) (x : RealVector k) :
     RealVector (k - 1) :=
   let i' : Fin ((k - 1) + 1) := Fin.cast (by omega) i
@@ -81,9 +72,7 @@ def aux_mToKReassociate (k : ℕ) :
       RealVector k × (RealVector (k - 1) × ℝ) :=
   fun q => (q.1.1, (q.2, q.1.2))
 
-/--
-Haar preservation of `aux_mToKReassociate`.
--/
+/-- Haar preservation of `aux_mToKReassociate`. -/
 theorem aux_measurePreserving_mToKReassociate (k : ℕ) :
     MeasurePreserving (aux_mToKReassociate k)
     (((volume : Measure (RealVector k)).prod (volume : Measure ℝ)).prod
@@ -99,17 +88,13 @@ theorem aux_measurePreserving_mToKReassociate (k : ℕ) :
     (volume : Measure (RealVector (k - 1)))
   convert hprod.comp hassoc using 1; rfl
 
-/--
-The coordinate-sum shear after the scalar/predecessor reassociation.
--/
+/-- The coordinate-sum shear after the scalar/predecessor reassociation. -/
 def aux_mToKSumShear (k : ℕ) :
     RealVector k × (RealVector (k - 1) × ℝ) →
       RealVector k × (RealVector (k - 1) × ℝ) :=
   fun q => (q.1, (q.2.1, q.2.2 - coordinateSum q.2.1))
 
-/--
-Haar preservation of `aux_mToKSumShear`.
--/
+/-- Haar preservation of `aux_mToKSumShear`. -/
 theorem aux_measurePreserving_mToKSumShear (k : ℕ) :
     MeasurePreserving (aux_mToKSumShear k)
     ((volume : Measure (RealVector k)).prod
@@ -120,9 +105,7 @@ theorem aux_measurePreserving_mToKSumShear (k : ℕ) :
     (aux_measurePreserving_coordinateSumShear (k - 1))
   convert hprod using 1; rfl
 
-/--
-The volume-form version of the reassociation map, for composing affine coordinate changes.
--/
+/-- The volume-form version of the reassociation map, for composing affine coordinate changes. -/
 theorem aux_measurePreserving_mToKReassociate_volume (k : ℕ) :
     MeasurePreserving (aux_mToKReassociate k) volume volume := by
   change MeasurePreserving (aux_mToKReassociate k)
@@ -132,9 +115,7 @@ theorem aux_measurePreserving_mToKReassociate_volume (k : ℕ) :
       ((volume : Measure (RealVector (k - 1))).prod (volume : Measure ℝ)))
   exact aux_measurePreserving_mToKReassociate k
 
-/--
-The volume-form version of the coordinate-sum shear, for composing affine changes.
--/
+/-- The volume-form version of the coordinate-sum shear, for composing affine changes. -/
 theorem aux_measurePreserving_mToKSumShear_volume (k : ℕ) :
     MeasurePreserving (aux_mToKSumShear k) volume volume := by
   change MeasurePreserving (aux_mToKSumShear k)
@@ -152,9 +133,7 @@ def aux_mToKJoin (d : ℕ) : RealVector d × ℝ → RealVector (d + 1) :=
   fun q =>
     (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (d + 1) => ℝ) (Fin.last d)).symm (q.2, q.1)
 
-/--
-Haar preservation of the coordinate insertion `aux_mToKJoin`.
--/
+/-- Haar preservation of the coordinate insertion `aux_mToKJoin`. -/
 theorem aux_measurePreserving_mToKJoin (d : ℕ) :
     MeasurePreserving (aux_mToKJoin d) volume volume := by
   let e := MeasurableEquiv.piFinSuccAbove (fun _ : Fin (d + 1) => ℝ) (Fin.last d)
@@ -170,16 +149,12 @@ theorem aux_measurePreserving_mToKJoin (d : ℕ) :
   have hjoin : MeasurePreserving e.symm volume volume := hsplit.symm e
   convert hjoin.comp hswap using 1; rfl
 
-/--
-Apply the coordinate insertion in the second component of a product.
--/
+/-- Apply the coordinate insertion in the second component of a product. -/
 def aux_mToKJoinProduct (d : ℕ) :
     RealVector (d + 1) × (RealVector d × ℝ) → RealVector (d + 1) × RealVector (d + 1) :=
   fun q => (q.1, aux_mToKJoin d q.2)
 
-/--
-Haar preservation of `aux_mToKJoinProduct`.
--/
+/-- Haar preservation of `aux_mToKJoinProduct`. -/
 theorem aux_measurePreserving_mToKJoinProduct (d : ℕ) :
     MeasurePreserving (aux_mToKJoinProduct d) volume volume := by
   change MeasurePreserving (aux_mToKJoinProduct d)
@@ -191,16 +166,12 @@ theorem aux_measurePreserving_mToKJoinProduct (d : ℕ) :
     (aux_measurePreserving_mToKJoin d)
   convert hprod using 1; rfl
 
-/--
-The final determinant-one addition step of the `M`-to-`K` change of variables.
--/
+/-- The final determinant-one addition step of the `M`-to-`K` change of variables. -/
 def aux_mToKAdd (d : ℕ) :
     RealVector (d + 1) × RealVector (d + 1) → RealVector (d + 1) × RealVector (d + 1) :=
   fun q => (q.1 + q.2, q.2)
 
-/--
-Haar preservation of the final addition step.
--/
+/-- Haar preservation of the final addition step. -/
 theorem aux_measurePreserving_mToKAdd (d : ℕ) :
     MeasurePreserving (aux_mToKAdd d) volume volume := by
   change MeasurePreserving (aux_mToKAdd d)
@@ -211,9 +182,7 @@ theorem aux_measurePreserving_mToKAdd (d : ℕ) :
   convert measurePreserving_add_prod (volume : Measure (RealVector (d + 1)))
     (volume : Measure (RealVector (d + 1))) using 1; rfl
 
-/--
-The factorization of the determinant-one coordinate map defining `K_k(M)`.
--/
+/-- The factorization of the determinant-one coordinate map defining `K_k(M)`. -/
 def aux_mToKFactor (d : ℕ) :
     ((RealVector (d + 1) × ℝ) × RealVector d) →
       RealVector (d + 1) × RealVector (d + 1) :=
@@ -221,9 +190,7 @@ def aux_mToKFactor (d : ℕ) :
     (aux_mToKJoinProduct d
       (aux_mToKSumShear (d + 1) (aux_mToKReassociate (d + 1) q)))
 
-/--
-Haar preservation of the full determinant-one `M`-to-`K` coordinate factorization.
--/
+/-- Haar preservation of the full determinant-one `M`-to-`K` coordinate factorization. -/
 theorem aux_measurePreserving_mToKFactor (d : ℕ) :
     MeasurePreserving (aux_mToKFactor d) volume volume := by
   exact (aux_measurePreserving_mToKAdd d).comp
@@ -232,9 +199,7 @@ theorem aux_measurePreserving_mToKFactor (d : ℕ) :
         (aux_measurePreserving_mToKReassociate_volume (d + 1))))
 
 
-/--
-The change of variables in the definition of `K_k`.
--/
+/-- The change of variables in the definition of `K_k`. -/
 def mToKPoint (k : ℕ) (hk : 1 ≤ k) (z : RealVector k × ℝ)
     (p : RealVector (k - 1)) : RealVector k × RealVector k :=
   (fun i =>
@@ -327,9 +292,7 @@ def aux_mToKInversePoint (k : ℕ) (hk : 1 ≤ k) (y : RealVector k × RealVecto
   let p : RealVector (k - 1) := fun i => y.2 (aux_predecessorIndex k hk i)
   ((fun i => y.1 i - y.2 i, y.2 (lastIndex k hk) + coordinateSum p), p)
 
-/--
-The explicit coordinate inverse needed for the `M`-to-`K` affine change of variables.
--/
+/-- The explicit coordinate inverse needed for the `M`-to-`K` affine change of variables. -/
 theorem aux_mToKPoint_inverse (k : ℕ) (hk : 1 ≤ k) (y : RealVector k × RealVector k) :
     mToKPoint k hk (aux_mToKInversePoint k hk y).1 (aux_mToKInversePoint k hk y).2 = y := by
   apply Prod.ext
@@ -359,9 +322,7 @@ theorem aux_mToKPoint_inverse (k : ℕ) (hk : 1 ≤ k) (y : RealVector k × Real
         rfl
       simp [mToKPoint, aux_mToKInversePoint, hi, i', hi'_eq]
 
-/--
-The second explicit inverse identity for the `M`-to-`K` coordinate map.
--/
+/-- The second explicit inverse identity for the `M`-to-`K` coordinate map. -/
 theorem aux_mToKInversePoint_inverse (k : ℕ) (hk : 1 ≤ k)
     (z : RealVector k × ℝ) (p : RealVector (k - 1)) :
     aux_mToKInversePoint k hk (mToKPoint k hk z p) = (z, p) := by
@@ -451,51 +412,57 @@ def aux_mToKLinearEquiv (k : ℕ) (hk : 1 ≤ k) :
       by_cases hi : i = lastIndex k hk <;>
         simp [mToKPoint, hi, aux_coordinateSum_smul] <;> ring
 
-/--
-The continuous version of `aux_mToKLinearEquiv`, used to transport `W₀` membership.
--/
+/-- The continuous version of `aux_mToKLinearEquiv`, used to transport `W₀` membership. -/
 noncomputable def aux_mToKContinuousLinearEquiv (k : ℕ) (hk : 1 ≤ k) :
     ((RealVector k × ℝ) × RealVector (k - 1)) ≃L[ℝ] (RealVector k × RealVector k) :=
   (aux_mToKLinearEquiv k hk).toContinuousLinearEquiv
 
 /--
-\begin{proposition}[$M$ to $K$]\label{M to K}
+**Proposition ($M$ to $K$).**
 
-Let $k\in\N$ satisfy $1\le k\le n$. Let $M\in W_0((\R^2)^k)$.
-Define for $z\in \R^{k+1}$,
-\begin{equation}\label{kviam_2}
-    K_k(M)(z)=\int_{\R^{k-1}}  M((z_{l}+p_{l},p_{l})_{l\in [k-1)},
+Let $k\in\mathbb{N}$ satisfy $1\le k\le n$. Let $M\in W_0((\mathbb{R}^2)^k)$.
+Define for $z\in \mathbb{R}^{k+1}$,
+
+$$
+K_k(M)(z)=\int_{\mathbb{R}^{k-1}}  M((z_{l}+p_{l},p_{l})_{l\in [k-1)},
     z_{k-1}+z_{k}-\Sigma(p),z_{k}-\Sigma(p))\,dp.
-\end{equation}
-The integrand is in $W_0(\R^{k-1})$ for every $z\in\R^{k+1}$.
-The argument of $M$ is identified with an element of $(\R^2)^{k}$.
-Then $K_k(M)\in W_0(\R^{k+1})$ and
-\begin{equation}\label{auto:K-map-L1-bound} \|K_k(M)\|_1 \le \|M\|_1. \end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.MKernels.mToK_integrand_memW0`],
-[`Codex.Preliminaries.MKernels.mToK_memW0`], [`Codex.Preliminaries.MKernels.mToK_eLpNorm_one_le`].
+The integrand is in $W_0(\mathbb{R}^{k-1})$ for every $z\in\mathbb{R}^{k+1}$.
+The argument of $M$ is identified with an element of $(\mathbb{R}^2)^{k}$.
+Then $K_k(M)\in W_0(\mathbb{R}^{k+1})$ and
+
+$$
+\|K_k(M)\|_1 \le \|M\|_1.
+$$
+
+See also [`Codex.mToK_integrand_memW0`],
+[`Codex.mToK_memW0`], [`Codex.mToK_eLpNorm_one_le`].
 -/
 def mToK (k : ℕ) (hk : 1 ≤ k) (M : MKernel k) : KKernel k :=
   fun z => ∫ p : RealVector (k - 1), M (mToKPoint k hk z p)
 
 /--
-\begin{proposition}[$M$ to $K$]\label{M to K}
+**Proposition ($M$ to $K$).**
 
-Let $k\in\N$ satisfy $1\le k\le n$. Let $M\in W_0((\R^2)^k)$.
-Define for $z\in \R^{k+1}$,
-\begin{equation}\label{kviam_2}
-    K_k(M)(z)=\int_{\R^{k-1}}  M((z_{l}+p_{l},p_{l})_{l\in [k-1)},
+Let $k\in\mathbb{N}$ satisfy $1\le k\le n$. Let $M\in W_0((\mathbb{R}^2)^k)$.
+Define for $z\in \mathbb{R}^{k+1}$,
+
+$$
+K_k(M)(z)=\int_{\mathbb{R}^{k-1}}  M((z_{l}+p_{l},p_{l})_{l\in [k-1)},
     z_{k-1}+z_{k}-\Sigma(p),z_{k}-\Sigma(p))\,dp.
-\end{equation}
-The integrand is in $W_0(\R^{k-1})$ for every $z\in\R^{k+1}$.
-The argument of $M$ is identified with an element of $(\R^2)^{k}$.
-Then $K_k(M)\in W_0(\R^{k+1})$ and
-\begin{equation}\label{auto:K-map-L1-bound} \|K_k(M)\|_1 \le \|M\|_1. \end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.MKernels.mToK`], [`Codex.Preliminaries.MKernels.mToK_memW0`],
-[`Codex.Preliminaries.MKernels.mToK_eLpNorm_one_le`].
+The integrand is in $W_0(\mathbb{R}^{k-1})$ for every $z\in\mathbb{R}^{k+1}$.
+The argument of $M$ is identified with an element of $(\mathbb{R}^2)^{k}$.
+Then $K_k(M)\in W_0(\mathbb{R}^{k+1})$ and
+
+$$
+\|K_k(M)\|_1 \le \|M\|_1.
+$$
+
+See also [`Codex.mToK`], [`Codex.mToK_memW0`],
+[`Codex.mToK_eLpNorm_one_le`].
 -/
 theorem mToK_integrand_memW0 (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MKernel k)
     (hM : MemW0 M) (z : RealVector k × ℝ) :
@@ -520,23 +487,27 @@ theorem mToK_integrand_memW0 (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MK
   exact hs
 
 /--
-\begin{proposition}[$M$ to $K$]\label{M to K}
+**Proposition ($M$ to $K$).**
 
-Let $k\in\N$ satisfy $1\le k\le n$. Let $M\in W_0((\R^2)^k)$.
-Define for $z\in \R^{k+1}$,
-\begin{equation}\label{kviam_2}
-    K_k(M)(z)=\int_{\R^{k-1}}  M((z_{l}+p_{l},p_{l})_{l\in [k-1)},
+Let $k\in\mathbb{N}$ satisfy $1\le k\le n$. Let $M\in W_0((\mathbb{R}^2)^k)$.
+Define for $z\in \mathbb{R}^{k+1}$,
+
+$$
+K_k(M)(z)=\int_{\mathbb{R}^{k-1}}  M((z_{l}+p_{l},p_{l})_{l\in [k-1)},
     z_{k-1}+z_{k}-\Sigma(p),z_{k}-\Sigma(p))\,dp.
-\end{equation}
-The integrand is in $W_0(\R^{k-1})$ for every $z\in\R^{k+1}$.
-The argument of $M$ is identified with an element of $(\R^2)^{k}$.
-Then $K_k(M)\in W_0(\R^{k+1})$ and
-\begin{equation}\label{auto:K-map-L1-bound} \|K_k(M)\|_1 \le \|M\|_1. \end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.MKernels.mToK`],
-[`Codex.Preliminaries.MKernels.mToK_integrand_memW0`],
-[`Codex.Preliminaries.MKernels.mToK_eLpNorm_one_le`].
+The integrand is in $W_0(\mathbb{R}^{k-1})$ for every $z\in\mathbb{R}^{k+1}$.
+The argument of $M$ is identified with an element of $(\mathbb{R}^2)^{k}$.
+Then $K_k(M)\in W_0(\mathbb{R}^{k+1})$ and
+
+$$
+\|K_k(M)\|_1 \le \|M\|_1.
+$$
+
+See also [`Codex.mToK`],
+[`Codex.mToK_integrand_memW0`],
+[`Codex.mToK_eLpNorm_one_le`].
 -/
 theorem mToK_memW0 (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MKernel k)
     (hM : MemW0 M) : MemW0 (mToK k hk M) := by
@@ -561,22 +532,26 @@ theorem mToK_memW0 (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MKernel k)
   exact hI
 
 /--
-\begin{proposition}[$M$ to $K$]\label{M to K}
+**Proposition ($M$ to $K$).**
 
-Let $k\in\N$ satisfy $1\le k\le n$. Let $M\in W_0((\R^2)^k)$.
-Define for $z\in \R^{k+1}$,
-\begin{equation}\label{kviam_2}
-    K_k(M)(z)=\int_{\R^{k-1}}  M((z_{l}+p_{l},p_{l})_{l\in [k-1)},
+Let $k\in\mathbb{N}$ satisfy $1\le k\le n$. Let $M\in W_0((\mathbb{R}^2)^k)$.
+Define for $z\in \mathbb{R}^{k+1}$,
+
+$$
+K_k(M)(z)=\int_{\mathbb{R}^{k-1}}  M((z_{l}+p_{l},p_{l})_{l\in [k-1)},
     z_{k-1}+z_{k}-\Sigma(p),z_{k}-\Sigma(p))\,dp.
-\end{equation}
-The integrand is in $W_0(\R^{k-1})$ for every $z\in\R^{k+1}$.
-The argument of $M$ is identified with an element of $(\R^2)^{k}$.
-Then $K_k(M)\in W_0(\R^{k+1})$ and
-\begin{equation}\label{auto:K-map-L1-bound} \|K_k(M)\|_1 \le \|M\|_1. \end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.MKernels.mToK`],
-[`Codex.Preliminaries.MKernels.mToK_integrand_memW0`], [`Codex.Preliminaries.MKernels.mToK_memW0`].
+The integrand is in $W_0(\mathbb{R}^{k-1})$ for every $z\in\mathbb{R}^{k+1}$.
+The argument of $M$ is identified with an element of $(\mathbb{R}^2)^{k}$.
+Then $K_k(M)\in W_0(\mathbb{R}^{k+1})$ and
+
+$$
+\|K_k(M)\|_1 \le \|M\|_1.
+$$
+
+See also [`Codex.mToK`],
+[`Codex.mToK_integrand_memW0`], [`Codex.mToK_memW0`].
 -/
 theorem mToK_eLpNorm_one_le (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MKernel k)
     (hM : MemW0 M) :
@@ -618,13 +593,13 @@ theorem mToK_eLpNorm_one_le (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MKe
         (volume : Measure (RealVector k))) := hG_norm
 
 /--
-Auxiliary definition for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`]; see
+Auxiliary definition for Proposition [`Codex.positivityM_memW0`]; see
  `positivityM_memW0`.
 -/
 def tensorSquare (phi : ℝ → ℝ) : ℝ × ℝ → ℝ := fun y => phi y.1 * phi y.2
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_memW0`.
 -/
 theorem aux_memW0_tensorSquare (phi : ℝ → ℝ) (hphi : MemW0 phi) :
@@ -632,16 +607,14 @@ theorem aux_memW0_tensorSquare (phi : ℝ → ℝ) (hphi : MemW0 phi) :
   change MemW0 (fun y : ℝ × ℝ => phi y.1 * phi y.2)
   exact hphi.aux_mul_prod hphi
 
-/--
-The simultaneous shift of the two coordinates in the direction $e_i^0+e_i^1$.
--/
+/-- The simultaneous shift of the two coordinates in the direction $e_i^0+e_i^1$. -/
 def aux_diagonalShift {k : ℕ} (y : RealVector k × RealVector k) (i : Fin k) (q : ℝ) :
     RealVector k × RealVector k :=
   (Function.update y.1 i (y.1 i - q), Function.update y.2 i (y.2 i - q))
 
 /--
-Auxiliary definition for Propositions [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`] and
-[`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`]; see `cauchySchwarzAtK_bound` and
+Auxiliary definition for Propositions [`Codex.cauchySchwarzKernel_memW0`] and
+[`Codex.doublyCauchySchwarzKernel_memW0`]; see `cauchySchwarzAtK_bound` and
 `cauchySchwarzAtNMinusOne`.
 -/
 def diagonalConvolution {k : ℕ} (rho : MKernel k) (i : Fin k) (phi : ℝ → ℝ) :
@@ -650,7 +623,7 @@ def diagonalConvolution {k : ℕ} (rho : MKernel k) (i : Fin k) (phi : ℝ → �
 
 /--
 Auxiliary definition for Proposition
- [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`]; see
+ [`Codex.doublyCauchySchwarzKernel_memW0`]; see
 `cauchySchwarzAtNMinusOne`.
 -/
 def realConvolution (phi psi : ℝ → ℝ) : ℝ → ℝ :=
@@ -713,16 +686,14 @@ theorem aux_memW0_convolutionAlong {E : Type*} [NormedAddCommGroup E]
   simpa [H, Function.comp_def, aux_convolutionAlongShear] using hIntegral
 
 /--
-Auxiliary definition for Propositions [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`] and
-[`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`]; see `cauchySchwarzAtK_bound` and
+Auxiliary definition for Propositions [`Codex.cauchySchwarzKernel_memW0`] and
+[`Codex.doublyCauchySchwarzKernel_memW0`]; see `cauchySchwarzAtK_bound` and
 `cauchySchwarzAtNMinusOne`.
 -/
 def diagonalDirection (k : ℕ) (i : Fin k) : RealVector k × RealVector k :=
   (Pi.single i 1, Pi.single i 1)
 
-/--
-The affine formula relating `diagonalDirection` to `aux_diagonalShift`.
--/
+/-- The affine formula relating `diagonalDirection` to `aux_diagonalShift`. -/
 theorem aux_sub_smul_diagonalDirection (k : ℕ) (i : Fin k)
     (y : RealVector k × RealVector k) (q : ℝ) :
     y - q • diagonalDirection k i = aux_diagonalShift y i q := by
@@ -743,8 +714,8 @@ theorem aux_sub_smul_diagonalDirection (k : ℕ) (i : Fin k)
     · simp [h]
 
 /--
-Auxiliary for Propositions [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`] and
-[`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Propositions [`Codex.cauchySchwarzKernel_memW0`] and
+[`Codex.doublyCauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzKernel_memW0` and
 `doublyCauchySchwarzKernel_memW0`.
 -/
@@ -771,9 +742,7 @@ theorem diagonalConvolution_memW0 (k : ℕ) (rho : MKernel k) (hrho : MemW0 rho)
   rw [← hEq]
   exact h
 
-/--
-Auxiliary `W₀` closure for ordinary one-dimensional convolution.
--/
+/-- Auxiliary `W₀` closure for ordinary one-dimensional convolution. -/
 theorem aux_realConvolution_memW0 (phi psi : ℝ → ℝ) (hphi : MemW0 phi)
     (hpsi : MemW0 psi) : MemW0 (realConvolution phi psi) := by
   change MemW0 (fun x : ℝ => ∫ q : ℝ, phi (x - q) * psi q)
@@ -781,8 +750,8 @@ theorem aux_realConvolution_memW0 (phi psi : ℝ → ℝ) (hphi : MemW0 phi)
   simpa using h
 
 /--
-Auxiliary definition for Propositions [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`] and
-[`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`]; see `cauchySchwarzLift_memW0` and
+Auxiliary definition for Propositions [`Codex.cauchySchwarzKernel_memW0`] and
+[`Codex.doublyCauchySchwarzKernel_memW0`]; see `cauchySchwarzLift_memW0` and
 `cauchySchwarzAtNMinusOne`.
 -/
 def cauchySchwarzLift {k J : ℕ} (rho : Fin J → MKernel k)
@@ -827,9 +796,7 @@ noncomputable def aux_cauchySchwarzLiftEquiv (k : ℕ) :
   ((aux_lastCoordinateSplit k).prodCongr (aux_lastCoordinateSplit k)).trans
     (aux_cauchySchwarzLiftReassociate k)
 
-/--
-The explicit coordinates of `aux_cauchySchwarzLiftEquiv`.
--/
+/-- The explicit coordinates of `aux_cauchySchwarzLiftEquiv`. -/
 theorem aux_cauchySchwarzLiftEquiv_apply (k : ℕ)
     (y : RealVector (k + 1) × RealVector (k + 1)) :
     aux_cauchySchwarzLiftEquiv k y =
@@ -875,52 +842,61 @@ theorem aux_memW0_cauchySchwarzLiftSummand (k : ℕ) (rho : MKernel k)
   simpa [H, R, Function.comp_def, aux_cauchySchwarzLiftEquiv_apply] using hPullback
 
 /--
-\begin{proposition}[Cauchy-Schwarz at $k$]\label{Cauchy-Schwarz at k}
+**Proposition (Cauchy-Schwarz at $k$).**
 
-Let $k,J\in\N$ with $1\le k<n-1$ and $J\ge1$. For $j\in[J)$, let $\rho_j\in W_0((\R^2)^k)$ and
-let $\varphi_j\in W_0(\R)$ be real valued. Let $i\in[k)$. Let $M\in W_0((\R^2)^k)$ and
-$\widetilde M\in W_0((\R^2)^{k+1})$ be defined by
-\begin{equation}\label{before CS}
+Let $k,J\in\mathbb{N}$ with $1\le k<n-1$ and $J\ge1$. For $j\in[J)$, let $\rho_j\in
+W_0((\mathbb{R}^2)^k)$ and let $\varphi_j\in W_0(\mathbb{R})$ be real valued. Let $i\in[k)$. Let
+$M\in W_0((\mathbb{R}^2)^k)$ and $\widetilde M\in W_0((\mathbb{R}^2)^{k+1})$ be defined by
+
+$$
 M=\sum_{j\in[J)}\rho_j*_{e_i^0+e_i^1}\varphi_j,
-\end{equation}
-and, for $y\in(\R^2)^{k+1}$,
-\begin{equation}\label{Cauchy Schwarz tilde M definition}
+$$
+
+and, for $y\in(\mathbb{R}^2)^{k+1}$,
+
+$$
 \widetilde M(y)=\sum_{j\in[J)}|\rho_j(y_{[k)})|\varphi_j^{\otimes2}(y_k).
-\end{equation}
-Then for all $\F\in\mathfrak F$,
-\begin{equation}\label{Cauchy Schwarz at k estimate}
-|\Lambda_k(M)(\F)|
+$$
+
+Then for all $\mathbf{F}\in\mathfrak F$,
+
+$$
+|\Lambda_k(M)(\mathbf{F})|
 \le
-|\Lambda_{k+1}(\widetilde M)(\F)|^{1/2}
+|\Lambda_{k+1}(\widetilde M)(\mathbf{F})|^{1/2}
 \Big(\sum_{j\in[J)}\|\rho_j\|_1\Big)^{1/2}.
-\end{equation}
-\end{proposition}
+$$
 
-\begin{proposition}[Cauchy-Schwarz at $n-1$]\label{Cauchy-Schwarz at n-1}
+**Proposition (Cauchy-Schwarz at $n-1$).**
 
-Let $J\in\N$ with $J\ge1$ and, for $j\in [J)$, let
-$\rho_j\in W_0((\R^2)^{n-1})$  and $\varphi_j\in W_0(\R)$ be real valued.
+Let $J\in\mathbb{N}$ with $J\ge1$ and, for $j\in [J)$, let
+$\rho_j\in W_0((\mathbb{R}^2)^{n-1})$  and $\varphi_j\in W_0(\mathbb{R})$ be real valued.
 Let $i \in [n-1)$.
 Define
-\begin{equation}\label{before CS 2}
-    M=\sum_{j\in [J)} \rho_j *_{e_i^0+e_i^1} (\varphi_j * \varphi_j),
-\end{equation}
-and for $y\in (\R^2)^n$,
-\begin{equation}\label{auto:terminal-prism-majorant-kernel}
-    \tilde{M}(y)=\sum_{j\in [J)} |\rho_j(y_{[n-1)})| \varphi_j^{\otimes 2}(y_{n-1}).
-\end{equation}
-Then $M\in W_0((\R^2)^{n-1})$ and $\tilde{M}\in W_0((\R^2)^n)$ and for all $\F\in\mathfrak{F}$
-\begin{equation}\label{auto:terminal-prism-majorant-bound}
-|\Lambda_{n-1}(M)(\F)| \le
-\sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
-\end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzAtK_bound`],
-[`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzAtNMinusOne_bound`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzAtNMinusOne`].
+$$
+    M=\sum_{j\in [J)} \rho_j *_{e_i^0+e_i^1} (\varphi_j * \varphi_j),
+$$
+
+and for $y\in (\mathbb{R}^2)^n$,
+
+$$
+    \tilde{M}(y)=\sum_{j\in [J)} |\rho_j(y_{[n-1)})| \varphi_j^{\otimes 2}(y_{n-1}).
+$$
+
+Then $M\in W_0((\mathbb{R}^2)^{n-1})$ and $\tilde{M}\in W_0((\mathbb{R}^2)^n)$ and for all
+$\mathbf{F}\in\mathfrak{F}$
+
+$$
+|\Lambda_{n-1}(M)(\mathbf{F})| \le
+\sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
+$$
+
+See also [`Codex.cauchySchwarzKernel_memW0`],
+[`Codex.cauchySchwarzAtK_bound`],
+[`Codex.doublyCauchySchwarzKernel_memW0`],
+[`Codex.cauchySchwarzAtNMinusOne_bound`],
+[`Codex.cauchySchwarzAtNMinusOne`].
 -/
 theorem cauchySchwarzLift_memW0 (k J : ℕ) (rho : Fin J → MKernel k)
     (phi : Fin J → ℝ → ℝ) (hrho : ∀ j, MemW0 (rho j))
@@ -932,7 +908,7 @@ theorem cauchySchwarzLift_memW0 (k J : ℕ) (rho : Fin J → MKernel k)
   exact aux_memW0_cauchySchwarzLiftSummand k (rho j) (hrho j) (phi j) (hphi j)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_memW0`.
 -/
 noncomputable def aux_tensorSquareExtensionEquiv (d : ℕ) (i : Fin (d + 1)) :
@@ -942,7 +918,7 @@ noncomputable def aux_tensorSquareExtensionEquiv (d : ℕ) (i : Fin (d + 1)) :
     (aux_cauchySchwarzLiftReassociate d)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_memW0`.
 -/
 theorem aux_tensorSquareExtensionEquiv_apply (d : ℕ) (i : Fin (d + 1))
@@ -953,7 +929,7 @@ theorem aux_tensorSquareExtensionEquiv_apply (d : ℕ) (i : Fin (d + 1))
     aux_cauchySchwarzLiftReassociate]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_memW0`.
 -/
 theorem aux_memW0_tensorSquareExtensionSucc (d : ℕ) (i : Fin (d + 1))
@@ -985,7 +961,7 @@ theorem aux_memW0_tensorSquareExtensionSucc (d : ℕ) (i : Fin (d + 1))
   simpa [H, Function.comp_def, aux_tensorSquareExtensionEquiv_apply] using hPullback
 
 /--
-Auxiliary definition for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`]; see
+Auxiliary definition for Proposition [`Codex.cauchySchwarzKernel_memW0`]; see
 `cauchySchwarzAtK_bound`.
 -/
 def cauchySchwarzKernel {k J : ℕ} (rho : Fin J → MKernel k) (phi : Fin J → ℝ → ℝ)
@@ -994,7 +970,7 @@ def cauchySchwarzKernel {k J : ℕ} (rho : Fin J → MKernel k) (phi : Fin J →
 
 /--
 Auxiliary definition for Proposition
- [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`]; see
+ [`Codex.doublyCauchySchwarzKernel_memW0`]; see
 `cauchySchwarzAtNMinusOne`.
 -/
 def doublyCauchySchwarzKernel {k J : ℕ} (rho : Fin J → MKernel k)
@@ -1002,29 +978,33 @@ def doublyCauchySchwarzKernel {k J : ℕ} (rho : Fin J → MKernel k)
   fun y => ∑ j, diagonalConvolution (rho j) i (realConvolution (phi j) (phi j)) y
 
 /--
-\begin{proposition}[Cauchy-Schwarz at $k$]\label{Cauchy-Schwarz at k}
+**Proposition (Cauchy-Schwarz at $k$).**
 
-Let $k,J\in\N$ with $1\le k<n-1$ and $J\ge1$. For $j\in[J)$, let $\rho_j\in W_0((\R^2)^k)$ and
-let $\varphi_j\in W_0(\R)$ be real valued. Let $i\in[k)$. Let $M\in W_0((\R^2)^k)$ and
-$\widetilde M\in W_0((\R^2)^{k+1})$ be defined by
-\begin{equation}\label{before CS}
+Let $k,J\in\mathbb{N}$ with $1\le k<n-1$ and $J\ge1$. For $j\in[J)$, let $\rho_j\in
+W_0((\mathbb{R}^2)^k)$ and let $\varphi_j\in W_0(\mathbb{R})$ be real valued. Let $i\in[k)$. Let
+$M\in W_0((\mathbb{R}^2)^k)$ and $\widetilde M\in W_0((\mathbb{R}^2)^{k+1})$ be defined by
+
+$$
 M=\sum_{j\in[J)}\rho_j*_{e_i^0+e_i^1}\varphi_j,
-\end{equation}
-and, for $y\in(\R^2)^{k+1}$,
-\begin{equation}\label{Cauchy Schwarz tilde M definition}
-\widetilde M(y)=\sum_{j\in[J)}|\rho_j(y_{[k)})|\varphi_j^{\otimes2}(y_k).
-\end{equation}
-Then for all $\F\in\mathfrak F$,
-\begin{equation}\label{Cauchy Schwarz at k estimate}
-|\Lambda_k(M)(\F)|
-\le
-|\Lambda_{k+1}(\widetilde M)(\F)|^{1/2}
-\Big(\sum_{j\in[J)}\|\rho_j\|_1\Big)^{1/2}.
-\end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.MKernels.cauchySchwarzLift_memW0`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzAtK_bound`].
+and, for $y\in(\mathbb{R}^2)^{k+1}$,
+
+$$
+\widetilde M(y)=\sum_{j\in[J)}|\rho_j(y_{[k)})|\varphi_j^{\otimes2}(y_k).
+$$
+
+Then for all $\mathbf{F}\in\mathfrak F$,
+
+$$
+|\Lambda_k(M)(\mathbf{F})|
+\le
+|\Lambda_{k+1}(\widetilde M)(\mathbf{F})|^{1/2}
+\Big(\sum_{j\in[J)}\|\rho_j\|_1\Big)^{1/2}.
+$$
+
+See also [`Codex.cauchySchwarzLift_memW0`],
+[`Codex.cauchySchwarzAtK_bound`].
 -/
 theorem cauchySchwarzKernel_memW0 (n k J : ℕ) (_hk : 1 ≤ k) (_hkn : k < n - 1)
     (_hJ : 1 ≤ J) (rho : Fin J → MKernel k) (phi : Fin J → ℝ → ℝ)
@@ -1037,29 +1017,34 @@ theorem cauchySchwarzKernel_memW0 (n k J : ℕ) (_hk : 1 ≤ k) (_hkn : k < n - 
   exact diagonalConvolution_memW0 k (rho j) (hrho j) i (phi j) (hphi j)
 
 /--
-\begin{proposition}[Cauchy-Schwarz at $n-1$]\label{Cauchy-Schwarz at n-1}
+**Proposition (Cauchy-Schwarz at $n-1$).**
 
-Let $J\in\N$ with $J\ge1$ and, for $j\in [J)$, let
-$\rho_j\in W_0((\R^2)^{n-1})$  and $\varphi_j\in W_0(\R)$ be real valued.
+Let $J\in\mathbb{N}$ with $J\ge1$ and, for $j\in [J)$, let
+$\rho_j\in W_0((\mathbb{R}^2)^{n-1})$  and $\varphi_j\in W_0(\mathbb{R})$ be real valued.
 Let $i \in [n-1)$.
 Define
-\begin{equation}\label{before CS 2}
-    M=\sum_{j\in [J)} \rho_j *_{e_i^0+e_i^1} (\varphi_j * \varphi_j),
-\end{equation}
-and for $y\in (\R^2)^n$,
-\begin{equation}\label{auto:terminal-prism-majorant-kernel}
-    \tilde{M}(y)=\sum_{j\in [J)} |\rho_j(y_{[n-1)})| \varphi_j^{\otimes 2}(y_{n-1}).
-\end{equation}
-Then $M\in W_0((\R^2)^{n-1})$ and $\tilde{M}\in W_0((\R^2)^n)$ and for all $\F\in\mathfrak{F}$
-\begin{equation}\label{auto:terminal-prism-majorant-bound}
-|\Lambda_{n-1}(M)(\F)| \le
-\sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
-\end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.MKernels.cauchySchwarzLift_memW0`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzAtNMinusOne_bound`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzAtNMinusOne`].
+$$
+    M=\sum_{j\in [J)} \rho_j *_{e_i^0+e_i^1} (\varphi_j * \varphi_j),
+$$
+
+and for $y\in (\mathbb{R}^2)^n$,
+
+$$
+    \tilde{M}(y)=\sum_{j\in [J)} |\rho_j(y_{[n-1)})| \varphi_j^{\otimes 2}(y_{n-1}).
+$$
+
+Then $M\in W_0((\mathbb{R}^2)^{n-1})$ and $\tilde{M}\in W_0((\mathbb{R}^2)^n)$ and for all
+$\mathbf{F}\in\mathfrak{F}$
+
+$$
+|\Lambda_{n-1}(M)(\mathbf{F})| \le
+\sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
+$$
+
+See also [`Codex.cauchySchwarzLift_memW0`],
+[`Codex.cauchySchwarzAtNMinusOne_bound`],
+[`Codex.cauchySchwarzAtNMinusOne`].
 -/
 theorem doublyCauchySchwarzKernel_memW0 (n J : ℕ) (_hn : 1 ≤ n) (_hJ : 1 ≤ J)
     (rho : Fin J → MKernel (n - 1)) (phi : Fin J → ℝ → ℝ)
@@ -1072,7 +1057,7 @@ theorem doublyCauchySchwarzKernel_memW0 (n J : ℕ) (_hn : 1 ≤ n) (_hJ : 1 ≤
     (realConvolution (phi j) (phi j)) (aux_realConvolution_memW0 _ _ (hphi j) (hphi j))
 
 /--
-Auxiliary definition for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`]; see
+Auxiliary definition for Proposition [`Codex.positivityM_memW0`]; see
  `positivityM_nonnegative`.
 -/
 def tensorSquareExtension (k : ℕ) (hk : 1 ≤ k) (i : Fin k) (tildeM : MKernel (k - 1))
@@ -1081,7 +1066,7 @@ def tensorSquareExtension (k : ℕ) (hk : 1 ≤ k) (i : Fin k) (tildeM : MKernel
     tensorSquare phi (y.1 i, y.2 i)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_memW0`.
 -/
 theorem aux_tensorSquareExtension_memW0 (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n)
@@ -1103,20 +1088,22 @@ theorem aux_tensorSquareExtension_memW0 (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤
       simpa only [hErase] using h
 
 /--
-\begin{proposition}[Positivity]\label{Positivity M}
+**Proposition (Positivity).**
 
-Let $1\le k\le n$ and $i\in [k)$. Let $\tilde{M}\in W_0((\R^2)^{k-1})$ be nonnegative
-and let $\phi\in W_0(\R)$ be real valued. Define for $y\in (\R^2)^k$,
-\begin{equation}\label{auto:positive-prism-product-kernel}
+Let $1\le k\le n$ and $i\in [k)$. Let $\tilde{M}\in W_0((\mathbb{R}^2)^{k-1})$ be nonnegative
+and let $\phi\in W_0(\mathbb{R})$ be real valued. Define for $y\in (\mathbb{R}^2)^k$,
+
+$$
     M(y)=\tilde{M}(y_{[k)\setminus i}) \phi^{\otimes 2}(y_{i}).
-\end{equation}
-Then $M\in W_0((\R^2)^k)$ and for all $\F\in {\mathfrak{F}}$,
-\begin{equation}\label{auto:positive-prism-form}
-    \Lambda_k(M)(\F)\ge 0.
-\end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.MKernels.positivityM_nonnegative`].
+Then $M\in W_0((\mathbb{R}^2)^k)$ and for all $\mathbf{F}\in {\mathfrak{F}}$,
+
+$$
+    \Lambda_k(M)(\mathbf{F})\ge 0.
+$$
+
+See also [`Codex.positivityM_nonnegative`].
 -/
 theorem positivityM_memW0 (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n)
     (i : Fin k) (tildeM : MKernel (k - 1)) (htildeM : MemW0 tildeM)
@@ -1125,20 +1112,21 @@ theorem positivityM_memW0 (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n)
   aux_tensorSquareExtension_memW0 n k hk hkn i tildeM htildeM htildeM_nonneg phi hphi
 
 /--
-\begin{definition}[prism form]\label{auto:prism-form-definition}
+**Definition (prism form).**
 
-Let $1\le k\le n$. By Proposition [`Codex.Preliminaries.MKernels.mToK`], $K_k(M)\in W_0(\R^{k+1})$
-for every $M\in W_0((\R^2)^k)$. We define for such $M$ and $\mathbf{F}\in\mathfrak{F}$,
-\begin{equation}\label{auto:prism-form-formula}\Lambda_k(M)(\mathbf{F}) :=
-\Theta_k(K_k(M))(\mathbf{F}).\end{equation}
-\end{definition}
+Let $1\le k\le n$. By Proposition [`Codex.mToK`], $K_k(M)\in W_0(\mathbb{R}^{k+1})$ for every $M\in
+W_0((\mathbb{R}^2)^k)$. We define for such $M$ and $\mathbf{F}\in\mathfrak{F}$,
+
+$$
+\Lambda_k(M)(\mathbf{F}) = \Theta_k(K_k(M))(\mathbf{F}).
+$$
 -/
 def prismForm (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n) (M : MKernel k)
     (F : Fin n → RealVector n → ℝ) : ℝ :=
   prismBrascampLiebForm n k hk hkn (mToK k hk M) F
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 def aux_nonlastIndex (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) : Fin n :=
@@ -1153,7 +1141,7 @@ def aux_nonlastIndex (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) : Fin n
     exact hi this⟩
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_nonlastIndex_castSucc (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) :
@@ -1162,7 +1150,7 @@ theorem aux_nonlastIndex_castSucc (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.la
   rfl
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_nonlastIndex_lt (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) :
@@ -1176,7 +1164,7 @@ theorem aux_nonlastIndex_lt (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) 
   omega
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_coordinateSum_insertNth (d : ℕ) (j : Fin (d + 1))
@@ -1191,7 +1179,7 @@ theorem aux_coordinateSum_insertNth (d : ℕ) (j : Fin (d + 1))
   exact Fin.insertNth_apply_succAbove (α := fun _ : Fin (d + 1) => ℝ) j q r a
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_succAbove_last (d : ℕ) (i : Fin (d + 2))
@@ -1216,7 +1204,7 @@ theorem aux_succAbove_last (d : ℕ) (i : Fin (d + 2))
   · exact le_of_not_gt hnot
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_succAbove_nonlast_comm (d : ℕ) (i : Fin (d + 2))
@@ -1230,7 +1218,7 @@ theorem aux_succAbove_nonlast_comm (d : ℕ) (i : Fin (d + 2))
   exact (congrArg Fin.castSucc (Fin.castPred_succAbove_castPred hi ha)).symm
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToKPoint_erase_nonlast (d : ℕ)
@@ -1293,7 +1281,7 @@ theorem aux_mToKPoint_erase_nonlast (d : ℕ)
         hbottom, hglobal, hcast]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_eraseVector_eq (d : ℕ) (i : Fin (d + 2))
@@ -1303,7 +1291,7 @@ theorem aux_eraseVector_eq (d : ℕ) (i : Fin (d + 2))
   simp [aux_eraseVector, eraseVector]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToKPoint_at_nonlast (d : ℕ)
@@ -1336,7 +1324,7 @@ theorem aux_mToKPoint_at_nonlast (d : ℕ)
 set_option maxHeartbeats 800000 in
 -- The dependent coordinate expansion below requires additional elaboration heartbeats.
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToK_tensorSquareExtension_eq_positivity_nonlast (d : ℕ)
@@ -1458,7 +1446,7 @@ theorem aux_mToK_tensorSquareExtension_eq_positivity_nonlast (d : ℕ)
     _ = _ := by rfl
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToK_nonnegative (k : ℕ) (hk : 1 ≤ k) (M : MKernel k)
@@ -1470,7 +1458,7 @@ theorem aux_mToK_nonnegative (k : ℕ) (hk : 1 ≤ k) (M : MKernel k)
   exact hM_nonneg _
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 noncomputable def aux_lastFibreEquiv (d : ℕ) (s : ℝ) :
@@ -1509,7 +1497,7 @@ noncomputable def aux_lastFibreEquiv (d : ℕ) (s : ℝ) :
     · simpa [Fin.lastCases, Function.comp_def] using (continuous_apply j).comp continuous_snd
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_measurePreserving_lastFibreEquiv (d : ℕ) (s : ℝ) :
@@ -1558,9 +1546,7 @@ theorem aux_measurePreserving_lastFibreEquiv (d : ℕ) (s : ℝ) :
     ring
   · rfl
 
-/--
-A terminal `mToK` fibre integral is the corresponding diagonal `M` integral.
--/
+/-- A terminal `mToK` fibre integral is the corresponding diagonal `M` integral. -/
 theorem mToK_terminalFibreIntegral (d : ℕ) (M : MKernel (d + 1))
     (hM : MemW0 M) (z : RealVector (d + 1) × ℝ) :
     (∫ q : ℝ, mToK (d + 1) (by omega) M (z.1, z.2 - q)) =
@@ -1668,7 +1654,7 @@ theorem mToK_terminalFibreIntegral_general {k : ℕ} (hk : 1 ≤ k)
     exact mToK_terminalFibreIntegral d M hM z
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToKPoint_erase_last (d : ℕ)
@@ -1745,7 +1731,7 @@ theorem aux_mToKPoint_erase_last (d : ℕ)
       simp
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToKPoint_at_last (d : ℕ)
@@ -1766,7 +1752,7 @@ theorem aux_mToKPoint_at_last (d : ℕ)
 set_option maxHeartbeats 800000 in
 -- The last-coordinate expansion below requires additional elaboration heartbeats.
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToK_tensorSquareExtension_eq_positivity_last (d : ℕ)
@@ -1889,7 +1875,7 @@ theorem aux_mToK_tensorSquareExtension_eq_positivity_last (d : ℕ)
           rw [integral_mul_const, integral_mul_const]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_integral_product_square_nonnegative
@@ -1913,7 +1899,7 @@ theorem aux_integral_product_square_nonnegative
     _ ≥ 0 := integral_nonneg fun p => sq_nonneg _
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 noncomputable def aux_baseReorderOne (n : ℕ) :
@@ -1928,7 +1914,7 @@ noncomputable def aux_baseReorderOne (n : ℕ) :
       (MeasurableEquiv.piUnique (fun _ : Fin 1 => ℝ))))
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_baseReorderOne_apply (n : ℕ)
@@ -1937,7 +1923,7 @@ theorem aux_baseReorderOne_apply (n : ℕ)
   rfl
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_measurePreserving_baseReorderOne (n : ℕ) :
@@ -1970,7 +1956,7 @@ theorem aux_measurePreserving_baseReorderOne (n : ℕ) :
   exact hright.comp hswap
 
 /--
-Auxiliary definition for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`]; see
+Auxiliary definition for Proposition [`Codex.positivityM_memW0`]; see
  `positivityM_nonnegative`.
 -/
 def aux_rankOneFactor (n : ℕ) (hn : 1 ≤ n) (phi : ℝ → ℝ)
@@ -1982,7 +1968,7 @@ def aux_rankOneFactor (n : ℕ) (hn : 1 ≤ n) (phi : ℝ → ℝ)
         (concatVector n 1 hn (fun _ : Fin 1 => r) (eraseVector i x))
 
 /--
-Auxiliary definition for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`]; see
+Auxiliary definition for Proposition [`Codex.positivityM_memW0`]; see
  `positivityM_nonnegative`.
 -/
 def aux_rankOneRawIntegrand (n : ℕ) (hn : 1 ≤ n) (c : ℝ) (phi : ℝ → ℝ)
@@ -1992,7 +1978,7 @@ def aux_rankOneRawIntegrand (n : ℕ) (hn : 1 ≤ n) (c : ℝ) (phi : ℝ → �
     aux_rankOneFactor n hn phi F p.2 (p.1.2 0)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_prism_one_integrand_eq_rankOneRaw
@@ -2047,7 +2033,7 @@ theorem aux_prism_one_integrand_eq_rankOneRaw
   ring_nf
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_prism_one_rankOne_nonnegative
@@ -2116,7 +2102,7 @@ theorem aux_prism_one_rankOne_nonnegative
     _ ≥ 0 := by simpa only [G] using hnonneg
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_integral_realVector_zero (f : RealVector 0 → ℝ) :
@@ -2130,7 +2116,7 @@ theorem aux_integral_realVector_zero (f : RealVector 0 → ℝ) :
   exact Subsingleton.elim _ _
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.positivityM_memW0`], formalized as
+Auxiliary for Proposition [`Codex.positivityM_memW0`], formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToK_tensorSquareExtension_one_eq
@@ -2151,20 +2137,22 @@ theorem aux_mToK_tensorSquareExtension_one_eq
   ring
 
 /--
-\begin{proposition}[Positivity]\label{Positivity M}
+**Proposition (Positivity).**
 
-Let $1\le k\le n$ and $i\in [k)$. Let $\tilde{M}\in W_0((\R^2)^{k-1})$ be nonnegative
-and let $\phi\in W_0(\R)$ be real valued. Define for $y\in (\R^2)^k$,
-\begin{equation}\label{auto:positive-prism-product-kernel}
+Let $1\le k\le n$ and $i\in [k)$. Let $\tilde{M}\in W_0((\mathbb{R}^2)^{k-1})$ be nonnegative
+and let $\phi\in W_0(\mathbb{R})$ be real valued. Define for $y\in (\mathbb{R}^2)^k$,
+
+$$
     M(y)=\tilde{M}(y_{[k)\setminus i}) \phi^{\otimes 2}(y_{i}).
-\end{equation}
-Then $M\in W_0((\R^2)^k)$ and for all $\F\in {\mathfrak{F}}$,
-\begin{equation}\label{auto:positive-prism-form}
-    \Lambda_k(M)(\F)\ge 0.
-\end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.MKernels.positivityM_memW0`].
+Then $M\in W_0((\mathbb{R}^2)^k)$ and for all $\mathbf{F}\in {\mathfrak{F}}$,
+
+$$
+    \Lambda_k(M)(\mathbf{F})\ge 0.
+$$
+
+See also [`Codex.positivityM_memW0`].
 -/
 theorem positivityM_nonnegative
     (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n)
@@ -2210,7 +2198,7 @@ theorem positivityM_nonnegative
           (mToK (d + 1) (by omega) tildeM) hrho hrho_nonneg phi hphi i F hF
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It translates a predecessor fibre to compensate a
 diagonal shift in a nonfinal coordinate.
 -/
@@ -2219,7 +2207,7 @@ def aux_fibreTranslate (d : ℕ) (j : Fin d) (q : ℝ) (p : RealVector d) :
   p + q • Pi.single j 1
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It records the coordinate-sum change under
 `aux_fibreTranslate`.
 -/
@@ -2232,7 +2220,7 @@ theorem aux_coordinateSum_fibreTranslate (d : ℕ) (j : Fin d) (q : ℝ)
   rw [← Finset.mul_sum, Fintype.sum_pi_single', mul_one]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It unfolds the final first coordinate of the
 `mToKPoint` change of variables.
 -/
@@ -2244,7 +2232,7 @@ theorem aux_mToKPoint_fst_last (d : ℕ) (z : RealVector (d + 1) × ℝ)
   simp [mToKPoint, hlast]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It unfolds the final second coordinate of the
 `mToKPoint` change of variables.
 -/
@@ -2256,7 +2244,7 @@ theorem aux_mToKPoint_snd_last (d : ℕ) (z : RealVector (d + 1) × ℝ)
   simp [mToKPoint, hlast]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It unfolds a nonfinal first coordinate of the
 `mToKPoint` change of variables.
 -/
@@ -2269,7 +2257,7 @@ theorem aux_mToKPoint_fst_castSucc (d : ℕ) (a : Fin d)
   simp [mToKPoint, hlast, hne]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It unfolds a nonfinal second coordinate of the
 `mToKPoint` change of variables.
 -/
@@ -2281,7 +2269,7 @@ theorem aux_mToKPoint_snd_castSucc (d : ℕ) (a : Fin d)
   simp [mToKPoint, hlast, hne]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It transports a diagonal shift in a nonfinal
 coordinate through `mToKPoint`.
 -/
@@ -2321,7 +2309,7 @@ theorem aux_mToKPoint_diagonalShift_nonlast (d : ℕ) (j : Fin d)
         simp [aux_diagonalShift, hne, aux_mToKPoint_snd_castSucc, aux_fibreTranslate, haj]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It transports a diagonal shift in the final
 coordinate through `mToKPoint`.
 -/
@@ -2344,21 +2332,21 @@ theorem aux_mToKPoint_diagonalShift_last (d : ℕ)
       simp [aux_diagonalShift, hne, aux_mToKPoint_snd_castSucc]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It names the external variables in the raw
 diagonal-convolution change of variables.
 -/
 abbrev aux_mToKDiagonalZSpace (k : ℕ) := RealVector k × ℝ
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It names the predecessor fibre in the raw
 diagonal-convolution change of variables.
 -/
 abbrev aux_mToKDiagonalPSpace (k : ℕ) := RealVector (k - 1)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It groups the variables needed for the raw
 diagonal-convolution Fubini calculation.
 -/
@@ -2366,7 +2354,7 @@ abbrev aux_mToKDiagonalQSpace (k : ℕ) :=
   aux_mToKDiagonalZSpace k × (aux_mToKDiagonalPSpace k × ℝ)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It reassociates the variables of the raw
 diagonal-convolution change of variables.
 -/
@@ -2376,7 +2364,7 @@ noncomputable def aux_mToKDiagonalRawAssoc (k : ℕ) :
   (ContinuousLinearEquiv.prodAssoc ℝ (RealVector k × ℝ) (RealVector (k - 1)) ℝ).symm
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It is the global linear change of variables whose
 fibres give the raw diagonal-convolution integrands.
 -/
@@ -2388,7 +2376,7 @@ noncomputable def aux_mToKDiagonalRawEquiv (k : ℕ) (hk : 1 ≤ k) (i : Fin k) 
     (aux_convolutionAlongShear (diagonalDirection k i))
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It gives the coordinate formula for
 `aux_mToKDiagonalRawEquiv`.
 -/
@@ -2401,7 +2389,7 @@ theorem aux_mToKDiagonalRawEquiv_apply (k : ℕ) (hk : 1 ≤ k) (i : Fin k)
     aux_sub_smul_diagonalDirection]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It supplies the Fubini integrability certificate
 for the raw diagonal-convolution calculation.
 -/
@@ -2452,7 +2440,7 @@ theorem aux_integrable_mToKDiagonalRaw (k : ℕ) (hk : 1 ≤ k)
   exact aux_memW0_integrable_of_addHaar hs'
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It proves the M-to-K convolution identity when
 the shifted coordinate is final.
 -/
@@ -2524,7 +2512,7 @@ theorem aux_mToK_diagonalConvolution_last (d : ℕ)
       rw [integral_mul_const]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It proves the M-to-K convolution identity when
 the shifted coordinate is nonfinal.
 -/
@@ -2604,7 +2592,7 @@ theorem aux_mToK_diagonalConvolution_nonlast (d : ℕ) (j : Fin d)
       rw [integral_mul_const]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It identifies diagonal convolution on an arbitrary
 M-coordinate with one-dimensional convolution after the M-to-K map.
 -/
@@ -2621,7 +2609,7 @@ theorem aux_mToK_diagonalConvolution
     · simpa using aux_mToK_diagonalConvolution_nonlast d j rho hrho phi hphi
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It bounds the absolute value of an M-to-K fibre
 integral by the M-to-K image of the absolute kernel.
 -/
@@ -2634,7 +2622,7 @@ theorem aux_abs_mToK_le_mToK_abs (k : ℕ) (hk : 1 ≤ k) (M : MKernel k)
       (f := fun p : RealVector (k - 1) => M (mToKPoint k hk z p)))
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It gives the pointwise nonnegativity of the M-to-K
 image of an absolute kernel.
 -/
@@ -2647,7 +2635,7 @@ theorem aux_mToK_abs_nonnegative (k : ℕ) (hk : 1 ≤ k) (M : MKernel k)
   exact abs_nonneg _
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It writes the K-level Cauchy--Schwarz lift as a
 finite sum of monotonicity kernels.
 -/
@@ -2669,7 +2657,7 @@ theorem aux_singlyCancellativeLift_eq_sum_monotonicity
   · rfl
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It rewrites the M-level Cauchy--Schwarz lift as a
 sum of tensor-square extensions.
 -/
@@ -2689,7 +2677,7 @@ theorem aux_cauchySchwarzLift_eq_sum_tensorSquareExtension
   rfl
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It commutes the M-to-K map with the finite kernel
 sum used in the Cauchy--Schwarz decomposition.
 -/
@@ -2705,7 +2693,7 @@ theorem aux_mToK_finset_sum
     (mToK_integrand_memW0 k k hk le_rfl (M j) (hM j) z)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It identifies the M-to-K image of the original
 Cauchy--Schwarz kernel with the singly cancellative K-kernel.
 -/
@@ -2726,7 +2714,7 @@ theorem aux_mToK_cauchySchwarzKernel_eq_singlyCancellative
     exact diagonalConvolution_memW0 k (rho j) (hrho j) i (phi j) (hphi j)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It identifies the M-to-K image of the
 Cauchy--Schwarz lift in successor dimension.
 -/
@@ -2769,7 +2757,7 @@ theorem aux_mToK_cauchySchwarzLift_succ
       (fun y => |rho j y|) (aux_memW0_abs (hrho j)) (phi j) (hphi j)) z
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It identifies the M-to-K image of the
 Cauchy--Schwarz lift in every positive dimension.
 -/
@@ -2786,7 +2774,7 @@ theorem aux_mToK_cauchySchwarzLift
         aux_mToK_cauchySchwarzLift_succ d J rho phi hrho hphi
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition [`Codex.cauchySchwarzKernel_memW0`], formalized as
 `cauchySchwarzAtK_bound`.  It gives the finite-sum linearity of the prism
 Brascamp--Lieb form needed to apply monotonicity term by term.
 -/
@@ -2832,29 +2820,33 @@ theorem aux_prismBrascampLiebForm_finset_sum
       simpa only [Measure.volume_eq_prod] using (integral_prod (P (K j)) (hP j))
 
 /--
-\begin{proposition}[Cauchy-Schwarz at $k$]\label{Cauchy-Schwarz at k}
+**Proposition (Cauchy-Schwarz at $k$).**
 
-Let $k,J\in\N$ with $1\le k<n-1$ and $J\ge1$. For $j\in[J)$, let $\rho_j\in W_0((\R^2)^k)$ and
-let $\varphi_j\in W_0(\R)$ be real valued. Let $i\in[k)$. Let $M\in W_0((\R^2)^k)$ and
-$\widetilde M\in W_0((\R^2)^{k+1})$ be defined by
-\begin{equation}\label{before CS}
+Let $k,J\in\mathbb{N}$ with $1\le k<n-1$ and $J\ge1$. For $j\in[J)$, let $\rho_j\in
+W_0((\mathbb{R}^2)^k)$ and let $\varphi_j\in W_0(\mathbb{R})$ be real valued. Let $i\in[k)$. Let
+$M\in W_0((\mathbb{R}^2)^k)$ and $\widetilde M\in W_0((\mathbb{R}^2)^{k+1})$ be defined by
+
+$$
 M=\sum_{j\in[J)}\rho_j*_{e_i^0+e_i^1}\varphi_j,
-\end{equation}
-and, for $y\in(\R^2)^{k+1}$,
-\begin{equation}\label{Cauchy Schwarz tilde M definition}
-\widetilde M(y)=\sum_{j\in[J)}|\rho_j(y_{[k)})|\varphi_j^{\otimes2}(y_k).
-\end{equation}
-Then for all $\F\in\mathfrak F$,
-\begin{equation}\label{Cauchy Schwarz at k estimate}
-|\Lambda_k(M)(\F)|
-\le
-|\Lambda_{k+1}(\widetilde M)(\F)|^{1/2}
-\Big(\sum_{j\in[J)}\|\rho_j\|_1\Big)^{1/2}.
-\end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.MKernels.cauchySchwarzKernel_memW0`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzLift_memW0`].
+and, for $y\in(\mathbb{R}^2)^{k+1}$,
+
+$$
+\widetilde M(y)=\sum_{j\in[J)}|\rho_j(y_{[k)})|\varphi_j^{\otimes2}(y_k).
+$$
+
+Then for all $\mathbf{F}\in\mathfrak F$,
+
+$$
+|\Lambda_k(M)(\mathbf{F})|
+\le
+|\Lambda_{k+1}(\widetilde M)(\mathbf{F})|^{1/2}
+\Big(\sum_{j\in[J)}\|\rho_j\|_1\Big)^{1/2}.
+$$
+
+See also [`Codex.cauchySchwarzKernel_memW0`],
+[`Codex.cauchySchwarzLift_memW0`].
 -/
 theorem cauchySchwarzAtK_bound
     (n k J : ℕ) (hk : 1 ≤ k) (hkn : k < n - 1) (hJ : 1 ≤ J)
@@ -3032,7 +3024,7 @@ theorem cauchySchwarzAtK_bound
   exact hSquare
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition [`Codex.doublyCauchySchwarzKernel_memW0`],
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3058,7 +3050,7 @@ theorem aux_measurePreserving_scalarCauchyShear :
   exact hshear.comp hswap
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition [`Codex.doublyCauchySchwarzKernel_memW0`],
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3154,7 +3146,7 @@ theorem aux_realConvolution_to_doubleIntegral
     _ = ∫ r : ℝ, ∫ s : ℝ, rho (u.1, u.2 - r - s) * phi r * phi s := by rfl
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition [`Codex.doublyCauchySchwarzKernel_memW0`],
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3183,7 +3175,7 @@ theorem aux_mToK_doublyCauchySchwarzKernel
         (hK j) (phi j) (hphi j) u
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition [`Codex.doublyCauchySchwarzKernel_memW0`],
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3205,7 +3197,7 @@ theorem aux_mToK_cauchySchwarzLift_eq_doublyCancellativeLift
         (fun j => mToK k hk (fun y => |rho j y|)) phi).symm
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition [`Codex.doublyCauchySchwarzKernel_memW0`],
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3221,7 +3213,7 @@ theorem aux_doublyCancellativeLift_eq_sum_monotonicity
       aux_singlyCancellativeLift_eq_sum_monotonicity k J rho phi
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition [`Codex.doublyCauchySchwarzKernel_memW0`],
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3272,7 +3264,7 @@ theorem aux_doublyCancellativeLift_prism_le
     exact Finset.sum_le_sum fun j _ => hMono j
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition [`Codex.doublyCauchySchwarzKernel_memW0`],
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3308,7 +3300,7 @@ theorem aux_doublyCancellativeLift_prism_nonnegative
     exact Finset.sum_nonneg fun j _ => hPos j
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition [`Codex.doublyCauchySchwarzKernel_memW0`],
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3355,29 +3347,34 @@ theorem aux_doublyCancellativeLift_sSup_le
       le_csSup hBdd ⟨G, rfl⟩
 
 /--
-\begin{proposition}[Cauchy-Schwarz at $n-1$]\label{Cauchy-Schwarz at n-1}
+**Proposition (Cauchy-Schwarz at $n-1$).**
 
-Let $J\in\N$ with $J\ge1$ and, for $j\in [J)$, let
-$\rho_j\in W_0((\R^2)^{n-1})$  and $\varphi_j\in W_0(\R)$ be real valued.
+Let $J\in\mathbb{N}$ with $J\ge1$ and, for $j\in [J)$, let
+$\rho_j\in W_0((\mathbb{R}^2)^{n-1})$  and $\varphi_j\in W_0(\mathbb{R})$ be real valued.
 Let $i \in [n-1)$.
 Define
-\begin{equation}\label{before CS 2}
-    M=\sum_{j\in [J)} \rho_j *_{e_i^0+e_i^1} (\varphi_j * \varphi_j),
-\end{equation}
-and for $y\in (\R^2)^n$,
-\begin{equation}\label{auto:terminal-prism-majorant-kernel}
-    \tilde{M}(y)=\sum_{j\in [J)} |\rho_j(y_{[n-1)})| \varphi_j^{\otimes 2}(y_{n-1}).
-\end{equation}
-Then $M\in W_0((\R^2)^{n-1})$ and $\tilde{M}\in W_0((\R^2)^n)$ and for all $\F\in\mathfrak{F}$
-\begin{equation}\label{auto:terminal-prism-majorant-bound}
-|\Lambda_{n-1}(M)(\F)| \le
-\sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
-\end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzLift_memW0`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzAtNMinusOne`].
+$$
+    M=\sum_{j\in [J)} \rho_j *_{e_i^0+e_i^1} (\varphi_j * \varphi_j),
+$$
+
+and for $y\in (\mathbb{R}^2)^n$,
+
+$$
+    \tilde{M}(y)=\sum_{j\in [J)} |\rho_j(y_{[n-1)})| \varphi_j^{\otimes 2}(y_{n-1}).
+$$
+
+Then $M\in W_0((\mathbb{R}^2)^{n-1})$ and $\tilde{M}\in W_0((\mathbb{R}^2)^n)$ and for all
+$\mathbf{F}\in\mathfrak{F}$
+
+$$
+|\Lambda_{n-1}(M)(\mathbf{F})| \le
+\sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
+$$
+
+See also [`Codex.doublyCauchySchwarzKernel_memW0`],
+[`Codex.cauchySchwarzLift_memW0`],
+[`Codex.cauchySchwarzAtNMinusOne`].
 -/
 theorem cauchySchwarzAtNMinusOne_bound
     (k J : ℕ) (hk : 1 ≤ k) (hJ : 1 ≤ J)
@@ -3440,29 +3437,34 @@ theorem cauchySchwarzAtNMinusOne_bound
       rw [hLiftTransport]
 
 /--
-\begin{proposition}[Cauchy-Schwarz at $n-1$]\label{Cauchy-Schwarz at n-1}
+**Proposition (Cauchy-Schwarz at $n-1$).**
 
-Let $J\in\N$ with $J\ge1$ and, for $j\in [J)$, let
-$\rho_j\in W_0((\R^2)^{n-1})$  and $\varphi_j\in W_0(\R)$ be real valued.
+Let $J\in\mathbb{N}$ with $J\ge1$ and, for $j\in [J)$, let
+$\rho_j\in W_0((\mathbb{R}^2)^{n-1})$  and $\varphi_j\in W_0(\mathbb{R})$ be real valued.
 Let $i \in [n-1)$.
 Define
-\begin{equation}\label{before CS 2}
-    M=\sum_{j\in [J)} \rho_j *_{e_i^0+e_i^1} (\varphi_j * \varphi_j),
-\end{equation}
-and for $y\in (\R^2)^n$,
-\begin{equation}\label{auto:terminal-prism-majorant-kernel}
-    \tilde{M}(y)=\sum_{j\in [J)} |\rho_j(y_{[n-1)})| \varphi_j^{\otimes 2}(y_{n-1}).
-\end{equation}
-Then $M\in W_0((\R^2)^{n-1})$ and $\tilde{M}\in W_0((\R^2)^n)$ and for all $\F\in\mathfrak{F}$
-\begin{equation}\label{auto:terminal-prism-majorant-bound}
-|\Lambda_{n-1}(M)(\F)| \le
-\sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
-\end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.MKernels.doublyCauchySchwarzKernel_memW0`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzLift_memW0`],
-[`Codex.Preliminaries.MKernels.cauchySchwarzAtNMinusOne_bound`].
+$$
+    M=\sum_{j\in [J)} \rho_j *_{e_i^0+e_i^1} (\varphi_j * \varphi_j),
+$$
+
+and for $y\in (\mathbb{R}^2)^n$,
+
+$$
+    \tilde{M}(y)=\sum_{j\in [J)} |\rho_j(y_{[n-1)})| \varphi_j^{\otimes 2}(y_{n-1}).
+$$
+
+Then $M\in W_0((\mathbb{R}^2)^{n-1})$ and $\tilde{M}\in W_0((\mathbb{R}^2)^n)$ and for all
+$\mathbf{F}\in\mathfrak{F}$
+
+$$
+|\Lambda_{n-1}(M)(\mathbf{F})| \le
+\sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
+$$
+
+See also [`Codex.doublyCauchySchwarzKernel_memW0`],
+[`Codex.cauchySchwarzLift_memW0`],
+[`Codex.cauchySchwarzAtNMinusOne_bound`].
 -/
 theorem cauchySchwarzAtNMinusOne
     (k J : ℕ) (hk : 1 ≤ k) (hJ : 1 ≤ J)
@@ -3484,4 +3486,4 @@ theorem cauchySchwarzAtNMinusOne
 
 end
 
-end Codex.Preliminaries.MKernels
+end Codex

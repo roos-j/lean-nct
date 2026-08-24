@@ -16,19 +16,20 @@ convolution along an arbitrary Euclidean direction.
 
 @[expose] public section
 
-namespace Codex.Preliminaries.ConvolutionAlongVector
+namespace Codex
 
 open MeasureTheory Metric
 open scoped FourierTransform RealInnerProductSpace
 
 /--
-\begin{definition}[Convolution along a vector]\label{auto:convolution-along-vector-definition}
+**Definition (Convolution along a vector).**
 
-For $\rho\in W_0(\R^n), \varphi\in W_0(\R)$ and a vector $\alpha\in\mathbb{R}^n$ define for
-$x\in\mathbb{R}^n$,
-\begin{equation}\label{auto:convolution-along-vector-formula} (\rho *_\alpha \varphi)(x) =
-\int_{\R} \rho(x-p\alpha) \varphi(p)\,dp \end{equation}
-\end{definition}
+For $\rho\in W_0(\mathbb{R}^n), \varphi\in W_0(\mathbb{R})$ and a vector $\alpha\in\mathbb{R}^n$
+define for $x\in\mathbb{R}^n$,
+
+$$
+(\rho *_\alpha \varphi)(x) = \int_{\mathbb{R}} \rho(x-p\alpha) \varphi(p)\,dp
+$$
 -/
 noncomputable def convolutionAlongVector {n : ℕ} {𝕜 : Type*} [NormedField 𝕜]
     [NormedSpace ℝ 𝕜]
@@ -102,9 +103,7 @@ theorem aux_continuous_integral_real {n : ℕ}
     exact hf.1.continuousAt.tendsto.comp
       (continuous_id.prodMk continuous_const).continuousAt
 
-/--
-Auxiliary fact extracting ordinary integrability from Wiener-space membership.
--/
+/-- Auxiliary fact extracting ordinary integrability from Wiener-space membership. -/
 theorem aux_integrable_of_memW0 {E 𝕜 : Type*} [NormedAddCommGroup E] [ProperSpace E]
     [MeasureSpace E] [BorelSpace E] [NormedAddCommGroup 𝕜]
     {f : E → 𝕜} (hf : MemW0 f) : Integrable f := by
@@ -113,9 +112,7 @@ theorem aux_integrable_of_memW0 {E 𝕜 : Type*} [NormedAddCommGroup E] [ProperS
     abs_of_nonneg (aux_wienerEnvelope_nonneg hf.1 zero_le_one x)] using
       aux_norm_le_wienerEnvelope hf.1 zero_le_one x
 
-/--
-Auxiliary fibre-integration closure result needed for convolution along a real direction.
--/
+/-- Auxiliary fibre-integration closure result needed for convolution along a real direction. -/
 theorem aux_memW0_integral_real {n : ℕ}
     {𝕜 : Type*} [NormedField 𝕜] [NormedSpace ℝ 𝕜] [CompleteSpace 𝕜]
     {f : EuclideanSpace ℝ (Fin n) × ℝ → 𝕜} (hf : MemW0 f) :
@@ -156,16 +153,16 @@ theorem aux_memW0_integral_real {n : ℕ}
       · simp
 
 /--
-\begin{proposition}[Properties of convolution along a vector]
-\label{convolution vector}
+**Proposition (Properties of convolution along a vector).**
 
-For $\rho \in W_0(\R^n), \varphi\in W_0(\R), \alpha,\xi\in\mathbb{R}^n$ we have $\rho *_\alpha
-\varphi\in W_0(\R^n)$ and
-\begin{equation}\label{auto:convolution-along-vector-Fourier-transform} \widehat{\rho *_\alpha
-\varphi}(\xi) = \widehat{\rho}(\xi)\widehat{\varphi}(\alpha\cdot\xi). \end{equation}
-\end{proposition}
+For $\rho \in W_0(\mathbb{R}^n), \varphi\in W_0(\mathbb{R}), \alpha,\xi\in\mathbb{R}^n$ we have
+$\rho *_\alpha \varphi\in W_0(\mathbb{R}^n)$ and
 
-See also [`Codex.Preliminaries.ConvolutionAlongVector.fourier_convolutionAlongVector`].
+$$
+\widehat{\rho *_\alpha \varphi}(\xi) = \widehat{\rho}(\xi)\widehat{\varphi}(\alpha\cdot\xi).
+$$
+
+See also [`Codex.fourier_convolutionAlongVector`].
 -/
 theorem memW0_convolutionAlongVector {n : ℕ}
     {𝕜 : Type*} [NormedField 𝕜] [NormedSpace ℝ 𝕜] [CompleteSpace 𝕜]
@@ -190,16 +187,16 @@ theorem memW0_convolutionAlongVector {n : ℕ}
   simpa [F, aux_shear, Function.comp_def] using hI
 
 /--
-\begin{proposition}[Properties of convolution along a vector]
-\label{convolution vector}
+**Proposition (Properties of convolution along a vector).**
 
-For $\rho \in W_0(\R^n), \varphi\in W_0(\R), \alpha,\xi\in\mathbb{R}^n$ we have $\rho *_\alpha
-\varphi\in W_0(\R^n)$ and
-\begin{equation}\label{auto:convolution-along-vector-Fourier-transform} \widehat{\rho *_\alpha
-\varphi}(\xi) = \widehat{\rho}(\xi)\widehat{\varphi}(\alpha\cdot\xi). \end{equation}
-\end{proposition}
+For $\rho \in W_0(\mathbb{R}^n), \varphi\in W_0(\mathbb{R}), \alpha,\xi\in\mathbb{R}^n$ we have
+$\rho *_\alpha \varphi\in W_0(\mathbb{R}^n)$ and
 
-See also [`Codex.Preliminaries.ConvolutionAlongVector.memW0_convolutionAlongVector`].
+$$
+\widehat{\rho *_\alpha \varphi}(\xi) = \widehat{\rho}(\xi)\widehat{\varphi}(\alpha\cdot\xi).
+$$
+
+See also [`Codex.memW0_convolutionAlongVector`].
 -/
 theorem fourier_convolutionAlongVector {n : ℕ}
     {rho : EuclideanSpace ℝ (Fin n) → ℂ} {phi : ℝ → ℂ}
@@ -301,4 +298,4 @@ theorem fourier_convolutionAlongVector {n : ℕ}
         FourierTransform.fourier phi (inner ℝ alpha xi) := by
       rw [← Real.fourier_real_eq]
 
-end Codex.Preliminaries.ConvolutionAlongVector
+end Codex

@@ -44,8 +44,10 @@ open scoped BigOperators
 
 namespace Codex
 
-/-- Turns the pointwise growth hypothesis used in Stein's theorem into the filter formulation
-needed by the Phragmén--Lindelöf principle. -/
+/--
+Turns the pointwise growth hypothesis used in Stein's theorem into the filter formulation
+needed by the Phragmén--Lindelöf principle.
+-/
 private theorem isBigO_of_verticalClosedStrip_exp_growth
     {E : Type*} [NormedAddCommGroup E] {F : ℂ → E} {a C : ℝ}
     (hF : ∀ z : verticalClosedStrip 0 1,
@@ -57,8 +59,10 @@ private theorem isBigO_of_verticalClosedStrip_exp_growth
   filter_upwards [eventually_ge_atTop 0] with r hr z him hz
   simpa using hF ⟨z, Set.Ioo_subset_Icc_self hz⟩
 
-/-- Normalize a double-exponential strip-growth estimate so that its two parameters are
-nonnegative.  This is convenient when finite analytic deformations are summed. -/
+/--
+Normalize a double-exponential strip-growth estimate so that its two parameters are
+nonnegative.  This is convenient when finite analytic deformations are summed.
+-/
 private theorem exp_growth_normalize
     {F : ℂ → ℂ} {a C : ℝ}
     (hF : ∀ z : verticalClosedStrip 0 1,
@@ -78,8 +82,10 @@ private theorem exp_growth_normalize
       apply Real.exp_le_exp.mpr
       exact mul_le_mul_of_nonneg_right (le_max_left _ _) (abs_nonneg _)
 
-/-- A finite double sum of scalar analytic pairings preserves the growth class required by
-Phragmén--Lindelöf when its coefficient functions are uniformly bounded on the strip. -/
+/--
+A finite double sum of scalar analytic pairings preserves the growth class required by
+Phragmén--Lindelöf when its coefficient functions are uniformly bounded on the strip.
+-/
 private theorem finite_bisum_exp_growth_of_uniform_factors
     {ι κ : Type*} (s : Finset ι) (t : Finset κ)
     (α : ι → ℂ → ℂ) (β : κ → ℂ → ℂ) (H : ι → κ → ℂ → ℂ)
@@ -242,8 +248,10 @@ private theorem norm_le_of_inner_strip_bounds
   · exact hθ.1
   · exact hθ.2
 
-/-- The Phragmén--Lindelöf step after an analytic outer multiplier has been constructed.
-This is the analytic core of Hirschman's variable-bound three-lines estimate. -/
+/--
+The Phragmén--Lindelöf step after an analytic outer multiplier has been constructed.
+This is the analytic core of Hirschman's variable-bound three-lines estimate.
+-/
 private theorem outer_multiplier_three_lines
     {F H : ℂ → ℂ} {θ : ℝ}
     (hθ : θ ∈ Set.Icc 0 1)
@@ -345,8 +353,10 @@ private theorem outer_multiplier_three_lines
     _ ≤ Real.exp ((H (θ : ℂ)).re) * 1 := hmul
     _ = Real.exp ((H (θ : ℂ)).re) := mul_one _
 
-/-- Jensen's formula gives the submean inequality for `log ‖f‖` on a disk.  This is the
-local subharmonic input for the variable-bound three-lines argument. -/
+/--
+Jensen's formula gives the submean inequality for `log ‖f‖` on a disk.  This is the
+local subharmonic input for the variable-bound three-lines argument.
+-/
 private theorem analytic_circleAverage_log_norm_le
     {c : ℂ} {R : ℝ} {f : ℂ → ℂ}
     (hR : 0 < R) (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hfc : f c ≠ 0) :
@@ -378,9 +388,11 @@ private theorem analytic_circleAverage_log_norm_le
       (divisor f (closedBall c |R|)).apply_eq_zero_of_notMem hu
     simp [hzero]
 
-/-- A canonical (inverse Blaschke) factor is contractive in the closed disk.  This is the
+/--
+A canonical (inverse Blaschke) factor is contractive in the closed disk.  This is the
 zero-removal estimate used when upgrading Jensen's unweighted submean inequality to its
-Poisson-weighted form. -/
+Poisson-weighted form.
+-/
 private theorem one_le_norm_canonicalFactor
     {R : ℝ} {u z : ℂ} (hR : 0 < R)
     (hu : u ∈ ball 0 R) (hz : z ∈ closedBall 0 R) (hzu : z ≠ u) :
@@ -701,8 +713,10 @@ private theorem circleAverage_weighted_finsum_log_norm_sub
           (f := (Complex.re ∘ herglotzRieszKernel 0 w) * fun z ↦ Real.log ‖z - u‖)
           (a := (D u : ℝ)))
 
-/-- The Poisson-weighted submean inequality for the logarithm of the norm of a
-holomorphic function on a disk. -/
+/--
+The Poisson-weighted submean inequality for the logarithm of the norm of a
+holomorphic function on a disk.
+-/
 private theorem analytic_weighted_circleAverage_log_norm_le
     {R : ℝ} {f : ℂ → ℂ} {w : ℂ} (hR : 0 < R)
     (hf : AnalyticOnNhd ℂ f (closedBall 0 R))
@@ -1052,8 +1066,10 @@ private theorem tendsto_integral_weighted_log_max_norm_exp_neg
     exact tendsto_const_nhds.mul
       (tendsto_log_max_norm_exp_neg (hu_lim x))
 
-/-- Dominated convergence for a fixed finite logarithmic floor when the analytic functions have
-an independent, integrable pointwise upper bound. -/
+/--
+Dominated convergence for a fixed finite logarithmic floor when the analytic functions have
+an independent, integrable pointwise upper bound.
+-/
 private theorem tendsto_integral_weighted_log_max_norm_exp_neg_of_bound
     {α : Type*} [MeasurableSpace α] {μ : Measure α}
     {W B : α → ℝ} {u : ℕ → α → ℂ} {v : α → ℂ} {K : ℝ}
@@ -1145,8 +1161,10 @@ private theorem re_herglotzRieszKernel_nonneg
   exact le_trans (div_nonneg hnum hden) (by simpa [Function.comp_apply,
     herglotzRieszKernel_fun_def] using hlow)
 
-/-- On a circle, an analytic logarithm can be replaced above by the continuous finite-floor
-truncation; its isolated zeros do not change the average. -/
+/--
+On a circle, an analytic logarithm can be replaced above by the continuous finite-floor
+truncation; its isolated zeros do not change the average.
+-/
 private theorem analytic_weighted_circleAverage_log_norm_le_floor
     {R : ℝ} {f : ℂ → ℂ} {w : ℂ} {K : ℂ → ℝ} (hR : 0 < R)
     (hf : AnalyticOnNhd ℂ f (closedBall 0 R))
@@ -2437,8 +2455,10 @@ private theorem discToStrip_left_boundary_eq (t : ℝ) :
   push_cast
   ring
 
-/-- The disk-to-strip map approaches the left boundary continuously along any strict radial
-path. -/
+/--
+The disk-to-strip map approaches the left boundary continuously along any strict radial
+path.
+-/
 private theorem tendsto_discToStrip_radial_left
     {α : Type*} {l : Filter α} (r : α → ℝ)
     (hr : Tendsto r l (𝓝 1))
@@ -2491,8 +2511,10 @@ private theorem tendsto_discToStrip_radial_left
     exact discToStrip_left_boundary_eq t] at hlim
   exact hlim
 
-/-- The disk-to-strip map approaches the right boundary continuously along any strict radial
-path.  Its proof uses the upper-side limit of the principal logarithm at the negative axis. -/
+/--
+The disk-to-strip map approaches the right boundary continuously along any strict radial
+path.  Its proof uses the upper-side limit of the principal logarithm at the negative axis.
+-/
 private theorem tendsto_discToStrip_radial_right
     {α : Type*} {l : Filter α} (r : α → ℝ)
     (hr : Tendsto r l (𝓝 1))
@@ -2599,8 +2621,10 @@ private theorem tendsto_radialSequence :
     Tendsto (fun n : ℕ ↦ (n : ℝ) / ((n : ℝ) + 1)) atTop (𝓝 1) :=
   tendsto_natCast_div_add_atTop 1
 
-/-- The disk-to-strip coordinate is continuous at every interior point of the disk, also
-along an arbitrary real radial path converging to the unit radius. -/
+/--
+The disk-to-strip coordinate is continuous at every interior point of the disk, also
+along an arbitrary real radial path converging to the unit radius.
+-/
 private theorem tendsto_discToStrip_radial_interior_of_tendsto
     {α : Type*} {l : Filter α} (r : α → ℝ)
     (hr : Tendsto r l (𝓝 1)) {z : ℂ} (hz : ‖z‖ < 1) :
@@ -2634,8 +2658,10 @@ private theorem re_herglotzRieszKernel_unit_eq {w z : ℂ} (hz : Complex.normSq 
   rw [← Complex.normSq_eq_norm_sq, ← Complex.normSq_eq_norm_sq,
     ← Complex.normSq_eq_norm_sq, hz]
 
-/-- The unit-circle Poisson density, after the left Cayley parametrization, is the left
-strip kernel without its common harmonic-measure prefactor. -/
+/--
+The unit-circle Poisson density, after the left Cayley parametrization, is the left
+strip kernel without its common harmonic-measure prefactor.
+-/
 private theorem re_herglotzRieszKernel_left_transport
     {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 1) (t : ℝ) :
     (Real.cosh (Real.pi * t))⁻¹ *
@@ -2698,8 +2724,10 @@ private theorem re_herglotzRieszKernel_left_transport
           (Real.cosh (Real.pi * t) - Real.cos (Real.pi * θ)) := by
       field_simp [ne_of_gt hden]
 
-/-- The unit-circle Poisson density, after the right Cayley parametrization, is the right
-strip kernel without its common harmonic-measure prefactor. -/
+/--
+The unit-circle Poisson density, after the right Cayley parametrization, is the right
+strip kernel without its common harmonic-measure prefactor.
+-/
 private theorem re_herglotzRieszKernel_right_transport
     {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 1) (t : ℝ) :
     (Real.cosh (Real.pi * t))⁻¹ *
@@ -2765,8 +2793,10 @@ private theorem re_herglotzRieszKernel_right_transport
           (Real.cosh (Real.pi * t) + Real.cos (Real.pi * θ)) := by
       field_simp [ne_of_gt hden]
 
-/-- Transport the unit-circle Poisson average at a strip point to the two boundary lines of the
-strip.  This is the exact harmonic-measure identity used in Hirschman's theorem. -/
+/--
+Transport the unit-circle Poisson average at a strip point to the two boundary lines of the
+strip.  This is the exact harmonic-measure identity used in Hirschman's theorem.
+-/
 private theorem circleAverage_poisson_transport
     {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 1) {H : ℂ → ℝ}
     (hH : ContinuousOn H (sphere 0 1)) :
@@ -2951,8 +2981,10 @@ private theorem memLp_of_measurable_of_eLpNorm_le
     (hu : Measurable u) (hbound : eLpNorm u p μ ≤ A) (hA : A < ⊤) : MemLp u p μ :=
   ⟨hu.aestronglyMeasurable, hbound.trans_lt hA⟩
 
-/-- An endpoint estimate on the integrable-simple-function core supplies the `MemLp` fact
-needed for subsequent duality arguments. -/
+/--
+An endpoint estimate on the integrable-simple-function core supplies the `MemLp` fact
+needed for subsequent duality arguments.
+-/
 private theorem output_memLp_of_bound
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} {p q : ENNReal} {M : ℝ}
@@ -3136,8 +3168,10 @@ private theorem tendsto_eLpNorm_restrict_approxBounded
   · filter_upwards with y
     exact (ENNReal.continuous_rpow_const.tendsto _).comp (hgₙ_tendsto y).enorm
 
-/-- A pairing estimate on integrable simple functions extends to a bounded measurable test
-function supported on a finite-measure set. -/
+/--
+A pairing estimate on integrable simple functions extends to a bounded measurable test
+function supported on a finite-measure set.
+-/
 private theorem pairing_bound_of_bounded_support
     {Y : Type*} [MeasurableSpace Y] {ν : Measure Y} {u g : Y → ℂ}
     {s : Set Y} {A C : ℝ} {q : ENNReal}
@@ -3812,9 +3846,11 @@ private theorem memLp_of_pairing_bounds_finite_ennreal
     simpa only [hconj] using hbound h hh
   simpa only [hqeq] using memLp_of_pairing_bounds_finite hr hC hu hlocal_int hbound'
 
-/-- A scalar pairing estimate against the full simple-function dual unit ball gives the
+/--
+A scalar pairing estimate against the full simple-function dual unit ball gives the
 corresponding `Lᵠ` estimate.  The proof packages the `q = 1`, finite, and `q = ∞`
-phase-test arguments. -/
+phase-test arguments.
+-/
 private theorem memLp_of_pairing_bound
     {Y : Type*} [MeasurableSpace Y] {ν : Measure Y} [SigmaFinite ν]
     {u : Y → ℂ} {q : ENNReal} {C : ℝ} (hq : 1 ≤ q) (hC : 0 ≤ C)
@@ -4009,8 +4045,10 @@ private theorem integral_pairing_smul_right
       ring
     _ = c * (∫ y, T z f y * g y ∂ν) := integral_const_mul _ _
 
-/-- A bilinear estimate on the two unit balls extends to the usual product estimate,
-provided null seminorm inputs are already killed. -/
+/--
+A bilinear estimate on the two unit balls extends to the usual product estimate,
+provided null seminorm inputs are already killed.
+-/
 private theorem bilinear_bound_of_unit
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} {p r : ENNReal} {C : ℝ}
@@ -4087,8 +4125,10 @@ private theorem bilinear_bound_of_unit
       dsimp [a, b]
       ring
 
-/-- The final duality assembly for interpolation: a scalar pairing estimate with the two
-`Lᵖ` factors implies the asserted target-space norm estimate. -/
+/--
+The final duality assembly for interpolation: a scalar pairing estimate with the two
+`Lᵖ` factors implies the asserted target-space norm estimate.
+-/
 private theorem interpolation_from_pairing_bound
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -4174,8 +4214,10 @@ private theorem norm_integral_mul_le_eLpNorm_mul
     _ = (eLpNorm u q ν).toReal * (eLpNorm g q.conjExponent ν).toReal :=
       ENNReal.toReal_mul
 
-/-- A raw endpoint operator bound paired against normalized integrable simple functions is
-already a scalar boundary estimate. -/
+/--
+A raw endpoint operator bound paired against normalized integrable simple functions is
+already a scalar boundary estimate.
+-/
 private theorem endpoint_pairing_bound_normalized
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} {p q : ENNReal} {M : ℝ}
@@ -4212,8 +4254,10 @@ private theorem endpoint_pairing_bound_normalized
     _ ≤ M * 1 := mul_le_mul hTreal hgreal ENNReal.toReal_nonneg hM
     _ = M := mul_one _
 
-/-- The same endpoint pairing estimate, with the strip parameter retained.  This is the
-form used for the two vertical boundary lines in Stein's theorem. -/
+/--
+The same endpoint pairing estimate, with the strip parameter retained.  This is the
+form used for the two vertical boundary lines in Stein's theorem.
+-/
 private theorem boundary_pairing_bound_normalized
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} {p q : ENNReal} {M : ℝ}
@@ -4370,8 +4414,10 @@ private theorem diffContOnCl_input_deformation_coeff
     congr 2
     ring
 
-/-- A coefficient in a finite input deformation is uniformly bounded on the closed strip.
-The harmless `max 1` is essential when the underlying coefficient has norm below one. -/
+/--
+A coefficient in a finite input deformation is uniformly bounded on the closed strip.
+The harmless `max 1` is essential when the underlying coefficient has norm below one.
+-/
 private theorem rpow_affine_le_max_one
     {r a₀ a₁ x : ℝ} (hr : 0 ≤ r) (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁)
     (hx : x ∈ Set.Icc 0 1) :
@@ -4396,8 +4442,10 @@ private theorem rpow_affine_le_max_one
   · exact (Real.rpow_le_one hr hr1 he_nonneg).trans (le_max_left _ _)
   · exact (Real.rpow_le_rpow_of_exponent_le hr1 he_le).trans (le_max_right _ _)
 
-/-- The complex coefficient used by the finite input deformation is uniformly bounded on
-the closed strip. -/
+/--
+The complex coefficient used by the finite input deformation is uniformly bounded on
+the closed strip.
+-/
 private theorem norm_input_deformation_coeff_uniform
     {a₀ a₁ : ℝ} (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁)
     (c z : ℂ) (hz : z ∈ verticalClosedStrip 0 1) :
@@ -4430,8 +4478,10 @@ private theorem norm_input_deformation_coeff_uniform
       ring
     _ ≤ max 1 (‖c‖ ^ max a₀ a₁) := hpow
 
-/-- Raising a finite-range function to a pointwise real power transforms its `Lᵖ` norm
-in the expected way. -/
+/--
+Raising a finite-range function to a pointwise real power transforms its `Lᵖ` norm
+in the expected way.
+-/
 private theorem eLpNorm_simpleFunc_map_of_norm_rpow
     {X : Type*} [MeasurableSpace X] {μ : Measure X}
     (f : SimpleFunc X ℂ) {r s : ℝ} (hr : 0 < r) (hs : 0 < s)
@@ -4460,8 +4510,10 @@ private theorem eLpNorm_simpleFunc_map_of_norm_rpow
   · exact ne_of_gt ((ENNReal.ofReal_pos).mpr hs)
   · exact ENNReal.ofReal_ne_top
 
-/-- Converts an interpolation equation of extended exponents to one of real reciprocal
-exponents. -/
+/--
+Converts an interpolation equation of extended exponents to one of real reciprocal
+exponents.
+-/
 private theorem real_inv_interpolation
     {p p₀ p₁ : ENNReal} {θ : ℝ}
     (hθ : θ ∈ Set.Ioo 0 1)
@@ -4482,8 +4534,10 @@ private theorem real_inv_interpolation
     ENNReal.toReal_inv] at h
   simpa [ENNReal.toReal_ofReal h1θ0, ENNReal.toReal_ofReal hθ0] using h
 
-/-- The interpolation coefficients of an input deformation sum to one at `θ`, including
-the case of an infinite endpoint. -/
+/--
+The interpolation coefficients of an input deformation sum to one at `θ`, including
+the case of an infinite endpoint.
+-/
 private theorem input_coeff_at_theta_of_interp_general
     {p p₀ p₁ : ENNReal} {θ : ℝ}
     (hθ : θ ∈ Set.Ioo 0 1)
@@ -4520,8 +4574,10 @@ private theorem simpleFunc_input_deformation_at_theta
   rw [SimpleFunc.map_apply]
   exact input_deformation_at_theta hθ (f x)
 
-/-- At an `L∞` endpoint the corresponding input-deformation coefficient is zero, so the
-deformed scalar has norm at most one. -/
+/--
+At an `L∞` endpoint the corresponding input-deformation coefficient is zero, so the
+deformed scalar has norm at most one.
+-/
 private theorem norm_input_deformation_left_coeff_zero
     {a₀ a₁ t : ℝ} (ha₀ : a₀ = 0) (c : ℂ) :
     ‖if c = 0 then 0 else
@@ -4588,8 +4644,10 @@ private theorem eLpNorm_input_deformation_right_coeff_top
       rw [SimpleFunc.map_apply]
       exact norm_input_deformation_right_coeff_zero ha₁ (f x)) using 1; norm_num
 
-/-- The finite-exponent endpoint norm of a deformation written directly in terms of
-its real boundary coefficient. -/
+/--
+The finite-exponent endpoint norm of a deformation written directly in terms of
+its real boundary coefficient.
+-/
 private theorem eLpNorm_input_deformation_left_coeff
     {X : Type*} [MeasurableSpace X] {μ : Measure X}
     (f : SimpleFunc X ℂ) {r s a₀ a₁ t : ℝ}
@@ -4626,8 +4684,10 @@ private theorem interpolation_weights_sum_one {θ : ℝ} (hθ : θ ∈ Set.Ioo 0
   rw [← ENNReal.ofReal_add (by linarith [hθ.2]) hθ.1.le]
   norm_num
 
-/-- Taking Hӧlder conjugates preserves the affine interpolation relation between reciprocal
-exponents. -/
+/--
+Taking Hӧlder conjugates preserves the affine interpolation relation between reciprocal
+exponents.
+-/
 private theorem conjExponent_inv_interpolation
     {q q₀ q₁ : ENNReal} {θ : ℝ}
     (hθ : θ ∈ Set.Ioo 0 1)
@@ -4694,8 +4754,10 @@ private theorem one_le_conjExponent (q : ENNReal) (hq : 1 ≤ q) :
   change 1 ≤ q'
   exact ENNReal.HolderConjugate.one_le q' q
 
-/-- A normalized finite-exponent input deformation has norm at most one at the left
-boundary. -/
+/--
+A normalized finite-exponent input deformation has norm at most one at the left
+boundary.
+-/
 private theorem eLpNorm_input_deformation_left_coeff_le_one
     {X : Type*} [MeasurableSpace X] {μ : Measure X}
     (f : SimpleFunc X ℂ) {r s a₀ a₁ t : ℝ}
@@ -4709,8 +4771,10 @@ private theorem eLpNorm_input_deformation_left_coeff_le_one
   rw [eLpNorm_input_deformation_left_coeff f hr hs ha₀]
   exact ENNReal.rpow_le_one hf (div_nonneg hr.le hs.le)
 
-/-- A normalized finite-exponent input deformation has norm at most one at the right
-boundary. -/
+/--
+A normalized finite-exponent input deformation has norm at most one at the right
+boundary.
+-/
 private theorem eLpNorm_input_deformation_right_coeff_le_one
     {X : Type*} [MeasurableSpace X] {μ : Measure X}
     (f : SimpleFunc X ℂ) {r s a₀ a₁ t : ℝ}
@@ -4724,8 +4788,10 @@ private theorem eLpNorm_input_deformation_right_coeff_le_one
   rw [eLpNorm_input_deformation_right_coeff f hr hs ha₁]
   exact ENNReal.rpow_le_one hf (div_nonneg hr.le hs.le)
 
-/-- The left endpoint norm bound for a normalized deformation, uniformly covering finite
-and infinite endpoint exponents. -/
+/--
+The left endpoint norm bound for a normalized deformation, uniformly covering finite
+and infinite endpoint exponents.
+-/
 private theorem eLpNorm_input_deformation_left_coeff_ennreal_le_one
     {X : Type*} [MeasurableSpace X] {μ : Measure X}
     (f : SimpleFunc X ℂ) {p p₀ : ENNReal} {a₀ a₁ t : ℝ}
@@ -4751,8 +4817,10 @@ private theorem eLpNorm_input_deformation_left_coeff_ennreal_le_one
     apply eLpNorm_input_deformation_left_coeff_le_one f hr hs ha₀'
     simpa only [ENNReal.ofReal_toReal hp_top] using hf
 
-/-- The right endpoint norm bound for a normalized deformation, uniformly covering finite
-and infinite endpoint exponents. -/
+/--
+The right endpoint norm bound for a normalized deformation, uniformly covering finite
+and infinite endpoint exponents.
+-/
 private theorem eLpNorm_input_deformation_right_coeff_ennreal_le_one
     {X : Type*} [MeasurableSpace X] {μ : Measure X}
     (f : SimpleFunc X ℂ) {p p₁ : ENNReal} {a₀ a₁ t : ℝ}
@@ -4800,8 +4868,10 @@ private theorem simpleFunc_output_deformation_at_theta
   · exact conjExponent_ne_top_of_ne_one hq hq_ne_one
   · exact conjExponent_inv_interpolation hθ hq hq₀ hq₁ hint
 
-/-- The dual output deformation is normalized at the left boundary, allowing an infinite
-conjugate endpoint. -/
+/--
+The dual output deformation is normalized at the left boundary, allowing an infinite
+conjugate endpoint.
+-/
 private theorem eLpNorm_output_deformation_left_le_one
     {Y : Type*} [MeasurableSpace Y] {ν : Measure Y}
     (g : SimpleFunc Y ℂ) {q q₀ q₁ : ENNReal} {t : ℝ}
@@ -4822,8 +4892,10 @@ private theorem eLpNorm_output_deformation_left_le_one
   · rfl
   · exact hg
 
-/-- The dual output deformation is normalized at the right boundary, allowing an infinite
-conjugate endpoint. -/
+/--
+The dual output deformation is normalized at the right boundary, allowing an infinite
+conjugate endpoint.
+-/
 private theorem eLpNorm_output_deformation_right_le_one
     {Y : Type*} [MeasurableSpace Y] {ν : Measure Y}
     (g : SimpleFunc Y ℂ) {q q₀ q₁ : ENNReal} {t : ℝ}
@@ -4844,8 +4916,10 @@ private theorem eLpNorm_output_deformation_right_le_one
   · rfl
   · exact hg
 
-/-- In the `q = 1` branch the output conjugate exponent is `∞`, so the constant family
-`g_z = g` supplies the required dual deformation. -/
+/--
+In the `q = 1` branch the output conjugate exponent is `∞`, so the constant family
+`g_z = g` supplies the required dual deformation.
+-/
 private theorem output_deformation_top_at_theta
     {Y : Type*} [MeasurableSpace Y] (g : SimpleFunc Y ℂ) :
     g.map (fun c ↦ c) = g := by
@@ -5065,8 +5139,10 @@ private theorem DiffContOnCl.congr_eqOn_closure
   ⟨hG.differentiableOn.congr fun _ hz ↦ hFG (subset_closure hz),
     hG.continuousOn.congr hFG⟩
 
-/-- Weak analyticity on fixed simple functions is stable under analytic finite-range
-deformations of both arguments. -/
+/--
+Weak analyticity on fixed simple functions is stable under analytic finite-range
+deformations of both arguments.
+-/
 private theorem diffContOnCl_pairing_of_simple_deformations
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y}
@@ -5147,9 +5223,11 @@ private theorem diffContOnCl_pairing_of_simple_deformations
       (φ z) (ψ z) (fun c ↦ T z (e c)) (fun k ↦ (d k : Y → ℂ))
       (fun c hc k hk ↦ hpair_integrable ⟨z, hz⟩ (e c) (d k) (he c hc) (hd k hk)))
 
-/-- The common weak-growth hypothesis is stable under finite analytic deformations of the
+/--
+The common weak-growth hypothesis is stable under finite analytic deformations of the
 two simple-function arguments.  The proof reduces the pairing to a finite double sum and
-takes a finite common growth constant for its fixed scalar pairings. -/
+takes a finite common growth constant for its fixed scalar pairings.
+-/
 private theorem family_growth_of_simple_deformations
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y}
@@ -5283,8 +5361,10 @@ private theorem family_growth_of_simple_deformations
     (fun c hc z ↦ hφ c (by simpa only [s] using hc) z)
     (fun k hk z ↦ hψ k (by simpa only [t] using hk) z) hH z
 
-/-- A nonnegative function on a finite set has a single finite upper bound.  We use the
-sum rather than a maximum so that the empty finite set needs no separate case. -/
+/--
+A nonnegative function on a finite set has a single finite upper bound.  We use the
+sum rather than a maximum so that the empty finite set needs no separate case.
+-/
 private theorem finite_range_uniform_bound
     {α : Type*} (s : Finset α) (w : α → ℝ)
     (hw : ∀ x ∈ s, 0 ≤ w x) :
@@ -5613,9 +5693,11 @@ private theorem integrable_kernel_right {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 1) :
   rw [harg, Real.cos_pi_sub] at h
   simpa only [sub_neg_eq_add] using h
 
-/-- The exponentially growing boundary logarithms in Hirschman's estimate are integrable
+/--
+The exponentially growing boundary logarithms in Hirschman's estimate are integrable
 against either strip Poisson kernel.  The proof uses the elementary global lower bound on
-`cosh`, so it does not hide a compact/tail split. -/
+`cosh`, so it does not hide a compact/tail split.
+-/
 private theorem integrable_exp_neg_mul_abs {δ : ℝ} (hδ : 0 < δ) :
     Integrable (fun t : ℝ => exp (-δ * |t|)) := by
   suffices h : IntegrableOn (fun t : ℝ => exp (-δ * |t|)) (Iic 0 ∪ Ioi 0) volume by
@@ -5757,8 +5839,10 @@ private theorem integrable_log_div_right_kernel
     (A := A) (b := b) (s := cos (Real.pi * θ))
     hM.log hgrowth hb (abs_cos_pi_mul_lt_one hθ)
 
-/-- The logarithmic harmonic-measure integral occurring in the conclusion is a genuine
-finite Bochner integral under the stated growth hypotheses. -/
+/--
+The logarithmic harmonic-measure integral occurring in the conclusion is a genuine
+finite Bochner integral under the stated growth hypotheses.
+-/
 private theorem integrable_hirschman_log_integrand
     {M₀ M₁ : ℝ → ℝ} {A b θ : ℝ}
     (hM : Measurable M₀ ∧ Measurable M₁)
@@ -5992,8 +6076,10 @@ private theorem integrable_right_kernel_growth_plus
     ring]
   exact hsum
 
-/-- At the left boundary, a finite logarithmic floor is bounded by the corresponding floor
-of the prescribed positive endpoint majorant. -/
+/--
+At the left boundary, a finite logarithmic floor is bounded by the corresponding floor
+of the prescribed positive endpoint majorant.
+-/
 private theorem integral_left_log_max_norm_exp_neg_le
     {F : ℂ → ℂ} {M : ℝ → ℝ} {θ : ℝ} (N : ℕ)
     (hθ : θ ∈ Ioo 0 1) (hF : DiffContOnCl ℂ F (verticalStrip 0 1))
@@ -6102,8 +6188,10 @@ private theorem integral_left_log_max_norm_exp_neg_le
   apply (div_le_div_iff_of_pos_right (cosh_sub_cos_pi_mul_pos hθ t)).mpr
   exact log_max_norm_exp_neg_le_max_log_of_norm_le (hMpos t) (hbound t)
 
-/-- At the right boundary, a finite logarithmic floor is bounded by the corresponding floor
-of the prescribed positive endpoint majorant. -/
+/--
+At the right boundary, a finite logarithmic floor is bounded by the corresponding floor
+of the prescribed positive endpoint majorant.
+-/
 private theorem integral_right_log_max_norm_exp_neg_le
     {F : ℂ → ℂ} {M : ℝ → ℝ} {θ : ℝ} (N : ℕ)
     (hθ : θ ∈ Ioo 0 1) (hF : DiffContOnCl ℂ F (verticalStrip 0 1))
@@ -6212,8 +6300,10 @@ private theorem integral_right_log_max_norm_exp_neg_le
   apply (div_le_div_iff_of_pos_right (cosh_add_cos_pi_mul_pos hθ t)).mpr
   exact log_max_norm_exp_neg_le_max_log_of_norm_le (hMpos t) (hbound t)
 
-/-- Pulling an analytic strip function back by a strict radial disk contraction is analytic on
-the closed unit disk. -/
+/--
+Pulling an analytic strip function back by a strict radial disk contraction is analytic on
+the closed unit disk.
+-/
 private theorem analyticOnNhd_radial_discToStrip
     {F : ℂ → ℂ} {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1)
     (hF : AnalyticOnNhd ℂ F (verticalStrip 0 1)) :
@@ -6252,8 +6342,10 @@ private theorem analyticOnNhd_radial_discToStrip
   ext z
   rfl
 
-/-- A nonnegative exponential norm bound gives the corresponding bound for its logarithm,
-including the case where the norm is zero. -/
+/--
+A nonnegative exponential norm bound gives the corresponding bound for its logarithm,
+including the case where the norm is zero.
+-/
 private theorem log_norm_le_of_norm_le_exp {z : ℂ} {A : ℝ} (hA : 0 ≤ A)
     (hz : ‖z‖ ≤ Real.exp A) :
     Real.log ‖z‖ ≤ A := by
@@ -6683,9 +6775,11 @@ private theorem constant_kernel_factor {θ M₀ M₁ : ℝ} (hθ : θ ∈ Set.Io
     ← Real.rpow_def_of_pos hM₀, ← Real.rpow_def_of_pos hM₁]
   rfl
 
-/-- Apply Hirschman's scalar three-lines theorem after deforming the two finite-range
+/--
+Apply Hirschman's scalar three-lines theorem after deforming the two finite-range
 simple-function arguments.  Keeping this reduction separate makes the endpoint-exponent
-cases in Stein's theorem purely algebraic. -/
+cases in Stein's theorem purely algebraic.
+-/
 private theorem normalized_pairing_bound_of_deformations
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -6784,12 +6878,14 @@ private theorem normalized_pairing_bound_of_deformations
   simpa only [F, hφtheta, hψtheta] using
     (hirschman_three_lines hθ hF hF_growth hM_measurable hM_pos hM_growth hFbound₀ hFbound₁)
 
-/-- **Stein's interpolation theorem** for an analytic family of raw operators.
+/--
+**Stein's interpolation theorem** for an analytic family of raw operators.
 
 The common domain is the integrable-simple-function core: for a simple function,
 `Integrable f μ` is equivalent to finite measure support. Analyticity is the source theorem's
 weak scalar-pairing analyticity, and the conclusion has the exact Hirschman
-harmonic-measure constant. -/
+harmonic-measure constant.
+-/
 theorem stein_interpolation
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -7211,8 +7307,10 @@ theorem stein_interpolation_constant_bounds
   refine ⟨hmem, ?_⟩
   simpa [constant_kernel_factor hθ hM₀ hM₁] using hnorm
 
-/-- **Riesz--Thorin interpolation**, obtained from `stein_interpolation_constant_bounds` by
-taking the analytic family to be constant. -/
+/--
+**Riesz--Thorin interpolation**, obtained from `stein_interpolation_constant_bounds` by
+taking the analytic family to be constant.
+-/
 theorem riesz_thorin
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -7266,8 +7364,10 @@ theorem riesz_thorin
   · intro t f hf
     exact hbound₁ f hf
 
-/-- The standard finite-range analytic deformation for a non-distinguished input in
-a multilinear interpolation argument. -/
+/--
+The standard finite-range analytic deformation for a non-distinguished input in
+a multilinear interpolation argument.
+-/
 noncomputable def aux_multilinear_input_deformation
     {m : ℕ} {X : Type*} [MeasurableSpace X]
     (p₀ p₁ p : Fin (m + 1) → ENNReal) (g : Fin m → SimpleFunc X ℂ)
@@ -7279,8 +7379,10 @@ noncomputable def aux_multilinear_input_deformation
           ((p i.succ).toReal * ((p₀ i.succ)⁻¹).toReal : ℝ) : ℂ) *
         ((Real.log ‖c‖ : ℝ) : ℂ)))
 
-/-- The standard finite-range deformations are centered at the original tuple,
-preserve integrability, and are normalized at the two endpoint exponents. -/
+/--
+The standard finite-range deformations are centered at the original tuple,
+preserve integrability, and are normalized at the two endpoint exponents.
+-/
 theorem aux_multilinear_input_deformation_properties
     {m : ℕ} {X : Type*} [MeasurableSpace X] {μ : Measure X}
     {p₀ p₁ p : Fin (m + 1) → ENNReal} {θ : ℝ}
@@ -7331,8 +7433,10 @@ theorem aux_multilinear_input_deformation_properties
     · rfl
     · exact hgnorm i
 
-/-- Packages the usual finite-range input deformations for all but one input of a
-multilinear interpolation argument. -/
+/--
+Packages the usual finite-range input deformations for all but one input of a
+multilinear interpolation argument.
+-/
 theorem aux_multilinear_input_deformations
     {m : ℕ} {X : Type*} [MeasurableSpace X] {μ : Measure X}
     {p₀ p₁ p : Fin (m + 1) → ENNReal} {θ : ℝ}
@@ -7386,8 +7490,10 @@ theorem aux_multilinear_input_deformations
     · rfl
     · exact hgnorm i
 
-/-- Reduces a multilinear two-endpoint estimate to Stein interpolation after all
-but one inputs have been replaced by normalized analytic deformations. -/
+/--
+Reduces a multilinear two-endpoint estimate to Stein interpolation after all
+but one inputs have been replaced by normalized analytic deformations.
+-/
 theorem aux_multilinear_interpolation_of_deformations
     {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -7514,10 +7620,12 @@ theorem aux_multilinear_interpolation_of_deformations
   rw [hT_theta] at hmem hnorm
   exact ⟨hmem, hnorm⟩
 
-/-- A two-endpoint multilinear interpolation step for complex integrable simple
+/--
+A two-endpoint multilinear interpolation step for complex integrable simple
 functions.  The standard finite-range deformations of all non-distinguished inputs
 are inserted automatically; the analytic and growth hypotheses are precisely their
-weak scalar-pairing conditions. -/
+weak scalar-pairing conditions.
+-/
 theorem aux_multilinear_interpolation_two_endpoint_normalized
     {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -7574,8 +7682,10 @@ theorem aux_multilinear_interpolation_two_endpoint_normalized
     g₀ g hg₀ (aux_multilinear_input_deformation p₀ p₁ p g)
     hD_theta hD_integrable hD_left hD_right hB_analytic hB_growth
 
-/-- Finite-range analytic deformations preserve weak scalar-pairing analyticity for a
-complex multilinear map. -/
+/--
+Finite-range analytic deformations preserve weak scalar-pairing analyticity for a
+complex multilinear map.
+-/
 private theorem aux_multilinear_pairing_analytic
     {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y}
@@ -7658,8 +7768,10 @@ private theorem aux_multilinear_pairing_analytic
   simpa only [smul_eq_mul] using hprod.smul
     (diffContOnCl_const (𝕜 := ℂ) (s := verticalStrip 0 1) (c := H r))
 
-/-- Finite-range analytic deformations have uniform scalar-pairing growth for a
-complex multilinear map. -/
+/--
+Finite-range analytic deformations have uniform scalar-pairing growth for a
+complex multilinear map.
+-/
 private theorem aux_multilinear_pairing_growth
     {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y}
@@ -7784,10 +7896,12 @@ private theorem aux_multilinear_pairing_growth
     _ ≤ Real.exp C := add_one_le_exp C
     _ = Real.exp (C * Real.exp (0 * |(z : ℂ).im|)) := by simp
 
-/-- The normalized two-endpoint complex interpolation theorem for a complex multilinear
+/--
+The normalized two-endpoint complex interpolation theorem for a complex multilinear
 map on integrable simple functions.  Its hypotheses are only the endpoint bounds and the
 basic measurability and scalar-pairing integrability conditions; analyticity and growth of the
-standard finite-range deformations follow from multilinearity. -/
+standard finite-range deformations follow from multilinearity.
+-/
 theorem multilinear_interpolation_two_endpoint_normalized
     {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -7892,9 +8006,11 @@ theorem multilinear_interpolation_two_endpoint_normalized
       hM₀ hM₁ hB_add hB_smul hBmeas hBpair hBbound₀ hBbound₁ (g 0) (fun i ↦ g i.succ)
       (hg 0) (fun i ↦ hg i.succ) hgnorm hBanalytic hBgrowth
 
-/-- A set containing the endpoints and closed under binary convex combinations contains their
+/--
+A set containing the endpoints and closed under binary convex combinations contains their
 convex hull.  This is the induction principle used to pass from two-endpoint interpolation to a
-finite family of endpoints. -/
+finite family of endpoints.
+-/
 theorem convexHull_subset_of_binary
     {E : Type*} [AddCommMonoid E] [Module ℝ E] {S G : Set E}
     (hS : S ⊆ G)
@@ -7903,8 +8019,10 @@ theorem convexHull_subset_of_binary
     convexHull ℝ S ⊆ G :=
   convexHull_min hS ((convex_iff_add_mem).2 hbinary)
 
-/-- Normalizing a nonzero finite `Lᵖ` simple function by the reciprocal of its seminorm gives
-seminorm one. -/
+/--
+Normalizing a nonzero finite `Lᵖ` simple function by the reciprocal of its seminorm gives
+seminorm one.
+-/
 private theorem aux_eLpNorm_normalize_simpleFunc
     {X : Type*} [MeasurableSpace X] {μ : Measure X}
     (f : SimpleFunc X ℂ) (p : ENNReal)
@@ -7922,8 +8040,10 @@ private theorem aux_eLpNorm_normalize_simpleFunc
   rw [hnorm, ENNReal.ofReal_inv_of_pos hNpos, ENNReal.ofReal_toReal htop]
   exact ENNReal.inv_mul_cancel hzero htop
 
-/-- Simultaneously rescaling all non-distinguished inputs of a multilinear map factors out the
-product of the scalars. -/
+/--
+Simultaneously rescaling all non-distinguished inputs of a multilinear map factors out the
+product of the scalars.
+-/
 private theorem aux_multilinear_rescale_tail
     {m : ℕ} {X Y : Type*} [MeasurableSpace X]
     (B : MultilinearMap ℂ (fun _ : Fin (m + 1) ↦ SimpleFunc X ℂ) (Y → ℂ))
@@ -7936,8 +8056,10 @@ private theorem aux_multilinear_rescale_tail
   change B (Fin.cons (g 0) (fun i ↦ g i.succ)) = B g
   exact congrArg B (Fin.cons_self_tail g)
 
-/-- The norm of the product of reciprocal normalization scalars is the reciprocal of the
-product of the corresponding finite nonzero `ℝ≥0∞` seminorms. -/
+/--
+The norm of the product of reciprocal normalization scalars is the reciprocal of the
+product of the corresponding finite nonzero `ℝ≥0∞` seminorms.
+-/
 private theorem aux_enorm_prod_inv_toReal
     {m : ℕ} (N : Fin m → ENNReal)
     (hzero : ∀ i, N i ≠ 0) (htop : ∀ i, N i ≠ ∞) :
@@ -7965,9 +8087,11 @@ private theorem aux_enorm_prod_inv_toReal
       intro i hi j hj hij
       exact Or.inl (hzero i)
 
-/-- The full-product two-endpoint estimate follows from the normalized theorem by rescaling the
+/--
+The full-product two-endpoint estimate follows from the normalized theorem by rescaling the
 non-distinguished inputs.  The explicit `hzero` assumption records the natural requirement that
-the operator vanishes when one input has `Lᵖ` seminorm zero. -/
+the operator vanishes when one input has `Lᵖ` seminorm zero.
+-/
 theorem multilinear_interpolation_two_endpoint
     {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -8127,11 +8251,13 @@ private theorem aux_multilinearExponentOfReciprocal_interpolation
   rw [ENNReal.ofReal_add (mul_nonneg ha (hu i).1.le) (mul_nonneg hb (hv i).1.le),
     ENNReal.ofReal_mul ha, ENNReal.ofReal_mul hb]
 
-/-- Multilinear complex interpolation over an arbitrary family of endpoint reciprocal vectors.
+/--
+Multilinear complex interpolation over an arbitrary family of endpoint reciprocal vectors.
 The conclusion holds at every point of their convex hull.  The endpoint constant is common to all
 vertices, so every binary interpolation step preserves it exactly.  This is a SimpleFunc-level
 theorem; the final `hzero` condition is the natural a.e.-zero compatibility needed for homogeneous
-rescaling. -/
+rescaling.
+-/
 theorem multilinear_interpolation_convexHull
     {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -8244,9 +8370,11 @@ theorem multilinear_interpolation_convexHull
   have huG : u ∈ G := convexHull_subset_of_binary hSsub hbinary hu
   simpa only [Fin.prod_univ_succ, mul_assoc] using huG.2 g hg
 
-/-- A vector subspace of strict, strongly measurable representatives of almost-everywhere
+/--
+A vector subspace of strict, strongly measurable representatives of almost-everywhere
 classes.  It is used internally to turn an `Lp`-valued multilinear map into a strictly
-function-valued one without making an arbitrary nonlinear choice of representatives. -/
+function-valued one without making an arbitrary nonlinear choice of representatives.
+-/
 private def aux_stronglyMeasurableSubmodule {Y : Type*} [MeasurableSpace Y] :
     Submodule ℂ (Y → ℂ) where
   carrier := {f | StronglyMeasurable f}
@@ -8254,8 +8382,10 @@ private def aux_stronglyMeasurableSubmodule {Y : Type*} [MeasurableSpace Y] :
   add_mem' hf hg := hf.add hg
   smul_mem' c _f hf := hf.const_smul c
 
-/-- The linear quotient map from strict strongly measurable representatives to their
-almost-everywhere equivalence classes. -/
+/--
+The linear quotient map from strict strongly measurable representatives to their
+almost-everywhere equivalence classes.
+-/
 private noncomputable def aux_aeeqFunMkLinear {Y : Type*} [MeasurableSpace Y]
     {ν : Measure Y} :
     aux_stronglyMeasurableSubmodule (Y := Y) →ₗ[ℂ] (Y →ₘ[ν] ℂ) where
@@ -8404,10 +8534,12 @@ private theorem aux_eLpNorm_multilinearLpRepresentative {ι : Type*} {E : ι →
       eLpNorm (B u : Y → ℂ) 2 ν :=
   eLpNorm_congr_ae (aux_multilinearLpRepresentative_ae (Y := Y) (ν := ν) B u)
 
-namespace MultilinearInterpolation
+section
 
-/-- The subspace of simple functions belonging to a fixed `Lᵖ` space.  This is the
-integrable-simple-function core used to extend an algebraic map to all simple inputs. -/
+/--
+The subspace of simple functions belonging to a fixed `Lᵖ` space.  This is the
+integrable-simple-function core used to extend an algebraic map to all simple inputs.
+-/
 noncomputable def aux_simpleFuncMemLpSubmodule {X : Type*} [MeasurableSpace X]
     (p : ℝ≥0∞) (μ : Measure X) : Submodule ℂ (SimpleFunc X ℂ) where
   carrier := {f | MemLp (f : X → ℂ) p μ}
@@ -8421,8 +8553,10 @@ noncomputable def aux_simpleFuncMemLpSubmodule {X : Type*} [MeasurableSpace X]
     change MemLp (((↑) : SimpleFunc X ℂ → X → ℂ) (c • _)) p μ
     simpa only [SimpleFunc.coe_smul] using hf.const_smul c
 
-/-- A noncanonical linear retraction onto the `Lᵖ` simple-function core.  It makes an
-algebraic multilinear map total before the interpolation theorem is applied. -/
+/--
+A noncanonical linear retraction onto the `Lᵖ` simple-function core.  It makes an
+algebraic multilinear map total before the interpolation theorem is applied.
+-/
 noncomputable def aux_simpleFuncMemLpRetract {X : Type*} [MeasurableSpace X]
     (p : ℝ≥0∞) (μ : Measure X) :
     SimpleFunc X ℂ →ₗ[ℂ] aux_simpleFuncMemLpSubmodule p μ :=
@@ -8462,8 +8596,10 @@ theorem aux_simpleFuncMemLpToLp_apply {X : Type*} [MeasurableSpace X]
     aux_simpleFuncMemLpToLp p μ ⟨f, hf⟩ = hf.toLp f :=
   rfl
 
-/-- Extends an `Lp`-valued continuous multilinear map to all simple-function tuples by
-precomposing fixed linear core retractions.  It agrees with the original map on core inputs. -/
+/--
+Extends an `Lp`-valued continuous multilinear map to all simple-function tuples by
+precomposing fixed linear core retractions.  It agrees with the original map on core inputs.
+-/
 noncomputable def aux_extendLpCMLMToSimpleFunc {ι X F : Type*}
     [Fintype ι] [MeasurableSpace X]
     [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -8493,8 +8629,10 @@ theorem aux_extendLpCMLMToSimpleFunc_apply_of_memLp {ι X F : Type*}
   rw [aux_simpleFuncMemLpRetract_apply_of_memLp (p i) μ (f i) (hf i)]
   rfl
 
-/-- The common integrable simple-function core.  It is used when one algebraic totalization
-must agree simultaneously at several finite input exponents. -/
+/--
+The common integrable simple-function core.  It is used when one algebraic totalization
+must agree simultaneously at several finite input exponents.
+-/
 noncomputable abbrev aux_integrableSimpleFuncSubmodule {X : Type*} [MeasurableSpace X]
     (μ : Measure X) : Submodule ℂ (SimpleFunc X ℂ) :=
   aux_simpleFuncMemLpSubmodule 1 μ
@@ -8544,9 +8682,11 @@ theorem aux_integrableSimpleFuncToLp_apply {X : Type*} [MeasurableSpace X]
         (aux_simpleFuncExponent_ne_zero (p := p)) hp_top).mpr hf).toLp f := by
   rfl
 
-/-- Totalizes a continuous `Lp` multilinear map through the common integrable simple-function
+/--
+Totalizes a continuous `Lp` multilinear map through the common integrable simple-function
 core.  Unlike exponentwise retractions, this totalization agrees on every tuple relevant to
-the finite-exponent interpolation argument. -/
+the finite-exponent interpolation argument.
+-/
 noncomputable def aux_extendLpCMLMToSimpleFuncIntegrable {ι X F : Type*}
     [Fintype ι] [MeasurableSpace X]
     [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -8558,8 +8698,10 @@ noncomputable def aux_extendLpCMLMToSimpleFuncIntegrable {ι X F : Type*}
     (aux_integrableSimpleFuncToLp (p i) μ (hp_top i)).comp
       (aux_integrableSimpleFuncRetract μ)
 
-/-- The common-core totalization agrees with the original continuous multilinear map on
-integrable simple-function inputs. -/
+/--
+The common-core totalization agrees with the original continuous multilinear map on
+integrable simple-function inputs.
+-/
 theorem aux_extendLpCMLMToSimpleFuncIntegrable_apply_of_integrable {ι X F : Type*}
     [Fintype ι] [MeasurableSpace X]
     [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -8614,9 +8756,11 @@ private theorem aux_extendLpCMLMToSimpleFuncIntegrable_eq_zero_of_eLpNorm_eq_zer
   unfold aux_extendLpCMLMToSimpleFuncIntegrable
   exact B.toMultilinearMap.map_coord_zero i hinputzero
 
-/-- The common-integrable-core totalization vanishes when any finite-`Lᵖ`
+/--
+The common-integrable-core totalization vanishes when any finite-`Lᵖ`
 input has zero extended norm.  This supplies the null-input compatibility
-required by `multilinear_interpolation_convexHull_Lp_sq`. -/
+required by `multilinear_interpolation_convexHull_Lp_sq`.
+-/
 theorem aux_extendLpCMLMToSimpleFuncIntegrable_enorm_eq_zero_of_eLpNorm_eq_zero
     {m : ℕ} {X F : Type*} [MeasurableSpace X]
     [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -8648,8 +8792,10 @@ theorem aux_denseRange_integrableSimpleFuncToLp {X : Type*} [MeasurableSpace X]
   rw [← Lp.simpleFunc.toLp_eq_toLp]
   exact congrArg Subtype.val (Lp.simpleFunc.toLp_toSimpleFunc g)
 
-/-- A product-norm estimate for a continuous multilinear map extends from a coordinatewise
-dense core to all inputs. -/
+/--
+A product-norm estimate for a continuous multilinear map extends from a coordinatewise
+dense core to all inputs.
+-/
 theorem aux_ContinuousMultilinearMap_norm_le_of_denseRange
     {𝕜 ι F : Type*} {E₀ E : ι → Type*}
     [NontriviallyNormedField 𝕜] [Fintype ι]
@@ -8677,8 +8823,10 @@ theorem aux_ContinuousMultilinearMap_norm_le_of_denseRange
   intro y
   exact hbound y
 
-/-- The squared form of `aux_ContinuousMultilinearMap_norm_le_of_denseRange`, useful for
-finite `L²` energies whose natural endpoint bounds contain squared norms. -/
+/--
+The squared form of `aux_ContinuousMultilinearMap_norm_le_of_denseRange`, useful for
+finite `L²` energies whose natural endpoint bounds contain squared norms.
+-/
 theorem aux_ContinuousMultilinearMap_norm_sq_le_of_denseRange
     {𝕜 ι F : Type*} {E₀ E : ι → Type*}
     [NontriviallyNormedField 𝕜] [Fintype ι]
@@ -8706,8 +8854,10 @@ theorem aux_ContinuousMultilinearMap_norm_sq_le_of_denseRange
   intro y
   exact hbound y
 
-/-- The integrable simple-function core is dense in the ambient `Lp` space.  This is used
-to transfer endpoint estimates from the core on which a raw operator is defined. -/
+/--
+The integrable simple-function core is dense in the ambient `Lp` space.  This is used
+to transfer endpoint estimates from the core on which a raw operator is defined.
+-/
 theorem aux_denseRange_simpleFuncMemLpToLp {X : Type*} [MeasurableSpace X]
     (p : ℝ≥0∞) (μ : Measure X) [Fact (1 ≤ p)] (hp_top : p ≠ ∞) :
     DenseRange (aux_simpleFuncMemLpToLp p μ) := by
@@ -8719,8 +8869,10 @@ theorem aux_denseRange_simpleFuncMemLpToLp {X : Type*} [MeasurableSpace X]
   rw [← Lp.simpleFunc.toLp_eq_toLp]
   exact congrArg Subtype.val (Lp.simpleFunc.toLp_toSimpleFunc g)
 
-/-- Dense-range transfer for a continuous multilinear map, phrased for arbitrary core maps.
-Unlike the linear-map version, this does not require normed-space instances on the core. -/
+/--
+Dense-range transfer for a continuous multilinear map, phrased for arbitrary core maps.
+Unlike the linear-map version, this does not require normed-space instances on the core.
+-/
 theorem aux_ContinuousMultilinearMap_norm_sq_le_of_denseRange_functions
     {𝕜 ι F : Type*} {E₀ E : ι → Type*}
     [NontriviallyNormedField 𝕜] [Fintype ι]
@@ -8747,8 +8899,10 @@ theorem aux_ContinuousMultilinearMap_norm_sq_le_of_denseRange_functions
   intro y
   exact hbound y
 
-/-- A sharp squared estimate verified on the `MemLp` simple-function core extends to all
-ambient `Lp` inputs. -/
+/--
+A sharp squared estimate verified on the `MemLp` simple-function core extends to all
+ambient `Lp` inputs.
+-/
 theorem aux_ContinuousMultilinearMap_norm_sq_le_of_simpleFuncMemLp
     {ι X F : Type*} [Fintype ι] [MeasurableSpace X]
     [SeminormedAddCommGroup F] [NormedSpace ℂ F]
@@ -8768,9 +8922,11 @@ theorem aux_ContinuousMultilinearMap_norm_sq_le_of_simpleFuncMemLp
     exact aux_denseRange_simpleFuncMemLpToLp (p i) μ (hp_top i)
   · exact hcore
 
-/-- Converts a real squared product-norm estimate to its extended-norm form.
+/--
+Converts a real squared product-norm estimate to its extended-norm form.
 This is used to pass sharp continuous-multilinear endpoint estimates into
-the squared `Lp` interpolation theorem. -/
+the squared `Lp` interpolation theorem.
+-/
 theorem aux_enorm_sq_le_of_norm_sq_le
     {ι F : Type*} [Fintype ι] [NormedAddCommGroup F]
     {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
@@ -8789,9 +8945,11 @@ theorem aux_enorm_sq_le_of_norm_sq_le
       intro i _
       rw [ENNReal.ofReal_pow (norm_nonneg _) 2, ofReal_norm]
 
-/-- Converts an extended-norm squared product estimate back to its real-norm form.
+/--
+Converts an extended-norm squared product estimate back to its real-norm form.
 This is the converse of `aux_enorm_sq_le_of_norm_sq_le`, and is used when a sharp
-interpolation bound on a dense simple-function core is propagated by continuity. -/
+interpolation bound on a dense simple-function core is propagated by continuity.
+-/
 theorem aux_norm_sq_le_of_enorm_sq_le
     {ι F : Type*} [Fintype ι] [NormedAddCommGroup F]
     {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
@@ -8812,8 +8970,10 @@ theorem aux_norm_sq_le_of_enorm_sq_le
   exact (ENNReal.ofReal_le_ofReal_iff
     (mul_nonneg hK (Finset.prod_nonneg fun i _ ↦ sq_nonneg (‖x i‖)))).mp h
 
-/-- A sharp squared norm estimate for a complex CMLM transfers from Schwartz inputs to
-arbitrary `Lp` inputs.  Its codomain is arbitrary, so it applies to packed `L²` targets. -/
+/--
+A sharp squared norm estimate for a complex CMLM transfers from Schwartz inputs to
+arbitrary `Lp` inputs.  Its codomain is arbitrary, so it applies to packed `L²` targets.
+-/
 theorem aux_schwartz_sq_bound
     {ι X F : Type*} [Fintype ι]
     [NormedAddCommGroup X] [NormedSpace ℝ X] [MeasurableSpace X]
@@ -8852,10 +9012,12 @@ theorem aux_schwartz_sq_bound
   change ‖B.toMultilinearMap (fun i ↦ (f i).toLp (p i) μ)‖ ^ 2 ≤ _
   exact hcore f
 
-/-- The finite-endpoint convex-hull interpolation theorem for an `L²`-valued complex
+/--
+The finite-endpoint convex-hull interpolation theorem for an `L²`-valued complex
 multilinear map on integrable simple functions.  It is the quotient-valued form of
 `multilinear_interpolation_convexHull`; its only additional compatibility hypothesis says that
-the map vanishes in `L²` when one input has zero seminorm. -/
+the map vanishes in `L²` when one input has zero seminorm.
+-/
 theorem multilinear_interpolation_convexHull_Lp
     {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -8919,8 +9081,10 @@ theorem multilinear_interpolation_convexHull_Lp
   rw [← aux_eLpNorm_multilinearLpRepresentative (Y := Y) (ν := ν) B g]
   exact h
 
-/-- The squared-energy form of `multilinear_interpolation_convexHull_Lp`.  It keeps a
-common squared endpoint constant unchanged throughout the convex-hull interpolation. -/
+/--
+The squared-energy form of `multilinear_interpolation_convexHull_Lp`.  It keeps a
+common squared endpoint constant unchanged throughout the convex-hull interpolation.
+-/
 theorem multilinear_interpolation_convexHull_Lp_sq
     {m : ℕ} {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} [SigmaFinite ν]
@@ -9073,8 +9237,10 @@ theorem aux_packed_ae_eq_of_forall {J : ℕ} {X : Type*} [MeasurableSpace X]
   filter_upwards [] with j
   exact hfg j
 
-/-- Finite counting-measure packing preserves a coordinatewise a.e. equality, with no
-measurability hypotheses on either side. -/
+/--
+Finite counting-measure packing preserves a coordinatewise a.e. equality, with no
+measurability hypotheses on either side.
+-/
 theorem aux_packed_ae_eq_of_forall' {J : ℕ} {X : Type*} [MeasurableSpace X]
     {μ : Measure X} {f g : Fin J → X → ℂ}
     (hfg : ∀ j, f j =ᵐ[μ] g j) :
@@ -9305,7 +9471,7 @@ theorem aux_eLpNorm_sq_packLpCMLM_eq_sum_raw {J : ℕ} {ι Y : Type*} {X : ι �
   intro j
   simpa using hraw j
 
-end MultilinearInterpolation
+end
 
 
 end Codex

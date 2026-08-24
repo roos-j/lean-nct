@@ -15,7 +15,7 @@ real-variable and ergodic-average definitions used by the application in
 `RealToErgodic`.
 -/
 
-namespace Codex.CalderonTransference
+namespace Codex
 
 universe u
 
@@ -24,45 +24,49 @@ open scoped BigOperators ENNReal
 
 
 noncomputable section
-/-- The ambient real Euclidean space for the `n`-linear real-variable
-average. -/
-abbrev RealVector (n : ℕ) := EuclideanSpace ℝ (Fin n)
+/--
+The ambient real Euclidean space for the `n`-linear real-variable
+average.
+-/
+abbrev ctRealVector (n : ℕ) := EuclideanSpace ℝ (Fin n)
 
 /-- The `i`th coordinate direction of `ℝ^n`. -/
-noncomputable def coordinateAxis {n : ℕ} (i : Fin n) : RealVector n :=
+noncomputable def ctCoordinateAxis {n : ℕ} (i : Fin n) : ctRealVector n :=
   WithLp.toLp 2 (Pi.single i (1 : ℝ))
 
 /-- The real multilinear twisted average from Definition `A_def`. -/
-noncomputable def aux_twistedAverage {n : ℕ} (χ : ℝ → ℝ)
-    (f : Fin n → RealVector n → ℝ) : RealVector n → ℝ :=
-  fun x ↦ ∫ s : ℝ, χ s * ∏ i, f i (x + s • coordinateAxis i)
+noncomputable def aux_ct_twistedAverage {n : ℕ} (χ : ℝ → ℝ)
+    (f : Fin n → ctRealVector n → ℝ) : ctRealVector n → ℝ :=
+  fun x ↦ ∫ s : ℝ, χ s * ∏ i, f i (x + s • ctCoordinateAxis i)
 
 /-- The rescaled real multilinear twisted average. -/
-noncomputable def aux_twistedAverageAtScale {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
-    (f : Fin n → RealVector n → ℝ) : RealVector n → ℝ :=
-  aux_twistedAverage (fun s ↦ t⁻¹ * χ (t⁻¹ * s)) f
+noncomputable def aux_ct_twistedAverageAtScale {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
+    (f : Fin n → ctRealVector n → ℝ) : ctRealVector n → ℝ :=
+  aux_ct_twistedAverage (fun s ↦ t⁻¹ * χ (t⁻¹ * s)) f
 
 /- Compatibility names retained for the generated reduction proofs. -/
-noncomputable abbrev twistedAverage {n : ℕ} (χ : ℝ → ℝ)
-    (f : Fin n → RealVector n → ℝ) : RealVector n → ℝ :=
-  aux_twistedAverage χ f
+noncomputable abbrev ctTwistedAverage {n : ℕ} (χ : ℝ → ℝ)
+    (f : Fin n → ctRealVector n → ℝ) : ctRealVector n → ℝ :=
+  aux_ct_twistedAverage χ f
 
-noncomputable abbrev twistedAverageAtScale {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
-    (f : Fin n → RealVector n → ℝ) : RealVector n → ℝ :=
-  aux_twistedAverageAtScale t χ f
+noncomputable abbrev ctTwistedAverageAtScale {n : ℕ} (t : ℝ) (χ : ℝ → ℝ)
+    (f : Fin n → ctRealVector n → ℝ) : ctRealVector n → ℝ :=
+  aux_ct_twistedAverageAtScale t χ f
 
-/-- The kernel `\mathbf 1_{[0,1)}` used in the transference principle.  This
+/--
+The kernel `\mathbf 1_{[0,1)}` used in the transference principle.  This
 is the half-open representative of the usual unit-interval kernel; the two
-versions agree almost everywhere for Lebesgue integration. -/
-noncomputable def unitIntervalKernel : ℝ → ℝ :=
+versions agree almost everywhere for Lebesgue integration.
+-/
+noncomputable def ctUnitIntervalKernel : ℝ → ℝ :=
   (Ico (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ)
 
 /-- The finite squared `L²` jump energy for real-variable averages. -/
-noncomputable def endpointEnergy {n : ℕ} (J : ℕ) (t : Fin (J + 1) → ℝ)
-    (χ : ℝ → ℝ) (f : Fin n → RealVector n → ℝ) : ℝ≥0∞ :=
+noncomputable def ctEndpointEnergy {n : ℕ} (J : ℕ) (t : Fin (J + 1) → ℝ)
+    (χ : ℝ → ℝ) (f : Fin n → ctRealVector n → ℝ) : ℝ≥0∞ :=
   ∑ j : Fin J, eLpNorm
-    (fun x ↦ twistedAverageAtScale (t j.succ) χ f x -
-      twistedAverageAtScale (t j.castSucc) χ f x) 2 volume ^ 2
+    (fun x ↦ ctTwistedAverageAtScale (t j.succ) χ f x -
+      ctTwistedAverageAtScale (t j.castSucc) χ f x) 2 volume ^ 2
 
 /-- A family of commuting measure-preserving transformations. -/
 structure ErgodicSystem (X : Type*) [MeasurableSpace X] (μ : Measure X)
@@ -71,9 +75,11 @@ structure ErgodicSystem (X : Type*) [MeasurableSpace X] (μ : Measure X)
   measurePreserving : ∀ i, MeasurePreserving (transformation i) μ μ
   commutes : ∀ i j, Function.Commute (transformation i) (transformation j)
 
-/-- The joint forward orbit of a tuple of commuting transformations.  The
+/--
+The joint forward orbit of a tuple of commuting transformations.  The
 fixed coordinate order in this definition is harmless because the maps
-commute. -/
+commute.
+-/
 def aux_orbit {X : Type*} : {n : ℕ} →
     (Fin n → X → X) → (Fin n → ℕ) → X → X
   | 0, _, _ => id
@@ -113,8 +119,10 @@ theorem aux_orbit_measurePreserving {X : Type*} [MeasurableSpace X]
         intro i
         exact hS i.succ
 
-/-- A map commuting with every generator also commutes with their joint
-orbit. -/
+/--
+A map commuting with every generator also commutes with their joint
+orbit.
+-/
 theorem aux_orbit_commute {X : Type*} : ∀ {n : ℕ}
     (S : Fin n → X → X) (k : Fin n → ℕ) (h : X → X)
     (_hcomm : ∀ i, Function.Commute h (S i)),
@@ -153,8 +161,10 @@ theorem aux_orbit_add {X : Type*} : ∀ {n : ℕ} (S : Fin n → X → X)
       rw [aux_orbit_commute (fun i ↦ S i.succ) (fun i ↦ k i.succ)
         ((S 0)^[l 0]) (fun i ↦ (hS 0 i.succ).iterate_left (l 0))]
 
-/-- A joint orbit with only one nonzero coordinate is the corresponding
-iterate. -/
+/--
+A joint orbit with only one nonzero coordinate is the corresponding
+iterate.
+-/
 theorem aux_orbit_single {X : Type*} : ∀ {n : ℕ}
     (S : Fin n → X → X) (i : Fin n) (r : ℕ),
     aux_orbit S (Pi.single i r) = (S i)^[r]
@@ -211,8 +221,10 @@ theorem aux_orbit_coordinate {X : Type*} : ∀ {n : ℕ}
           simp [aux_coordinate]
         rw [htail, aux_orbit_coordinate]
 
-/-- Shifting a joint orbit in one coordinate amounts to composing with the
-corresponding transformation iterate. -/
+/--
+Shifting a joint orbit in one coordinate amounts to composing with the
+corresponding transformation iterate.
+-/
 theorem aux_orbit_add_coordinate {X : Type*} {n : ℕ}
     (S : Fin n → X → X) (hS : ∀ i j, Function.Commute (S i) (S j))
     (k : Fin n → ℕ) (i : Fin n) (m : ℕ) :
@@ -232,17 +244,21 @@ noncomputable def aux_discreteAverage {n : ℕ} (N : ℕ)
   fun k ↦ (N : ℝ)⁻¹ * ∑ m ∈ Finset.range N,
     ∏ i, F i (k + aux_coordinate i m)
 
-/-- The finite squared `ℓ²` jump energy of discrete multilinear averages on
-the forward lattice. -/
+/--
+The finite squared `ℓ²` jump energy of discrete multilinear averages on
+the forward lattice.
+-/
 noncomputable def aux_discreteJumpEnergy {n J : ℕ}
     (N : Fin (J + 1) → ℕ) (F : Fin n → (Fin n → ℕ) → ℝ) : ℝ≥0∞ :=
   ∑ j : Fin J, eLpNorm
     (fun k ↦ aux_discreteAverage (N j.succ) F k -
       aux_discreteAverage (N j.castSucc) F k) 2 Measure.count ^ 2
 
-/-- The discrete counterpart of the real-variable jump estimate.  The
+/--
+The discrete counterpart of the real-variable jump estimate.  The
 continuous-to-discrete part of Calderón transference establishes this
-auxiliary bound from `realVariableJumpBound`. -/
+auxiliary bound from `realVariableJumpBound`.
+-/
 def aux_discreteJumpBound {n : ℕ} (p : Fin n → ℝ≥0∞)
     (C : ℝ) (g : ℕ → ℝ) : Prop :=
   ∀ (J : ℕ), 0 < J → ∀ (N : Fin (J + 1) → ℕ),
@@ -255,9 +271,11 @@ def aux_discreteJumpBound {n : ℕ} (p : Fin n → ℝ≥0∞)
 
 /-! ### The continuous-to-discrete cuboid lift -/
 
-/-- We use raw coordinate vectors while constructing the cuboid lift.  The
+/--
+We use raw coordinate vectors while constructing the cuboid lift.  The
 `PiLp.volume_preserving_toLp` equivalence transports the resulting estimates
-to `RealVector n` below. -/
+to `ctRealVector n` below.
+-/
 abbrev aux_RVector (n : ℕ) := Fin n → ℝ
 
 /-- Integer lattice vectors indexing the cuboids. -/
@@ -273,9 +291,11 @@ def aux_translateAxisInt {n : ℕ} (x : aux_ZVector n) (i : Fin n)
     (s : ℤ) : aux_ZVector n :=
   fun j ↦ x j + if j = i then s else 0
 
-/-- The discrete multilinear average on the full integer lattice.  The
+/--
+The discrete multilinear average on the full integer lattice.  The
 cuboid lift is naturally indexed by this lattice; finite orbit data are
-extended by zero outside a positive box before applying it. -/
+extended by zero outside a positive box before applying it.
+-/
 noncomputable def aux_integerDiscreteAverage {n : ℕ} (N : ℕ)
     (F : Fin n → aux_ZVector n → ℝ) : aux_ZVector n → ℝ :=
   fun k ↦ (N : ℝ)⁻¹ * ∑ m ∈ Finset.range N,
@@ -287,8 +307,10 @@ noncomputable def aux_natToInt {n : ℕ}
   classical
   exact fun k ↦ if hk : ∀ i, 0 ≤ k i then F fun i ↦ (k i).toNat else 0
 
-/-- On the forward lattice, the integer-lattice average of the zero
-extension is the original discrete average. -/
+/--
+On the forward lattice, the integer-lattice average of the zero
+extension is the original discrete average.
+-/
 theorem aux_integerDiscreteAverage_natToInt {n : ℕ} (N : ℕ)
     (F : Fin n → (Fin n → ℕ) → ℝ) (k : Fin n → ℕ) :
     aux_integerDiscreteAverage N (fun i ↦ aux_natToInt (F i))
@@ -317,12 +339,14 @@ theorem aux_integerDiscreteAverage_natToInt {n : ℕ} (N : ℕ)
     omega
   · simp [aux_translateAxisInt, aux_coordinate, hji]
 
-/-- Rescaling the half-open unit-interval kernel by a positive integer gives
-the indicator of the corresponding half-open scale interval. -/
+/--
+Rescaling the half-open unit-interval kernel by a positive integer gives
+the indicator of the corresponding half-open scale interval.
+-/
 theorem aux_scaled_unitIntervalKernel {N : ℕ} (hN : 0 < N) (s : ℝ) :
-    (N : ℝ)⁻¹ * unitIntervalKernel ((N : ℝ)⁻¹ * s) =
+    (N : ℝ)⁻¹ * ctUnitIntervalKernel ((N : ℝ)⁻¹ * s) =
       (N : ℝ)⁻¹ * (Ico (0 : ℝ) N).indicator (fun _ ↦ (1 : ℝ)) s := by
-  unfold unitIntervalKernel
+  unfold ctUnitIntervalKernel
   by_cases hs : s ∈ Ico (0 : ℝ) N
   · have hNreal : 0 < (N : ℝ) := by exact_mod_cast hN
     have hs' : (N : ℝ)⁻¹ * s ∈ Ico (0 : ℝ) 1 := by
@@ -347,8 +371,10 @@ theorem aux_scaled_unitIntervalKernel {N : ℕ} (hN : 0 < N) (s : ℝ) :
         simpa using h
     simp [hs, hs']
 
-/-- A scaled half-open interval kernel converts a full integral into the
-corresponding scale-interval integral. -/
+/--
+A scaled half-open interval kernel converts a full integral into the
+corresponding scale-interval integral.
+-/
 theorem aux_integral_scaled_Ico_eq_setIntegral {N : ℕ} (P : ℝ → ℝ) :
     ∫ s : ℝ, ((N : ℝ)⁻¹ * (Ico (0 : ℝ) N).indicator (fun _ ↦ (1 : ℝ)) s) *
         P s =
@@ -370,8 +396,10 @@ theorem aux_integral_scaled_Ico_eq_setIntegral {N : ℕ} (P : ℝ → ℝ) :
     _ = _ := by
       rw [MeasureTheory.integral_indicator measurableSet_Ico]
 
-/-- The scaled kernel may be replaced by any pointwise equal integrand on
-its scale interval. -/
+/--
+The scaled kernel may be replaced by any pointwise equal integrand on
+its scale interval.
+-/
 theorem aux_integral_scaled_Ico_eq_of_pointwise {N : ℕ}
     (P Q : ℝ → ℝ) (hPQ : ∀ s, s ∈ Ico (0 : ℝ) N → P s = Q s) :
     ∫ s : ℝ, ((N : ℝ)⁻¹ * (Ico (0 : ℝ) N).indicator (fun _ ↦ (1 : ℝ)) s) *
@@ -383,10 +411,12 @@ theorem aux_integral_scaled_Ico_eq_of_pointwise {N : ℕ}
   filter_upwards [ae_restrict_mem measurableSet_Ico] with s hs
   exact hPQ s hs
 
-/-- The thin cuboid lift used for the continuous-to-discrete reduction.  The
+/--
+The thin cuboid lift used for the continuous-to-discrete reduction.  The
 `i`th coordinate has width `δ`, while every other coordinate has width `ε`.
 The choice `0 < ε < δ` and `ε + δ < 1` makes the translated cuboids from
-different lattice times disjoint. -/
+different lattice times disjoint.
+-/
 noncomputable def aux_cuboidEmbed {n : ℕ} (ε δ : ℝ) (i : Fin n)
     (a : aux_ZVector n → ℝ) (y : aux_RVector n) : ℝ :=
   if ∀ j,
@@ -406,9 +436,11 @@ theorem aux_floor_intCast_add_of_mem_Ico (z : ℤ) {r : ℝ}
   · norm_num
     linarith
 
-/-- On a common overlap interval, the `i`th cuboid lift recovers the
+/--
+On a common overlap interval, the `i`th cuboid lift recovers the
 corresponding discrete translate.  This is the exact pointwise
-continuous-to-discrete identity. -/
+continuous-to-discrete identity.
+-/
 theorem aux_cuboidEmbed_translateAxis_eq {n : ℕ} {ε δ : ℝ}
     (hε : ε < 1) (hεδ : ε + δ < 1) (i : Fin n)
     (a : aux_ZVector n → ℝ) (k : aux_ZVector n) (u : aux_RVector n)
@@ -460,8 +492,10 @@ theorem aux_cuboidEmbed_translateAxis_eq {n : ℕ} {ε δ : ℝ}
       rw [hfloor]
       simpa [aux_translateAxis, aux_translateAxisInt, hji] using hu j
 
-/-- If one parameter lies in every overlap interval, the product of cuboid
-lifts is exactly the corresponding diagonal discrete product. -/
+/--
+If one parameter lies in every overlap interval, the product of cuboid
+lifts is exactly the corresponding diagonal discrete product.
+-/
 theorem aux_cuboidEmbed_product_translateAxis_eq {n : ℕ} {ε δ : ℝ}
     (hε : ε < 1) (hεδ : ε + δ < 1)
     (a : Fin n → aux_ZVector n → ℝ) (k : aux_ZVector n)
@@ -475,8 +509,10 @@ theorem aux_cuboidEmbed_product_translateAxis_eq {n : ℕ} {ε δ : ℝ}
   intro i _
   exact aux_cuboidEmbed_translateAxis_eq hε hεδ i (a i) k u m s hu (hs i)
 
-/-- At a base point in the small cube, a cuboid lift is either its one
-discrete translate on an overlap interval, or it vanishes. -/
+/--
+At a base point in the small cube, a cuboid lift is either its one
+discrete translate on an overlap interval, or it vanishes.
+-/
 theorem aux_cuboidEmbed_translateAxis_exists_or_eq_zero {n : ℕ}
     {ε δ : ℝ} (hε : ε < 1) (hεδ : ε + δ < 1) (i : Fin n)
     (a : aux_ZVector n → ℝ) (k : aux_ZVector n) (u : aux_RVector n)
@@ -515,8 +551,10 @@ theorem aux_cuboidEmbed_translateAxis_exists_or_eq_zero {n : ℕ}
     simp only [Int.fract] at hcoordinate
     constructor <;> linarith [hcoordinate.1, hcoordinate.2]
 
-/-- Different coordinate overlap intervals cannot meet at distinct integer
-indices when their total width is less than one. -/
+/--
+Different coordinate overlap intervals cannot meet at distinct integer
+indices when their total width is less than one.
+-/
 theorem aux_overlap_index_eq {n : ℕ} {ε δ : ℝ}
     (hwidth : ε + δ < 1) (u : aux_RVector n)
     (hu : ∀ i, 0 ≤ u i ∧ u i < ε) (i j : Fin n) (s : ℝ)
@@ -538,8 +576,10 @@ theorem aux_overlap_index_eq {n : ℕ} {ε δ : ℝ}
     exact_mod_cast hlower
   omega
 
-/-- Outside the common overlap intervals, one cuboid factor vanishes and so
-does their product. -/
+/--
+Outside the common overlap intervals, one cuboid factor vanishes and so
+does their product.
+-/
 theorem aux_cuboidEmbed_product_eq_zero_of_no_common_overlap
     {n : ℕ} (hn : 0 < n) {ε δ : ℝ} (hε : ε < 1)
     (hwidth : ε + δ < 1) (a : Fin n → aux_ZVector n → ℝ)
@@ -572,18 +612,20 @@ theorem aux_cuboidEmbed_product_eq_zero_of_no_common_overlap
     · exact hno.2
   exact Finset.prod_eq_zero_iff.mpr ⟨i, Finset.mem_univ i, hzero⟩
 
-/-- The raw-coordinate translation agrees with translation by
-`coordinateAxis` after passing to Euclidean space. -/
+/--
+The raw-coordinate translation agrees with translation by
+`ctCoordinateAxis` after passing to Euclidean space.
+-/
 theorem aux_toLp_translateAxis {n : ℕ} (x : aux_RVector n)
     (i : Fin n) (s : ℝ) :
     WithLp.toLp 2 (aux_translateAxis x i s) =
-      WithLp.toLp 2 x + s • coordinateAxis i := by
+      WithLp.toLp 2 x + s • ctCoordinateAxis i := by
   ext j
-  simp [aux_translateAxis, coordinateAxis]
+  simp [aux_translateAxis, ctCoordinateAxis]
 
-/-- Lift a raw-coordinate function to `RealVector n`. -/
+/-- Lift a raw-coordinate function to `ctRealVector n`. -/
 noncomputable def aux_liftRaw {n : ℕ}
-    (F : aux_RVector n → ℝ) : RealVector n → ℝ :=
+    (F : aux_RVector n → ℝ) : ctRealVector n → ℝ :=
   fun x ↦ F fun j ↦ x j
 
 theorem aux_liftRaw_toLp {n : ℕ} (F : aux_RVector n → ℝ)
@@ -591,21 +633,25 @@ theorem aux_liftRaw_toLp {n : ℕ} (F : aux_RVector n → ℝ)
     aux_liftRaw F (WithLp.toLp 2 x) = F x :=
   rfl
 
-/-- The cuboid lifts have the expected integrand after passing from raw
-coordinates to `RealVector n`. -/
+/--
+The cuboid lifts have the expected integrand after passing from raw
+coordinates to `ctRealVector n`.
+-/
 theorem aux_cuboidEmbed_integrand_toLp {n : ℕ} {ε δ : ℝ}
     (a : Fin n → aux_ZVector n → ℝ) (k : aux_ZVector n)
     (u : aux_RVector n) (s : ℝ) :
     (∏ i, aux_liftRaw (aux_cuboidEmbed ε δ i (a i))
-        (WithLp.toLp 2 (fun j ↦ (k j : ℝ) + u j) + s • coordinateAxis i)) =
+        (WithLp.toLp 2 (fun j ↦ (k j : ℝ) + u j) + s • ctCoordinateAxis i)) =
       ∏ i, aux_cuboidEmbed ε δ i (a i)
         (aux_translateAxis (fun j ↦ (k j : ℝ) + u j) i s) := by
   apply Finset.prod_congr rfl
   intro i _
   rw [← aux_toLp_translateAxis, aux_liftRaw_toLp]
 
-/-- The common time interval on which all cuboid factors select the same
-lattice time. -/
+/--
+The common time interval on which all cuboid factors select the same
+lattice time.
+-/
 def aux_commonOverlap {n : ℕ} (ε δ : ℝ) (u : aux_RVector n)
     (m : ℕ) (s : ℝ) : Prop :=
   ∀ i, ε - u i ≤ s - (m : ℝ) ∧ s - (m : ℝ) < ε + δ - u i
@@ -706,8 +752,10 @@ theorem aux_overlapUpper_eq_add_overlapUpper_zero {n : ℕ}
   simpa [sub_eq_add_neg, add_assoc] using
     (aux_add_inf' Finset.univ hne (fun i ↦ ε + δ - u i) (m : ℝ)).symm
 
-/-- The length of a common overlap interval is independent of its lattice
-time. -/
+/--
+The length of a common overlap interval is independent of its lattice
+time.
+-/
 theorem aux_overlapWidth_invariant {n : ℕ} (hn : 0 < n)
     (ε δ : ℝ) (u : aux_RVector n) (m : ℕ) :
     aux_overlapUpper hn ε δ u m - aux_overlapLower hn ε u m =
@@ -747,8 +795,10 @@ theorem aux_overlapWidth_lower_bound {n : ℕ} (hn : 0 < n)
   norm_num only [Nat.cast_zero, zero_add] at hsup hinf ⊢
   linarith
 
-/-- Every overlap indexed by `range N` lies inside the scale interval
-`[0,N)`. -/
+/--
+Every overlap indexed by `range N` lies inside the scale interval
+`[0,N)`.
+-/
 theorem aux_commonOverlapSet_subset_scale {n : ℕ} (hn : 0 < n)
     {ε δ : ℝ} (hwidth : ε + δ < 1) (u : aux_RVector n)
     (hu : ∀ i, 0 ≤ u i ∧ u i < ε) (N : ℕ) (q : Fin N) :
@@ -776,8 +826,10 @@ noncomputable def aux_overlapContribution {n : ℕ} (ε δ : ℝ)
     ∏ i, a i (aux_translateAxisInt k i (q : ℤ))
   else 0
 
-/-- An overlap contribution is the indicator of its common half-open
-interval times its diagonal lattice coefficient. -/
+/--
+An overlap contribution is the indicator of its common half-open
+interval times its diagonal lattice coefficient.
+-/
 theorem aux_overlapContribution_eq_indicator {n : ℕ} (hn : 0 < n)
     (ε δ : ℝ) (a : Fin n → aux_ZVector n → ℝ) (k : aux_ZVector n)
     (u : aux_RVector n) (q : ℕ) (s : ℝ) :
@@ -803,8 +855,10 @@ theorem aux_integral_indicator_Ico_const {a b c : ℝ} (hab : a ≤ b) :
   rw [MeasureTheory.integral_const]
   simp [hab]
 
-/-- The full scale integral of the finite overlap expansion factors as the
-common overlap width times the discrete diagonal sum. -/
+/--
+The full scale integral of the finite overlap expansion factors as the
+common overlap width times the discrete diagonal sum.
+-/
 theorem aux_integral_sum_overlapContribution {n : ℕ} (hn : 0 < n)
     {ε δ : ℝ} (hεδ : ε ≤ δ) (a : Fin n → aux_ZVector n → ℝ)
     (k : aux_ZVector n) (u : aux_RVector n) (N : ℕ)
@@ -846,8 +900,10 @@ theorem aux_integral_sum_overlapContribution {n : ℕ} (hn : 0 < n)
     rw [MeasureTheory.integrable_indicator_iff measurableSet_Ico]
     exact MeasureTheory.integrableOn_const measure_Ico_lt_top.ne
 
-/-- Restricting the finite overlap expansion to its scale interval does not
-change its integral. -/
+/--
+Restricting the finite overlap expansion to its scale interval does not
+change its integral.
+-/
 theorem aux_setIntegral_sum_overlapContribution {n : ℕ}
     (hn : 0 < n) {ε δ : ℝ} (hεδ : ε ≤ δ) (hwidth : ε + δ < 1)
     (a : Fin n → aux_ZVector n → ℝ) (k : aux_ZVector n)
@@ -879,8 +935,10 @@ theorem aux_setIntegral_sum_overlapContribution {n : ℕ}
         simp [hs, hzero]
     _ = _ := aux_integral_sum_overlapContribution hn hεδ a k u N hu
 
-/-- A common overlap contributing to the interval `[0,N)` has an index in
-`range N`.  The open upper faces of the cuboids remove endpoint terms. -/
+/--
+A common overlap contributing to the interval `[0,N)` has an index in
+`range N`.  The open upper faces of the cuboids remove endpoint terms.
+-/
 theorem aux_commonOverlap_index_mem_range {n : ℕ} (hn : 0 < n)
     {ε δ : ℝ} (hwidth : ε + δ < 1) (u : aux_RVector n)
     (hu : ∀ i, 0 ≤ u i ∧ u i < ε) (N : ℕ) {s : ℝ}
@@ -911,8 +969,10 @@ theorem aux_commonOverlap_index_mem_range {n : ℕ} (hn : 0 < n)
   refine ⟨⟨m.toNat, htoNat⟩, ?_⟩
   simp only [Int.toNat_of_nonneg hmnonneg]
 
-/-- On `[0,N)`, the cuboid product is a finite sum of the diagonal discrete
-products over its common overlap intervals. -/
+/--
+On `[0,N)`, the cuboid product is a finite sum of the diagonal discrete
+products over its common overlap intervals.
+-/
 theorem aux_cuboidEmbed_product_eq_overlapSum {n : ℕ}
     (hn : 0 < n) {ε δ : ℝ} (hε : ε < 1)
     (hwidth : ε + δ < 1) (a : Fin n → aux_ZVector n → ℝ)
@@ -982,28 +1042,30 @@ theorem aux_cuboidEmbed_product_eq_overlapSum {n : ℕ}
     intro i
     simpa only [Int.cast_natCast] using hq i
 
-/-- At a point of the base cuboid, the rescaled continuous average of the
+/--
+At a point of the base cuboid, the rescaled continuous average of the
 cuboid lift is exactly the common-overlap width times the integer-lattice
-discrete average. -/
+discrete average.
+-/
 theorem aux_twistedAverageAtScale_cuboidLift_eq {n : ℕ}
     (hn : 0 < n) {ε δ : ℝ} (hε : ε < 1) (hεδ : ε ≤ δ)
     (hwidth : ε + δ < 1) (N : ℕ) (hN : 0 < N)
     (a : Fin n → aux_ZVector n → ℝ) (k : aux_ZVector n)
     (u : aux_RVector n) (hu : ∀ i, 0 ≤ u i ∧ u i < ε) :
-    twistedAverageAtScale (N : ℝ) unitIntervalKernel
+    ctTwistedAverageAtScale (N : ℝ) ctUnitIntervalKernel
         (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i)))
         (WithLp.toLp 2 (fun j ↦ (k j : ℝ) + u j)) =
       aux_overlapWidth hn ε δ u * aux_integerDiscreteAverage N a k := by
   let P : ℝ → ℝ := fun s ↦
     ∏ i, aux_liftRaw (aux_cuboidEmbed ε δ i (a i))
-      (WithLp.toLp 2 (fun j ↦ (k j : ℝ) + u j) + s • coordinateAxis i)
+      (WithLp.toLp 2 (fun j ↦ (k j : ℝ) + u j) + s • ctCoordinateAxis i)
   let Q : ℝ → ℝ := fun s ↦ ∑ q : Fin N,
     aux_overlapContribution ε δ a k u q.val s
-  unfold twistedAverageAtScale
-  unfold aux_twistedAverageAtScale aux_twistedAverage
-  change ∫ s : ℝ, (N : ℝ)⁻¹ * unitIntervalKernel ((N : ℝ)⁻¹ * s) * P s = _
+  unfold ctTwistedAverageAtScale
+  unfold aux_ct_twistedAverageAtScale aux_ct_twistedAverage
+  change ∫ s : ℝ, (N : ℝ)⁻¹ * ctUnitIntervalKernel ((N : ℝ)⁻¹ * s) * P s = _
   calc
-    ∫ s : ℝ, (N : ℝ)⁻¹ * unitIntervalKernel ((N : ℝ)⁻¹ * s) * P s =
+    ∫ s : ℝ, (N : ℝ)⁻¹ * ctUnitIntervalKernel ((N : ℝ)⁻¹ * s) * P s =
         ∫ s : ℝ, ((N : ℝ)⁻¹ * (Ico (0 : ℝ) N).indicator
           (fun _ ↦ (1 : ℝ)) s) * P s := by
       apply MeasureTheory.integral_congr_ae
@@ -1025,8 +1087,10 @@ theorem aux_twistedAverageAtScale_cuboidLift_eq {n : ℕ}
         (fun m ↦ ∏ i, a i (aux_translateAxisInt k i (m : ℤ))) N]
       ring
 
-/-- The discrete data obtained by sampling an ergodic system along the joint
-forward orbit based at `x`. -/
+/--
+The discrete data obtained by sampling an ergodic system along the joint
+forward orbit based at `x`.
+-/
 def aux_orbitFunction {X : Type*} [MeasurableSpace X]
     {μ : Measure X} {n : ℕ} (S : ErgodicSystem X μ n)
     (f : Fin n → X → ℝ) (x : X) :
@@ -1047,8 +1111,10 @@ theorem aux_orbit_add_coordinate_apply {X : Type*}
     aux_orbit_coordinate]
   rfl
 
-/-- The exact finite identity at the core of the ergodic-to-discrete
-reduction. -/
+/--
+The exact finite identity at the core of the ergodic-to-discrete
+reduction.
+-/
 theorem aux_discreteAverage_orbitFunction {X : Type*}
     [MeasurableSpace X] {μ : Measure X} {n : ℕ}
     (S : ErgodicSystem X μ n) (f : Fin n → X → ℝ) (x : X)
@@ -1062,8 +1128,10 @@ theorem aux_discreteAverage_orbitFunction {X : Type*}
   intro i hi
   exact congrArg (f i) (aux_orbit_add_coordinate_apply S k i m x)
 
-/-- The discrete jump energy of orbit data is exactly the lattice sum of the
-corresponding ergodic jump functions. -/
+/--
+The discrete jump energy of orbit data is exactly the lattice sum of the
+corresponding ergodic jump functions.
+-/
 theorem aux_discreteJumpEnergy_orbitFunction {X : Type*}
     [MeasurableSpace X] {μ : Measure X} {n J : ℕ}
     (S : ErgodicSystem X μ n) (N : Fin (J + 1) → ℕ)
@@ -1083,8 +1151,10 @@ theorem aux_discreteJumpEnergy_orbitFunction {X : Type*}
   rw [aux_discreteAverage_orbitFunction]
   rw [aux_discreteAverage_orbitFunction]
 
-/-- A nonnegative measurable integral is invariant under a joint forward
-orbit. -/
+/--
+A nonnegative measurable integral is invariant under a joint forward
+orbit.
+-/
 theorem aux_lintegral_orbit_comp {X : Type*} [MeasurableSpace X]
     {μ : Measure X} {n : ℕ} (S : ErgodicSystem X μ n) (k : Fin n → ℕ)
     {F : X → ℝ≥0∞} (hF : Measurable F) :
@@ -1122,9 +1192,9 @@ def realVariableJumpBound {n : ℕ} (p : Fin n → ℝ≥0∞)
     (C : ℝ) (g : ℕ → ℝ) : Prop :=
   ∀ (J : ℕ), 0 < J → ∀ (t : Fin (J + 1) → ℝ),
     StrictMono t → (∀ j, 0 < t j) →
-      ∀ f : Fin n → RealVector n → ℝ,
+      ∀ f : Fin n → ctRealVector n → ℝ,
         (∀ i, MemLp (f i) (p i) volume) →
-          endpointEnergy J t unitIntervalKernel f ≤
+          ctEndpointEnergy J t ctUnitIntervalKernel f ≤
             ENNReal.ofReal C * ENNReal.ofReal (g J) *
               ∏ i, eLpNorm (f i) (p i) volume ^ 2
 
@@ -1139,15 +1209,19 @@ def realErgodicJumpBound {n : ℕ} (p : Fin n → ℝ≥0∞)
         ENNReal.ofReal C * ENNReal.ofReal (g J) *
           ∏ i, eLpNorm (f i) (p i) μ ^ 2
 
-/-- The application-facing name of the copied real-variable hypothesis from
-`RealToErgodic`. -/
-abbrev aux_realVariableJumpBound {n : ℕ} (p : Fin n → ℝ≥0∞)
+/--
+The application-facing name of the copied real-variable hypothesis from
+`RealToErgodic`.
+-/
+abbrev aux_ct_realVariableJumpBound {n : ℕ} (p : Fin n → ℝ≥0∞)
     (C : ℝ) (g : ℕ → ℝ) : Prop :=
   realVariableJumpBound p C g
 
-/-- The application-facing name of the copied ergodic conclusion from
-`RealToErgodic`. -/
-abbrev aux_realErgodicJumpBound.{v} {n : ℕ} (p : Fin n → ℝ≥0∞)
+/--
+The application-facing name of the copied ergodic conclusion from
+`RealToErgodic`.
+-/
+abbrev aux_ct_realErgodicJumpBound.{v} {n : ℕ} (p : Fin n → ℝ≥0∞)
     (C : ℝ) (g : ℕ → ℝ) : Prop :=
   realErgodicJumpBound.{v} p C g
 
@@ -1187,8 +1261,10 @@ def latticeAxisCuboid {n : ℕ} (ε δ : ℝ) (i : Fin n)
     (k : ZVector n) : Set (RVector n) :=
   axisCuboid ε δ i fun j ↦ (k j : ℝ)
 
-/-- The floor description of the cuboid lift agrees with the corresponding
-half-open translated cuboid. -/
+/--
+The floor description of the cuboid lift agrees with the corresponding
+half-open translated cuboid.
+-/
 theorem mem_latticeAxisCuboid_iff {n : ℕ} {ε δ : ℝ}
     (hε0 : 0 ≤ ε) (hε : ε < 1) (hεδ : ε + δ < 1)
     (i : Fin n) (k : ZVector n) (y : RVector n) :
@@ -1398,8 +1474,10 @@ def finiteLatticeStep {n : ℕ} (ε δ : ℝ) (i : Fin n)
     (A : Finset (ZVector n)) (a : ZVector n → ℝ) : RVector n → ℝ :=
   finiteStep A (latticeAxisCuboid ε δ i) a
 
-/-- A finite-support floor cuboid lift is a finite sum of disjoint
-half-open cuboid steps. -/
+/--
+A finite-support floor cuboid lift is a finite sum of disjoint
+half-open cuboid steps.
+-/
 theorem cuboidEmbed_eq_finiteLatticeStep_apply {n : ℕ}
     {ε δ : ℝ} (hε0 : 0 ≤ ε) (hε : ε < 1) (hεδ : ε + δ < 1)
     (i : Fin n) (A : Finset (ZVector n)) (a : ZVector n → ℝ)
@@ -1497,8 +1575,10 @@ theorem lintegral_count_enorm_rpow_eq_finset {κ : Type*}
     rw [hsupport k hk]
     simp [ENNReal.zero_rpow_of_pos hq]
 
-/-- The cuboid lift has the original counting norm times its box-volume
-factor. -/
+/--
+The cuboid lift has the original counting norm times its box-volume
+factor.
+-/
 theorem eLpNorm_cuboidEmbed_eq_count_mul {n : ℕ}
     {ε δ : ℝ} (hε0 : 0 ≤ ε) (hε : ε < 1) (hεδ : ε + δ < 1)
     (i : Fin n) (A : Finset (ZVector n)) (a : ZVector n → ℝ)
@@ -1563,9 +1643,11 @@ theorem eLpNorm_liftRaw_eq {n : ℕ} (F : RVector n → ℝ)
   rw [hcomp] at h
   exact h.symm
 
-/-- The coordinate `WithLp` equivalence preserves `eLpNorm` without an
+/--
+The coordinate `WithLp` equivalence preserves `eLpNorm` without an
 additional measurability assumption.  This form is useful for jump
-functions, whose measurability is not part of the real-variable hypothesis. -/
+functions, whose measurability is not part of the real-variable hypothesis.
+-/
 theorem eLpNorm_liftRaw_eq_any {n : ℕ} (F : RVector n → ℝ)
     (p : ℝ≥0∞) (hp0 : p ≠ 0) (hptop : p ≠ ∞) :
     eLpNorm (aux_liftRaw F) p volume = eLpNorm F p volume := by
@@ -1574,7 +1656,7 @@ theorem eLpNorm_liftRaw_eq_any {n : ℕ} (F : RVector n → ℝ)
   congr 1
   have h := (PiLp.volume_preserving_toLp (Fin n)).lintegral_comp_emb
     (MeasurableEquiv.toLp 2 (Fin n → ℝ)).measurableEmbedding
-    (fun x : RealVector n ↦ ‖aux_liftRaw F x‖ₑ ^ p.toReal)
+    (fun x : ctRealVector n ↦ ‖aux_liftRaw F x‖ₑ ^ p.toReal)
   have hcomp : (fun x : Fin n → ℝ ↦
       ‖aux_liftRaw F (WithLp.toLp 2 x)‖ₑ ^ p.toReal) =
       fun x ↦ ‖F x‖ₑ ^ p.toReal := by
@@ -1583,10 +1665,12 @@ theorem eLpNorm_liftRaw_eq_any {n : ℕ} (F : RVector n → ℝ)
   rw [hcomp] at h
   exact h.symm
 
-/-- Pulling a function back along the coordinate `WithLp` equivalence leaves
-its `eLpNorm` unchanged, without a measurability side condition. -/
+/--
+Pulling a function back along the coordinate `WithLp` equivalence leaves
+its `eLpNorm` unchanged, without a measurability side condition.
+-/
 theorem eLpNorm_toLp_comp_eq {n : ℕ} {E : Type*}
-    [TopologicalSpace E] [ENorm E] (F : RealVector n → E)
+    [TopologicalSpace E] [ENorm E] (F : ctRealVector n → E)
     (p : ℝ≥0∞) (hp0 : p ≠ 0) (hptop : p ≠ ∞) :
     eLpNorm (fun x : RVector n ↦ F (WithLp.toLp 2 x)) p volume =
       eLpNorm F p volume := by
@@ -1597,8 +1681,10 @@ theorem eLpNorm_toLp_comp_eq {n : ℕ} {E : Type*}
     (MeasurableEquiv.toLp 2 (Fin n → ℝ)).measurableEmbedding
     (fun x ↦ ‖F x‖ₑ ^ p.toReal)
 
-/-- The Euclidean cuboid lift has the corresponding counting norm times its
-fixed box-volume factor. -/
+/--
+The Euclidean cuboid lift has the corresponding counting norm times its
+fixed box-volume factor.
+-/
 theorem eLpNorm_liftedCuboidEmbed_eq_count_mul {n : ℕ}
     {ε δ : ℝ} (hε0 : 0 ≤ ε) (hε : ε < 1) (hεδ : ε + δ < 1)
     (i : Fin n) (A : Finset (ZVector n)) (a : ZVector n → ℝ)
@@ -1770,8 +1856,10 @@ theorem count_energy_mul_le_eLpNorm_two_sq_of_cube_dom {n : ℕ}
   convert h using 1
   norm_num [ENNReal.rpow_natCast]
 
-/-- A nonnegative lower coefficient can be moved through a real scalar
-multiple inside the extended norm. -/
+/--
+A nonnegative lower coefficient can be moved through a real scalar
+multiple inside the extended norm.
+-/
 theorem enorm_mul_le_enorm_mul_of_nonneg_le {c w h : ℝ}
     (hc : 0 ≤ c) (hcw : c ≤ w) :
     ‖c * h‖ₑ ≤ ‖w * h‖ₑ := by
@@ -1781,8 +1869,10 @@ theorem enorm_mul_le_enorm_mul_of_nonneg_le {c w h : ℝ}
     abs_of_nonneg (le_trans hc hcw)]
   exact mul_le_mul_of_nonneg_right hcw (abs_nonneg h)
 
-/-- The overlap formula gives the pointwise endpoint-jump domination needed
-for the finite base-cube energy comparison. -/
+/--
+The overlap formula gives the pointwise endpoint-jump domination needed
+for the finite base-cube energy comparison.
+-/
 theorem endpointJump_cube_dom_of_overlap_formula {n J : ℕ}
     {ε δ : ℝ} (hεδ : ε ≤ δ)
     (N : Fin (J + 1) → ℕ) (T : ℕ → RVector n → ℝ)
@@ -1865,8 +1955,10 @@ theorem finite_jump_energy_lower_of_cube_dom {n J : ℕ}
           exact count_energy_mul_le_eLpNorm_two_sq_of_cube_dom hε A (d j) (G j)
             (hsupport j) (hdom j)
 
-/-- The exact cuboid-overlap formula controls every finite portion of the
-integer-lattice jump energy by the corresponding continuous jump energy. -/
+/--
+The exact cuboid-overlap formula controls every finite portion of the
+integer-lattice jump energy by the corresponding continuous jump energy.
+-/
 theorem finite_jump_energy_lower_on_of_overlap_formula {n J : ℕ}
     (hn : 0 < n) {ε δ : ℝ} (hε : ε < 1) (hεδ : ε ≤ δ)
     (hwidth : ε + δ < 1) (N : Fin (J + 1) → ℕ)
@@ -1877,10 +1969,10 @@ theorem finite_jump_energy_lower_on_of_overlap_formula {n J : ℕ}
           ‖aux_integerDiscreteAverage (N j.succ) a k -
             aux_integerDiscreteAverage (N j.castSucc) a k‖ₑ ^ (2 : ℝ) ≤
       ∑ j : Fin J, eLpNorm
-        (fun x ↦ twistedAverageAtScale (N j.succ : ℝ) unitIntervalKernel
+        (fun x ↦ ctTwistedAverageAtScale (N j.succ : ℝ) ctUnitIntervalKernel
             (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i)))
             (WithLp.toLp 2 x) -
-          twistedAverageAtScale (N j.castSucc : ℝ) unitIntervalKernel
+          ctTwistedAverageAtScale (N j.castSucc : ℝ) ctUnitIntervalKernel
             (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i)))
             (WithLp.toLp 2 x)) 2 volume ^ 2 := by
   let d : Fin J → ZVector n → ℝ := fun j k ↦
@@ -1889,10 +1981,10 @@ theorem finite_jump_energy_lower_on_of_overlap_formula {n J : ℕ}
         aux_integerDiscreteAverage (N j.castSucc) a k
     else 0
   let G : Fin J → RVector n → ℝ := fun j x ↦
-    twistedAverageAtScale (N j.succ : ℝ) unitIntervalKernel
+    ctTwistedAverageAtScale (N j.succ : ℝ) ctUnitIntervalKernel
         (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i)))
         (WithLp.toLp 2 x) -
-      twistedAverageAtScale (N j.castSucc : ℝ) unitIntervalKernel
+      ctTwistedAverageAtScale (N j.castSucc : ℝ) ctUnitIntervalKernel
         (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i)))
         (WithLp.toLp 2 x)
   have hlower := finite_jump_energy_lower_of_cube_dom (n := n) (J := J)
@@ -1905,7 +1997,7 @@ theorem finite_jump_energy_lower_on_of_overlap_formula {n J : ℕ}
       dsimp [d, G]
       simp only [if_pos hk]
       apply endpointJump_cube_dom_of_overlap_formula hεδ N
-        (fun M x ↦ twistedAverageAtScale (M : ℝ) unitIntervalKernel
+        (fun M x ↦ ctTwistedAverageAtScale (M : ℝ) ctUnitIntervalKernel
           (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i)))
           (WithLp.toLp 2 x))
         (fun M k ↦ aux_integerDiscreteAverage M a k)
@@ -1931,29 +2023,31 @@ theorem finite_jump_energy_lower_on_of_overlap_formula {n J : ℕ}
   simpa [G] using hlower
 
 set_option maxHeartbeats 800000 in
--- Expanding the two `endpointEnergy` expressions exposes nested Bochner
+-- Expanding the two `ctEndpointEnergy` expressions exposes nested Bochner
 -- integrals and exceeds Lean's default elaboration budget.
-/-- Re-express the raw-coordinate jump energy used by the cuboid calculation
-as the `endpointEnergy` of its Euclidean lifts. -/
+/--
+Re-express the raw-coordinate jump energy used by the cuboid calculation
+as the `ctEndpointEnergy` of its Euclidean lifts.
+-/
 theorem raw_cuboid_jumpEnergy_eq_endpointEnergy {n J : ℕ}
     (N : Fin (J + 1) → ℕ) (a : Fin n → ZVector n → ℝ)
     (ε δ : ℝ) :
     (∑ j : Fin J, eLpNorm
-      (fun x ↦ twistedAverageAtScale (N j.succ : ℝ) unitIntervalKernel
+      (fun x ↦ ctTwistedAverageAtScale (N j.succ : ℝ) ctUnitIntervalKernel
           (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i)))
           (WithLp.toLp 2 x) -
-        twistedAverageAtScale (N j.castSucc : ℝ) unitIntervalKernel
+        ctTwistedAverageAtScale (N j.castSucc : ℝ) ctUnitIntervalKernel
           (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i)))
           (WithLp.toLp 2 x)) 2 volume ^ 2) =
-      endpointEnergy J (fun q ↦ (N q : ℝ)) unitIntervalKernel
+      ctEndpointEnergy J (fun q ↦ (N q : ℝ)) ctUnitIntervalKernel
         (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i))) := by
-  unfold endpointEnergy
+  unfold ctEndpointEnergy
   apply Finset.sum_congr rfl
   intro j hj
-  let H : RealVector n → ℝ := fun x ↦
-    twistedAverageAtScale (N j.succ : ℝ) unitIntervalKernel
+  let H : ctRealVector n → ℝ := fun x ↦
+    ctTwistedAverageAtScale (N j.succ : ℝ) ctUnitIntervalKernel
         (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i))) x -
-      twistedAverageAtScale (N j.castSucc : ℝ) unitIntervalKernel
+      ctTwistedAverageAtScale (N j.castSucc : ℝ) ctUnitIntervalKernel
         (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i))) x
   change eLpNorm (fun x : RVector n ↦ H (WithLp.toLp 2 x)) 2 volume ^ 2 =
     eLpNorm H 2 volume ^ 2
@@ -2041,8 +2135,10 @@ noncomputable def aux_truncate {n : ℕ} (A : Finset (Fin n → ℕ))
     (F : (Fin n → ℕ) → ℝ) : (Fin n → ℕ) → ℝ :=
   fun k ↦ if k ∈ A then F k else 0
 
-/-- The finite set of all sites sampled by averages of length at most `L` at
-points in `B`. -/
+/--
+The finite set of all sites sampled by averages of length at most `L` at
+points in `B`.
+-/
 noncomputable def aux_localInputSupport {n : ℕ}
     (B : Finset (Fin n → ℕ)) (L : ℕ) : Finset (Fin n → ℕ) :=
   B.biUnion fun k ↦
@@ -2083,8 +2179,10 @@ theorem aux_discreteAverage_congr_on {n : ℕ} (N : ℕ)
   intro i hi
   exact h i m hm
 
-/-- Truncation to the sites relevant for a finite output set preserves all
-averages whose scale does not exceed the chosen cutoff. -/
+/--
+Truncation to the sites relevant for a finite output set preserves all
+averages whose scale does not exceed the chosen cutoff.
+-/
 theorem aux_discreteAverage_truncate_eq_of_mem {n : ℕ}
     {B : Finset (Fin n → ℕ)} {L N : ℕ} (hNL : N ≤ L)
     (F : Fin n → (Fin n → ℕ) → ℝ) {k : Fin n → ℕ} (hk : k ∈ B) :
@@ -2124,7 +2222,7 @@ theorem aux_finite_forward_jump_energy_lower {n J : ℕ}
         ∑ j : Fin J, ∑ k ∈ A,
           ‖aux_discreteAverage (N j.succ) F k -
             aux_discreteAverage (N j.castSucc) F k‖ₑ ^ (2 : ℝ) ≤
-      endpointEnergy J (fun q ↦ (N q : ℝ)) unitIntervalKernel
+      ctEndpointEnergy J (fun q ↦ (N q : ℝ)) ctUnitIntervalKernel
         (fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i
           (aux_natToInt (aux_truncate
             (aux_localInputSupport A (N (Fin.last J))) (F i))))) := by
@@ -2242,9 +2340,11 @@ theorem aux_finite_continuous_to_discrete_constant_bridge {n : ℕ}
 set_option maxHeartbeats 800000 in
 -- The local cuboid lift carries several nested finite sums through the
 -- real-variable endpoint estimate.
-/-- The continuous real-variable hypothesis bounds every finite portion of a
+/--
+The continuous real-variable hypothesis bounds every finite portion of a
 forward-lattice jump sum.  The data are first truncated only at sites read by
-the finitely many output points under consideration. -/
+the finitely many output points under consideration.
+-/
 theorem aux_finite_forward_jump_bound_of_realVariable {n J : ℕ}
     (hn : 0 < n) (p : Fin n → ℝ≥0∞) (C : ℝ) (g : ℕ → ℝ)
     (hreal : realVariableJumpBound p C g) (hJ : 0 < J)
@@ -2264,13 +2364,13 @@ theorem aux_finite_forward_jump_bound_of_realVariable {n J : ℕ}
   let B : Finset (Fin n → ℕ) := aux_localInputSupport A L
   let F' : Fin n → (Fin n → ℕ) → ℝ := fun i ↦ aux_truncate B (F i)
   let a : Fin n → aux_ZVector n → ℝ := fun i ↦ aux_natToInt (F' i)
-  let f : Fin n → RealVector n → ℝ :=
+  let f : Fin n → ctRealVector n → ℝ :=
     fun i ↦ aux_liftRaw (aux_cuboidEmbed ε δ i (a i))
   let D : ℝ≥0∞ := ∑ j : Fin J, ∑ k ∈ A,
     ‖aux_discreteAverage (N j.succ) F k -
       aux_discreteAverage (N j.castSucc) F k‖ₑ ^ (2 : ℝ)
-  let E : ℝ≥0∞ := endpointEnergy J (fun q ↦ (N q : ℝ))
-    unitIntervalKernel f
+  let E : ℝ≥0∞ := ctEndpointEnergy J (fun q ↦ (N q : ℝ))
+    ctUnitIntervalKernel f
   have hε0 : 0 ≤ ε := by dsimp [ε]; norm_num
   have hε : ε < 1 := by dsimp [ε]; norm_num
   have hεδ : ε ≤ δ := by dsimp [ε, δ]; norm_num
@@ -2355,9 +2455,11 @@ theorem card_box_double (n M : ℕ) :
   rw [card_box, card_box]
   rw [show M + M = 2 * M by omega, Nat.mul_pow]
 
-/-- Cancels the inner-box cardinality after enlarging a side length from
+/--
+Cancels the inner-box cardinality after enlarging a side length from
 `M` to `2M`.  This is the sole cardinality loss in the finite-box
-ergodic-to-discrete reduction. -/
+ergodic-to-discrete reduction.
+-/
 theorem cancel_box_ratio {n M : ℕ} (hM : 0 < M)
     {E A P : ℝ≥0∞}
     (h : ((box n M).card : ℝ≥0∞) * E ≤
@@ -2623,8 +2725,10 @@ theorem lintegral_finite_orbit_sum
   · intro j _
     simpa only [Finset.sum_fn] using Finset.aemeasurable_sum B (hmeas j)
 
-/-- Converts a pointwise finite-box lower bound into the integrated lower
-bound required by the transference assembly step. -/
+/--
+Converts a pointwise finite-box lower bound into the integrated lower
+bound required by the transference assembly step.
+-/
 theorem finite_box_orbit_lower_bound
     {X κ : Type*} [MeasurableSpace X] {μ : Measure X}
     (B : Finset κ) (T : κ → X → X)
@@ -2649,9 +2753,11 @@ theorem finite_box_orbit_lower_bound
       (lintegral_finite_orbit_sum μ B T hT d hd).symm
     _ ≤ ∫⁻ x, D x ∂μ := lintegral_mono hpoint
 
-/-- Generic finite-box ergodic-to-discrete transfer.  The input `hpoint` is
+/--
+Generic finite-box ergodic-to-discrete transfer.  The input `hpoint` is
 the local discrete-energy lower bound, `hdiscrete` is the discrete estimate,
-and `hright` is the finite-box Hölder estimate for its norm product. -/
+and `hright` is the finite-box Hölder estimate for its norm product.
+-/
 theorem finite_box_ergodic_to_discrete
     {X κ : Type*} [MeasurableSpace X] {μ : Measure X}
     (B B' : Finset κ) (T : κ → X → X)
@@ -2700,9 +2806,11 @@ theorem holder_exponents_of_inverse_sum {n : ℕ} (p : Fin n → ℝ≥0∞)
         ring
       _ = 1 := by rw [hsum]; norm_num
 
-/-- Measurability of the discrete norm product for finite orbit truncations.
+/--
+Measurability of the discrete norm product for finite orbit truncations.
 The pointwise norm formula is the same one used in the finite-box Hölder
-estimate. -/
+estimate.
+-/
 theorem aemeasurable_truncOrbit_normProduct
     {X κ : Type*} [MeasurableSpace X] [MeasurableSpace κ]
     [Countable κ] [MeasurableSingletonClass κ] {μ : Measure X}
@@ -2726,16 +2834,20 @@ theorem aemeasurable_truncOrbit_normProduct
       exact ENNReal.continuous_rpow_const.aemeasurable.comp_aemeasurable
         (aemeasurable_orbitPowerSum B T hT (f i) (hf i) (p i).toReal))
 
-/-- The last member of a strictly increasing finite scale tuple bounds all
-of its scales. -/
+/--
+The last member of a strictly increasing finite scale tuple bounds all
+of its scales.
+-/
 theorem scale_le_last {J : ℕ} (N : Fin (J + 1) → ℕ)
     (hN : StrictMono N) (q : Fin (J + 1)) :
     N q ≤ N (Fin.last J) :=
   hN.monotone (Fin.le_last q)
 
-/-- Most local finite-box form of the ergodic-to-discrete reduction.  The
+/--
+Most local finite-box form of the ergodic-to-discrete reduction.  The
 input is only the finite inner-box sum of discrete jumps; no global discrete
-jump energy and no finite-support theorem for that energy are used. -/
+jump energy and no finite-support theorem for that energy are used.
+-/
 theorem finite_box_bound_of_finite_sum_cancelled
     {X : Type*} [MeasurableSpace X] {μ : Measure X} {n J M : ℕ}
     (hM : 0 < M)
@@ -2954,8 +3066,10 @@ theorem aux_ofReal_two_pow_mul (n : ℕ) (C : ℝ) :
   rw [ENNReal.ofReal_pow (by norm_num)]
   norm_num
 
-/-- The fully internal combination of the finite cuboid reduction and the
-finite-box orbit reduction. -/
+/--
+The fully internal combination of the finite cuboid reduction and the
+finite-box orbit reduction.
+-/
 theorem aux_realErgodicJumpBound_of_realVariable {n : ℕ}
     (hn : 0 < n) (p : Fin n → ℝ≥0∞) (C : ℝ) (g : ℕ → ℝ)
     (hp : ∀ i, 1 < p i ∧ p i < ∞)
@@ -2992,11 +3106,13 @@ theorem aux_realErgodicJumpBound_of_realVariable {n : ℕ}
 def calderonTransferenceConstant (n : ℕ) : ℝ :=
   (2 : ℝ) ^ (4 * n + 6)
 
-/-- Calderón transference for the multilinear averages defined in this
+/--
+Calderón transference for the multilinear averages defined in this
 Mathlib-only module.  The explicit transference factor is
 `calderonTransferenceConstant n = 2 ^ (4 * n + 6)`; thus an input constant
-`C` is transferred with constant `C * calderonTransferenceConstant n`. -/
-theorem calderon_transference_external {n : ℕ} (hn : 2 ≤ n)
+`C` is transferred with constant `C * calderonTransferenceConstant n`.
+-/
+theorem ct_calderon_transference_external {n : ℕ} (hn : 2 ≤ n)
     (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 < p i ∧ p i < ∞)
     (hsum : (∑ i, ((p i)⁻¹).toReal) = 1 / 2) (C : ℝ) (_hC : 0 < C) :
     0 < calderonTransferenceConstant n ∧ ∀ g : ℕ → ℝ,
@@ -3022,4 +3138,4 @@ theorem calderon_transference_external {n : ℕ} (hn : 2 ≤ n)
 
 end
 
-end Codex.CalderonTransference
+end Codex

@@ -25,8 +25,10 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
 - Every new non-temporary Lean source file under `LeanNct/` must be added as an
   explicit import in `LeanNct.lean` when it is created. Temporary scratch files
   must not be imported there.
-- All new work must be contained in a namespace beginning with `Codex` and
-  mirroring the file structure, for example `Codex.Preliminaries.KKernels`.
+- All new work must be contained in the single flat namespace `Codex`.
+  Choose names that stay unambiguous
+  across the whole `Codex` namespace.  Sub-namespaces are for structure
+  projections and dot-notation only.
 - A lot of work has already been done, make sure to inspect the state of the formalization first and continue at the appropriate point.
 
 ## Faithfulness to the manuscript

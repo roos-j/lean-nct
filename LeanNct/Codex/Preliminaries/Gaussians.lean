@@ -27,26 +27,21 @@ The Gaussian objects from the manuscript, together with the Fourier-normalized f
 mathlib.
 -/
 
-namespace Codex.Preliminaries.Gaussians
+namespace Codex
 
 open MeasureTheory Filter
 open scoped FourierTransform Real RealInnerProductSpace Topology
-open Codex.Preliminaries.Notation
 
 
 noncomputable section
 /--
-Recall that $\g(x)=e^{-\pi x^2}$ for $x\in\R$.
--/
-abbrev gaussian : ℝ → ℝ := Notation.gaussian
-
-/--
-For $\lambda>0$, the rescaled Gaussian is $\g_{(\lambda)}(x)=\lambda^{-1}\g(\lambda^{-1}x)$.
+For $\lambda>0$, the rescaled Gaussian is
+$\mathfrak{g}_{(\lambda)}(x)=\lambda^{-1}\mathfrak{g}(\lambda^{-1}x)$.
 -/
 def gaussianRescale (t : ℝ) : ℝ → ℝ := fun x => t⁻¹ * gaussian (t⁻¹ * x)
 
 /--
-The explicit constant in Proposition [`Codex.Preliminaries.Gaussians.gaussianBumpDecay`],
+The explicit constant in Proposition [`Codex.gaussianBumpDecay`],
  formalized by
 `gaussianBumpDecay`.
 -/
@@ -360,7 +355,7 @@ theorem aux_gaussian_iteratedDeriv_hermite (m : ℕ) (x : ℝ) :
   let h : ℝ → ℝ := fun y => Real.exp (-(y ^ 2 / 2))
   have hgauss : gaussian = fun z : ℝ => h (s * z) := by
     funext z
-    dsimp [h, s, gaussian, Notation.gaussian]
+    dsimp [h, s, gaussian, Codex.gaussian]
     rw [show (Real.sqrt (2 * Real.pi) * z) ^ 2 = (2 * Real.pi) * z ^ 2 by
       rw [mul_pow, Real.sq_sqrt (by positivity)]]
     congr 1
@@ -790,20 +785,22 @@ theorem aux_gaussian_iteratedDeriv_half_decay (m : ℕ) (x : ℝ) :
           (Real.rpow 2 ((m : ℝ) / 2) * R) * E by ring, hcombine]
 
 /--
-\begin{proposition}\label{Gaussian bump decay}
+**Proposition.**
 
-For every $x\in\R$, $m,N\in\N$,
-\begin{equation}\label{auto:Gaussian-derivative-decay} |\g^{(m)}(x)|\le C_{\text{Gaussian bump
-decay},m,N} \langle x\rangle^N, \end{equation}
+For every $x\in\mathbb{R}$, $m,N\in\mathbb{N}$,
+
+$$
+|\mathfrak{g}^{(m)}(x)|\le C_{\text{Gaussian bump decay},m,N} \langle x\rangle^N,
+$$
+
 where
-\begin{equation}\label{auto:Gaussian-bump-decay-constant}
+
+$$
 C_{\text{Gaussian bump decay},m,N}
 =\bigl(64(m+1)\bigr)^{m/2}\bigl(4(N+1)\bigr)^{N/2}.
-\end{equation}
+$$
 
-\end{proposition}
-
-See also [`Codex.Preliminaries.Gaussians.gaussianBumpDecay`].
+See also [`Codex.gaussianBumpDecay`].
 -/
 theorem gaussianBumpDecay (x : ℝ) (m N : ℕ) :
     |iteratedDeriv m gaussian x| ≤ C_gaussianBumpDecay m N * bracketBump x ^ N := by
@@ -826,24 +823,18 @@ theorem gaussianBumpDecay (x : ℝ) (m N : ℕ) :
       dsimp [A, B, C_gaussianBumpDecay]
       ring
 
-/--
-The Gaussian is strictly positive at every real point.
--/
+/-- The Gaussian is strictly positive at every real point. -/
 theorem aux_gaussian_pos (x : ℝ) : 0 < gaussian x := by
   change 0 < Real.exp (-Real.pi * x ^ 2)
   exact Real.exp_pos _
 
-/--
-The Gaussian takes values at most one.
--/
+/-- The Gaussian takes values at most one. -/
 theorem aux_gaussian_le_one (x : ℝ) : gaussian x ≤ 1 := by
   change Real.exp (-Real.pi * x ^ 2) ≤ 1
   apply Real.exp_le_one_iff.mpr
   nlinarith [Real.pi_pos, sq_nonneg x]
 
-/--
-The Gaussian is an even function.
--/
+/-- The Gaussian is an even function. -/
 theorem aux_gaussian_neg (x : ℝ) : gaussian (-x) = gaussian x := by
   change Real.exp (-Real.pi * (-x) ^ 2) = Real.exp (-Real.pi * x ^ 2)
   congr 1
@@ -860,9 +851,7 @@ theorem aux_gaussianBumpDecay_zero_zero (x : ℝ) :
   norm_num [Real.rpow_zero]
   exact aux_gaussian_le_one x
 
-/--
-This auxiliary quadratic-decay estimate supplies the zero-order case used below.
--/
+/-- This auxiliary quadratic-decay estimate supplies the zero-order case used below. -/
 theorem aux_gaussian_le_four_bracket_sq (x : ℝ) :
     gaussian x ≤ 4 * bracketBump x ^ 2 := by
   rw [bracketBump]
@@ -902,9 +891,7 @@ theorem aux_gaussian_le_four_bracket_sq (x : ℝ) :
           mul_le_mul_of_nonneg_right (le_of_lt Real.pi_gt_three) (sq_nonneg _)
         nlinarith
 
-/--
-This auxiliary quartic-decay estimate is used when differentiating the Gaussian.
--/
+/-- This auxiliary quartic-decay estimate is used when differentiating the Gaussian. -/
 theorem aux_gaussian_le_sixteen_bracket_four (x : ℝ) :
     gaussian x ≤ 16 * bracketBump x ^ 4 := by
   rw [bracketBump]
@@ -970,13 +957,11 @@ theorem aux_gaussian_le_sixteen_bracket_four (x : ℝ) :
       rw [hrewrite']
       exact (inv_le_inv₀ hrfourpos (by positivity)).2 hscale
     calc
-      gaussian x = Real.exp (-a) := by simp [a, gaussian, Notation.gaussian]
+      gaussian x = Real.exp (-a) := by simp [a, gaussian, Codex.gaussian]
       _ ≤ (|x| ^ 4)⁻¹ := hinv
       _ ≤ 16 / (1 + |x|) ^ 4 := hlast
 
-/--
-This rescaled zero-order bound is the instance of Gaussian decay used by the diagonal kernel.
--/
+/-- This rescaled zero-order bound is the instance of Gaussian decay used by the diagonal kernel. -/
 theorem gaussianRescale_le_C_gaussianBumpDecay_zero_two {t x : ℝ} (ht : 0 < t) :
     |gaussianRescale t x| ≤
       C_gaussianBumpDecay 0 2 * scaledBracketBump 2 t x := by
@@ -994,9 +979,7 @@ theorem gaussianRescale_le_C_gaussianBumpDecay_zero_two {t x : ℝ} (ht : 0 < t)
       gcongr
     _ = C_gaussianBumpDecay 0 2 * (t⁻¹ * bracketBump (t⁻¹ * x) ^ 2) := by ring
 
-/--
-This auxiliary derivative formula starts the first-order Gaussian decay estimate.
--/
+/-- This auxiliary derivative formula starts the first-order Gaussian decay estimate. -/
 theorem aux_gaussian_hasDerivAt (x : ℝ) :
     HasDerivAt gaussian (-2 * Real.pi * x * gaussian x) x := by
   have hpow : HasDerivAt (fun y : ℝ => y ^ 2) (2 * x) x := by
@@ -1007,9 +990,7 @@ theorem aux_gaussian_hasDerivAt (x : ℝ) :
     (-2 * Real.pi * x * Real.exp (-Real.pi * x ^ 2)) x
   convert (Real.hasDerivAt_exp (-Real.pi * x ^ 2)).comp x hinner using 1 <;> first | rfl | ring
 
-/--
-This auxiliary chain-rule formula transports the Gaussian derivative through rescaling.
--/
+/-- This auxiliary chain-rule formula transports the Gaussian derivative through rescaling. -/
 theorem gaussianRescale_hasDerivAt (t x : ℝ) :
     HasDerivAt (gaussianRescale t)
       (t⁻¹ * (-2 * Real.pi * (t⁻¹ * x) * gaussian (t⁻¹ * x)) * t⁻¹) x := by
@@ -1066,9 +1047,7 @@ theorem aux_gaussian_deriv_le_C_gaussianBumpDecay_one_two (x : ℝ) :
     _ ≤ C_gaussianBumpDecay 1 2 * bracketBump x ^ 2 :=
       mul_le_mul_of_nonneg_right hconstant (by positivity)
 
-/--
-This first-order rescaled estimate is a downstream instance of Gaussian bump decay.
--/
+/-- This first-order rescaled estimate is a downstream instance of Gaussian bump decay. -/
 theorem gaussianRescale_deriv_bound {t x : ℝ} (ht : 0 < t) :
     |deriv (gaussianRescale t) x| ≤
       t⁻¹ * C_gaussianBumpDecay 1 2 * scaledBracketBump 2 t x := by
@@ -1087,14 +1066,14 @@ theorem gaussianRescale_deriv_bound {t x : ℝ} (ht : 0 < t) :
       ring
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`], formalized as
+Auxiliary for Proposition [`Codex.gaussian_memSchwartz`], formalized as
 gaussian_memW0. It supplies the continuity used there.
 -/
 theorem gaussian_continuous : Continuous gaussian := by
-  fun_prop [gaussian, Notation.gaussian]
+  fun_prop [gaussian, Codex.gaussian]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`], formalized as
+Auxiliary for Proposition [`Codex.gaussian_memSchwartz`], formalized as
 gaussian_memW0. It supplies the integrability used there.
 -/
 theorem aux_gaussian_integrable : Integrable gaussian := by
@@ -1130,7 +1109,7 @@ theorem aux_wienerEnvelope_gaussian_le (x : ℝ) :
 /--
 Auxiliary smoothness fact used to construct the Schwartz function in
 `gaussian_memSchwartz`, formalizing part (i) of Proposition
-[`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`].
+[`Codex.gaussian_memSchwartz`].
 -/
 theorem aux_gaussian_contDiff : ContDiff ℝ (↑(⊤ : ℕ∞)) gaussian := by
   change ContDiff ℝ (↑(⊤ : ℕ∞)) (fun x : ℝ => Real.exp (-Real.pi * x ^ 2))
@@ -1138,7 +1117,7 @@ theorem aux_gaussian_contDiff : ContDiff ℝ (↑(⊤ : ℕ∞)) gaussian := by
 
 /--
 Auxiliary Hermite-type representation used by `gaussian_memSchwartz`, formalizing part (i)
-of Proposition [`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`].  It expresses each
+of Proposition [`Codex.gaussian_memSchwartz`].  It expresses each
 derivative as a
 polynomial times the Gaussian, which is needed to transfer rapid decay to all derivatives.
 -/
@@ -1166,7 +1145,7 @@ theorem aux_gaussian_iteratedDeriv_polynomial : ∀ n : ℕ, ∃ p : Polynomial 
 
 /--
 Auxiliary rapid-decay fact used by `gaussian_memSchwartz`, formalizing part (i) of
-Proposition [`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`].  It packages the standard
+Proposition [`Codex.gaussian_memSchwartz`].  It packages the standard
 super-polynomial
 decay of the Gaussian at infinity.
 -/
@@ -1176,11 +1155,11 @@ theorem aux_gaussian_superpolynomialDecay :
   rw [tendsto_zero_iff_abs_tendsto_zero]
   convert tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact Real.pi_pos (n : ℝ) using 1
   funext x
-  simp [gaussian, Notation.gaussian, abs_mul, Real.rpow_natCast]
+  simp [gaussian, Codex.gaussian, abs_mul, Real.rpow_natCast]
 
 /--
 Auxiliary global bound used by `gaussian_memSchwartz`, formalizing part (i) of Proposition
-[`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`].  It turns rapid Gaussian decay into a
+[`Codex.gaussian_memSchwartz`].  It turns rapid Gaussian decay into a
 uniform bound after
 multiplication by an arbitrary polynomial.
 -/
@@ -1189,7 +1168,7 @@ theorem aux_polynomial_gaussian_bound (p : Polynomial ℝ) (k : ℕ) :
   have hspd := aux_gaussian_superpolynomialDecay.polynomial_mul p
   have htendsto := hspd k
   have hcont : Continuous (fun x : ℝ => x ^ k * (p.eval x * gaussian x)) := by
-    fun_prop [gaussian, Notation.gaussian]
+    fun_prop [gaussian, Codex.gaussian]
   have hbounded := hcont.isBounded_range_iff_isBigO.mpr (htendsto.isBigO_one ℝ)
   rw [isBounded_iff_forall_norm_le] at hbounded
   simp only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff] at hbounded
@@ -1199,27 +1178,28 @@ theorem aux_polynomial_gaussian_bound (p : Polynomial ℝ) (k : ℕ) :
   simpa [Real.norm_eq_abs, abs_mul, abs_pow] using hC x
 
 /--
-\begin{proposition}[Elementary Gaussian properties]\label{Elementary Gaussian properties}
+**Proposition (Elementary Gaussian properties).**
 
-(i) $\g\in \mathcal{S}(\R)\subset W_0(\R)$
+(i) $\mathfrak{g}\in \mathcal{S}(\mathbb{R})\subset W_0(\mathbb{R})$
 
-(ii) $\widehat{\g}=\g$.
+(ii) $\widehat{\mathfrak{g}}=\mathfrak{g}$.
 
 (iii) We have for $\lambda,\mu>0$
-    \begin{equation}\label{eq:gaussconv}
-    \g_{(\lambda)}*\g_{(\mu)}=\g_{(\sqrt{\lambda^2+\mu^2})}\, .
-    \end{equation}
+
+$$
+\mathfrak{g}_{(\lambda)}*\mathfrak{g}_{(\mu)}=\mathfrak{g}_{(\sqrt{\lambda^2+\mu^2})}\, .
+$$
 
 (iv) We have for $\lambda>0$
- \begin{equation}\label{eq:scaleFT}
-     \widehat{\g_{(\lambda)}}(\xi)=\g(\lambda \xi)
- \end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.Gaussians.gaussian_memW0`],
-[`Codex.Preliminaries.Gaussians.gaussian_fourier_fixed`],
-[`Codex.Preliminaries.Gaussians.gaussianRescale_convolution`],
-[`Codex.Preliminaries.Gaussians.gaussianRescale_fourier`].
+$$
+     \widehat{\mathfrak{g}_{(\lambda)}}(\xi)=\mathfrak{g}(\lambda \xi)
+$$
+
+See also [`Codex.gaussian_memW0`],
+[`Codex.gaussian_fourier_fixed`],
+[`Codex.gaussianRescale_convolution`],
+[`Codex.gaussianRescale_fourier`].
 -/
 theorem gaussian_memSchwartz :
     ∃ G : SchwartzMap ℝ ℝ, ∀ x : ℝ, G x = gaussian x := by
@@ -1240,27 +1220,28 @@ theorem gaussian_memSchwartz :
   exact ⟨G, fun x => rfl⟩
 
 /--
-\begin{proposition}[Elementary Gaussian properties]\label{Elementary Gaussian properties}
+**Proposition (Elementary Gaussian properties).**
 
-(i) $\g\in \mathcal{S}(\R)\subset W_0(\R)$
+(i) $\mathfrak{g}\in \mathcal{S}(\mathbb{R})\subset W_0(\mathbb{R})$
 
-(ii) $\widehat{\g}=\g$.
+(ii) $\widehat{\mathfrak{g}}=\mathfrak{g}$.
 
 (iii) We have for $\lambda,\mu>0$
-    \begin{equation}\label{eq:gaussconv}
-    \g_{(\lambda)}*\g_{(\mu)}=\g_{(\sqrt{\lambda^2+\mu^2})}\, .
-    \end{equation}
+
+$$
+\mathfrak{g}_{(\lambda)}*\mathfrak{g}_{(\mu)}=\mathfrak{g}_{(\sqrt{\lambda^2+\mu^2})}\, .
+$$
 
 (iv) We have for $\lambda>0$
- \begin{equation}\label{eq:scaleFT}
-     \widehat{\g_{(\lambda)}}(\xi)=\g(\lambda \xi)
- \end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`],
-[`Codex.Preliminaries.Gaussians.gaussian_fourier_fixed`],
-[`Codex.Preliminaries.Gaussians.gaussianRescale_convolution`],
-[`Codex.Preliminaries.Gaussians.gaussianRescale_fourier`].
+$$
+     \widehat{\mathfrak{g}_{(\lambda)}}(\xi)=\mathfrak{g}(\lambda \xi)
+$$
+
+See also [`Codex.gaussian_memSchwartz`],
+[`Codex.gaussian_fourier_fixed`],
+[`Codex.gaussianRescale_convolution`],
+[`Codex.gaussianRescale_fourier`].
 -/
 theorem gaussian_memW0 : MemW0 gaussian := by
   refine ⟨gaussian_continuous, ?_⟩
@@ -1348,40 +1329,39 @@ theorem aux_gaussianRescale_memW0 {t : ℝ} (ht : 0 < t) : MemW0 (gaussianRescal
     (ae_of_all _ fun x => aux_wienerEnvelope_nonneg hcontinuous zero_le_one x)
     (ae_of_all _ fun x => aux_wienerEnvelope_gaussianRescale_le ht x)
 
-/--
-The standard Gaussian from the manuscript has unit integral.
--/
+/-- The standard Gaussian from the manuscript has unit integral. -/
 theorem aux_integral_gaussian : ∫ x : ℝ, gaussian x = 1 := by
   have h := integral_gaussian Real.pi
-  simpa [gaussian, Notation.gaussian, Real.pi_ne_zero, div_self, Real.sqrt_one] using h
+  simpa [gaussian, Codex.gaussian, Real.pi_ne_zero, div_self, Real.sqrt_one] using h
 
 /--
-\begin{proposition}[Elementary Gaussian properties]\label{Elementary Gaussian properties}
+**Proposition (Elementary Gaussian properties).**
 
-(i) $\g\in \mathcal{S}(\R)\subset W_0(\R)$
+(i) $\mathfrak{g}\in \mathcal{S}(\mathbb{R})\subset W_0(\mathbb{R})$
 
-(ii) $\widehat{\g}=\g$.
+(ii) $\widehat{\mathfrak{g}}=\mathfrak{g}$.
 
 (iii) We have for $\lambda,\mu>0$
-    \begin{equation}\label{eq:gaussconv}
-    \g_{(\lambda)}*\g_{(\mu)}=\g_{(\sqrt{\lambda^2+\mu^2})}\, .
-    \end{equation}
+
+$$
+\mathfrak{g}_{(\lambda)}*\mathfrak{g}_{(\mu)}=\mathfrak{g}_{(\sqrt{\lambda^2+\mu^2})}\, .
+$$
 
 (iv) We have for $\lambda>0$
- \begin{equation}\label{eq:scaleFT}
-     \widehat{\g_{(\lambda)}}(\xi)=\g(\lambda \xi)
- \end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`],
-[`Codex.Preliminaries.Gaussians.gaussian_memW0`],
-[`Codex.Preliminaries.Gaussians.gaussianRescale_convolution`],
-[`Codex.Preliminaries.Gaussians.gaussianRescale_fourier`].
+$$
+     \widehat{\mathfrak{g}_{(\lambda)}}(\xi)=\mathfrak{g}(\lambda \xi)
+$$
+
+See also [`Codex.gaussian_memSchwartz`],
+[`Codex.gaussian_memW0`],
+[`Codex.gaussianRescale_convolution`],
+[`Codex.gaussianRescale_fourier`].
 -/
 theorem gaussian_fourier_fixed :
     FourierTransform.fourier (fun x : ℝ => (gaussian x : ℂ)) =
       fun ξ : ℝ => (gaussian ξ : ℂ) := by
-  simpa [gaussian, Notation.gaussian] using
+  simpa [gaussian, Codex.gaussian] using
     (fourier_gaussian_pi (b := (1 : ℂ)) (by norm_num))
 
 /--
@@ -1397,7 +1377,7 @@ theorem aux_gaussianRescale_complete_square (a μ x y : ℝ) (ha : 0 < a) (hμ :
   have hμ0 : μ ≠ 0 := ne_of_gt hμ
   have hs : a ^ 2 + μ ^ 2 ≠ 0 := by positivity
   unfold gaussianRescale
-  simp only [gaussian, Notation.gaussian]
+  simp only [gaussian, Codex.gaussian]
   calc
     a⁻¹ * Real.exp (-Real.pi * (a⁻¹ * (x - y)) ^ 2) *
           (μ⁻¹ * Real.exp (-Real.pi * (μ⁻¹ * y) ^ 2)) =
@@ -1419,9 +1399,7 @@ theorem aux_gaussianRescale_complete_square (a μ x y : ℝ) (ha : 0 < a) (hμ :
         Real.exp (-(Real.pi * (a ^ 2 + μ ^ 2) / (a ^ 2 * μ ^ 2)) *
           (y - μ ^ 2 / (a ^ 2 + μ ^ 2) * x) ^ 2) := by ring
 
-/--
-Auxiliary translation-invariance identity used in `gaussianRescale_convolution`.
--/
+/-- Auxiliary translation-invariance identity used in `gaussianRescale_convolution`. -/
 theorem aux_integral_gaussian_shift (B c : ℝ) :
     (∫ y : ℝ, Real.exp (-B * (y - c) ^ 2)) =
       ∫ y : ℝ, Real.exp (-B * y ^ 2) := by
@@ -1430,27 +1408,28 @@ theorem aux_integral_gaussian_shift (B c : ℝ) :
   exact integral_add_right_eq_self f (-c)
 
 /--
-\begin{proposition}[Elementary Gaussian properties]\label{Elementary Gaussian properties}
+**Proposition (Elementary Gaussian properties).**
 
-(i) $\g\in \mathcal{S}(\R)\subset W_0(\R)$
+(i) $\mathfrak{g}\in \mathcal{S}(\mathbb{R})\subset W_0(\mathbb{R})$
 
-(ii) $\widehat{\g}=\g$.
+(ii) $\widehat{\mathfrak{g}}=\mathfrak{g}$.
 
 (iii) We have for $\lambda,\mu>0$
-    \begin{equation}\label{eq:gaussconv}
-    \g_{(\lambda)}*\g_{(\mu)}=\g_{(\sqrt{\lambda^2+\mu^2})}\, .
-    \end{equation}
+
+$$
+\mathfrak{g}_{(\lambda)}*\mathfrak{g}_{(\mu)}=\mathfrak{g}_{(\sqrt{\lambda^2+\mu^2})}\, .
+$$
 
 (iv) We have for $\lambda>0$
- \begin{equation}\label{eq:scaleFT}
-     \widehat{\g_{(\lambda)}}(\xi)=\g(\lambda \xi)
- \end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`],
-[`Codex.Preliminaries.Gaussians.gaussian_memW0`],
-[`Codex.Preliminaries.Gaussians.gaussian_fourier_fixed`],
-[`Codex.Preliminaries.Gaussians.gaussianRescale_fourier`].
+$$
+     \widehat{\mathfrak{g}_{(\lambda)}}(\xi)=\mathfrak{g}(\lambda \xi)
+$$
+
+See also [`Codex.gaussian_memSchwartz`],
+[`Codex.gaussian_memW0`],
+[`Codex.gaussian_fourier_fixed`],
+[`Codex.gaussianRescale_fourier`].
 -/
 theorem gaussianRescale_convolution (a μ : ℝ) (ha : 0 < a) (hμ : 0 < μ) (x : ℝ) :
     (∫ y : ℝ, gaussianRescale a (x - y) * gaussianRescale μ y) =
@@ -1495,7 +1474,7 @@ theorem gaussianRescale_convolution (a μ : ℝ) (ha : 0 < a) (hμ : 0 < μ) (x 
       rw [hinside, Real.sqrt_sq_eq_abs,
         abs_of_pos (div_pos (mul_pos ha hμ) hsqrtpos)]
       unfold gaussianRescale
-      simp only [gaussian, Notation.gaussian]
+      simp only [gaussian, Codex.gaussian]
       have hexp : -Real.pi * x ^ 2 / (a ^ 2 + μ ^ 2) =
           -Real.pi * ((Real.sqrt (a ^ 2 + μ ^ 2))⁻¹ * x) ^ 2 := by
         field_simp
@@ -1504,27 +1483,28 @@ theorem gaussianRescale_convolution (a μ : ℝ) (ha : 0 < a) (hμ : 0 < μ) (x 
       field_simp
 
 /--
-\begin{proposition}[Elementary Gaussian properties]\label{Elementary Gaussian properties}
+**Proposition (Elementary Gaussian properties).**
 
-(i) $\g\in \mathcal{S}(\R)\subset W_0(\R)$
+(i) $\mathfrak{g}\in \mathcal{S}(\mathbb{R})\subset W_0(\mathbb{R})$
 
-(ii) $\widehat{\g}=\g$.
+(ii) $\widehat{\mathfrak{g}}=\mathfrak{g}$.
 
 (iii) We have for $\lambda,\mu>0$
-    \begin{equation}\label{eq:gaussconv}
-    \g_{(\lambda)}*\g_{(\mu)}=\g_{(\sqrt{\lambda^2+\mu^2})}\, .
-    \end{equation}
+
+$$
+\mathfrak{g}_{(\lambda)}*\mathfrak{g}_{(\mu)}=\mathfrak{g}_{(\sqrt{\lambda^2+\mu^2})}\, .
+$$
 
 (iv) We have for $\lambda>0$
- \begin{equation}\label{eq:scaleFT}
-     \widehat{\g_{(\lambda)}}(\xi)=\g(\lambda \xi)
- \end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.Gaussians.gaussian_memSchwartz`],
-[`Codex.Preliminaries.Gaussians.gaussian_memW0`],
-[`Codex.Preliminaries.Gaussians.gaussian_fourier_fixed`],
-[`Codex.Preliminaries.Gaussians.gaussianRescale_convolution`].
+$$
+     \widehat{\mathfrak{g}_{(\lambda)}}(\xi)=\mathfrak{g}(\lambda \xi)
+$$
+
+See also [`Codex.gaussian_memSchwartz`],
+[`Codex.gaussian_memW0`],
+[`Codex.gaussian_fourier_fixed`],
+[`Codex.gaussianRescale_convolution`].
 -/
 theorem gaussianRescale_fourier (a : ℝ) (ha : 0 < a) :
     FourierTransform.fourier (fun x : ℝ => (gaussianRescale a x : ℂ)) =
@@ -1538,7 +1518,7 @@ theorem gaussianRescale_fourier (a : ℝ) (ha : 0 < a) :
       (a⁻¹ : ℂ) • (fun x : ℝ => Complex.exp (-Real.pi * b * (x : ℂ) ^ 2)) := by
     funext x
     simp only [Pi.smul_apply, smul_eq_mul]
-    simp [gaussianRescale, gaussian, Notation.gaussian, b, Complex.ofReal_exp, ha0]
+    simp [gaussianRescale, gaussian, Codex.gaussian, b, Complex.ofReal_exp, ha0]
     congr 1
     ring
   rw [hinput]
@@ -1571,31 +1551,35 @@ theorem gaussianRescale_fourier (a : ℝ) (ha : 0 < a) :
         push_cast
         field_simp
       rw [hpow, hexp]
-      simp [gaussian, Notation.gaussian, Complex.ofReal_exp, ha0]
+      simp [gaussian, Codex.gaussian, Complex.ofReal_exp, ha0]
 
 /--
-\begin{proposition}\label{square root one minus Gaussian}
+**Proposition.**
 
-    The function
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian}
-        f(x)=\sqrt{1-\g(x)}
-    \end{equation}
-    is well-defined
-    using the nonnegative square root and is continuous on $\R$.
-    For $|x|\le \frac 12$, we have
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian-small-lower-bound}
+The function
+
+$$
+        f(x)=\sqrt{1-\mathfrak{g}(x)}
+$$
+
+is well-defined
+using the nonnegative square root and is continuous on $\mathbb{R}$.
+For $|x|\le \frac 12$, we have
+
+$$
         f(x)\ge \tfrac 12 |x|
-    \end{equation}
-    and for $|x|\ge \frac 12$ we have
- \begin{equation}\label{auto:square-root-one-minus-Gaussian-large-bounds}
-        1-\g(x)\le f(x)\le 1.
-    \end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_wellDefined`],
-[`Codex.Preliminaries.Gaussians.continuous_sqrtOneMinusGaussian`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_lower`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_bounds`].
+and for $|x|\ge \frac 12$ we have
+
+$$
+        1-\mathfrak{g}(x)\le f(x)\le 1.
+$$
+
+See also [`Codex.sqrtOneMinusGaussian_wellDefined`],
+[`Codex.continuous_sqrtOneMinusGaussian`],
+[`Codex.sqrtOneMinusGaussian_lower`],
+[`Codex.sqrtOneMinusGaussian_bounds`].
 -/
 def sqrtOneMinusGaussian (x : ℝ) : ℝ := Real.sqrt (1 - gaussian x)
 
@@ -1610,83 +1594,95 @@ theorem aux_one_sub_gaussian_nonneg (x : ℝ) : 0 ≤ 1 - gaussian x := by
   nlinarith [Real.pi_pos, sq_nonneg x]
 
 /--
-\begin{proposition}\label{square root one minus Gaussian}
+**Proposition.**
 
-    The function
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian}
-        f(x)=\sqrt{1-\g(x)}
-    \end{equation}
-    is well-defined
-    using the nonnegative square root and is continuous on $\R$.
-    For $|x|\le \frac 12$, we have
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian-small-lower-bound}
+The function
+
+$$
+        f(x)=\sqrt{1-\mathfrak{g}(x)}
+$$
+
+is well-defined
+using the nonnegative square root and is continuous on $\mathbb{R}$.
+For $|x|\le \frac 12$, we have
+
+$$
         f(x)\ge \tfrac 12 |x|
-    \end{equation}
-    and for $|x|\ge \frac 12$ we have
- \begin{equation}\label{auto:square-root-one-minus-Gaussian-large-bounds}
-        1-\g(x)\le f(x)\le 1.
-    \end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian`],
-[`Codex.Preliminaries.Gaussians.continuous_sqrtOneMinusGaussian`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_lower`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_bounds`].
+and for $|x|\ge \frac 12$ we have
+
+$$
+        1-\mathfrak{g}(x)\le f(x)\le 1.
+$$
+
+See also [`Codex.sqrtOneMinusGaussian`],
+[`Codex.continuous_sqrtOneMinusGaussian`],
+[`Codex.sqrtOneMinusGaussian_lower`],
+[`Codex.sqrtOneMinusGaussian_bounds`].
 -/
 theorem sqrtOneMinusGaussian_wellDefined (x : ℝ) : 0 ≤ 1 - gaussian x :=
   aux_one_sub_gaussian_nonneg x
 
 /--
-\begin{proposition}\label{square root one minus Gaussian}
+**Proposition.**
 
-    The function
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian}
-        f(x)=\sqrt{1-\g(x)}
-    \end{equation}
-    is well-defined
-    using the nonnegative square root and is continuous on $\R$.
-    For $|x|\le \frac 12$, we have
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian-small-lower-bound}
+The function
+
+$$
+        f(x)=\sqrt{1-\mathfrak{g}(x)}
+$$
+
+is well-defined
+using the nonnegative square root and is continuous on $\mathbb{R}$.
+For $|x|\le \frac 12$, we have
+
+$$
         f(x)\ge \tfrac 12 |x|
-    \end{equation}
-    and for $|x|\ge \frac 12$ we have
- \begin{equation}\label{auto:square-root-one-minus-Gaussian-large-bounds}
-        1-\g(x)\le f(x)\le 1.
-    \end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_wellDefined`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_lower`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_bounds`].
+and for $|x|\ge \frac 12$ we have
+
+$$
+        1-\mathfrak{g}(x)\le f(x)\le 1.
+$$
+
+See also [`Codex.sqrtOneMinusGaussian`],
+[`Codex.sqrtOneMinusGaussian_wellDefined`],
+[`Codex.sqrtOneMinusGaussian_lower`],
+[`Codex.sqrtOneMinusGaussian_bounds`].
 -/
 theorem continuous_sqrtOneMinusGaussian : Continuous sqrtOneMinusGaussian := by
   apply Continuous.sqrt
   exact continuous_const.sub gaussian_continuous
 
 /--
-\begin{proposition}\label{square root one minus Gaussian}
+**Proposition.**
 
-    The function
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian}
-        f(x)=\sqrt{1-\g(x)}
-    \end{equation}
-    is well-defined
-    using the nonnegative square root and is continuous on $\R$.
-    For $|x|\le \frac 12$, we have
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian-small-lower-bound}
+The function
+
+$$
+        f(x)=\sqrt{1-\mathfrak{g}(x)}
+$$
+
+is well-defined
+using the nonnegative square root and is continuous on $\mathbb{R}$.
+For $|x|\le \frac 12$, we have
+
+$$
         f(x)\ge \tfrac 12 |x|
-    \end{equation}
-    and for $|x|\ge \frac 12$ we have
- \begin{equation}\label{auto:square-root-one-minus-Gaussian-large-bounds}
-        1-\g(x)\le f(x)\le 1.
-    \end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_wellDefined`],
-[`Codex.Preliminaries.Gaussians.continuous_sqrtOneMinusGaussian`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_bounds`].
+and for $|x|\ge \frac 12$ we have
+
+$$
+        1-\mathfrak{g}(x)\le f(x)\le 1.
+$$
+
+See also [`Codex.sqrtOneMinusGaussian`],
+[`Codex.sqrtOneMinusGaussian_wellDefined`],
+[`Codex.continuous_sqrtOneMinusGaussian`],
+[`Codex.sqrtOneMinusGaussian_bounds`].
 -/
 theorem sqrtOneMinusGaussian_lower (x : ℝ) (hx : |x| ≤ 1 / 2) :
     1 / 2 * |x| ≤ sqrtOneMinusGaussian x := by
@@ -1741,28 +1737,32 @@ theorem sqrtOneMinusGaussian_lower (x : ℝ) (hx : |x| ≤ 1 / 2) :
   · exact aux_one_sub_gaussian_nonneg x
 
 /--
-\begin{proposition}\label{square root one minus Gaussian}
+**Proposition.**
 
-    The function
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian}
-        f(x)=\sqrt{1-\g(x)}
-    \end{equation}
-    is well-defined
-    using the nonnegative square root and is continuous on $\R$.
-    For $|x|\le \frac 12$, we have
-    \begin{equation}\label{auto:square-root-one-minus-Gaussian-small-lower-bound}
+The function
+
+$$
+        f(x)=\sqrt{1-\mathfrak{g}(x)}
+$$
+
+is well-defined
+using the nonnegative square root and is continuous on $\mathbb{R}$.
+For $|x|\le \frac 12$, we have
+
+$$
         f(x)\ge \tfrac 12 |x|
-    \end{equation}
-    and for $|x|\ge \frac 12$ we have
- \begin{equation}\label{auto:square-root-one-minus-Gaussian-large-bounds}
-        1-\g(x)\le f(x)\le 1.
-    \end{equation}
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_wellDefined`],
-[`Codex.Preliminaries.Gaussians.continuous_sqrtOneMinusGaussian`],
-[`Codex.Preliminaries.Gaussians.sqrtOneMinusGaussian_lower`].
+and for $|x|\ge \frac 12$ we have
+
+$$
+        1-\mathfrak{g}(x)\le f(x)\le 1.
+$$
+
+See also [`Codex.sqrtOneMinusGaussian`],
+[`Codex.sqrtOneMinusGaussian_wellDefined`],
+[`Codex.continuous_sqrtOneMinusGaussian`],
+[`Codex.sqrtOneMinusGaussian_lower`].
 -/
 theorem sqrtOneMinusGaussian_bounds (x : ℝ) (_hx : 1 / 2 ≤ |x|) :
     1 - gaussian x ≤ sqrtOneMinusGaussian x ∧ sqrtOneMinusGaussian x ≤ 1 := by
@@ -1798,7 +1798,7 @@ theorem aux_one_sub_gaussian_hasDerivAt (x : ℝ) :
 
 /--
 This auxiliary L'Hôpital computation identifies the quadratic coefficient of
-`1 - \g` at the origin.  It is used to remove the square-root singularity in $B'$.
+`1 - \mathfrak{g}` at the origin.  It is used to remove the square-root singularity in $B'$.
 -/
 theorem aux_one_sub_gaussian_div_sq_tendsto :
     Tendsto (fun x : ℝ => (1 - gaussian x) / x ^ 2)
@@ -1823,7 +1823,7 @@ theorem aux_one_sub_gaussian_div_sq_tendsto :
   · have hcont : Continuous (fun x : ℝ => (1 : ℝ) - gaussian x) :=
       continuous_const.sub gaussian_continuous
     have h := hcont.tendsto (0 : ℝ)
-    simpa [gaussian, Notation.gaussian] using h.mono_left nhdsWithin_le_nhds
+    simpa [gaussian, Codex.gaussian] using h.mono_left nhdsWithin_le_nhds
   · have hcont : Continuous (fun x : ℝ => x ^ 2) := continuous_id.pow 2
     have h := hcont.tendsto (0 : ℝ)
     simpa using h.mono_left nhdsWithin_le_nhds
@@ -1832,7 +1832,7 @@ theorem aux_one_sub_gaussian_div_sq_tendsto :
     have h : Tendsto (fun x : ℝ => Real.pi * gaussian x)
         (nhdsWithin (0 : ℝ) ({0}ᶜ : Set ℝ)) (𝓝 Real.pi) := by
       have h' := hcont.tendsto (0 : ℝ)
-      simpa [gaussian, Notation.gaussian] using h'.mono_left nhdsWithin_le_nhds
+      simpa [gaussian, Codex.gaussian] using h'.mono_left nhdsWithin_le_nhds
     refine h.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with x hx
     have hx0 : x ≠ 0 := by simpa using hx
@@ -1862,28 +1862,28 @@ theorem aux_sqrtOneMinusGaussian_pos {x : ℝ} (hx : x ≠ 0) :
   apply sub_pos.mpr
   have hneg : -Real.pi * x ^ 2 < 0 := by
     nlinarith [Real.pi_pos, sq_pos_of_ne_zero hx]
-  simpa [gaussian, Notation.gaussian] using (Real.exp_lt_exp.mpr hneg)
+  simpa [gaussian, Codex.gaussian] using (Real.exp_lt_exp.mpr hneg)
 
 /--
-\begin{proposition}\label{poisson to abel}
+**Proposition.**
 
 Let
-\begin{equation}\label{auto:Gaussian-comparison-function}
-    p(x)=2(1+(2\pi x)^2)^{-1}.
-\end{equation}
-Then
-\begin{equation}\label{eq: p hat}
-    \widehat{p}(\xi)=e^{- |\xi|}.
-\end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.Gaussians.poissonKernel_fourier`].
+$$
+    p(x)=2(1+(2\pi x)^2)^{-1}.
+$$
+
+Then
+
+$$
+    \widehat{p}(\xi)=e^{- |\xi|}.
+$$
+
+See also [`Codex.poissonKernel_fourier`].
 -/
 def poissonKernel (x : ℝ) : ℝ := 2 * (1 + (2 * Real.pi * x) ^ 2)⁻¹
 
-/--
-The Poisson kernel in the manuscript is strictly positive.
--/
+/-- The Poisson kernel in the manuscript is strictly positive. -/
 theorem aux_poissonKernel_pos (x : ℝ) : 0 < poissonKernel x := by
   unfold poissonKernel
   positivity
@@ -1932,9 +1932,7 @@ theorem aux_poissonKernel_integrable : Integrable poissonKernel := by
       by simpa only [one_div] using one_div_le_one_div_of_le hdenpos hden
     gcongr
 
-/--
-This auxiliary continuity fact is used to apply Fourier inversion to the Abel profile.
--/
+/-- This auxiliary continuity fact is used to apply Fourier inversion to the Abel profile. -/
 theorem aux_poissonFrequency_continuous : Continuous aux_poissonFrequency := by
   unfold aux_poissonFrequency
   fun_prop
@@ -2089,7 +2087,7 @@ theorem aux_inverseFourier_poissonFrequency (x : ℝ) :
 
 /--
 This change-of-variables identity is used by `aux_inverseFourier_scaledPoissonFrequency`
-in the proof of Proposition [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`].
+in the proof of Proposition [`Codex.sqrtGaussianDecay`].
 -/
 theorem aux_inverseFourier_comp_mul_pos (f : ℝ → ℂ) (a x : ℝ) (ha : 0 < a) :
     FourierTransformInv.fourierInv (fun ξ : ℝ => f (a * ξ)) x =
@@ -2107,19 +2105,21 @@ theorem aux_inverseFourier_comp_mul_pos (f : ℝ → ℂ) (a x : ℝ) (ha : 0 < 
   field_simp
 
 /--
-\begin{proposition}\label{poisson to abel}
+**Proposition.**
 
 Let
-\begin{equation}\label{auto:Gaussian-comparison-function}
-    p(x)=2(1+(2\pi x)^2)^{-1}.
-\end{equation}
-Then
-\begin{equation}\label{eq: p hat}
-    \widehat{p}(\xi)=e^{- |\xi|}.
-\end{equation}
-\end{proposition}
 
-See also [`Codex.Preliminaries.Gaussians.poissonKernel`].
+$$
+    p(x)=2(1+(2\pi x)^2)^{-1}.
+$$
+
+Then
+
+$$
+    \widehat{p}(\xi)=e^{- |\xi|}.
+$$
+
+See also [`Codex.poissonKernel`].
 -/
 theorem poissonKernel_fourier :
     FourierTransform.fourier (fun x : ℝ => (poissonKernel x : ℂ)) =
@@ -2177,7 +2177,7 @@ theorem aux_exp_neg_abs_sqrt_pi_integrable :
     (ae_of_all _ aux_exp_neg_abs_sqrt_pi_le_poissonFrequency)
 
 /--
-Definition used in Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Definition used in Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 auxiliaryFunctionB_properties.
 -/
@@ -2201,7 +2201,7 @@ theorem aux_auxiliaryFunctionB_eq_fourierPoisson (ξ : ℝ) :
 /--
 This auxiliary continuity fact supplies the continuity clause of
 `auxiliaryFunctionB_properties`, the formalization of Proposition
-[`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`].
+[`Codex.auxiliaryFunctionB_properties`].
 -/
 theorem aux_auxiliaryFunctionB_continuous : Continuous auxiliaryFunctionB := by
   unfold auxiliaryFunctionB
@@ -2210,7 +2210,7 @@ theorem aux_auxiliaryFunctionB_continuous : Continuous auxiliaryFunctionB := by
       ((continuous_abs.comp (continuous_const.mul continuous_id)).neg))
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized as
 auxiliaryFunctionB_properties. It is the chosen extension representing $B'$.
 -/
@@ -2229,7 +2229,7 @@ theorem aux_auxiliaryFunctionB_hasDerivAt_of_ne_zero {x : ℝ} (hx : x ≠ 0) :
   have hgauss_lt_one : gaussian x < 1 := by
     have hneg : -Real.pi * x ^ 2 < 0 := by
       nlinarith [Real.pi_pos, sq_pos_of_ne_zero hx]
-    simpa [gaussian, Notation.gaussian] using (Real.exp_lt_exp.mpr hneg)
+    simpa [gaussian, Codex.gaussian] using (Real.exp_lt_exp.mpr hneg)
   have hrad_pos : 0 < 1 - gaussian x := sub_pos.mpr hgauss_lt_one
   have hrad_deriv : HasDerivAt (fun y : ℝ => 1 - gaussian y)
       (2 * Real.pi * x * gaussian x) x := by
@@ -2275,7 +2275,7 @@ theorem aux_auxiliaryFunctionB_smoothOffZero :
   have hgauss_lt_one : gaussian x < 1 := by
     have hneg : -Real.pi * x ^ 2 < 0 := by
       nlinarith [Real.pi_pos, sq_pos_of_ne_zero hx0]
-    simpa [gaussian, Notation.gaussian] using (Real.exp_lt_exp.mpr hneg)
+    simpa [gaussian, Codex.gaussian] using (Real.exp_lt_exp.mpr hneg)
   have hrad : 1 - gaussian x ≠ 0 := ne_of_gt (sub_pos.mpr hgauss_lt_one)
   have hgaussian : ContDiff ℝ (↑(⊤ : ℕ∞)) gaussian := by
     change ContDiff ℝ (↑(⊤ : ℕ∞)) (fun y : ℝ => Real.exp (-Real.pi * y ^ 2))
@@ -2337,7 +2337,7 @@ theorem aux_auxiliaryFunctionBDerivative_tendsto_zero :
     have hcont : Continuous (fun y : ℝ => Real.pi * gaussian y) :=
       continuous_const.mul gaussian_continuous
     have h := hcont.tendsto (0 : ℝ)
-    simpa [gaussian, Notation.gaussian] using h.mono_left nhdsWithin_le_nhds
+    simpa [gaussian, Codex.gaussian] using h.mono_left nhdsWithin_le_nhds
   have habel : Tendsto (fun y : ℝ =>
       Real.sqrt Real.pi * Real.exp (-|Real.sqrt Real.pi * y|))
       (nhdsWithin (0 : ℝ) ({0}ᶜ : Set ℝ)) (𝓝 (Real.sqrt Real.pi)) := by
@@ -2511,7 +2511,7 @@ theorem aux_sqrtOneMinusGaussian_lower (x : ℝ) :
       _ ≤ 1 - Real.exp (-u) := hu_exp
       _ = (sqrtOneMinusGaussian x) ^ 2 := by
         rw [sqrtOneMinusGaussian, Real.sq_sqrt hrad]
-        simp [u, gaussian, Notation.gaussian]
+        simp [u, gaussian, Codex.gaussian]
   nlinarith
 
 /--
@@ -2745,7 +2745,7 @@ theorem aux_BSecondNumerator_bounds {x : ℝ} (hx : |x| ≤ 1 / 2) :
   have ht0 : 0 ≤ t := by
     simpa [t] using aux_one_sub_gaussian_nonneg x
   have hgauss : gaussian x = Real.exp (-u) := by
-    simp [u, gaussian, Notation.gaussian]
+    simp [u, gaussian, Codex.gaussian]
   have ht_le_u : t ≤ u := by
     dsimp [t]
     rw [hgauss]
@@ -2818,7 +2818,7 @@ theorem aux_exp_three_half_pi_sq_le_nine {x : ℝ} (hx : |x| ≤ 1 / 2) :
 
 /--
 This auxiliary numerical estimate sharpens the local exponential factor in the
-pass-5 proof of Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`].  It
+pass-5 proof of Proposition [`Codex.auxiliaryFunctionB_properties`].  It
 is used to obtain the stated
 `56` bound for the $L^1$ norm of $B''$.
 -/
@@ -2845,7 +2845,7 @@ theorem aux_exp_three_half_pi_sq_le_four {x : ℝ} (hx : |x| ≤ 1 / 2) :
 
 /--
 The zero extension used for the second derivative assertion in Proposition
-[`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`].
+[`Codex.auxiliaryFunctionB_properties`].
 -/
 def auxiliaryFunctionBSecondDerivative (x : ℝ) : ℝ :=
   if x = 0 then 0 else
@@ -2972,7 +2972,7 @@ theorem aux_BSecondGaussianPart_abs_le_near_zero {x : ℝ}
         _ = 144 * |x| := by ring
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this retains the sign and sharp local envelope in the
 cancellation of the Gaussian quotient terms of $B''$.
@@ -3056,7 +3056,7 @@ theorem aux_BSecondGaussianPart_nonneg_le_local {x : ℝ}
   · simpa [T, u] using hquot
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this is the pass-5 local $B''$ estimate on the interval where
 the quotient formula has a removable singularity.
@@ -3349,7 +3349,7 @@ theorem aux_BSecondGaussianPart_abs_le_outer {x : ℝ}
     _ ≤ 12 * Real.exp (-(1 / 2) * x ^ 2) + 8 * q := add_le_add hfirst hsecond
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this supplies the tail lower bound for the square-root
 denominators in the sharp $B''$ estimate.
@@ -3386,7 +3386,7 @@ theorem aux_sqrtOneMinusGaussian_half_of_half_le_abs {x : ℝ}
   linarith
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this is the pass-5 tail envelope for the Gaussian quotient
 terms of $B''$.
@@ -3472,19 +3472,19 @@ theorem aux_BSecondGaussianPart_abs_le_outer_sharp {x : ℝ}
     _ = 2 * Real.pi * gaussian x + 12 * Real.pi ^ 2 * x ^ 2 * gaussian x := by ring
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this supplies the integrability of the Gaussian second moment
 needed for the sharp tail majorant.
 -/
 theorem aux_sq_mul_gaussian_integrable :
     Integrable (fun x : ℝ => x ^ 2 * gaussian x) := by
-  simpa [gaussian, Notation.gaussian, Real.rpow_natCast] using
+  simpa [gaussian, Codex.gaussian, Real.rpow_natCast] using
     (integrable_rpow_mul_exp_neg_mul_sq (b := Real.pi) Real.pi_pos
       (s := (2 : ℝ)) (by norm_num : (-1 : ℝ) < 2))
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this evaluates the Gaussian second moment in the sharp
 tail estimate.
@@ -3492,7 +3492,7 @@ tail estimate.
 theorem aux_integral_gaussian_second_moment :
     (∫ x : ℝ, x ^ 2 * gaussian x) = (2 * Real.pi)⁻¹ := by
   have hlin : Integrable (fun x : ℝ => x * gaussian x) := by
-    simpa [gaussian, Notation.gaussian] using
+    simpa [gaussian, Codex.gaussian] using
       (integrable_mul_exp_neg_mul_sq (b := Real.pi) Real.pi_pos)
   have hderiv : Integrable (fun x : ℝ => x * (fderiv ℝ gaussian x) 1) := by
     convert aux_sq_mul_gaussian_integrable.const_mul (-(2 * Real.pi)) using 1
@@ -3530,7 +3530,7 @@ theorem aux_integral_gaussian_second_moment :
   linarith [hmoment]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this evaluates the Abel tail occurring in the sharp $B''$
 majorant.
@@ -3710,7 +3710,7 @@ theorem aux_auxiliaryFunctionBSecondDerivative_norm_le (x : ℝ) :
           exact le_rfl
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this combines the pass-5 local and tail estimates into the
 sharp integrable majorant for the zero extension of $B''$.
@@ -3795,7 +3795,7 @@ theorem aux_auxiliaryFunctionBSecondDerivative_norm_le_sharp (x : ℝ) :
             exact le_rfl
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this proves integrability of the pass-5 sharp $B''$
 majorant.
@@ -3819,7 +3819,7 @@ theorem aux_BSecondSharpMajorant_integrable :
   ring
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`],
+Auxiliary for Proposition [`Codex.auxiliaryFunctionB_properties`],
  formalized by
 `auxiliaryFunctionB_properties`: this integrates the pass-5 sharp $B''$ majorant and verifies
 the constant $56$.
@@ -3928,7 +3928,7 @@ theorem aux_BSecondMajorant_integrable :
 /--
 This auxiliary calculation integrates the explicit $B''$ majorant and checks that the
 numerical total is below the constant in Proposition
-[`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`].
+[`Codex.auxiliaryFunctionB_properties`].
 -/
 theorem aux_BSecondMajorant_integral_le_hundred :
     (∫ x : ℝ,
@@ -4062,7 +4062,7 @@ theorem aux_sqrtOneMinusGaussian_hasDerivAt {x : ℝ} (hx : x ≠ 0) :
   have hlt : gaussian x < 1 := by
     have hneg : -Real.pi * x ^ 2 < 0 := by
       nlinarith [Real.pi_pos, sq_pos_of_ne_zero hx]
-    simpa [gaussian, Notation.gaussian] using (Real.exp_lt_exp.mpr hneg)
+    simpa [gaussian, Codex.gaussian] using (Real.exp_lt_exp.mpr hneg)
   unfold sqrtOneMinusGaussian
   exact (aux_one_sub_gaussian_hasDerivAt x).sqrt (ne_of_gt (sub_pos.mpr hlt))
 
@@ -4230,7 +4230,7 @@ theorem aux_auxiliaryFunctionBDerivative_hasDerivAt_of_ne_zero {x : ℝ} (hx : x
 /--
 This auxiliary measurability fact supplies the Borel-measurability conclusion for the
 zero extension of $B''$ in Proposition
-[`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`].
+[`Codex.auxiliaryFunctionB_properties`].
 -/
 theorem aux_auxiliaryFunctionBSecondDerivative_measurable :
     Measurable auxiliaryFunctionBSecondDerivative := by
@@ -4365,7 +4365,7 @@ theorem aux_deriv_auxiliaryFunctionBDerivative (x : ℝ) :
 /--
 This auxiliary integrability theorem turns the explicit majorant for the zero extension of
 $B''$ into the integrability component of Proposition
-[`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`].
+[`Codex.auxiliaryFunctionB_properties`].
 -/
 theorem aux_auxiliaryFunctionBSecondDerivative_integrable :
     Integrable auxiliaryFunctionBSecondDerivative := by
@@ -4390,7 +4390,7 @@ theorem aux_auxiliaryFunctionBTrueSecondDerivative_integrable :
 
 /--
 This is the $B''$ norm component of Proposition
- [`Codex.Preliminaries.Gaussians.auxiliaryFunctionB_properties`]; the complete
+ [`Codex.auxiliaryFunctionB_properties`]; the complete
 source proposition is recorded in `auxiliaryFunctionB_properties`.
 -/
 theorem aux_auxiliaryFunctionBSecondDerivative_eLpNorm_one_le :
@@ -4446,7 +4446,7 @@ theorem aux_sqrtGaussianCoefficient_succ (n : ℕ) :
 
 /--
 This auxiliary positivity fact makes the binomial Gaussian-mixture terms nonnegative in
-the proof of Proposition [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], formalized by
+the proof of Proposition [`Codex.sqrtGaussianDecay`], formalized by
 `sqrtGaussianDecay`.
 -/
 theorem aux_sqrtGaussianCoefficient_nonneg (n : ℕ) :
@@ -4511,13 +4511,13 @@ theorem aux_sqrtGaussianFrequencyProfile_hasSum {x : ℝ} (hx : x ≠ 0) :
   have hgauss_lt_one : gaussian x < 1 := by
     have hneg : -Real.pi * x ^ 2 < 0 := by
       nlinarith [Real.pi_pos, sq_pos_of_ne_zero hx]
-    simpa [gaussian, Notation.gaussian] using (Real.exp_lt_exp.mpr hneg)
+    simpa [gaussian, Codex.gaussian] using (Real.exp_lt_exp.mpr hneg)
   have hsum := aux_sqrtGaussianCoefficient_hasSum (gaussian x)
     (aux_gaussian_pos x).le hgauss_lt_one
   simpa only [sqrtOneMinusGaussian, aux_gaussian_pow_succ_eq] using hsum
 
 /--
-Auxiliary frequency profile for [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], used to
+Auxiliary frequency profile for [`Codex.sqrtGaussianDecay`], used to
  define the
 inverse-Fourier kernel in `sqrtGaussianDecay`.
 -/
@@ -4526,7 +4526,7 @@ def aux_sqrtGaussianFrequencyProfile (ξ : ℝ) : ℂ :=
 
 /--
 Auxiliary complex-valued inverse-Fourier kernel for
- [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`],
+ [`Codex.sqrtGaussianDecay`],
 used to define the real-valued function in `sqrtGaussianDecay`.
 -/
 def aux_sqrtGaussianKernel : ℝ → ℂ :=
@@ -4534,7 +4534,7 @@ def aux_sqrtGaussianKernel : ℝ → ℂ :=
 
 /--
 The real-valued inverse-Fourier kernel $\rho$ from
- [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`],
+ [`Codex.sqrtGaussianDecay`],
 used by the public theorem `sqrtGaussianDecay`.
 -/
 def aux_sqrtGaussianDecayKernel (x : ℝ) : ℝ := (aux_sqrtGaussianKernel x).re
@@ -4616,7 +4616,7 @@ theorem aux_inverseFourier_scaledPoissonFrequency (x : ℝ) :
 
 /--
 The inverse-Fourier kernel $\rho$ from Proposition
- [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`] is
+ [`Codex.sqrtGaussianDecay`] is
 continuous.
 -/
 theorem aux_sqrtGaussianKernel_continuous : Continuous aux_sqrtGaussianKernel := by
@@ -4734,23 +4734,24 @@ theorem aux_auxiliaryFunctionB_eLpNorm_one_le :
   exact ENNReal.ofReal_le_ofReal hnorm_bound
 
 /--
-\begin{proposition}\label{auxiliary function B}
+**Proposition.**
 
-    With $p$ as in Proposition [`Codex.Preliminaries.Gaussians.poissonKernel`], define $B:\R\to
-    \R$ by
-\begin{equation}\label{auto:Gaussian-square-root-remainder}
-    B(\xi):=1-\sqrt{1-\g(\xi)}-\widehat{p}(\sqrt{\pi}\xi)\, .
-\end{equation}
-Then $B$ is smooth on $\R\setminus \{0\}$ and continuous on $\R$. The function $B'$
-has a continuous extension to $\R$ which is integrable and the
-function $B''$, extended to be $0$ at $0$, is Borel measurable and integrable on $\R$.
+With $p$ as in Proposition [`Codex.poissonKernel`], define $B:\mathbb{R}\to \mathbb{R}$ by
+
+$$
+    B(\xi)=1-\sqrt{1-\mathfrak{g}(\xi)}-\widehat{p}(\sqrt{\pi}\xi)\, .
+$$
+
+Then $B$ is smooth on $\mathbb{R}\setminus \{0\}$ and continuous on $\mathbb{R}$. The function $B'$
+has a continuous extension to $\mathbb{R}$ which is integrable and the
+function $B''$, extended to be $0$ at $0$, is Borel measurable and integrable on $\mathbb{R}$.
 Moreover,
-\begin{equation}\label{eq:B-explicit-norms}
+
+$$
     \|B\|_1\le 6,\qquad
     \|B'\|_1\le 12,\qquad
     \|B''\|_1\le 68.
-\end{equation}
-\end{proposition}
+$$
 -/
 theorem auxiliaryFunctionB_properties :
     Continuous auxiliaryFunctionB ∧
@@ -4849,9 +4850,7 @@ theorem aux_deriv_auxiliaryFunctionBDerivative_complex_integrable :
   funext x
   exact aux_deriv_auxiliaryFunctionBDerivative_complex x
 
-/--
-This auxiliary Fourier identity is the first integration-by-parts relation for $B$.
--/
+/-- This auxiliary Fourier identity is the first integration-by-parts relation for $B$. -/
 theorem aux_inverseFourier_auxiliaryFunctionBDerivative (x : ℝ) :
     FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionBDerivative ξ : ℂ)) x =
       (-(2 * Real.pi * Complex.I * x)) *
@@ -4898,9 +4897,7 @@ theorem aux_integral_norm_auxiliaryFunctionB_le_six :
     ← ofReal_integral_norm_eq_lintegral_enorm aux_auxiliaryFunctionB_integrable] at h
   exact (ENNReal.ofReal_le_ofReal_iff (by norm_num)).mp h
 
-/--
-This weaker form of the $B$ integral estimate is retained for earlier auxiliary bounds.
--/
+/-- This weaker form of the $B$ integral estimate is retained for earlier auxiliary bounds. -/
 theorem aux_integral_norm_auxiliaryFunctionB_le_eight :
     (∫ ξ : ℝ, ‖auxiliaryFunctionB ξ‖) ≤ 8 :=
   aux_integral_norm_auxiliaryFunctionB_le_six.trans (by norm_num)
@@ -4922,9 +4919,7 @@ theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_six (x : ℝ) :
       simp [Circle.norm_smul]
     _ ≤ 6 := aux_integral_norm_auxiliaryFunctionB_le_six
 
-/--
-This auxiliary uniform estimate is the zeroth-order inverse-Fourier bound for $B$.
--/
+/-- This auxiliary uniform estimate is the zeroth-order inverse-Fourier bound for $B$. -/
 theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_eight (x : ℝ) :
     ‖FourierTransformInv.fourierInv (fun ξ : ℝ => (auxiliaryFunctionB ξ : ℂ)) x‖ ≤ 8 := by
   rw [Real.fourierInv_eq]
@@ -5079,7 +5074,7 @@ theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_thirtyTwo_bracket_sq (x : 
       _ ≤ 32 := by norm_num
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], formalized by
+Auxiliary for Proposition [`Codex.sqrtGaussianDecay`], formalized by
 `sqrtGaussianDecay`: this combines the sharpened uniform and second-derivative bounds for the
 inverse transform of $B$.
 -/
@@ -5138,7 +5133,7 @@ theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_fifteen_bracket_sq (x : �
       _ ≤ 15 := by norm_num
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], formalized by
+Auxiliary for Proposition [`Codex.sqrtGaussianDecay`], formalized by
 `sqrtGaussianDecay`: this is the retained weaker pass-5 bracket-bump estimate for the inverse
 transform of $B$.
 -/
@@ -5196,9 +5191,7 @@ theorem aux_norm_inverseFourier_auxiliaryFunctionB_le_seventeen_bracket_sq (x : 
         mul_le_mul_of_nonneg_left hquad (by norm_num)
       _ ≤ 17 := by norm_num
 
-/--
-This bound controls the scaled Abel kernel in the proof of `sqrtGaussianDecay`.
--/
+/-- This bound controls the scaled Abel kernel in the proof of `sqrtGaussianDecay`. -/
 theorem aux_scaledPoissonKernel_le_eight_bracket_sq (x : ℝ) :
     aux_scaledPoissonKernel x ≤ 8 * bracketBump x ^ 2 := by
   have hformula : aux_scaledPoissonKernel x =
@@ -5244,7 +5237,7 @@ theorem aux_scaledPoissonKernel_le_eight_bracket_sq (x : ℝ) :
     _ ≤ 8 * (1 + |x|)⁻¹ ^ 2 := hlast
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], formalized by
+Auxiliary for Proposition [`Codex.sqrtGaussianDecay`], formalized by
 `sqrtGaussianDecay`: this is the pass-5 bracket-bump bound for the scaled Abel kernel.
 -/
 theorem aux_scaledPoissonKernel_le_three_halves_bracket_sq (x : ℝ) :
@@ -5328,7 +5321,7 @@ theorem aux_abs_sqrtGaussianDecayKernel_le_forty_bracket_sq (x : ℝ) :
     _ = 40 * bracketBump x ^ 2 := by ring
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], formalized by
+Auxiliary for Proposition [`Codex.sqrtGaussianDecay`], formalized by
 `sqrtGaussianDecay`: this combines the sharpened $15$ and $3/2$ estimates into the pass-8
 decay constant.
 -/
@@ -5356,7 +5349,7 @@ theorem aux_abs_sqrtGaussianDecayKernel_le_seventeen_bracket_sq (x : ℝ) :
       nlinarith [sq_nonneg (bracketBump x)]
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], formalized by
+Auxiliary for Proposition [`Codex.sqrtGaussianDecay`], formalized by
 `sqrtGaussianDecay`: this retains the weaker pass-5 decay estimate.
 -/
 theorem aux_abs_sqrtGaussianDecayKernel_le_nineteen_bracket_sq (x : ℝ) :
@@ -5391,7 +5384,7 @@ theorem aux_sqrtGaussianDecayKernel_le_forty_bracket_sq (x : ℝ) :
   (le_abs_self _).trans (aux_abs_sqrtGaussianDecayKernel_le_forty_bracket_sq x)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], formalized by
+Auxiliary for Proposition [`Codex.sqrtGaussianDecay`], formalized by
 `sqrtGaussianDecay`: this is the one-sided form of the pass-8 decay estimate.
 -/
 theorem aux_sqrtGaussianDecayKernel_le_seventeen_bracket_sq (x : ℝ) :
@@ -5399,7 +5392,7 @@ theorem aux_sqrtGaussianDecayKernel_le_seventeen_bracket_sq (x : ℝ) :
   (le_abs_self _).trans (aux_abs_sqrtGaussianDecayKernel_le_seventeen_bracket_sq x)
 
 /--
-Auxiliary for Proposition [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], formalized by
+Auxiliary for Proposition [`Codex.sqrtGaussianDecay`], formalized by
 `sqrtGaussianDecay`: this retains the weaker pass-5 one-sided decay estimate.
 -/
 theorem aux_sqrtGaussianDecayKernel_le_nineteen_bracket_sq (x : ℝ) :
@@ -5469,7 +5462,7 @@ theorem aux_sqrtGaussianDecayKernel_hasSum (x : ℝ) :
         FourierTransformInv.fourierInv (fun ξ : ℝ => (gaussian ξ : ℂ)) y =
           (gaussian y : ℂ) := by
       rw [Real.fourierInv_eq_fourier_neg, gaussian_fourier_fixed]
-      simp [gaussian, Notation.gaussian]
+      simp [gaussian, Codex.gaussian]
     have hinv : FourierTransformInv.fourierInv
         (fun ξ : ℝ => (gaussian (Real.sqrt (n + 1) * ξ) : ℂ)) x =
         (gaussianRescale (Real.sqrt (n + 1)) x : ℂ) := by
@@ -5615,9 +5608,7 @@ theorem aux_wienerEnvelope_sqrtGaussianDecayKernel_le_hundredSixty_bracket_sq (x
       mul_le_mul_of_nonneg_left (hlocal z hz) (by norm_num)
     _ = 160 * bracketBump x ^ 2 := by ring
 
-/--
-This auxiliary conclusion supplies the $W_0$ clause of `sqrtGaussianDecay`.
--/
+/-- This auxiliary conclusion supplies the $W_0$ clause of `sqrtGaussianDecay`. -/
 theorem aux_sqrtGaussianDecayKernel_memW0 : MemW0 aux_sqrtGaussianDecayKernel := by
   have hcont : Continuous aux_sqrtGaussianDecayKernel := by
     exact Complex.continuous_re.comp aux_sqrtGaussianKernel_continuous
@@ -5635,25 +5626,27 @@ theorem aux_sqrtGaussianDecayKernel_memW0 : MemW0 aux_sqrtGaussianDecayKernel :=
     _ ≤ 160 * (1 + x ^ 2)⁻¹ :=
       mul_le_mul_of_nonneg_left (aux_bracketBump_sq_le_inv_one_add_sq x) (by norm_num)
 
-/--
-Constant from [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`], used by `sqrtGaussianDecay`.
--/
+/-- Constant from [`Codex.sqrtGaussianDecay`], used by `sqrtGaussianDecay`. -/
 def C_squareRootGaussianDecay : ℝ := 17
 
 /--
-\begin{proposition}[square root of Gaussian decay]\label{square root of Gaussian decay}
+**Proposition (square root of Gaussian decay).**
 
-For $x\in\R$ let
-\begin{equation}\label{auto:inverse-Fourier-square-root-Gaussian} \rho(x) = \mathcal{F}^{-1}(\xi
-\mapsto 1- \sqrt{1-\g(\xi)})(x). \end{equation}
-This is a well-defined function in $W_0(\R)$ satisfying for all $x\in\R$,
-\begin{equation} \label{sqr gauss C}
+For $x\in\mathbb{R}$ let
+
+$$
+\rho(x) = \mathcal{F}^{-1}(\xi \mapsto 1- \sqrt{1-\mathfrak{g}(\xi)})(x).
+$$
+
+This is a well-defined function in $W_0(\mathbb{R})$ satisfying for all $x\in\mathbb{R}$,
+
+$$
     0\le \rho(x) \le C_{\text{square root of Gaussian decay}} \langle x\rangle^2,
-\end{equation}
-where $C_{\text{square root of Gaussian decay}}=17$.
-\end{proposition}
+$$
 
-See also [`Codex.Preliminaries.Gaussians.sqrtGaussianDecay`].
+where $C_{\text{square root of Gaussian decay}}=17$.
+
+See also [`Codex.sqrtGaussianDecay`].
 -/
 theorem sqrtGaussianDecay :
     MemW0 aux_sqrtGaussianDecayKernel ∧
@@ -5668,4 +5661,4 @@ theorem sqrtGaussianDecay :
 
 end
 
-end Codex.Preliminaries.Gaussians
+end Codex

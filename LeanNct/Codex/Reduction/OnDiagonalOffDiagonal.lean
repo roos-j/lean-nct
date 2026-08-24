@@ -15,24 +15,11 @@ Formalization of the reduction subsection which turns the on-diagonal
 estimates into the window and Whitney estimates used in the final reduction.
 -/
 
-namespace Codex.Reduction.OnDiagonalOffDiagonal
+namespace Codex
 
 open MeasureTheory Set Filter Topology
 open scoped BigOperators ENNReal FourierTransform Real Convolution RealInnerProductSpace
 
-open Codex
-open Codex.Preliminaries.Notation
-open Codex.Preliminaries.BumpsAndEstimates
-open Codex.Preliminaries.KKernels
-open Codex.Preliminaries.MKernels
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
-open Codex.MainArgument.MainInduction
-open Codex.Reduction.OnDiagonalMainArgument
-open Codex.Reduction.WindowsAndPairs
-open Codex.Reduction.BumpFunctions
-open Codex.Reduction.Miscellany
 
 
 noncomputable section
@@ -57,7 +44,7 @@ noncomputable def aux_diagonalBandSequence (D : ReductionData) (h : ℕ) :
     KernelSequence 1 :=
   fun j => aux_liftPlaneKernel (aux_diagonalBandKernel D.kernel D.a h j)
 
-/-- The constant in Proposition [`Codex.Reduction.OnDiagonalOffDiagonal.diagonalBandReduction`]. -/
+/-- The constant in Proposition [`Codex.diagonalBandReduction`]. -/
 noncomputable def C_diagonalBandReduction : ℝ :=
   (2 : ℝ) ^ 4 * Real.sqrt (C_nReduction * C_increaseDataReduction) +
     (2 : ℝ) ^ 3 * C_increaseDataReduction
@@ -181,11 +168,11 @@ theorem fourScaleFrequency_mul_sqrt_eq_phiDifference
     (hmuMinus : 0 < muMinus) (hmuScale : 2 * muMinus ≤ muPlus) :
     fourScaleGaussianRhoFrequency phiHat muMinus muPlus lambdaMinus lambdaPlus
         (-(1 / 2 : ℝ)) u *
-      (Real.sqrt (Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-        Codex.Preliminaries.Gaussians.gaussian (muPlus * u)) : ℂ) =
+      (Real.sqrt (Codex.gaussian (muMinus * u) -
+        Codex.gaussian (muPlus * u)) : ℂ) =
       phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u) := by
-  let g : ℝ := Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-    Codex.Preliminaries.Gaussians.gaussian (muPlus * u)
+  let g : ℝ := Codex.gaussian (muMinus * u) -
+    Codex.gaussian (muPlus * u)
   let c : ℂ := phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u)
   have hg : 0 ≤ g := by
     dsimp [g]
@@ -222,7 +209,7 @@ theorem realConvolution_fourScaleRho_sigma_eq_band
       (aux_memW0_re (aux_fourScaleGaussianRho_memW0 hmuMinus hmuPlus
         hlambdaMinus hlambdaPlus hscales (by norm_num)))
       (squareRootGaussianDifference_memW0 ha j)
-  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+  · exact Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0 hlambdaMinus)
       (aux_standardBumpRescale_memW0 hlambdaPlus)
   · exact fourierReal_standardBumpRescale_sub_integrable
@@ -269,13 +256,13 @@ theorem fourScaleFrequency_mul_sqrt_sq_eq_phiDifference
     (phiHat : ℝ → ℂ) (muMinus muPlus lambdaMinus lambdaPlus u : ℝ)
     (hmuMinus : 0 < muMinus) (hmuScale : 2 * muMinus ≤ muPlus) :
     fourScaleGaussianRhoFrequency phiHat muMinus muPlus lambdaMinus lambdaPlus (-1 : ℝ) u *
-      (Real.sqrt (Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-        Codex.Preliminaries.Gaussians.gaussian (muPlus * u)) : ℂ) *
-      (Real.sqrt (Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-        Codex.Preliminaries.Gaussians.gaussian (muPlus * u)) : ℂ) =
+      (Real.sqrt (Codex.gaussian (muMinus * u) -
+        Codex.gaussian (muPlus * u)) : ℂ) *
+      (Real.sqrt (Codex.gaussian (muMinus * u) -
+        Codex.gaussian (muPlus * u)) : ℂ) =
       phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u) := by
-  let g : ℝ := Codex.Preliminaries.Gaussians.gaussian (muMinus * u) -
-    Codex.Preliminaries.Gaussians.gaussian (muPlus * u)
+  let g : ℝ := Codex.gaussian (muMinus * u) -
+    Codex.gaussian (muPlus * u)
   let c : ℂ := phiHat (lambdaMinus * u) - phiHat (lambdaPlus * u)
   have hg : 0 ≤ g := by
     dsimp [g]
@@ -318,7 +305,7 @@ theorem realConvolution_fourScaleRho_sigmaSq_eq_band
   apply real_eq_of_fourierReal_eq
   · exact aux_realConvolution_memW0 _ _ hrho
       (aux_realConvolution_memW0 _ _ hsigma hsigma)
-  · exact Codex.Preliminaries.KKernels.aux_memW0_sub
+  · exact Codex.aux_memW0_sub
       (aux_standardBumpRescale_memW0 hlambdaMinus)
       (aux_standardBumpRescale_memW0 hlambdaPlus)
   · exact fourierReal_standardBumpRescale_sub_integrable
@@ -534,8 +521,10 @@ theorem CincreaseDataReduction_nonneg : 0 ≤ C_increaseDataReduction := by
     aux_C_inductPositiveTermsTheorem_pos.le) CincreaseDataGaussianExpansion_nonneg)
     (by positivity)
 
-/-- The reduction increase-data constant is nonnegative.  This public form is
-used when reduction constants are assembled in the final argument. -/
+/--
+The reduction increase-data constant is nonnegative.  This public form is
+used when reduction constants are assembled in the final argument.
+-/
 theorem aux_CincreaseDataReduction_nonneg : 0 ≤ C_increaseDataReduction :=
   CincreaseDataReduction_nonneg
 
@@ -931,8 +920,10 @@ theorem quarter_height_tsum (C : ℝ) (hC : 0 ≤ C) :
       (ENNReal.ofReal_tsum_of_nonneg hnonneg hactual).symm
     _ ≤ ENNReal.ofReal ((2 : ℝ) ^ 3 * C) := ENNReal.ofReal_le_ofReal hsum
 
-/-- The ENNReal geometric tail of a quarter-power dyadic decay is at most eight
-    times its nonnegative coefficient. -/
+/--
+The ENNReal geometric tail of a quarter-power dyadic decay is at most eight
+times its nonnegative coefficient.
+-/
 theorem quarterHeightTsum (C : ℝ) (hC : 0 ≤ C) :
     (∑' h : ℕ, ENNReal.ofReal (C * Real.rpow 2 (-((h : ℝ) / 4)))) ≤
       ENNReal.ofReal ((2 : ℝ) ^ 3 * C) :=
@@ -940,31 +931,35 @@ theorem quarterHeightTsum (C : ℝ) (hC : 0 ≤ C) :
 
 
 /--
-\begin{proposition}[diagonal band - reduction variant]
-\label{P:diagonal-band-reduction}
-Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$ be as in Proposition~
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataReduction`]. For $h\in\N$ with
-$h\ge1$ and $j\in\Z$, define
-\begin{equation}\label{auto:diagonal-band-positive-scale}
-L_{h,j}= M_j \ast_{(1,1)} (\Phi_{(2^{h-1}a(j))}-\Phi_{(2^{h}a(j))}),
-\end{equation}
-and for $j\in \Z$,
-\begin{equation}\label{auto:diagonal-band-zero-scale}
-L_{0,j}=M_j \ast_{(1,1)} (\Phi_{(a(j-1))}-\Phi_{(a(j))}).
-\end{equation}
-Let $\mathbf{L}_h=(L_{h,j})_{j\in \Z}$. Then
-\begin{equation}\label{auto:diagonal-band-sum-bound}
-\sum_{h\in \N} \|\mathbf{L}_h\|_{\rm M(1)} \leq C_{\text{P:diagonal-band-reduction}}
-\end{equation}
-with  $C_{\text{P:diagonal-band-reduction}} = 2^4(
-    C_{\text{lem:N-reduction}}
-    C_{\text{P:increase-data-reduction}}
-  )^{1/2} + 2^3 C_{\text{P:increase-data-reduction}}$.
-\end{proposition}
+**Proposition (diagonal band - reduction variant).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.diagonalBandReduction`],
-[`Codex.Reduction.OnDiagonalMainArgument.nReduction`],
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataReduction`].
+Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \mathbb{Z}}$ be as in Proposition
+[`Codex.increaseDataReduction`]. For $h\in\mathbb{N}$ with $h\ge1$ and $j\in\mathbb{Z}$, define
+
+$$
+L_{h,j}= M_j \ast_{(1,1)} (\Phi_{(2^{h-1}a(j))}-\Phi_{(2^{h}a(j))}),
+$$
+
+and for $j\in \mathbb{Z}$,
+
+$$
+L_{0,j}=M_j \ast_{(1,1)} (\Phi_{(a(j-1))}-\Phi_{(a(j))}).
+$$
+
+Let $\mathbf{L}_h=(L_{h,j})_{j\in \mathbb{Z}}$. Then
+
+$$
+\sum_{h\in \mathbb{N}} \|\mathbf{L}_h\|_{\rm M(1)} \leq C_{\text{diagonal band - reduction variant}}
+$$
+
+with  $C_{\text{diagonal band - reduction variant}} = 2^4(
+C_{\text{lem:N-reduction}}
+C_{\text{increase data - reduction variant}}
+  )^{1/2} + 2^3 C_{\text{increase data - reduction variant}}$.
+
+See also [`Codex.diagonalBandReduction`],
+[`Codex.nReduction`],
+[`Codex.increaseDataReduction`].
 -/
 theorem diagonalBandReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) :
     ∑' h : ℕ,
@@ -1010,15 +1005,14 @@ theorem diagonalBandReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) :
 -- The explicit numerical calculation below contains powers through `2^552`.
 set_option exponentiation.threshold 600 in
 /--
-\begin{lemma}[constant $C_{\text{P:diagonal-band-reduction}}$ \auto]
-\label{constant diagonal band reduction}
-\begin{equation}\label{constant diagonal band reduction bound}
-C_{\text{P:diagonal-band-reduction}}
-<\tfrac{63}{64}2^{480}<2^{480}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{diagonal band - reduction variant}}$).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.diagonalBandReduction`].
+$$
+C_{\text{diagonal band - reduction variant}}
+<\tfrac{63}{64}2^{480}<2^{480}.
+$$
+
+See also [`Codex.diagonalBandReduction`].
 -/
 theorem constantDiagonalBandReduction :
     C_diagonalBandReduction < (63 / 64 : ℝ) * (2 : ℝ) ^ 480 := by
@@ -1179,18 +1173,22 @@ theorem aux_largeScaleSmoothing_tendsto_zero
     exact le_rfl
 
 /--
-\begin{lemma}\label{lem:L1-reduction}
-Let $a\in A$ and suppose that $(M_j)_{j\in\Z}\subset W_0(\R^2)$ satisfies for all
-$\xi \in \R$ and $j\in \Z$
-\begin{equation}\label{auto:vanishing-diagonal-assumption}
+**Lemma.**
+
+Let $a\in A$ and suppose that $(M_j)_{j\in\mathbb{Z}}\subset W_0(\mathbb{R}^2)$ satisfies for all
+$\xi \in \mathbb{R}$ and $j\in \mathbb{Z}$
+
+$$
 \widehat{M_j}(\xi,-\xi)=0.
-\end{equation}
+$$
+
 Then
-\begin{equation}\label{auto:vanishing-diagonal-large-scale-limit}    \lim_{t\to\infty}
+
+$$
+\lim_{t\to\infty}
     \| M_j\ast_{(1,1)}\Phi_{(t)} \|_1
     =0
-    \end{equation}
-\end{lemma}
+$$
 -/
 theorem lOneReduction (M : RealPlane → ℝ) (hM : MemW0 M)
     (hcancel : ∀ ξ : ℝ, aux_fourierPlane M (ξ, -ξ) = 0) :
@@ -1204,8 +1202,10 @@ noncomputable def aux_planeFourier (M : RealPlane → ℝ) :
   FourierTransform.fourier
     (fun v : EuclideanSpace ℝ (Fin 2) => (M (v 0, v 1) : ℂ))
 
-/-- The Fourier support hypothesis in Proposition
-[`Codex.Reduction.OnDiagonalOffDiagonal.vanishingDiagonalReduction`]. -/
+/--
+The Fourier support hypothesis in Proposition
+[`Codex.vanishingDiagonalReduction`].
+-/
 def aux_frequencyDiagonalBound (D : ReductionData) : Prop :=
   ∀ j : ℤ,
     Function.support
@@ -1292,7 +1292,7 @@ theorem aux_initialSmoothing_eq
     fun z => (D.kernel j (z 0, z 1) : ℂ)
   let phi : ℝ → ℂ := fun q => (standardBumpRescale (D.a (j - 1)) q : ℂ)
   let conv : EuclideanSpace ℝ (Fin 2) → ℂ :=
-    Codex.Preliminaries.ConvolutionAlongVector.convolutionAlongVector f phi
+    Codex.convolutionAlongVector f phi
       aux_vanishingDiagonalDirection
   have ha : 0 < D.a (j - 1) := aux_spacedSequence_pos D.a_spaced _
   have hfre : MemW0 (fun z : EuclideanSpace ℝ (Fin 2) => D.kernel j (z 0, z 1)) := by
@@ -1308,7 +1308,7 @@ theorem aux_initialSmoothing_eq
   have hphi : MemW0 phi := by
     simpa [phi] using aux_memW0_complex_ofReal_vanishing _ hphire
   have hconv : MemW0 conv :=
-    Codex.Preliminaries.ConvolutionAlongVector.memW0_convolutionAlongVector hf hphi
+    Codex.memW0_convolutionAlongVector hf hphi
       aux_vanishingDiagonalDirection
   have hfourier (xi : EuclideanSpace ℝ (Fin 2)) :
       FourierTransform.fourier conv xi = FourierTransform.fourier f xi := by
@@ -1316,7 +1316,7 @@ theorem aux_initialSmoothing_eq
       FourierTransform.fourier conv xi =
           FourierTransform.fourier f xi * FourierTransform.fourier phi
             (inner ℝ aux_vanishingDiagonalDirection xi) :=
-        Codex.Preliminaries.ConvolutionAlongVector.fourier_convolutionAlongVector hf hphi
+        Codex.fourier_convolutionAlongVector hf hphi
           aux_vanishingDiagonalDirection xi
       _ = aux_planeFourier (D.kernel j) xi *
           FourierTransform.fourier (fun x : ℝ => (standardBump x : ℂ))
@@ -1627,18 +1627,18 @@ theorem aux_diagonalBand_prefix_bound {n : ℕ} (hn : 2 ≤ n)
     _ ≤ ENNReal.ofReal C_diagonalBandReduction := diagonalBandReduction hn D
 
 /--
-\begin{proposition}[vanishing diagonal - reduction variant]
-\label{P:vanishing-diagonal-reduction}
-Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$ be as in Proposition~
-[`Codex.Reduction.OnDiagonalMainArgument.increaseDataReduction`]. In addition, assume that
-$\widehat{M_j}(\xi,\eta)$ is supported where $|\xi+\eta| \leq 2^{-1} (a(j-1))^{-1}$.
-Let $\mathbf{M}=(M_j)_{j\in \Z}$. Then
-\begin{equation}\label{auto:vanishing-diagonal-M-bound}
-\|\mathbf{M}\|_{\rm M(1)} \leq C_{\text{P:diagonal-band-reduction}}
-\end{equation}
-\end{proposition}
+**Proposition (vanishing diagonal - reduction variant).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.diagonalBandReduction`].
+Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \mathbb{Z}}$ be as in Proposition
+[`Codex.increaseDataReduction`]. In addition, assume that $\widehat{M_j}(\xi,\eta)$ is supported in
+the set where $|\xi+\eta| \leq 2^{-1} (a(j-1))^{-1}$.
+Let $\mathbf{M}=(M_j)_{j\in \mathbb{Z}}$. Then
+
+$$
+\|\mathbf{M}\|_{\rm M(1)} \leq C_{\text{diagonal band - reduction variant}}
+$$
+
+See also [`Codex.diagonalBandReduction`].
 -/
 theorem vanishingDiagonalReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (hsupport : aux_frequencyDiagonalBound D) :
@@ -1647,7 +1647,7 @@ theorem vanishingDiagonalReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
         ENNReal.ofReal C_diagonalBandReduction := by
   let P : ℕ → KernelSequence 1 := fun H j y =>
     ∑ h ∈ Finset.range (H + 1), aux_diagonalBandSequence D h j y
-  apply Codex.MainArgument.MainInduction.aux_kernelSequenceSeminorm_le_of_prefix_tendsto_eLpNorm
+  apply Codex.aux_kernelSequenceSeminorm_le_of_prefix_tendsto_eLpNorm
     (by omega) (by omega)
     (fun j => aux_liftPlaneKernel (D.kernel j)) P
       (ENNReal.ofReal C_diagonalBandReduction)
@@ -1663,8 +1663,10 @@ theorem vanishingDiagonalReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
 noncomputable def aux_windowRescale (phi : SchwartzMap ℝ ℝ) (t : ℝ) : ℝ → ℝ :=
   fun x => t⁻¹ * phi (t⁻¹ * x)
 
-/-- The telescoping window kernel from Proposition
-[`Codex.Reduction.OnDiagonalOffDiagonal.oneScaleEstimateWindow`]. -/
+/--
+The telescoping window kernel from Proposition
+[`Codex.oneScaleEstimateWindow`].
+-/
 noncomputable def aux_oneScaleWindowKernel (phi : SchwartzMap ℝ ℝ) (a : ℤ → ℝ)
     (j : ℤ) : RealPlane → ℝ :=
   fun v => tensorSquare (aux_windowRescale phi (a (j - 1))) v -
@@ -1675,7 +1677,7 @@ noncomputable def aux_oneScaleWindowSequence (phi : SchwartzMap ℝ ℝ) (a : �
     KernelSequence 1 :=
   fun j => aux_liftPlaneKernel (aux_oneScaleWindowKernel phi a j)
 
-/-- The constant in Proposition [`Codex.Reduction.OnDiagonalOffDiagonal.oneScaleEstimateWindow`]. -/
+/-- The constant in Proposition [`Codex.oneScaleEstimateWindow`]. -/
 noncomputable def C_oneScaleEstimateWindow : ℝ :=
   (2 : ℝ) ^ 9 * C_uniPair ^ 2
 
@@ -1891,22 +1893,24 @@ theorem aux_oneScale_telescope (phi : SchwartzMap ℝ ℝ) (a : ℤ → ℝ) :
     push_cast <;> ring_nf
 
 /--
-\begin{proposition}\label{P:one-scale-estimate-window}
-Let $a\in A$. For $j\in \Z$, we set
-\begin{equation}\label{auto:one-scale-window-kernel}
+**Proposition.**
+
+Let $a\in A$. For $j\in \mathbb{Z}$, we set
+
+$$
 M_j=(\phi_{0,a(j-1)})^{\otimes 2} - (\phi_{0,a(j)})^{\otimes 2}
-\end{equation}
-and $\mathbf{M}=(M_j)_{j\in \Z}$. Then
-\begin{equation}\label{E:telescoping-estimate}
+$$
+
+and $\mathbf{M}=(M_j)_{j\in \mathbb{Z}}$. Then
+
+$$
 \|\mathbf{M}\|_{\rm M(1)} \leq C_{\text{P:one-scale-estimate-window}},
-\end{equation}
-where $C_{\text{P:one-scale-estimate-window}}=2^9C_{\text{def:unipair}}^2$.
+$$
 
+where $C_{\text{P:one-scale-estimate-window}}=2^9C_{\text{Universal pair}}^2$.
 
-\end{proposition}
-
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.oneScaleEstimateWindow`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`].
+See also [`Codex.oneScaleEstimateWindow`],
+[`Codex.uniPair`].
 -/
 theorem oneScaleEstimateWindow {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
     (ha : SpacedSequence a) (phi0 phi1 : SchwartzMap ℝ ℝ)
@@ -1943,14 +1947,13 @@ theorem oneScaleEstimateWindow {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
       ring
 
 /--
-\begin{lemma}[constant $C_{\text{P:one-scale-estimate-window}}$ \auto]
-\label{auto:constant-one-scale-window}
-\begin{equation}\label{auto:constant-one-scale-window-bound}
-C_{\text{P:one-scale-estimate-window}}=2^{39}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{P:one-scale-estimate-window}}$).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.oneScaleEstimateWindow`].
+$$
+C_{\text{P:one-scale-estimate-window}}=2^{39}.
+$$
+
+See also [`Codex.oneScaleEstimateWindow`].
 -/
 theorem constantOneScaleWindow : C_oneScaleEstimateWindow = (2 : ℝ) ^ 39 := by
   norm_num [C_oneScaleEstimateWindow, C_uniPair]
@@ -1996,8 +1999,10 @@ theorem aux_fourier_sub_of_integrable (f g : ℝ → ℝ)
       integral_sub hf' hg'
     _ = _ := by rfl
 
-/-- Fourier transform converts a positive `L¹`-normalized window rescaling
-into frequency rescaling. -/
+/--
+Fourier transform converts a positive `L¹`-normalized window rescaling
+into frequency rescaling.
+-/
 theorem aux_windowRescale_fourier (t : ℝ) (ht : 0 < t)
     (phi : SchwartzMap ℝ ℝ) (xi : ℝ) :
     FourierTransform.fourier (fun x : ℝ => (aux_windowRescale phi t x : ℂ)) xi =
@@ -2047,13 +2052,14 @@ theorem aux_window_square_fourier_algebra (A B C : ℂ)
     _ = A ^ 2 - C ^ 2 := by linear_combination hBC
 
 /--
-\begin{lemma}\label{L:fourier-transform-window}
-Let $a\in A$. Then for any $j\in \Z$,
-\begin{equation}\label{auto:window-square-Fourier-identity}
+**Lemma.**
+
+Let $a\in A$. Then for any $j\in \mathbb{Z}$,
+
+$$
 \mathcal F({\phi}_{0,a(j-1)}-{\phi}_{1,a(j)})^2=
 (\widehat{{\phi}_{0,a(j-1)}})^2-(\widehat{{\phi}_{0,a(j)}})^2.
-\end{equation}
-\end{lemma}
+$$
 -/
 theorem fourierTransformWindow (a : ℤ → ℝ) (ha : SpacedSequence a)
     (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
@@ -2115,13 +2121,13 @@ theorem fourierTransformWindow (a : ℤ → ℝ) (ha : SpacedSequence a)
   exact aux_window_square_fourier_algebra _ _ _ hcross (hpair.2.2 _)
 
 /--
-\begin{lemma} \label{lem:scaleest}
-For any $x\in \R$ and $\lambda, s>0$,
-    \begin{equation}\label{auto:scaled-bracket-comparison}
-    \langle x \rangle^2_{(\lambda s)} \le
-    \max\{\lambda,\lambda^{-1}\}\langle x \rangle^2_{(s)}
-    \end{equation}
-\end{lemma}
+**Lemma.**
+
+For any $x\in \mathbb{R}$ and $\lambda, s>0$,
+
+$$
+\langle x \rangle^2_{(\lambda s)} \le \max\{\lambda,\lambda^{-1}\}\langle x \rangle^2_{(s)}
+$$
 -/
 theorem scaleEstimate (x lambda s : ℝ) (hlambda : 0 < lambda) (hs : 0 < s) :
     scaledBracketBump 2 (lambda * s) x ≤
@@ -2179,8 +2185,10 @@ noncomputable def C_inductPositiveTermsReductionNonWhitney : ℝ :=
     128 * max 1 ((C_uniPair / (2 * Real.pi)) ^ 4) * C_smoothDecay2 2 ^ 2 *
       C_diagonalBandReduction
 
-/-- The part of the non-Whitney window kernel not accounted for by the
-one-scale telescoping window sequence. -/
+/--
+The part of the non-Whitney window kernel not accounted for by the
+one-scale telescoping window sequence.
+-/
 noncomputable def aux_nonWhitneyCorrection (phi0 phi1 : SchwartzMap ℝ ℝ)
     (a : ℤ → ℝ) (j : ℤ) : RealPlane → ℝ :=
   aux_nonWhitneyKernel phi0 phi1 a j - aux_oneScaleWindowKernel phi0 a j
@@ -2200,8 +2208,10 @@ theorem aux_nonWhitneyCorrection_memW0 (a : ℤ → ℝ) (ha : SpacedSequence a)
     · apply aux_memW0_tensorSquare
       exact aux_windowRescale_memW0 phi0 (ha _).1
 
-/-- The original non-Whitney sequence splits into its telescoping and
-transverse components. -/
+/--
+The original non-Whitney sequence splits into its telescoping and
+transverse components.
+-/
 theorem aux_nonWhitney_decompose (phi0 phi1 : SchwartzMap ℝ ℝ)
     (a : ℤ → ℝ) :
     aux_nonWhitneySequence phi0 phi1 a =
@@ -3166,27 +3176,28 @@ theorem aux_nonWhitneyCorrectionSequence_eq_const_mul_data
   field_simp [ne_of_gt aux_nonWhitneyCorrectionConstant_pos]
 
 /--
-\begin{proposition}[induct positive terms - reduction variant, non-Whitney]
-\label{P:induct-positive-terms-reduction-non-whitney}
-Let $a\in A$ and let
-\begin{equation}\label{auto:non-Whitney-kernel}
-M_j=({\phi}_{0,a(j-1)}-{\phi}_{1,a(j)})^{\otimes 2}.
-\end{equation}
-Then with $\M=(M_j)_{j\in \Z}$,
-\begin{equation}\label{auto:non-Whitney-reduction-bound}
-\|\M\|_{\rm M(1)}\le C_{\text{P:induct-positive-terms-reduction-non-whitney}},
-\end{equation}
-where $C_{\text{P:induct-positive-terms-reduction-non-whitney}}=
-C_{\text{P:one-scale-estimate-window}}+
-128 \max(1,(C_{\text{def:unipair}}/2\pi)^4)
-C_{\text{lem:smoothdecay2},2}^2C_{\text{P:diagonal-band-reduction}}$.
-\end{proposition}
+**Proposition (induct positive terms - reduction variant, non-Whitney).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionNonWhitney`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.oneScaleEstimateWindow`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`],
-[`Codex.Preliminaries.BumpsAndEstimates.smoothDecay2`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.diagonalBandReduction`].
+Let $a\in A$ and let
+
+$$
+M_j=({\phi}_{0,a(j-1)}-{\phi}_{1,a(j)})^{\otimes 2}.
+$$
+
+Then with $\mathbf{M}=(M_j)_{j\in \mathbb{Z}}$,
+$$
+\|\mathbf{M}\|_{\rm M(1)}\le C_{\text{induct positive terms - reduction variant, non-Whitney}},
+$$
+
+where $C_{\text{induct positive terms - reduction variant,
+non-Whitney}}=C_{\text{P:one-scale-estimate-window}}+ 128 \max(1,(C_{\text{Universal pair}}/2\pi)^4)
+C_{\text{lem:smoothdecay2},2}^2C_{\text{diagonal band - reduction variant}}$.
+
+See also [`Codex.inductPositiveTermsReductionNonWhitney`],
+[`Codex.oneScaleEstimateWindow`],
+[`Codex.uniPair`],
+[`Codex.smoothDecay2`],
+[`Codex.diagonalBandReduction`].
 -/
 theorem inductPositiveTermsReductionNonWhitney {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a) (phi0 phi1 : SchwartzMap ℝ ℝ)
@@ -3258,15 +3269,14 @@ theorem inductPositiveTermsReductionNonWhitney {n : ℕ} (hn : 2 ≤ n)
 -- The explicit numerical calculation below contains powers through `2^541`.
 set_option exponentiation.threshold 600 in
 /--
-\begin{lemma}[constant $C_{\text{P:induct-positive-terms-reduction-non-whitney}}$ \auto]
-\label{constant non Whitney reduction}
-\begin{equation}\label{constant non Whitney reduction bound}
-C_{\text{P:induct-positive-terms-reduction-non-whitney}}
-<\tfrac89 2^{541}<2^{541}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{induct positive terms - reduction variant, non-Whitney}}$).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionNonWhitney`].
+$$
+C_{\text{induct positive terms - reduction variant, non-Whitney}}
+<\tfrac89 2^{541}<2^{541}.
+$$
+
+See also [`Codex.inductPositiveTermsReductionNonWhitney`].
 -/
 theorem constantNonWhitneyReduction :
     C_inductPositiveTermsReductionNonWhitney <
@@ -3348,8 +3358,10 @@ noncomputable def C_inductPositiveTermsReductionNonWhitneySkip (n : ℕ) : ℝ :
   Real.rpow 2 (1 - Real.rpow 2 (2 - n)) *
     C_inductPositiveTermsReductionNonWhitney
 
-/-- Odd-indexed partial sums of a nonnegative sequence are bounded by the
-corresponding doubled prefix. -/
+/--
+Odd-indexed partial sums of a nonnegative sequence are bounded by the
+corresponding doubled prefix.
+-/
 theorem aux_odd_sum_le_double_sum (p : ℕ → ℝ)
     (hpos : ∀ j, 0 ≤ p j) (J : ℕ) :
     (∑ j ∈ Finset.range J, p (2 * j + 1)) ≤
@@ -3553,22 +3565,26 @@ theorem aux_kernelSequenceSeminorm_odd_subsequence_le {n : ℕ} (hn : 2 ≤ n)
       (ENNReal.ofReal_mul hfactor_nonneg).symm
 
 /--
-\begin{proposition}[induct positive terms - reduction variant, non-Whitney, skip terms]
-\label{P:induct-positive-terms-reduction-non-whitney-skip}
-Let $a\in A$ and let
-\begin{equation}\label{auto:skipped-non-Whitney-kernel}
-\tilde{M}_j=({\phi}_{0,a(2j)}-{\phi}_{1,a(2j+1)})^{\otimes 2}.
-\end{equation}
-Then with $\tilde{\M}=(\tilde{M}_j)_{j\in \Z}$,
-\begin{equation}\label{E:est-skipped-terms}
-\|\tilde{\M}\|_{\rm M(1)}\le C_{\text{P:induct-positive-terms-reduction-non-whitney-skip}},
-\end{equation}
-where $C_{\text{P:induct-positive-terms-reduction-non-whitney-skip}}=
-2^{1-2^{2-n}} C_{\text{P:induct-positive-terms-reduction-non-whitney}}$.
-\end{proposition}
+**Proposition (induct positive terms - reduction variant, non-Whitney, skip terms).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionNonWhitneySkip`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionNonWhitney`].
+Let $a\in A$ and let
+
+$$
+\tilde{M}_j=({\phi}_{0,a(2j)}-{\phi}_{1,a(2j+1)})^{\otimes 2}.
+$$
+
+Then with $\tilde{\mathbf{M}}=(\tilde{M}_j)_{j\in \mathbb{Z}}$,
+
+$$
+\|\tilde{\mathbf{M}}\|_{\rm M(1)}\le C_{\text{induct positive terms - reduction variant,
+non-Whitney, skip terms}},
+$$
+
+where $C_{\text{induct positive terms - reduction variant, non-Whitney, skip terms}}= 2^{1-2^{2-n}}
+C_{\text{induct positive terms - reduction variant, non-Whitney}}$.
+
+See also [`Codex.inductPositiveTermsReductionNonWhitneySkip`],
+[`Codex.inductPositiveTermsReductionNonWhitney`].
 -/
 theorem inductPositiveTermsReductionNonWhitneySkip {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a) (phi0 phi1 : SchwartzMap ℝ ℝ)
@@ -3666,15 +3682,15 @@ theorem inductPositiveTermsReductionNonWhitneySkip {n : ℕ} (hn : 2 ≤ n)
   simpa [C_inductPositiveTermsReductionNonWhitneySkip] using hmain
 
 /--
-\begin{lemma}[constant $C_{\text{P:induct-positive-terms-reduction-non-whitney-skip}}$ \auto]
-\label{constant non Whitney skip reduction}
-\begin{equation}\label{constant non Whitney skip reduction bound}
-C_{\text{P:induct-positive-terms-reduction-non-whitney-skip}}
-<\tfrac89 2^{542}<2^{542}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{induct positive terms - reduction variant, non-Whitney, skip
+terms}}$).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionNonWhitneySkip`].
+$$
+C_{\text{induct positive terms - reduction variant, non-Whitney, skip terms}}
+<\tfrac89 2^{542}<2^{542}.
+$$
+
+See also [`Codex.inductPositiveTermsReductionNonWhitneySkip`].
 -/
 theorem constantNonWhitneySkipReduction {n : ℕ} (_hn : 2 ≤ n) :
     C_inductPositiveTermsReductionNonWhitneySkip n <
@@ -3722,7 +3738,7 @@ structure WhitneyKernelData where
   kernel_memW0 : MemW0 kernel
   kernel_nonzero : kernel ≠ 0
   symmetric : ∀ v : RealPlane, kernel v = kernel (v.2, v.1)
-  positive : ∀ g : ℝ → ℝ, Codex.Reduction.BumpFunctions.aux_bounded g →
+  positive : ∀ g : ℝ → ℝ, Codex.aux_bounded g →
     0 ≤ ∫ v : RealPlane, g v.1 * g v.2 * kernel v
   fourier_support :
     Function.support (aux_planeFourier kernel) ⊆
@@ -3740,8 +3756,10 @@ structure WhitneyKernelData where
 noncomputable def aux_planeRescale (t : ℝ) (Psi : RealPlane → ℝ) : RealPlane → ℝ :=
   fun v => t⁻¹ ^ 2 * Psi (t⁻¹ * v.1, t⁻¹ * v.2)
 
-/-- In plane coordinates, the normalized rescaling of `integralFctKernel` is
-the two-dimensional rescaling used by the integral-kernel estimates. -/
+/--
+In plane coordinates, the normalized rescaling of `integralFctKernel` is
+the two-dimensional rescaling used by the integral-kernel estimates.
+-/
 theorem planeRescale_integralFctKernel_eq
     (s : ℝ) (psi : ℝ → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
     aux_planeRescale s
@@ -3751,8 +3769,10 @@ theorem planeRescale_integralFctKernel_eq
   unfold aux_planeRescale aux_integralFctKernelAtScale rescaled
   rfl
 
-/-- The preceding coordinate identity remains available after replacing the
-physical kernel by any bundled Schwartz representative. -/
+/--
+The preceding coordinate identity remains available after replacing the
+physical kernel by any bundled Schwartz representative.
+-/
 theorem planeRescale_schwartzKernel_eq
     (s : ℝ) (psi : ℝ → ℝ) (K : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ)
     (hK : ∀ u : EuclideanSpace ℝ (Fin 2), K u = integralFctKernel psi u)
@@ -4047,7 +4067,7 @@ theorem aux_planeRescale_decay (Psi : WhitneyKernelData) {t : ℝ} (ht : 0 < t)
   have hbracket (x : ℝ) :
       scaledBracketBumpReal (3 / 2 : ℝ) 1 (t⁻¹ * x) =
         t * scaledBracketBumpReal (3 / 2 : ℝ) t x := by
-    have h := Codex.MainArgument.GaussianDomination.aux_scaledBracketBumpReal_simul_rescale
+    have h := Codex.aux_scaledBracketBumpReal_simul_rescale
       (3 / 2 : ℝ) t 1 (t⁻¹ * x) ht
     convert h.symm using 1
     field_simp [ne_of_gt ht]
@@ -5167,47 +5187,61 @@ noncomputable def C_inductPositiveTermsReductionWhitneyGap (n : ℕ) : ℝ :=
       C_diagonalBandReduction
 
 /--
-\begin{proposition}[induct positive terms - reduction variant, Whitney, with gap]
-\label{P:induct-positive-terms-reduction-whitney-gap}
-Let $a\in {\rm A}$ satisfy $a(j)\geq 2^{11}a(j-1)$ for every $j\in\mathbb Z$.
-Let $M_j:\mathbb{R}^2\to \mathbb{R}$ be of the form
-\begin{equation}\label{auto:Whitney-gap-kernel}
-M_j=\Psi_{(a(j))}
-\end{equation}
-for every $j\in\Z$, where $\Psi:\mathbb{R}^2\to \mathbb{R}$ is a Schwartz function
-satisfying $\Psi(v_0,v_1)=\Psi(v_1,v_0)$ for all $v=(v_0,v_1)\in\mathbb{R}^2$,
-\begin{equation}\label{p1-on-W_pos}
-\int_{\mathbb{R}^2} g(v_0){g(v_1)}\Psi(v)\,dv\ge 0
-\end{equation}
-for all bounded measurable $g:\mathbb{R}\to\mathbb{R}$,
-\begin{equation}\label{p1-on-W_supp}
-\mathrm{supp}(\widehat{\Psi}) \subset \mathrm{Ann}_1(1, 2^3)^2,
-\end{equation}
-for $m\in [3)$ and $\xi \in \R$,
-\begin{equation}\label{p1-on-W_der}
-\Big|\tfrac{d^m}{d\xi^{m}} \widehat{\Psi}(\xi,-\xi)\Big| \leq 1,
-\end{equation}
-and for all $v\in\mathbb{R}^2$,
-\begin{equation}\label{p1-on-W_decay}
-|\Psi(v)| \le \sum_{u=0}^1 \langle(W_u v)_0\rangle^{3/2} \langle (W_u v)_1\rangle^{3/2}.
-\end{equation}
-Then with $\M=(M_j)_{j\in\Z}$,
-\begin{equation}\label{auto:Whitney-gap-reduction-bound}
-\|\M\|_{\rm M(1)} \le C_{\text{P:induct-positive-terms-reduction-whitney-gap}}.
-\end{equation}
-where
-\begin{equation}\label{auto:Whitney-gap-constant-definition}
-C_{\text{P:induct-positive-terms-reduction-whitney-gap}}
-=2C_{\text{P:induct-positive-terms-reduction-non-whitney-skip}}
-+2^{19}(C_{\text{def:unipair}}^2+C_{\text{lem:Phij\_prop}}^2)C_{\text{P:diagonal-band-reduction}}.
-\end{equation}
-\end{proposition}
+**Proposition (induct positive terms - reduction variant, Whitney, with gap).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitneyGap`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionNonWhitneySkip`],
-[`Codex.Reduction.WindowsAndPairs.uniPair`],
-[`Codex.Reduction.Miscellany.phiJProperties`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.diagonalBandReduction`].
+Let $a\in {\rm A}$ satisfy $a(j)\geq 2^{11}a(j-1)$ for every $j\in\mathbb Z$. Let
+$M_j:\mathbb{R}^2\to \mathbb{R}$ be of the form
+
+$$
+M_j=\Psi_{(a(j))}
+$$
+
+for every $j\in\mathbb{Z}$, where $\Psi:\mathbb{R}^2\to \mathbb{R}$ is a Schwartz function
+satisfying $\Psi(v_0,v_1)=\Psi(v_1,v_0)$ for all $v=(v_0,v_1)\in\mathbb{R}^2$,
+
+$$
+\int_{\mathbb{R}^2} g(v_0){g(v_1)}\Psi(v)\,dv\ge 0
+$$
+
+for all bounded measurable $g:\mathbb{R}\to\mathbb{R}$,
+
+$$
+\mathrm{supp}(\widehat{\Psi}) \subset \mathrm{Ann}_1(1, 2^3)^2,
+$$
+
+for $m\in [3)$ and $\xi \in \mathbb{R}$,
+
+$$
+\Big|\tfrac{d^m}{d\xi^{m}} \widehat{\Psi}(\xi,-\xi)\Big| \leq 1,
+$$
+
+and for all $v\in\mathbb{R}^2$,
+
+$$
+|\Psi(v)| \le \sum_{u=0}^1 \langle(W_u v)_0\rangle^{3/2} \langle (W_u v)_1\rangle^{3/2}.
+$$
+
+Then with $\mathbf{M}=(M_j)_{j\in\mathbb{Z}}$,
+
+$$
+\|\mathbf{M}\|_{\rm M(1)} \le C_{\text{induct positive terms - reduction variant, Whitney, with
+gap}}.
+$$
+
+where
+
+$$
+C_{\text{induct positive terms - reduction variant, Whitney, with gap}}
+=2C_{\text{induct positive terms - reduction variant, non-Whitney, skip terms}}
++2^{19}(C_{\text{Universal pair}}^2+C_{\text{lem:Phij\_prop}}^2)C_{\text{diagonal band - reduction
+variant}}.
+$$
+
+See also [`Codex.inductPositiveTermsReductionWhitneyGap`],
+[`Codex.inductPositiveTermsReductionNonWhitneySkip`],
+[`Codex.uniPair`],
+[`Codex.phiJProperties`],
+[`Codex.diagonalBandReduction`].
 -/
 theorem inductPositiveTermsReductionWhitneyGap {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a)
@@ -5429,15 +5463,14 @@ theorem inductPositiveTermsReductionWhitneyGap {n : ℕ} (hn : 2 ≤ n)
 -- The explicit numerical calculation below contains powers through `2^553`.
 set_option exponentiation.threshold 600 in
 /--
-\begin{lemma}[constant $C_{\text{P:induct-positive-terms-reduction-whitney-gap}}$ \auto]
-\label{constant Whitney gap reduction}
-\begin{equation}\label{constant Whitney gap reduction bound}
-C_{\text{P:induct-positive-terms-reduction-whitney-gap}}
-<\tfrac{127}{128}2^{553}<2^{553}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{induct positive terms - reduction variant, Whitney, with gap}}$).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitneyGap`].
+$$
+C_{\text{induct positive terms - reduction variant, Whitney, with gap}}
+<\tfrac{127}{128}2^{553}<2^{553}.
+$$
+
+See also [`Codex.inductPositiveTermsReductionWhitneyGap`].
 -/
 theorem constantWhitneyGapReduction {n : ℕ} (hn : 2 ≤ n) :
     C_inductPositiveTermsReductionWhitneyGap n <
@@ -5725,28 +5758,31 @@ theorem aux_kernelSequenceSeminorm_residue_le {n : ℕ} (hn : 2 ≤ n)
     _ = ENNReal.ofReal (11 * C) := aux_whitney_ennreal_sum_eleven_ofReal C
 
 /--
-\begin{proposition}[induct positive terms - reduction variant, Whitney]
-\label{P:induct-positive-terms-reduction-whitney}
-Let $a\in {\rm A}$. Let $M_j:\mathbb{R}^2\to \mathbb{R}$ be of the form
-\begin{equation}\label{auto:Whitney-kernel}
-M_j=\Psi_{(a(j))}
-\end{equation}
-for every $j\in\Z$, where $\Psi:\mathbb{R}^2\to \mathbb{R}$ is a Schwartz function
-satisfying $\Psi(u_0,u_1)=\Psi(u_1,u_0)$ for all $u=(u_0,u_1)\in\mathbb{R}^2$,
-and \eqref{p1-on-W_pos}, \eqref{p1-on-W_supp}, \eqref{p1-on-W_der},
-\eqref{p1-on-W_decay}. Then with $\M=(M_j)_{j\in\Z}$,
-\begin{equation}\label{auto:Whitney-reduction-bound}
-\|\M\|_{\rm M(1)} \le C_{\text{P:induct-positive-terms-reduction-whitney}},
-\end{equation}
-where
-\begin{equation}\label{auto:Whitney-constant-definition}
-C_{\text{P:induct-positive-terms-reduction-whitney}}
-=11C_{\text{P:induct-positive-terms-reduction-whitney-gap}}.
-\end{equation}
-\end{proposition}
+**Proposition (induct positive terms - reduction variant, Whitney).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitney`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitneyGap`].
+Let $a\in {\rm A}$. Let $M_j:\mathbb{R}^2\to \mathbb{R}$ be of the form
+
+$$
+M_j=\Psi_{(a(j))}
+$$
+
+for every $j\in\mathbb{Z}$, where $\Psi:\mathbb{R}^2\to \mathbb{R}$ is a Schwartz function
+satisfying $\Psi(u_0,u_1)=\Psi(u_1,u_0)$ for all $u=(u_0,u_1)\in\mathbb{R}^2$, and (`p1-on-W_pos`),
+(`p1-on-W_supp`), (`p1-on-W_der`), (`p1-on-W_decay`). Then with $\mathbf{M}=(M_j)_{j\in\mathbb{Z}}$,
+
+$$
+\|\mathbf{M}\|_{\rm M(1)} \le C_{\text{induct positive terms - reduction variant, Whitney}},
+$$
+
+where
+
+$$
+C_{\text{induct positive terms - reduction variant, Whitney}}
+=11C_{\text{induct positive terms - reduction variant, Whitney, with gap}}.
+$$
+
+See also [`Codex.inductPositiveTermsReductionWhitney`],
+[`Codex.inductPositiveTermsReductionWhitneyGap`].
 -/
 theorem inductPositiveTermsReductionWhitney {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a)
@@ -5799,15 +5835,14 @@ theorem inductPositiveTermsReductionWhitney {n : ℕ} (hn : 2 ≤ n)
 -- The explicit numerical calculation below contains powers through `2^557`.
 set_option exponentiation.threshold 600 in
 /--
-\begin{lemma}[constant $C_{\text{P:induct-positive-terms-reduction-whitney}}$ \auto]
-\label{constant Whitney reduction}
-\begin{equation}\label{constant Whitney reduction bound}
-C_{\text{P:induct-positive-terms-reduction-whitney}}
-<2^{557}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{induct positive terms - reduction variant, Whitney}}$).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitney`].
+$$
+C_{\text{induct positive terms - reduction variant, Whitney}}
+<2^{557}.
+$$
+
+See also [`Codex.inductPositiveTermsReductionWhitney`].
 -/
 theorem constantWhitneyReduction {n : ℕ} (hn : 2 ≤ n) :
     C_inductPositiveTermsReductionWhitney n < (2 : ℝ) ^ 557 := by
@@ -6417,8 +6452,10 @@ noncomputable def aux_whitneyProduct_productData (psi : SchwartzMap ℝ ℝ)
   diagonal_derivative := aux_whitneyProduct_product_diagonal_derivative psi hderiv
   decay := aux_whitneyProduct_product_decay psi hsupport hderiv
 
-/-- Generic positive tensor-product package for the ordinary Whitney reduction.
-The caller supplies only the two problem-specific analytic fields. -/
+/--
+Generic positive tensor-product package for the ordinary Whitney reduction.
+The caller supplies only the two problem-specific analytic fields.
+-/
 noncomputable def aux_tensorWhitneyData
     (psi : SchwartzMap ℝ ℝ)
     (hsupport : Function.support
@@ -6521,36 +6558,44 @@ theorem aux_whitneyProduct_whitneyProductSequence_zero (a : ℤ → ℝ) :
 
 
 /--
-\begin{proposition}[induct positive terms - reduction variant, Whitney, product-type]
-\label{P:induct-positive-terms-reduction-whitney-product}
+**Proposition (induct positive terms - reduction variant, Whitney, product-type).**
+
 Let $a\in A$ and let
-\begin{equation}\label{auto:Whitney-product-kernel}
+
+$$
 M_j=(\psi_{(a(j))})^{\otimes2}
-\end{equation}
-for $j\in\Z$, where $\psi:\R\to\R$ is a Schwartz function satisfying
-\begin{equation}\label{1-on-W_supp}
+$$
+
+for $j\in\mathbb{Z}$, where $\psi:\mathbb{R}\to\mathbb{R}$ is a Schwartz function satisfying
+
+$$
 \operatorname{supp}(\widehat\psi)\subset\operatorname{Ann}_1(1,2^3),
-\end{equation}
-\begin{equation}\label{auto:Whitney-product-Fourier-derivative-assumption}
+$$
+
+$$
 |\widehat\psi^{(m)}(\xi)|\le1,
 \qquad
 m\in[3),
 \quad
-\xi\in\R.
-\end{equation}
-Then, with $\M=(M_j)_{j\in\Z}$,
-\begin{equation}\label{auto:Whitney-product-reduction-bound}
-\|\M\|_{{\rm M}(1)}\le C_{\text{P:induct-positive-terms-reduction-whitney-product}},
-\end{equation}
-where
-\begin{equation}\label{auto:Whitney-product-constant-definition}
-C_{\text{P:induct-positive-terms-reduction-whitney-product}}
-=2^{12}C_{\text{P:induct-positive-terms-reduction-whitney}}.
-\end{equation}
-\end{proposition}
+\xi\in\mathbb{R}.
+$$
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitneyProduct`],
-[`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitney`].
+Then, with $\mathbf{M}=(M_j)_{j\in\mathbb{Z}}$,
+
+$$
+\|\mathbf{M}\|_{{\rm M}(1)}\le C_{\text{induct positive terms - reduction variant, Whitney,
+product-type}},
+$$
+
+where
+
+$$
+C_{\text{induct positive terms - reduction variant, Whitney, product-type}}
+=2^{12}C_{\text{induct positive terms - reduction variant, Whitney}}.
+$$
+
+See also [`Codex.inductPositiveTermsReductionWhitneyProduct`],
+[`Codex.inductPositiveTermsReductionWhitney`].
 -/
 theorem inductPositiveTermsReductionWhitneyProduct {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a) (psi : SchwartzMap ℝ ℝ)
@@ -6587,15 +6632,14 @@ theorem inductPositiveTermsReductionWhitneyProduct {n : ℕ} (hn : 2 ≤ n)
 
 
 /--
-\begin{lemma}[constant $C_{\text{P:induct-positive-terms-reduction-whitney-product}}$ \auto]
-\label{constant Whitney product reduction}
-\begin{equation}\label{constant Whitney product reduction bound}
-C_{\text{P:induct-positive-terms-reduction-whitney-product}}
-<2^{569}.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{induct positive terms - reduction variant, Whitney, product-type}}$).**
 
-See also [`Codex.Reduction.OnDiagonalOffDiagonal.inductPositiveTermsReductionWhitneyProduct`].
+$$
+C_{\text{induct positive terms - reduction variant, Whitney, product-type}}
+<2^{569}.
+$$
+
+See also [`Codex.inductPositiveTermsReductionWhitneyProduct`].
 -/
 theorem constantWhitneyProductReduction {n : ℕ} (hn : 2 ≤ n) :
     C_inductPositiveTermsReductionWhitneyProduct n < (2 : ℝ) ^ 569 := by
@@ -6609,4 +6653,4 @@ theorem constantWhitneyProductReduction {n : ℕ} (hn : 2 ≤ n) :
 
 end
 
-end Codex.Reduction.OnDiagonalOffDiagonal
+end Codex

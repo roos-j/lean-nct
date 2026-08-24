@@ -12,18 +12,12 @@ set_option linter.style.header false
 Formalization of the subsection ``Main induction''.
 -/
 
-namespace Codex.MainArgument.MainInduction
+namespace Codex
 
 open MeasureTheory
 open Filter Topology
 open scoped BigOperators ENNReal Real
 
-open Codex.Preliminaries.KKernels
-open Codex.Preliminaries.MKernels
-open Codex.Preliminaries.MultiplicativelySpacedMonotoneSequences
-open Codex.MainArgument.SandwichKernel
-open Codex.MainArgument.MultipliersHLN
-open Codex.MainArgument.GaussianDomination
 
 
 noncomputable section
@@ -412,10 +406,10 @@ theorem aux_augmentedLastBaseKernel_nonneg
   apply Finset.prod_nonneg
   intro q _
   split_ifs with hlt hqi
-  · exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ q j _
+  · exact Codex.aux_gammaGaussian_nonneg γ q j _
   · exact aux_dominatingGaussianTerm_nonneg
       (w.scales b m) (w.scales_in_A b hb m) (w.orientation b) j _
-  · exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ q (j - 1) _
+  · exact Codex.aux_gammaGaussian_nonneg γ q (j - 1) _
 
 /-- The terminal sandwich of the augmented parameters has the required tensor-extension form. -/
 theorem aux_augmentedLast_sandwich_eq_tensorSquareExtension
@@ -635,15 +629,17 @@ theorem aux_geometricDelta_augmentedIncreaseParameters_le {n : ℕ} (γ : Geomet
       simp [Nat.add_mul]
 
 /--
-\begin{definition}[induct positive terms]\label{induct positive terms}
-Let $k\in \N$ with $1\le k\le n$ and $C\in [1,\infty)$.
-We say that $\InductPositiveTerms{k,C}$ holds if
+**Definition (induct positive terms).**
+
+Let $k\in \mathbb{N}$ with $1\le k\le n$ and $C\in [1,\infty)$.
+We say that $\mathrm{InductPositiveTerms}(k,C)$ holds if
 
 for all $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$,
-\begin{equation}\label{auto:positive-terms-square-root-bound}
-    \|\M(\gamma,s_{\gamma} \otimes s_{\gamma},i)\|_{{\rm M}(k)}\le C \Delta_\gamma^{2-2^{k-n+1}}.
-\end{equation}
-\end{definition}
+
+$$
+\|\mathbf{M}(\gamma,s_{\gamma} \otimes s_{\gamma},i)\|_{{\rm M}(k)}\le C
+    \Delta_\gamma^{2-2^{k-n+1}}.
+$$
 -/
 def InductPositiveTerms (n k : ℕ) (C : ℝ) (_hk : 1 ≤ k) (_hkn : k ≤ n) (_hC : 1 ≤ C) :
     Prop :=
@@ -655,16 +651,17 @@ def InductPositiveTerms (n k : ℕ) (C : ℝ) (_hk : 1 ≤ k) (_hkn : k ≤ n) (
           (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)))
 
 /--
-\begin{definition}[vanishing diagonal]\label{vanishing diagonal}
-Let $k\in \N$ with $1\le k\le n$ and $C\in [1,\infty)$.
-We say that $\VanishingDiagonal{k,C}$ holds if
+**Definition (vanishing diagonal).**
+
+Let $k\in \mathbb{N}$ with $1\le k\le n$ and $C\in [1,\infty)$.
+We say that $\mathrm{VanishingDiagonal}(k,C)$ holds if
 
 for all $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$,
-\begin{equation}\label{auto:H-positive-terms-bound}
-    \|\M(\gamma,H_\gamma,i)\|_{{\rm M}(k)}
+
+$$
+    \|\mathbf{M}(\gamma,H_\gamma,i)\|_{{\rm M}(k)}
     \le C \Delta_\gamma^{2-2^{k-n+1}} .
-\end{equation}
-\end{definition}
+$$
 -/
 def VanishingDiagonal (n k : ℕ) (C : ℝ) (_hk : 1 ≤ k) (_hkn : k ≤ n) (_hC : 1 ≤ C) :
     Prop :=
@@ -676,17 +673,18 @@ def VanishingDiagonal (n k : ℕ) (C : ℝ) (_hk : 1 ≤ k) (_hkn : k ≤ n) (_h
           (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)))
 
 /--
-\begin{definition}[diagonal band]\label{diagonal band}
-Let $k\in \N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
-We say that $\DiagonalBand{k,C}$ holds if
+**Definition (diagonal band).**
+
+Let $k\in \mathbb{N}$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
+We say that $\mathrm{DiagonalBand}(k,C)$ holds if
 
 for all $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$,
-\begin{equation}\label{auto:L-positive-terms-sum-bound}
+
+$$
    \sum_{\iota\in\mathcal{I}_{\gamma}}
-   \|\M(\gamma,L_{\gamma,\iota},i)\|_{{\rm M}(k)}
+   \|\mathbf{M}(\gamma,L_{\gamma,\iota},i)\|_{{\rm M}(k)}
    \le C\Delta_\gamma^{2-2^{k-n+1}} .
-\end{equation}
-\end{definition}
+$$
 -/
 def DiagonalBand (n k : ℕ) (C : ℝ) (_hk : 1 ≤ k) (_hkn : k ≤ n - 1) (_hC : 1 ≤ C) :
     Prop :=
@@ -699,29 +697,33 @@ def DiagonalBand (n k : ℕ) (C : ℝ) (_hk : 1 ≤ k) (_hkn : k ≤ n - 1) (_hC
           (2 - (2 : ℝ) ^ ((k : ℤ) - (n : ℤ) + 1)))
 
 /--
-\begin{definition}[increase data]\label{increase data}
-Let $k\in \N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
-We say that $\IncreaseData{k,C}$ holds if
+**Definition (increase data).**
+
+Let $k\in \mathbb{N}$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
+We say that $\mathrm{IncreaseData}(k,C)$ holds if
 
 the following holds.
 
 Let $\gamma=(k,u,a)\in \Gamma$, let $i\in [k)$, and let
 $\iota\in\mathcal{I}_{\gamma}$.
 For $j\in\mathbb Z$ and $y\in(\mathbb R^2)^{k+1}$ define
-\begin{equation}\label{auto:increased-data-kernel}
-    (\M_{i,\iota})_j(y):=
+
+$$
+    (\mathbf{M}_{i,\iota})_j(y)=
     \Big(\prod_{m\in [i)} (G_\gamma)_{m,j}(y_m)\Big)
     |(N_{\gamma,\iota})_{i,j}(y_i)|
     \Big(\prod_{m=i+1}^{k-1} (G_\gamma)_{m,j-1}(y_m)\Big)
     \bigl(\sigma_{\gamma,\iota,i,j}^{\otimes 2}\bigr)(y_{k}) .
-\end{equation}
-Then $\M_{i,\iota}\in {\rm M}(k+1)$ and
-\begin{equation}\label{auto:increased-data-M-norm-bound}
-  \|\M_{i,\iota}\|_{{\rm M}(k+1)}
-  \le C 2^{-\tfrac{|\iota_0|}{2}}(1+|\iota_0|)^2
+$$
+
+Then $\mathbf{M}_{i,\iota}\in {\rm M}(k+1)$ and
+
+$$
+  \|\mathbf{M}_{i,\iota}\|_{{\rm M}(k+1)}
+  \le
+  C 2^{-\tfrac{|\iota_0|}{2}}(1+|\iota_0|)^2
   \Delta_\gamma^{2-2^{k-n+2}} .
-\end{equation}
-\end{definition}
+$$
 -/
 def IncreaseData (n k : ℕ) (C : ℝ) (_hk : 1 ≤ k) (hkn : k ≤ n - 1) (_hC : 1 ≤ C) :
     Prop :=
@@ -850,14 +852,16 @@ theorem aux_terminalVanishingDiagonal {n : ℕ} (hn : 1 ≤ n) :
   exact bot_le
 
 /--
-\begin{proposition}[vanishing kernel integral]\label{vanishing kernel integral}
+**Proposition (vanishing kernel integral).**
+
 Let $\gamma=(n,w,a)\in \Gamma$.
 For every $i\in [n)$,
-\begin{equation}\label{auto:terminal-H-prism-form-zero}
-    \|\M(\gamma,H_\gamma,i)\|_{{\rm M}(n)}=0.
-\end{equation}
-In particular, $\VanishingDiagonal{n,1}$ holds.
-\end{proposition}
+
+$$
+    \|\mathbf{M}(\gamma,H_\gamma,i)\|_{{\rm M}(n)}=0.
+$$
+
+In particular, $\mathrm{VanishingDiagonal}(n,1)$ holds.
 -/
 theorem vanishingKernelIntegral (n : ℕ) (hn : 1 ≤ n) :
     (∀ (γ : GeometricParameters n), γ.k = n → ∀ i : Fin γ.k,
@@ -869,9 +873,11 @@ theorem vanishingKernelIntegral (n : ℕ) (hn : 1 ≤ n) :
     exact aux_terminalSandwichSeminorm_eq_zero hn γ hγ i
   · exact aux_terminalVanishingDiagonal hn
 
-/-- This auxiliary monotonicity lemma lets later induction steps enlarge the
+/--
+This auxiliary monotonicity lemma lets later induction steps enlarge the
 constant in the conclusion of `InductPositiveTerms` without changing the
-geometric data. -/
+geometric data.
+-/
 theorem aux_inductPositiveTerms_mono {n k : ℕ} {C D : ℝ}
     (hk : 1 ≤ k) (hkn : k ≤ n) (hC : 1 ≤ C) (hD : 1 ≤ D) (hCD : C ≤ D) :
     InductPositiveTerms n k C hk hkn hC →
@@ -999,8 +1005,10 @@ theorem aux_kernelSequenceSeminorm_le_of_tendsto_eLpNorm
             (mul_nonneg hc (abs_nonneg _))
     _ ≤ A + eLpNorm (fun y => MP y - MM y) 1 volume := add_le_add hmain herror'
 
-/-- A kernel sequence inherits a uniform seminorm bound from finite approximants
-that converge on every finite index prefix in `L¹`. -/
+/--
+A kernel sequence inherits a uniform seminorm bound from finite approximants
+that converge on every finite index prefix in `L¹`.
+-/
 theorem aux_kernelSequenceSeminorm_le_of_prefix_tendsto_eLpNorm
     {n k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n)
     (M : KernelSequence k) (P : ℕ → KernelSequence k) (A : ℝ≥0∞)
@@ -1013,8 +1021,10 @@ theorem aux_kernelSequenceSeminorm_le_of_prefix_tendsto_eLpNorm
   aux_kernelSequenceSeminorm_le_of_tendsto_eLpNorm
     hk hkn M P A hM hP hbound hconv
 
-/-- This auxiliary monotonicity lemma is used to align the output constants of
-the diagonal-band and positive-term implications. -/
+/--
+This auxiliary monotonicity lemma is used to align the output constants of
+the diagonal-band and positive-term implications.
+-/
 theorem aux_vanishingDiagonal_mono {n k : ℕ} {C D : ℝ}
     (hk : 1 ≤ k) (hkn : k ≤ n) (hC : 1 ≤ C) (hD : 1 ≤ D) (hCD : C ≤ D) :
     VanishingDiagonal n k C hk hkn hC →
@@ -1025,8 +1035,10 @@ theorem aux_vanishingDiagonal_mono {n k : ℕ} {C D : ℝ}
   apply mul_le_mul_of_nonneg_right hCD
   exact Real.rpow_nonneg (by positivity) _
 
-/-- This auxiliary monotonicity lemma is used to enlarge the summation bound
-in `DiagonalBand` when composing the main induction implications. -/
+/--
+This auxiliary monotonicity lemma is used to enlarge the summation bound
+in `DiagonalBand` when composing the main induction implications.
+-/
 theorem aux_diagonalBand_mono {n k : ℕ} {C D : ℝ}
     (hk : 1 ≤ k) (hkn : k ≤ n - 1) (hC : 1 ≤ C) (hD : 1 ≤ D) (hCD : C ≤ D) :
     DiagonalBand n k C hk hkn hC →
@@ -1039,20 +1051,21 @@ theorem aux_diagonalBand_mono {n k : ℕ} {C D : ℝ}
 
 /--
 Constant used by
-[`Codex.MainArgument.MainInduction.inductPositiveTerms_implies_increaseData`].
+[`Codex.inductPositiveTerms_implies_increaseData`].
 -/
 noncomputable def C_inductPositiveTermsImplyIncreaseData : ℝ :=
   (2 : ℝ) ^ (10 : ℕ) * C_gaussianDominationCombinedCard *
     (1 + C_gaussianDominationCombinedDistance) ^ (2 : ℕ) * C_gaussianDominationCombined
 
 /--
-\label{constant induct positive terms imply increase data}
+Blueprint label `constant induct positive terms imply increase data`.
 
-The constant from [`Codex.MainArgument.MainInduction.inductPositiveTerms_implies_increaseData`]
+The constant from [`Codex.inductPositiveTerms_implies_increaseData`]
 satisfies
-\begin{equation}\label{constant induct positive terms imply increase data bound}
+
+$$
 C_{\mathrm{induct\ positive\ terms\ imply\ increase\ data}}<2^{172}.
-\end{equation}
+$$
 -/
 theorem constantInductPositiveTermsImplyIncreaseData :
     C_inductPositiveTermsImplyIncreaseData < (2 : ℝ) ^ (172 : ℕ) := by
@@ -1061,8 +1074,10 @@ theorem constantInductPositiveTermsImplyIncreaseData :
     C_gaussianDominationCombined
   norm_num
 
-/-- This auxiliary positivity fact is needed when taking square roots of the
-constant in the reverse induction estimates. -/
+/--
+This auxiliary positivity fact is needed when taking square roots of the
+constant in the reverse induction estimates.
+-/
 theorem aux_C_inductPositiveTermsImplyIncreaseData_pos :
     0 < C_inductPositiveTermsImplyIncreaseData := by
   unfold C_inductPositiveTermsImplyIncreaseData
@@ -1070,9 +1085,11 @@ theorem aux_C_inductPositiveTermsImplyIncreaseData_pos :
     C_gaussianDominationCombined
   positivity
 
-/-- This auxiliary lower bound supplies the manuscript's admissibility
+/--
+This auxiliary lower bound supplies the manuscript's admissibility
 condition `C ∈ [1,∞)` when the Gaussian-domination constant is fed into the
-main induction. -/
+main induction.
+-/
 theorem aux_one_le_C_inductPositiveTermsImplyIncreaseData :
     1 ≤ C_inductPositiveTermsImplyIncreaseData := by
   unfold C_inductPositiveTermsImplyIncreaseData
@@ -1166,11 +1183,11 @@ theorem increaseBase_nonneg {n : ℕ}
   · apply mul_nonneg
     · apply Finset.prod_nonneg
       intro q _
-      exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ q j _
+      exact Codex.aux_gammaGaussian_nonneg γ q j _
     · exact abs_nonneg _
   · apply Finset.prod_nonneg
     intro q _
-    exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ q (j - 1) _
+    exact Codex.aux_gammaGaussian_nonneg γ q (j - 1) _
 
 theorem gaussianBase_memW0 {n : ℕ}
     (γ : GeometricParameters n) {hkn : γ.k ≤ n - 1}
@@ -1228,12 +1245,12 @@ theorem gaussianBase_nonneg {n : ℕ}
   · apply mul_nonneg
     · apply Finset.prod_nonneg
       intro q _
-      exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ q j _
+      exact Codex.aux_gammaGaussian_nonneg γ q j _
     · exact aux_dominatingGaussianTerm_nonneg
         (w.scales b m) (w.scales_in_A b hb m) (w.orientation b) j _
   · apply Finset.prod_nonneg
     intro q _
-    exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ q (j - 1) _
+    exact Codex.aux_gammaGaussian_nonneg γ q (j - 1) _
 
 theorem increaseBase_eq_outer_mul_abs {n : ℕ}
     (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
@@ -1265,10 +1282,10 @@ theorem outerGaussianProduct_nonneg {n : ℕ}
   apply mul_nonneg
   · apply Finset.prod_nonneg
     intro q _
-    exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ q j _
+    exact Codex.aux_gammaGaussian_nonneg γ q j _
   · apply Finset.prod_nonneg
     intro q _
-    exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ q (j - 1) _
+    exact Codex.aux_gammaGaussian_nonneg γ q (j - 1) _
 
 noncomputable def finTwoNatEnum : ℕ ≃ (Fin 2 → ℕ) :=
   ((finTwoArrowEquiv ℕ).trans Nat.pairEquiv).symm
@@ -2298,8 +2315,10 @@ theorem kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
 
 end aux_inductPositiveTerms
 
-/-- A terminal tensor-square extension inherits finite-prefix seminorm bounds
-from a nonnegative summable pointwise majorant. -/
+/--
+A terminal tensor-square extension inherits finite-prefix seminorm bounds
+from a nonnegative summable pointwise majorant.
+-/
 theorem aux_kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
     {n k : ℕ} (hk : 1 ≤ k) (hkn : k + 1 ≤ n)
     (M : ℤ → MKernel k) (G : ℕ → ℤ → MKernel k)
@@ -2319,16 +2338,20 @@ theorem aux_kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
   aux_inductPositiveTerms.kernelSequenceSeminorm_tensorSquareExtension_le_of_base_majorant
     hk hkn M G phi A hM hM_nonneg hG hG_nonneg hG_sum hM_le hphi hpartial
 
-/-- A nonnegative scalar multiple of a Wiener-space function is again in the
-Wiener space. -/
+/--
+A nonnegative scalar multiple of a Wiener-space function is again in the
+Wiener space.
+-/
 theorem aux_memW0_const_mul_nonneg {E : Type*}
     [NormedAddCommGroup E] [ProperSpace E] [MeasureSpace E] [BorelSpace E]
     {f : E → ℝ} (hf : MemW0 f) (c : ℝ) (hc : 0 ≤ c) :
     MemW0 (fun x => c * f x) :=
   aux_inductPositiveTerms.memW0ConstMulNonneg hf c hc
 
-/-- The seminorm of a finite nonnegative-scalar combination is bounded by the
-corresponding finite sum of scalar seminorm bounds. -/
+/--
+The seminorm of a finite nonnegative-scalar combination is bounded by the
+corresponding finite sum of scalar seminorm bounds.
+-/
 theorem aux_kernelSequenceSeminorm_fintype_sum_const_mul_le
     {n r : ℕ} (hr : 1 ≤ r) (hrn : r ≤ n)
     {β : Type*} [Fintype β] (S : β → KernelSequence r)
@@ -2339,17 +2362,19 @@ theorem aux_kernelSequenceSeminorm_fintype_sum_const_mul_le
     hr hrn S hS c hc
 
 /--
-\begin{proposition}\label{induct positive terms imply increase data}
-Let $k\in\N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
-Assume that $\InductPositiveTerms{k+1,C}$ holds. Then $\IncreaseData{k,C\cdot C_{\mathrm{induct\
-positive\ terms\ imply\ increase\ data}}}$ holds, where
-\begin{equation}\label{auto:increase-data-induction-constant-definition}C_{\mathrm{induct\
-positive\ terms\ imply\ increase\ data}} = 2^{10} C_{\mathrm{Gaussian\ domination\ combined},0}
-(1+C_{\mathrm{Gaussian\ domination\ combined},1})^2 C_{\mathrm{Gaussian\ domination\
-combined},2}.\end{equation}
-\end{proposition}
+**Proposition.**
 
-[`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`] supplies the
+Let $k\in\mathbb{N}$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
+Assume that $\mathrm{InductPositiveTerms}(k+1,C)$ holds. Then $\mathrm{IncreaseData}(k,C\cdot
+C_{\text{induct positive terms imply increase data}})$ holds, where
+
+$$
+C_{\text{induct positive terms imply increase data}} = 2^{10} C_{\text{Gaussian domination,
+combined},0} (1+C_{\text{Gaussian domination, combined},1})^2 C_{\text{Gaussian domination,
+combined},2}.
+$$
+
+[`Codex.gaussianDominationCombined`] supplies the
 Gaussian-domination constants.
 -/
 theorem inductPositiveTerms_implies_increaseData
@@ -2442,15 +2467,17 @@ theorem inductPositiveTerms_implies_increaseData
     rw [hkernel]
     simpa [mul_assoc, mul_left_comm, mul_comm] using hmain
 
-/-- Constant used by [`Codex.MainArgument.MainInduction.betterInduction`]. -/
+/-- Constant used by [`Codex.betterInduction`]. -/
 noncomputable def C_betterInduction (k : ℕ) : ℝ :=
   ((2 : ℝ) ^ (15 : ℕ) * (k + 2 : ℕ) *
       Real.sqrt
         (C_gaussianDominationCombined * C_inductPositiveTermsImplyIncreaseData) +
     Real.sqrt 2) ^ (2 : ℕ)
 
-/-- This auxiliary positivity fact supplies the admissibility condition on the
-constant in `betterInduction`. -/
+/--
+This auxiliary positivity fact supplies the admissibility condition on the
+constant in `betterInduction`.
+-/
 theorem aux_C_betterInduction_pos (k : ℕ) : 0 < C_betterInduction k := by
   unfold C_betterInduction
   apply sq_pos_of_pos
@@ -2458,8 +2485,10 @@ theorem aux_C_betterInduction_pos (k : ℕ) : 0 < C_betterInduction k := by
   · positivity
   · exact Real.sqrt_pos.2 (by norm_num)
 
-/-- This auxiliary lower bound supplies the `C ∈ [1,∞)` hypothesis needed
-when `betterInduction` invokes the preceding induction implication. -/
+/--
+This auxiliary lower bound supplies the `C ∈ [1,∞)` hypothesis needed
+when `betterInduction` invokes the preceding induction implication.
+-/
 theorem aux_one_le_C_betterInduction (k : ℕ) : 1 ≤ C_betterInduction k := by
   unfold C_betterInduction
   have hmain : 0 ≤ (2 : ℝ) ^ (15 : ℕ) * (k + 2 : ℕ) *
@@ -2487,7 +2516,7 @@ theorem aux_one_le_C_betterInduction (k : ℕ) : 1 ≤ C_betterInduction k := by
         Real.sqrt 2) ^ (2 : ℕ) :=
       (sq_le_sq₀ hroot hsumnonneg).2 hsum
 
-/-- Constant in [`Codex.MainArgument.MainInduction.inductPositiveTermsTheorem`]. -/
+/-- Constant in [`Codex.inductPositiveTermsTheorem`]. -/
 noncomputable def C_inductPositiveTermsTheorem : ℝ :=
   ((2 : ℝ) ^ (17 : ℕ) *
       Real.sqrt
@@ -2495,12 +2524,13 @@ noncomputable def C_inductPositiveTermsTheorem : ℝ :=
     Real.sqrt 2) ^ (2 : ℕ)
 
 /--
-\label{constant induct positive terms theorem}
+Blueprint label `constant induct positive terms theorem`.
 
-The constant from [`Codex.MainArgument.MainInduction.inductPositiveTermsTheorem`] satisfies
-\begin{equation}\label{constant induct positive terms theorem bound}
+The constant from [`Codex.inductPositiveTermsTheorem`] satisfies
+
+$$
 C_{\mathrm{induct\ positive\ terms\ theorem}}<2^{359}.
-\end{equation}
+$$
 -/
 theorem constantInductPositiveTermsTheorem :
     C_inductPositiveTermsTheorem < (2 : ℝ) ^ (359 : ℕ) := by
@@ -2540,8 +2570,10 @@ theorem constantInductPositiveTermsTheorem :
     _ = (2 : ℝ) ^ (359 : ℕ) := by
       rw [← pow_add]
 
-/-- This auxiliary positivity fact supplies the admissibility condition on the
-constant in `inductPositiveTermsTheorem`. -/
+/--
+This auxiliary positivity fact supplies the admissibility condition on the
+constant in `inductPositiveTermsTheorem`.
+-/
 theorem aux_C_inductPositiveTermsTheorem_pos :
     0 < C_inductPositiveTermsTheorem := by
   unfold C_inductPositiveTermsTheorem
@@ -2550,8 +2582,10 @@ theorem aux_C_inductPositiveTermsTheorem_pos :
   · positivity
   · exact Real.sqrt_pos.2 (by norm_num)
 
-/-- This auxiliary lower bound supplies the admissibility condition on the
-constant used in the final `inductPositiveTermsTheorem`. -/
+/--
+This auxiliary lower bound supplies the admissibility condition on the
+constant used in the final `inductPositiveTermsTheorem`.
+-/
 theorem aux_one_le_C_inductPositiveTermsTheorem :
     1 ≤ C_inductPositiveTermsTheorem := by
   unfold C_inductPositiveTermsTheorem
@@ -2582,13 +2616,15 @@ theorem aux_one_le_C_inductPositiveTermsTheorem :
 
 /--
 Output constant from
-[`Codex.MainArgument.MainInduction.vanishingDiagonal_implies_inductPositiveTerms`].
+[`Codex.vanishingDiagonal_implies_inductPositiveTerms`].
 -/
 def C_vanishingDiagonalImpliesInductPositiveTerms (k : ℕ) (C : ℝ) : ℝ :=
   k * C + 2
 
-/-- This auxiliary bound verifies the admissibility condition on the output
-constant of `vanishingDiagonal_implies_inductPositiveTerms`. -/
+/--
+This auxiliary bound verifies the admissibility condition on the output
+constant of `vanishingDiagonal_implies_inductPositiveTerms`.
+-/
 theorem aux_one_le_C_vanishingDiagonalImpliesInductPositiveTerms (k : ℕ) {C : ℝ}
     (hC : 1 ≤ C) : 1 ≤ C_vanishingDiagonalImpliesInductPositiveTerms k C := by
   unfold C_vanishingDiagonalImpliesInductPositiveTerms
@@ -2702,11 +2738,10 @@ theorem aux_kernelSequenceSeminorm_le_sum_of_positive {n : ℕ}
   exact ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left hpi_le_sum hw)
 
 /--
-\begin{proposition}
-\label{vanishing diagonal implies induct positive terms}
-Let $k\in\N$ with $1\le k\le n$ and $C\in [1,\infty)$.
-If $\VanishingDiagonal{k,C}$ holds, then $\InductPositiveTerms{k,kC+2}$ holds.
-\end{proposition}
+**Proposition.**
+
+Let $k\in\mathbb{N}$ with $1\le k\le n$ and $C\in [1,\infty)$.
+If $\mathrm{VanishingDiagonal}(k,C)$ holds, then $\mathrm{InductPositiveTerms}(k,kC+2)$ holds.
 -/
 theorem vanishingDiagonal_implies_inductPositiveTerms {n k : ℕ} {C : ℝ}
     (hk : 1 ≤ k) (hkn : k ≤ n) (hC : 1 ≤ C) :
@@ -3007,11 +3042,10 @@ theorem aux_hMultiplier_seminorm_le_symmetricLMultiplierSum {n : ℕ}
       · simp
 
 /--
-\begin{proposition}
-\label{diagonal band implies vanishing diagonal}
-Let $k\in\N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
-If $\DiagonalBand{k,C}$ holds, then $\VanishingDiagonal{k,C}$ holds.
-\end{proposition}
+**Proposition.**
+
+Let $k\in\mathbb{N}$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
+If $\mathrm{DiagonalBand}(k,C)$ holds, then $\mathrm{VanishingDiagonal}(k,C)$ holds.
 -/
 theorem diagonalBand_implies_vanishingDiagonal {n k : ℕ} {C : ℝ}
     (hk : 1 ≤ k) (hkn : k ≤ n - 1) (hC : 1 ≤ C) :
@@ -3021,15 +3055,17 @@ theorem diagonalBand_implies_vanishingDiagonal {n k : ℕ} {C : ℝ}
   intro γ hγ i
   exact (aux_hMultiplier_seminorm_le_symmetricLMultiplierSum γ i).trans (hband γ hγ i)
 
-/-- Output constant from [`Codex.MainArgument.MainInduction.increaseData_implies_diagonalBand`]. -/
+/-- Output constant from [`Codex.increaseData_implies_diagonalBand`]. -/
 noncomputable def C_increaseDataImpliesDiagonalBand (k n : ℕ) (C : ℝ) : ℝ :=
   if k < n - 1 then
     (2 : ℝ) ^ (15 : ℕ) * Real.sqrt C_gaussianDominationCombined * Real.sqrt C
   else
     (2 : ℝ) ^ (10 : ℕ) * C
 
-/-- This auxiliary bound verifies the `C ∈ [1,∞)` side condition for the
-two constants in `increaseData_implies_diagonalBand`. -/
+/--
+This auxiliary bound verifies the `C ∈ [1,∞)` side condition for the
+two constants in `increaseData_implies_diagonalBand`.
+-/
 theorem aux_one_le_C_increaseDataImpliesDiagonalBand (k n : ℕ) {C : ℝ}
     (hC : 1 ≤ C) : 1 ≤ C_increaseDataImpliesDiagonalBand k n C := by
   unfold C_increaseDataImpliesDiagonalBand
@@ -4570,7 +4606,7 @@ theorem aux_eLpNorm_sandwichN_le_two_pow_nine {n : ℕ}
       ((2 : ℝ) ^ (9 : ℕ) * C_gaussianDominationCombined *
         Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) := by
   rw [aux_eLpNorm_one_sandwichKernel γ (nMultiplier γ hkn ι) i j
-    (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    (Codex.aux_memW0_integrable_of_addHaar
       (nKernelWellDefinedness γ hkn ι i j))]
   exact aux_eLpNorm_nMultiplier_le_two_pow_nine γ hkn i ι j
 
@@ -4646,7 +4682,7 @@ theorem aux_integral_witness_level {n : ℕ} (γ : GeometricParameters n)
       _ = (w.B.card : ℝ) * aux_gaussianDominationWeight m := by
         simp [nsmul_eq_mul]
   · intro b hb
-    exact (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    exact (Codex.aux_memW0_integrable_of_addHaar
       (aux_dominatingGaussianTerm_memW0 (w.scales b m)
         (w.scales_in_A b hb m) (w.orientation b) j)).const_mul _
 
@@ -4677,7 +4713,7 @@ theorem aux_integral_witness_series {n : ℕ} (γ : GeometricParameters n)
     rw [hfun]
     apply integrable_finsetSum
     intro b hb
-    exact (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    exact (Codex.aux_memW0_integrable_of_addHaar
       (aux_dominatingGaussianTerm_memW0 (w.scales b m)
         (w.scales_in_A b hb m) (w.orientation b) j)).const_mul _
   have hint_eq (m : Fin 2 → ℕ) :
@@ -4715,7 +4751,7 @@ theorem aux_nMultiplier_integral_abs_le_witness {n : ℕ} (γ : GeometricParamet
       ∑ b ∈ w.B, aux_dominatingGaussianTerm (w.scales b m) (w.orientation b) j v
   let A : ℝ := C * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)
   have hN : Integrable (nMultiplier γ hkn ι i j) :=
-    Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    Codex.aux_memW0_integrable_of_addHaar
       (nKernelWellDefinedness γ hkn ι i j)
   have hNabs : Integrable (fun v : RealPlane => |nMultiplier γ hkn ι i j v|) := by
     simpa [Real.norm_eq_abs] using hN.norm
@@ -4742,7 +4778,7 @@ theorem aux_eLpNorm_nMultiplier_le_witness {n : ℕ} (γ : GeometricParameters n
       ((C * Real.rpow 2 (-((ι.1.1.natAbs : ℕ) : ℝ) / 2)) *
         ((w.B.card : ℝ) * ∑' m : Fin 2 → ℕ, aux_gaussianDominationWeight m)) := by
   apply aux_eLpNorm_one_le_of_integral_norm_le
-    (Codex.Preliminaries.KKernels.aux_memW0_integrable_of_addHaar
+    (Codex.aux_memW0_integrable_of_addHaar
       (nKernelWellDefinedness γ hkn ι i j))
   simpa [Real.norm_eq_abs] using
     aux_nMultiplier_integral_abs_le_witness γ hkn i ι hC w j
@@ -4894,12 +4930,12 @@ theorem aux_cauchySchwarzLift_eq_increaseData_partial
     dsimp [A]
     apply Finset.prod_nonneg
     intro m _
-    exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ m (l.1 : ℤ) _
+    exact Codex.aux_gammaGaussian_nonneg γ m (l.1 : ℤ) _
   have hB : 0 ≤ B := by
     dsimp [B]
     apply Finset.prod_nonneg
     intro m _
-    exact Codex.MainArgument.GaussianDomination.aux_gammaGaussian_nonneg γ m ((l.1 : ℤ) - 1) _
+    exact Codex.aux_gammaGaussian_nonneg γ m ((l.1 : ℤ) - 1) _
   change |A * nMultiplier γ hkn ι i (l.1 : ℤ)
       (y.1 i.castSucc, y.2 i.castSucc) * B| *
         tensorSquare (sigmaMultiplier γ ι i (l.1 : ℤ))
@@ -4997,20 +5033,22 @@ theorem aux_kernelSequenceSeminorm_one_le_of_cauchySchwarz {n : ℕ} (hn : 2 < n
   simpa [a] using ENNReal.ofReal_le_ofReal hreal
 
 /--
-\begin{proposition}\label{increase data implies diagonal band}
-Let $k\in\N$ with $1\le k\le n-1$ and $C\in[1,\infty)$. Suppose that $\IncreaseData{k,C}$ holds.
-Then:
+**Proposition.**
+
+Let $k\in\mathbb{N}$ with $1\le k\le n-1$ and $C\in[1,\infty)$. Suppose that
+$\mathrm{IncreaseData}(k,C)$ holds. Then:
 
 (i) If $k<n-1$, then
-\begin{equation}\label{auto:diagonal-band-induction-constant}
-\DiagonalBand{k,2^{15}C_{\mathrm{Gaussian\ domination\ combined},2}^{1/2}C^{1/2}}
-\end{equation}
+
+$$
+\mathrm{DiagonalBand}(k,2^{15}C_{\text{Gaussian domination, combined},2}^{1/2}C^{1/2})
+$$
+
 holds.
 
-(ii) If $k=n-1$, then $\DiagonalBand{n-1,2^{10}C}$ holds.
-\end{proposition}
+(ii) If $k=n-1$, then $\mathrm{DiagonalBand}(n-1,2^{10}C)$ holds.
 
-[`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`] supplies the displayed
+[`Codex.gaussianDominationCombined`] supplies the displayed
 constant.
 -/
 theorem increaseData_implies_diagonalBand {n k : ℕ} {C : ℝ}
@@ -5020,8 +5058,10 @@ theorem increaseData_implies_diagonalBand {n k : ℕ} {C : ℝ}
         (aux_one_le_C_increaseDataImpliesDiagonalBand k n hC) :=
   aux_increaseDataDiagonal.impl hk hkn hC
 
-/-- Recursive constants from [`Codex.MainArgument.MainInduction.inductPositiveTermsByInduction`].
-The argument is the reverse distance from `n`. -/
+/--
+Recursive constants from [`Codex.inductPositiveTermsByInduction`].
+The argument is the reverse distance from `n`.
+-/
 noncomputable def C_inductPositiveTermsByInduction (n : ℕ) : ℕ → ℝ
   | 0 => (2 : ℝ) + n
   | Nat.succ 0 =>
@@ -5034,8 +5074,10 @@ noncomputable def C_inductPositiveTermsByInduction (n : ℕ) : ℕ → ℝ
           (C_inductPositiveTermsImplyIncreaseData *
             C_inductPositiveTermsByInduction n (r + 1))
 
-/-- This auxiliary induction establishes the admissibility side condition for
-the recursive constants in `inductPositiveTermsByInduction`. -/
+/--
+This auxiliary induction establishes the admissibility side condition for
+the recursive constants in `inductPositiveTermsByInduction`.
+-/
 theorem aux_one_le_C_inductPositiveTermsByInduction (n r : ℕ) :
     1 ≤ C_inductPositiveTermsByInduction n r := by
   induction r with
@@ -5186,27 +5228,31 @@ theorem distance (n : ℕ) (hn : 1 ≤ n) :
 end aux_inductPositiveTermsByInduction
 
 /--
-\begin{proposition}\label{P:C_k-induction}
-For every $k\in\N$ with $1\le k\le n$, $\InductPositiveTerms{k,C_k}$ holds, where
-\begin{equation}\label{auto:positive-induction-recursion}
-C_n=2+n,
-\end{equation}
-\begin{equation}\label{auto:positive-induction-recursion-terminal-step}
-C_{n-1}=2+(n-1)2^{10}C_{\mathrm{induct\ positive\ terms\ imply\ increase\ data}}C_n,
-\end{equation}
-and, for $1\le k\le n-2$,
-\begin{equation}\label{auto:positive-induction-recursion-interior-step}
-C_k=2+k2^{15}C_{\mathrm{Gaussian\ domination\ combined},2}^{1/2}
-(C_{\mathrm{induct\ positive\ terms\ imply\ increase\ data}}C_{k+1})^{1/2}.
-\end{equation}
-\end{proposition}
+**Proposition.**
 
-See also [`Codex.MainArgument.MainInduction.vanishingDiagonal_implies_inductPositiveTerms`],
-[`Codex.MainArgument.MainInduction.vanishingKernelIntegral`],
-[`Codex.MainArgument.MainInduction.inductPositiveTerms_implies_increaseData`],
-[`Codex.MainArgument.MainInduction.increaseData_implies_diagonalBand`],
-[`Codex.MainArgument.MainInduction.diagonalBand_implies_vanishingDiagonal`], and
-[`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`].
+For every $k\in\mathbb{N}$ with $1\le k\le n$, $\mathrm{InductPositiveTerms}(k,C_k)$ holds, where
+
+$$
+C_n=2+n,
+$$
+
+$$
+C_{n-1}=2+(n-1)2^{10}C_{\text{induct positive terms imply increase data}}C_n,
+$$
+
+and, for $1\le k\le n-2$,
+
+$$
+C_k=2+k2^{15}C_{\text{Gaussian domination, combined},2}^{1/2}
+(C_{\text{induct positive terms imply increase data}}C_{k+1})^{1/2}.
+$$
+
+See also [`Codex.vanishingDiagonal_implies_inductPositiveTerms`],
+[`Codex.vanishingKernelIntegral`],
+[`Codex.inductPositiveTerms_implies_increaseData`],
+[`Codex.increaseData_implies_diagonalBand`],
+[`Codex.diagonalBand_implies_vanishingDiagonal`], and
+[`Codex.gaussianDominationCombined`].
 -/
 theorem inductPositiveTermsByInduction (n k : ℕ)
     (hk : 1 ≤ k) (hkn : k ≤ n) :
@@ -5427,17 +5473,19 @@ theorem recursive_constant_le_better (n : ℕ) :
 end aux_betterInduction
 
 /--
-\begin{lemma}[constant $C_k$ \auto]\label{P:better-induction}
-For every $k\in\N$ with $1\le k\le n-1$,
-\begin{equation}\label{auto:positive-induction-local-bound}
-\InductPositiveTerms{k,
-(18\cdot2^{173}(k+2)+2^{1/2})^2}
-\end{equation}
-holds.
-\end{lemma}
+**Lemma (constant $C_k$).**
 
-See also [`Codex.MainArgument.MainInduction.inductPositiveTermsByInduction`] and
-[`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`].
+For every $k\in\mathbb{N}$ with $1\le k\le n-1$,
+
+$$
+\mathrm{InductPositiveTerms}(k,
+(18\cdot2^{173}(k+2)+2^{1/2})^2)
+$$
+
+holds.
+
+See also [`Codex.inductPositiveTermsByInduction`] and
+[`Codex.gaussianDominationCombined`].
 -/
 theorem betterInduction (n k : ℕ)
     (hk : 1 ≤ k) (hkn : k ≤ n - 1) :
@@ -5454,20 +5502,21 @@ theorem betterInduction (n k : ℕ)
     (aux_one_le_C_betterInduction k) hbound hrec
 
 /--
-\begin{theorem}\label{induct positive terms theorem}
-$\InductPositiveTerms{2,C_{\mathrm{induct\ positive\ terms\ theorem}}}$ holds, where
-\begin{equation}\label{auto:positive-induction-constant-definition}
-C_{\mathrm{induct\ positive\ terms\ theorem}}
-=
-\bigl(2^{17}(C_{\mathrm{Gaussian\ domination\ combined},2}C_{\mathrm{induct\ positive\ terms\
-imply\ increase\ data}})^{1/2}+2^{1/2}\bigr)^2.
-\end{equation}
-\end{theorem}
+**Theorem.**
 
-See also [`Codex.MainArgument.MainInduction.betterInduction`],
-[`Codex.MainArgument.MainInduction.inductPositiveTermsByInduction`],
-[`Codex.MainArgument.GaussianDomination.gaussianDominationCombined`], and
-[`Codex.MainArgument.MainInduction.inductPositiveTerms_implies_increaseData`].
+$\mathrm{InductPositiveTerms}(2,C_{\text{induct positive terms theorem}})$ holds, where
+
+$$
+C_{\text{induct positive terms theorem}}
+=
+\bigl(2^{17}(C_{\text{Gaussian domination, combined},2}C_{\text{induct positive terms imply increase
+data}})^{1/2}+2^{1/2}\bigr)^2.
+$$
+
+See also [`Codex.betterInduction`],
+[`Codex.inductPositiveTermsByInduction`],
+[`Codex.gaussianDominationCombined`], and
+[`Codex.inductPositiveTerms_implies_increaseData`].
 -/
 theorem inductPositiveTermsTheorem (n : ℕ) (hn : 2 ≤ n) :
     InductPositiveTerms n 2 C_inductPositiveTermsTheorem (by omega) hn
@@ -5505,4 +5554,4 @@ theorem inductPositiveTermsTheorem (n : ℕ) (hn : 2 ≤ n) :
 
 end
 
-end Codex.MainArgument.MainInduction
+end Codex

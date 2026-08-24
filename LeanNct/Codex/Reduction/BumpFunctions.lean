@@ -12,36 +12,40 @@ set_option linter.style.header false
 Formalization of the ``Bump functions'' subsection of the reduction argument.
 -/
 
-namespace Codex.Reduction.BumpFunctions
+namespace Codex
 
 open MeasureTheory Set
 open scoped BigOperators FourierTransform Real RealInnerProductSpace
 
-open Codex.Preliminaries.Notation
-open Codex.Preliminaries.BumpsAndEstimates
 
 
 noncomputable section
-/-- The multiplication operator $X\phi(u)=u\phi(u)$ from
-\eqref{auto:multiplication-operator-X}. -/
+/--
+The multiplication operator $X\phi(u)=u\phi(u)$ from
+(`auto:multiplication-operator-X`).
+-/
 noncomputable def multiplicationOperatorX {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (phi : ℝ → E) : ℝ → E :=
   fun u ↦ u • phi u
 
-/-- The logarithmic-derivative operator $T\phi=(X\phi)'$ used in
-Lemma [`Codex.Reduction.BumpFunctions.fourierDerivativeMul`]. -/
+/--
+The logarithmic-derivative operator $T\phi=(X\phi)'$ used in
+Lemma [`Codex.fourierDerivativeMul`].
+-/
 noncomputable def aux_T {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (phi : ℝ → E) : ℝ → E :=
   fun x ↦ deriv (multiplicationOperatorX phi) x
 
 /--
-\begin{lemma}\label{lem:ft_deriv_mul}
+**Lemma.**
+
 For a Schwartz function $\phi:\mathbb{R}\to\mathbb{C}$ let
 $T\phi(x)=\frac{d}{dx} (x \phi(x))|_x$. Then
 for every $m\ge 0$,
-\begin{equation}\label{auto:Fourier-derivatives-of-T}(\widehat{T\phi})^{(m)}(\xi) =
--(m (\widehat{\phi})^{(m)}(\xi) + \xi (\widehat{\phi})^{(m+1)}(\xi)).\end{equation}
-\end{lemma}
+
+$$
+(\widehat{T\phi})^{(m)}(\xi) = -(m (\widehat{\phi})^{(m)}(\xi) + \xi (\widehat{\phi})^{(m+1)}(\xi)).
+$$
 -/
 theorem fourierDerivativeMul (phi : SchwartzMap ℝ ℂ) (m : ℕ) (xi : ℝ) :
     iteratedDeriv m
@@ -192,19 +196,22 @@ theorem fourierDerivativeMul (phi : SchwartzMap ℝ ℂ) (m : ℕ) (xi : ℝ) :
         ring
   simpa [smul_eq_mul] using congrFun (hformula m) xi
 
-/-- The explicit constant in Lemma [`Codex.Reduction.BumpFunctions.wideBump`]. -/
+/-- The explicit constant in Lemma [`Codex.wideBump`]. -/
 noncomputable def C_wideBump (N : ℝ) : ℝ :=
   Real.rpow 2 (3 * N)
 
 /--
-\begin{lemma} \label{lem:widebump}
-Let $k \leq 2$, $t\in [2^{1-k}, 2^{2-k}]$. Then for every $u\in \R$ and $N\ge 0$,
-\begin{equation}\label{auto:wide-bump-translation-bound}\langle u-t\rangle^{N}
-\le C_{\text{lem:widebump},N} 2^{-kN}\langle u\rangle^{N},\end{equation}
-where $C_{\text{lem:widebump},N}=2^{3N}$.
-\end{lemma}
+**Lemma.**
 
-See also [`Codex.Reduction.BumpFunctions.wideBump`].
+Let $k \leq 2$, $t\in [2^{1-k}, 2^{2-k}]$. Then for every $u\in \mathbb{R}$ and $N\ge 0$,
+
+$$
+\langle u-t\rangle^{N} \le C_{\text{lem:widebump},N} 2^{-kN}\langle u\rangle^{N},
+$$
+
+where $C_{\text{lem:widebump},N}=2^{3N}$.
+
+See also [`Codex.wideBump`].
 -/
 theorem wideBump (k : ℤ) (hk : k ≤ 2) (t : ℝ)
     (ht : t ∈ Set.Icc ((2 : ℝ) ^ (1 - k)) ((2 : ℝ) ^ (2 - k)))
@@ -271,7 +278,7 @@ theorem wideBump (k : ℤ) (hk : k ≤ 2) (t : ℝ)
             (Real.rpow_add (x := (2 : ℝ)) (by norm_num : (0 : ℝ) < 2)
               (3 * N) (-((k : ℝ) * N)))
 
-/-- The constant in Lemma [`Codex.Reduction.BumpFunctions.thetaTOffcenter`]. -/
+/-- The constant in Lemma [`Codex.thetaTOffcenter`]. -/
 noncomputable def C_thetaTOffcenter : ℝ := 133
 
 theorem thetaTOffcenter_bracket_pos (x : ℝ) : 0 < bracketBump x := by
@@ -647,9 +654,11 @@ theorem thetaTOffcenter_two_small (R v₀ v₁ : ℝ) (hR : 0 < R) (hRtwo : 2 �
 
 
 /--
-\begin{lemma}\label{lem:thetat_offcenter}
-Let $k\le-1$. Then for every $v\in\R^2$,
-\begin{equation}\label{E:two-terms}
+**Lemma.**
+
+Let $k\le-1$. Then for every $v\in\mathbb{R}^2$,
+
+$$
 2^{k/2}\int_1^2
 \langle v_0-t2^{-k}\rangle^2
 \langle v_1-t2^{-k}\rangle^2\,dt
@@ -659,14 +668,15 @@ Let $k\le-1$. Then for every $v\in\R^2$,
 +
 \langle v_0+v_1\rangle^{3/2}\langle v_0-v_1\rangle^{3/2}
 \right),
-\end{equation}
-where
-\begin{equation}\label{off center bump constant}
-C_{\text{lem:thetat\_offcenter}}=133.
-\end{equation}
-\end{lemma}
+$$
 
-See also [`Codex.Reduction.BumpFunctions.thetaTOffcenter`].
+where
+
+$$
+C_{\text{lem:thetat\_offcenter}}=133.
+$$
+
+See also [`Codex.thetaTOffcenter`].
 -/
 theorem thetaTOffcenter (k : ℤ) (hk : k ≤ -1) (v₀ v₁ : ℝ) :
     Real.rpow 2 ((k : ℝ) / 2) *
@@ -835,36 +845,42 @@ theorem thetaTOffcenter (k : ℤ) (hk : k ≤ -1) (v₀ v₁ : ℝ) :
 
 
 /--
-\begin{lemma}[constant $C_{\text{lem:thetat\_offcenter}}$ \auto]\label{constant off center bump}
-\begin{equation}\label{constant off center bump bound}
-C_{\text{lem:thetat\_offcenter}}\le133.
-\end{equation}
-\end{lemma}
+**Lemma (constant $C_{\text{lem:thetat\_offcenter}}$).**
 
-See also [`Codex.Reduction.BumpFunctions.thetaTOffcenter`].
+$$
+C_{\text{lem:thetat\_offcenter}}\le133.
+$$
+
+See also [`Codex.thetaTOffcenter`].
 -/
 theorem constantOffCenterBump : C_thetaTOffcenter ≤ 133 := by
   norm_num [C_thetaTOffcenter]
 
-/-- The one-dimensional $L^1$-normalized dilation used in Lemma
-[`Codex.Reduction.BumpFunctions.integralFct`]. -/
-noncomputable def aux_realRescaled (t : ℝ) (psi : ℝ → ℝ) : ℝ → ℝ :=
+/--
+The one-dimensional $L^1$-normalized dilation used in Lemma
+[`Codex.integralFct`].
+-/
+noncomputable def aux_bf_realRescaled (t : ℝ) (psi : ℝ → ℝ) : ℝ → ℝ :=
   fun x ↦ t⁻¹ * psi (t⁻¹ * x)
 
-/-- The tensor kernel defined by the integral in Lemma
-[`Codex.Reduction.BumpFunctions.integralFct`]. -/
+/--
+The tensor kernel defined by the integral in Lemma
+[`Codex.integralFct`].
+-/
 noncomputable def integralFctKernel (psi : ℝ → ℝ) :
     EuclideanSpace ℝ (Fin 2) → ℝ :=
   fun u ↦ ∫ t : ℝ in Set.Icc 1 2,
-    aux_realRescaled t psi (u 0) * aux_realRescaled t psi (u 1) * t⁻¹
+    aux_bf_realRescaled t psi (u 0) * aux_bf_realRescaled t psi (u 1) * t⁻¹
 
 /-- The $L^1$-normalized two-dimensional dilation of `integralFctKernel`. -/
 noncomputable def aux_integralFctKernelAtScale (s : ℝ) (psi : ℝ → ℝ) :
     EuclideanSpace ℝ (Fin 2) → ℝ :=
   rescaled s (integralFctKernel psi)
 
-/-- The frequency set in the support conclusion of Lemma
-[`Codex.Reduction.BumpFunctions.integralFct`]. -/
+/--
+The frequency set in the support conclusion of Lemma
+[`Codex.integralFct`].
+-/
 noncomputable def aux_integralFctBand (ell : ℤ) : Set ℝ :=
   Set.Icc (-((2 : ℝ) ^ (-ell))) (-((2 : ℝ) ^ (-3 - ell))) ∪
     Set.Icc ((2 : ℝ) ^ (-3 - ell)) ((2 : ℝ) ^ (-ell))
@@ -877,22 +893,28 @@ def aux_annulusOne (r R : ℝ) : Set ℝ :=
 def aux_productSet (s : Set ℝ) : Set (EuclideanSpace ℝ (Fin 2)) :=
   {xi | xi 0 ∈ s ∧ xi 1 ∈ s}
 
-/-- The coordinate swap on $mathbb R^2$ used in the symmetry assertion of
-Lemma [`Codex.Reduction.BumpFunctions.integralFct`]. -/
+/--
+The coordinate swap on $mathbb R^2$ used in the symmetry assertion of
+Lemma [`Codex.integralFct`].
+-/
 noncomputable def aux_swapTwo (u : EuclideanSpace ℝ (Fin 2)) :
     EuclideanSpace ℝ (Fin 2) :=
   WithLp.toLp 2 ![u 1, u 0]
 
-/-- A bounded measurable real function, in the sense needed by the Lebesgue-integral
-positivity statements in Lemmas [`Codex.Reduction.BumpFunctions.integralFct`] and
-[`Codex.Reduction.BumpFunctions.phiPosV2`]. -/
+/--
+A bounded measurable real function, in the sense needed by the Lebesgue-integral
+positivity statements in Lemmas [`Codex.integralFct`] and
+[`Codex.phiPosV2`].
+-/
 def aux_bounded (f : ℝ → ℝ) : Prop :=
   Measurable f ∧ Bornology.IsBounded (Set.range f)
 
-/-- Auxiliary scaling identity for the Fourier-support part of
-`integralFct` (Lemma [`Codex.Reduction.BumpFunctions.integralFct`]). -/
+/--
+Auxiliary scaling identity for the Fourier-support part of
+`integralFct` (Lemma [`Codex.integralFct`]).
+-/
 theorem aux_realRescaled_fourier (t : ℝ) (ht : 0 < t) (f : ℝ → ℝ) (xi : ℝ) :
-    FourierTransform.fourier (fun x : ℝ => (aux_realRescaled t f x : ℂ)) xi =
+    FourierTransform.fourier (fun x : ℝ => (aux_bf_realRescaled t f x : ℂ)) xi =
       FourierTransform.fourier (fun x : ℝ => (f x : ℂ)) (t * xi) := by
   rw [Real.fourier_real_eq_integral_exp_smul,
     Real.fourier_real_eq_integral_exp_smul]
@@ -900,10 +922,10 @@ theorem aux_realRescaled_fourier (t : ℝ) (ht : 0 < t) (f : ℝ → ℝ) (xi : 
     Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * (q : ℂ) * ((t * xi : ℝ) : ℂ)))
   calc
     (∫ x : ℝ, Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I) •
-        (aux_realRescaled t f x : ℂ)) = ∫ x : ℝ, (t⁻¹ : ℂ) * g (t⁻¹ * x) := by
+        (aux_bf_realRescaled t f x : ℂ)) = ∫ x : ℝ, (t⁻¹ : ℂ) * g (t⁻¹ * x) := by
       apply integral_congr_ae
       filter_upwards [] with x
-      dsimp [g, aux_realRescaled]
+      dsimp [g, aux_bf_realRescaled]
       have hphase : Complex.exp (↑(-2 * Real.pi * x * xi) * Complex.I) =
           Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * ((t⁻¹ * x : ℝ) : ℂ) *
             ((t * xi : ℝ) : ℂ))) := by
@@ -1100,8 +1122,10 @@ theorem aux_contDiff_infty_setIntegral_Icc_of_contDiffOn
   exact aux_contDiff_setIntegral_Icc_of_contDiffOn F N
     (hF.of_le (by exact_mod_cast hN))
 
-/-- The product Fourier factorization used in the support calculation of
-`integralFct` (Lemma [`Codex.Reduction.BumpFunctions.integralFct`]). -/
+/--
+The product Fourier factorization used in the support calculation of
+`integralFct` (Lemma [`Codex.integralFct`]).
+-/
 theorem aux_fourier_tensor_two (f g : ℝ → ℝ) (xi : EuclideanSpace ℝ (Fin 2)) :
     FourierTransform.fourier (fun u : EuclideanSpace ℝ (Fin 2) =>
       (f (u 0) * g (u 1) : ℂ)) xi =
@@ -1152,9 +1176,11 @@ theorem aux_fourier_tensor_two (f g : ℝ → ℝ) (xi : EuclideanSpace ℝ (Fin
         filter_upwards [] with x
         ring_nf
 
-/-- The Fourier transform of a two-coordinate tensor product factors into the
+/--
+The Fourier transform of a two-coordinate tensor product factors into the
 two one-dimensional Fourier transforms.  This exposes the calculation used in
-the reduction argument without duplicating its Fubini proof. -/
+the reduction argument without duplicating its Fubini proof.
+-/
 theorem aux_fourier_tensor_two_eq (f g : ℝ → ℝ) (xi : EuclideanSpace ℝ (Fin 2)) :
     FourierTransform.fourier (fun u : EuclideanSpace ℝ (Fin 2) =>
       (f (u 0) * g (u 1) : ℂ)) xi =
@@ -1162,34 +1188,36 @@ theorem aux_fourier_tensor_two_eq (f g : ℝ → ℝ) (xi : EuclideanSpace ℝ (
       FourierTransform.fourier (fun x : ℝ => (g x : ℂ)) (xi 1) := by
   exact aux_fourier_tensor_two f g xi
 
-/-- Integrability of the three-variable Fubini integrand in the positivity part of
-`integralFct` (Lemma [`Codex.Reduction.BumpFunctions.integralFct`]). -/
+/--
+Integrability of the three-variable Fubini integrand in the positivity part of
+`integralFct` (Lemma [`Codex.integralFct`]).
+-/
 theorem aux_integralFct_triple_integrable
     (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s)
     (f : ℝ → ℝ) (hf : Measurable f) (C : ℝ) (hC : ∀ x, |f x| ≤ C) :
     Integrable (fun q : ℝ × (ℝ × ℝ) =>
-      (f q.2.1 * aux_realRescaled (s * q.1) (fun x => psi x) q.2.1) *
-        (f q.2.2 * aux_realRescaled (s * q.1) (fun x => psi x) q.2.2) * q.1⁻¹)
+      (f q.2.1 * aux_bf_realRescaled (s * q.1) (fun x => psi x) q.2.1) *
+        (f q.2.2 * aux_bf_realRescaled (s * q.1) (fun x => psi x) q.2.2) * q.1⁻¹)
       ((volume.restrict (Set.Icc 1 2)).prod volume) := by
   let μ : Measure ℝ := volume.restrict (Set.Icc 1 2)
   let : IsFiniteMeasure μ := by
     dsimp [μ]
     infer_instance
   let A : ℝ × ℝ → ℝ := fun tx =>
-    f tx.2 * aux_realRescaled (s * tx.1) (fun x => psi x) tx.2
+    f tx.2 * aux_bf_realRescaled (s * tx.1) (fun x => psi x) tx.2
   let H : ℝ × (ℝ × ℝ) → ℝ := fun q => A (q.1, q.2.1) * A (q.1, q.2.2) * q.1⁻¹
   have hAmeas : Measurable A := by
-    dsimp [A, aux_realRescaled]
+    dsimp [A, aux_bf_realRescaled]
     fun_prop
   have hHmeas : Measurable H := by
-    dsimp [H, A, aux_realRescaled]
+    dsimp [H, A, aux_bf_realRescaled]
     fun_prop
   have hscaleNorm (a : ℝ) (ha : 0 < a) :
-      ∫ x : ℝ, ‖aux_realRescaled a (fun x => psi x) x‖ = ∫ x : ℝ, ‖psi x‖ := by
-    rw [show (fun x : ℝ => ‖aux_realRescaled a (fun x => psi x) x‖) =
+      ∫ x : ℝ, ‖aux_bf_realRescaled a (fun x => psi x) x‖ = ∫ x : ℝ, ‖psi x‖ := by
+    rw [show (fun x : ℝ => ‖aux_bf_realRescaled a (fun x => psi x) x‖) =
         fun x => |a⁻¹| * ‖psi (a⁻¹ * x)‖ by
           funext x
-          simp [aux_realRescaled, norm_mul]]
+          simp [aux_bf_realRescaled, norm_mul]]
     rw [integral_const_mul]
     rw [Measure.integral_comp_inv_mul_left (fun x : ℝ => ‖psi x‖) a]
     rw [smul_eq_mul]
@@ -1198,8 +1226,8 @@ theorem aux_integralFct_triple_integrable
     field_simp
   have hAt (t : ℝ) (ht : 0 < t) : Integrable (fun x : ℝ => A (t, x)) := by
     have hst : 0 < s * t := mul_pos hs ht
-    have hraw : Integrable (aux_realRescaled (s * t) (fun x => psi x)) := by
-      unfold aux_realRescaled
+    have hraw : Integrable (aux_bf_realRescaled (s * t) (fun x => psi x)) := by
+      unfold aux_bf_realRescaled
       convert (psi.integrable.comp_mul_left' (inv_ne_zero hst.ne')).const_mul (s * t)⁻¹ using 1
     dsimp [A]
     refine hraw.bdd_mul hf.aestronglyMeasurable (c := C) ?_
@@ -1208,20 +1236,20 @@ theorem aux_integralFct_triple_integrable
   have hLbound (t : ℝ) (ht : 0 < t) :
       ∫ x : ℝ, ‖A (t, x)‖ ≤ C * ∫ x : ℝ, ‖psi x‖ := by
     have hst : 0 < s * t := mul_pos hs ht
-    have hraw : Integrable (aux_realRescaled (s * t) (fun x => psi x)) := by
-      unfold aux_realRescaled
+    have hraw : Integrable (aux_bf_realRescaled (s * t) (fun x => psi x)) := by
+      unfold aux_bf_realRescaled
       convert (psi.integrable.comp_mul_left' (inv_ne_zero hst.ne')).const_mul (s * t)⁻¹ using 1
     have hAt' := hAt t ht
     calc
       ∫ x : ℝ, ‖A (t, x)‖ ≤
-          ∫ x : ℝ, C * ‖aux_realRescaled (s * t) (fun x => psi x) x‖ := by
+          ∫ x : ℝ, C * ‖aux_bf_realRescaled (s * t) (fun x => psi x) x‖ := by
         apply integral_mono hAt'.norm (hraw.norm.const_mul C)
         intro x
-        change ‖f x * aux_realRescaled (s * t) (fun x => psi x) x‖ ≤ _
+        change ‖f x * aux_bf_realRescaled (s * t) (fun x => psi x) x‖ ≤ _
         rw [norm_mul]
         exact mul_le_mul_of_nonneg_right (by simpa [Real.norm_eq_abs] using hC x)
           (norm_nonneg _)
-      _ = C * ∫ x : ℝ, ‖aux_realRescaled (s * t) (fun x => psi x) x‖ := by
+      _ = C * ∫ x : ℝ, ‖aux_bf_realRescaled (s * t) (fun x => psi x) x‖ := by
         rw [integral_const_mul]
       _ = C * ∫ x : ℝ, ‖psi x‖ := by rw [hscaleNorm _ hst]
   have hfixed : ∀ᵐ t : ℝ ∂μ, Integrable (fun xy : ℝ × ℝ => H (t, xy)) := by
@@ -1273,35 +1301,41 @@ theorem aux_integralFct_triple_integrable
     (integrable_prod_iff hHmeas.aestronglyMeasurable).2 ⟨hfixed, houter⟩
   simpa [μ, H, A] using hH
 
-/-- Rewriting the scaled kernel as the corresponding integral of one-dimensional
-dilations, used in the positivity and Fourier-support parts of `integralFct`. -/
+/--
+Rewriting the scaled kernel as the corresponding integral of one-dimensional
+dilations, used in the positivity and Fourier-support parts of `integralFct`.
+-/
 theorem aux_integralFctKernelAtScale_eq
     (s : ℝ) (hs : s ≠ 0) (psi : ℝ → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
     aux_integralFctKernelAtScale s psi u =
       ∫ t : ℝ in Set.Icc 1 2,
-        aux_realRescaled (s * t) psi (u 0) *
-          aux_realRescaled (s * t) psi (u 1) * t⁻¹ := by
+        aux_bf_realRescaled (s * t) psi (u 0) *
+          aux_bf_realRescaled (s * t) psi (u 1) * t⁻¹ := by
   unfold aux_integralFctKernelAtScale rescaled integralFctKernel
   rw [← MeasureTheory.integral_const_mul]
   apply integral_congr_ae
   filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
   have ht0 : t ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one ht.1)
-  simp only [aux_realRescaled]
+  simp only [aux_bf_realRescaled]
   simp only [PiLp.smul_apply, smul_eq_mul]
   field_simp [hs, ht0]
 
-/-- Expand a nonzero dilation of `integralFctKernel` into its defining compact
-scale integral.  This is the reusable scale/Fubini form of the kernel. -/
+/--
+Expand a nonzero dilation of `integralFctKernel` into its defining compact
+scale integral.  This is the reusable scale/Fubini form of the kernel.
+-/
 theorem integralFctKernelAtScale_eq
     (s : ℝ) (hs : s ≠ 0) (psi : ℝ → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
     aux_integralFctKernelAtScale s psi u =
       ∫ t : ℝ in Set.Icc 1 2,
-        aux_realRescaled (s * t) psi (u 0) *
-          aux_realRescaled (s * t) psi (u 1) * t⁻¹ :=
+        aux_bf_realRescaled (s * t) psi (u 0) *
+          aux_bf_realRescaled (s * t) psi (u 1) * t⁻¹ :=
   aux_integralFctKernelAtScale_eq s hs psi u
 
-/-- The product-square form of the Fubini integral in the positivity part of
-`integralFct` (Lemma [`Codex.Reduction.BumpFunctions.integralFct`]) is nonnegative. -/
+/--
+The product-square form of the Fubini integral in the positivity part of
+`integralFct` (Lemma [`Codex.integralFct`]) is nonnegative.
+-/
 theorem aux_integralFct_triple_nonnegative (A : ℝ × ℝ → ℝ)
     (hH : Integrable (fun q : ℝ × (ℝ × ℝ) =>
       A (q.1, q.2.1) * A (q.1, q.2.2) * q.1⁻¹)
@@ -1330,8 +1364,10 @@ theorem aux_integralFct_triple_nonnegative (A : ℝ × ℝ → ℝ)
       filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
       exact mul_nonneg (sq_nonneg _) (inv_nonneg.mpr (by linarith [ht.1]))
 
-/-- Fubini interchange for the compact scale integral in the Fourier-support
-calculation of `integralFct` (Lemma [`Codex.Reduction.BumpFunctions.integralFct`]). -/
+/--
+Fubini interchange for the compact scale integral in the Fourier-support
+calculation of `integralFct` (Lemma [`Codex.integralFct`]).
+-/
 theorem aux_fourier_setIntegral_swap
     {V} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V]
@@ -1345,8 +1381,10 @@ theorem aux_fourier_setIntegral_swap
   simp_rw [← integral_smul]
   rw [← integral_integral_swap h]
 
-/-- A version of `aux_fourier_setIntegral_swap` which obtains the harmless
-Fourier phase integrability from the raw integrability hypothesis. -/
+/--
+A version of `aux_fourier_setIntegral_swap` which obtains the harmless
+Fourier phase integrability from the raw integrability hypothesis.
+-/
 theorem aux_fourier_setIntegral_swap_of_integrable
     {V} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V]
@@ -1370,8 +1408,10 @@ theorem aux_fourier_setIntegral_swap_of_integrable
   apply aux_fourier_setIntegral_swap k a b xi
   simpa [e, smul_eq_mul] using hp
 
-/-- The unit Fourier band, after a scale in `[1,2]`, lies in the band used by
-`integralFct` (Lemma [`Codex.Reduction.BumpFunctions.integralFct`]). -/
+/--
+The unit Fourier band, after a scale in `[1,2]`, lies in the band used by
+`integralFct` (Lemma [`Codex.integralFct`]).
+-/
 theorem aux_integralFct_scale_band_mem (s t x : ℝ) (hs : 0 < s)
     (ht : t ∈ Set.Icc 1 2)
     (h : s * t * x ∈ Set.Icc (-1 : ℝ) (-(1 / 4 : ℝ)) ∪ Set.Icc (1 / 4 : ℝ) 1) :
@@ -1409,9 +1449,11 @@ theorem aux_integralFct_scale_band_mem (s t x : ℝ) (hs : 0 < s)
         _ ≤ t := by linarith [ht.1]
         _ = (s * t) * s⁻¹ := by field_simp [hs.ne']
 
-/-- A coordinate outside the scaled band forces the corresponding Fourier factor
+/--
+A coordinate outside the scaled band forces the corresponding Fourier factor
 to vanish in the support proof of `integralFct` (Lemma
-[`Codex.Reduction.BumpFunctions.integralFct`]). -/
+[`Codex.integralFct`]).
+-/
 theorem aux_integralFct_fourier_zero_outside_band
     (psi : SchwartzMap ℝ ℝ)
     (hpsi : Function.support (FourierTransform.fourier (fun x : ℝ ↦ (psi x : ℂ))) ⊆
@@ -1451,9 +1493,11 @@ theorem aux_band_subset_annulus (r : ℝ) (hr : 0 ≤ r) :
     · exact hx.1
     · nlinarith [hx.2, hr]
 
-/-- The scale-integrated tensor kernel has nonnegative quadratic forms.  This is
+/--
+The scale-integrated tensor kernel has nonnegative quadratic forms.  This is
 the positivity assertion used by `integralFct` (Lemma
-[`Codex.Reduction.BumpFunctions.integralFct`]). -/
+[`Codex.integralFct`]).
+-/
 theorem aux_integralFctKernelAtScale_nonnegative
     (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s)
     (f : ℝ → ℝ) (hf : aux_bounded f) :
@@ -1466,7 +1510,7 @@ theorem aux_integralFctKernelAtScale_nonnegative
     simpa [Real.norm_eq_abs] using hC (f x) ⟨x, rfl⟩
   let μ : Measure ℝ := volume.restrict (Set.Icc 1 2)
   let A : ℝ × ℝ → ℝ := fun tx =>
-    f tx.2 * aux_realRescaled (s * tx.1) (fun x => psi x) tx.2
+    f tx.2 * aux_bf_realRescaled (s * tx.1) (fun x => psi x) tx.2
   let H : ℝ × (ℝ × ℝ) → ℝ := fun q =>
     A (q.1, q.2.1) * A (q.1, q.2.2) * q.1⁻¹
   have hH : Integrable H (μ.prod volume) := by
@@ -1503,8 +1547,8 @@ theorem aux_integralFctKernelAtScale_nonnegative
     filter_upwards [] with u
     rw [show aux_integralFctKernelAtScale s (fun x => psi x) u =
         ∫ t : ℝ in Set.Icc 1 2,
-          aux_realRescaled (s * t) (fun x => psi x) (u 0) *
-            aux_realRescaled (s * t) (fun x => psi x) (u 1) * t⁻¹ by
+          aux_bf_realRescaled (s * t) (fun x => psi x) (u 0) *
+            aux_bf_realRescaled (s * t) (fun x => psi x) (u 1) * t⁻¹ by
           exact aux_integralFctKernelAtScale_eq s hs.ne' _ u]
     rw [← integral_const_mul]
     apply integral_congr_ae
@@ -1521,19 +1565,21 @@ theorem aux_integralFctKernelAtScale_nonnegative
       filter_upwards [] with t
       exact (hinner t).symm
 
-/-- Integrability of the complex scale-integrated tensor used to exchange the
+/--
+Integrability of the complex scale-integrated tensor used to exchange the
 Fourier and scale integrals in `integralFct` (Lemma
-[`Codex.Reduction.BumpFunctions.integralFct`]). -/
+[`Codex.integralFct`]).
+-/
 theorem aux_integralFctKernelAtScale_triple_integrable
     (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s) :
     Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) =>
-      (aux_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
-        aux_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹ : ℂ))
+      (aux_bf_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
+        aux_bf_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹ : ℂ))
       ((volume.restrict (Set.Icc 1 2)).prod volume) := by
   let μ : Measure ℝ := volume.restrict (Set.Icc 1 2)
   let H : ℝ × (ℝ × ℝ) → ℝ := fun q =>
-    aux_realRescaled (s * q.1) (fun x => psi x) q.2.1 *
-      aux_realRescaled (s * q.1) (fun x => psi x) q.2.2 * q.1⁻¹
+    aux_bf_realRescaled (s * q.1) (fun x => psi x) q.2.1 *
+      aux_bf_realRescaled (s * q.1) (fun x => psi x) q.2.2 * q.1⁻¹
   have hH : Integrable H (μ.prod volume) := by
     simpa [μ, H] using
       aux_integralFct_triple_integrable psi s hs (fun _ : ℝ => 1) (by fun_prop) 1
@@ -1546,8 +1592,8 @@ theorem aux_integralFctKernelAtScale_triple_integrable
   have heprod : MeasurePreserving (Prod.map id e) (μ.prod volume) (μ.prod volume) :=
     (MeasurePreserving.id μ).prod he
   let HE : ℝ × EuclideanSpace ℝ (Fin 2) → ℝ := fun q =>
-    aux_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
-      aux_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹
+    aux_bf_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
+      aux_bf_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹
   have hHE_eq : HE = H ∘ Prod.map id e := by
     funext q
     dsimp [HE, H, e]
@@ -1559,19 +1605,23 @@ theorem aux_integralFctKernelAtScale_triple_integrable
       (μ.prod volume) := hHE.ofReal
   simpa [μ, HE] using hHEC
 
-/-- Joint integrability of the scale parameter and spatial variables for the
+/--
+Joint integrability of the scale parameter and spatial variables for the
 expanded `integralFctKernel` at a positive scale.  This is the Fubini input for
-parameterized Brascamp--Lieb forms. -/
+parameterized Brascamp--Lieb forms.
+-/
 theorem integralFctKernelAtScale_triple_integrable
     (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s) :
     Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) =>
-      (aux_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
-        aux_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹ : ℂ))
+      (aux_bf_realRescaled (s * q.1) (fun x => psi x) (q.2 0) *
+        aux_bf_realRescaled (s * q.1) (fun x => psi x) (q.2 1) * q.1⁻¹ : ℂ))
       ((volume.restrict (Set.Icc 1 2)).prod volume) :=
   aux_integralFctKernelAtScale_triple_integrable psi s hs
 
-/-- Multiplication by a scalar commutes with the Fourier integral.  This
-form is used for the `dt/t` factor in `integralFct`. -/
+/--
+Multiplication by a scalar commutes with the Fourier integral.  This
+form is used for the `dt/t` factor in `integralFct`.
+-/
 theorem aux_fourier_mul_const
     {V} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V]
@@ -1723,11 +1773,11 @@ theorem aux_integralFctKernel_continuous (psi : SchwartzMap ℝ ℝ) :
     Continuous (fun u : EuclideanSpace ℝ (Fin 2) =>
       (integralFctKernel (fun x => psi x) u : ℂ)) := by
   let F : EuclideanSpace ℝ (Fin 2) → ℝ → ℝ := fun u t =>
-    aux_realRescaled t (fun x => psi x) (u 0) *
-      aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹
+    aux_bf_realRescaled t (fun x => psi x) (u 0) *
+      aux_bf_realRescaled t (fun x => psi x) (u 1) * t⁻¹
   have hF : ContDiffOn ℝ (⊤ : ℕ∞) F.uncurry
       (univ ×ˢ Ioi (0 : ℝ)) := by
-    dsimp [F, aux_realRescaled]
+    dsimp [F, aux_bf_realRescaled]
     have hne : ∀ p ∈ (univ : Set (EuclideanSpace ℝ (Fin 2))) ×ˢ Ioi (0 : ℝ),
         p.2 ≠ 0 := by
       rintro ⟨u, t⟩ ⟨-, ht⟩
@@ -1747,8 +1797,8 @@ theorem aux_integralFctKernel_integrable (psi : SchwartzMap ℝ ℝ) :
     Integrable (fun u : EuclideanSpace ℝ (Fin 2) =>
       (integralFctKernel (fun x => psi x) u : ℂ)) := by
   let k : ℝ → EuclideanSpace ℝ (Fin 2) → ℂ := fun t u =>
-    (aux_realRescaled t (fun x => psi x) (u 0) *
-      aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹ : ℂ)
+    (aux_bf_realRescaled t (fun x => psi x) (u 0) *
+      aux_bf_realRescaled t (fun x => psi x) (u 1) * t⁻¹ : ℂ)
   have hk : Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) => k q.1 q.2)
       ((volume.restrict (Icc (1 : ℝ) 2)).prod volume) := by
     simpa [k] using aux_integralFctKernelAtScale_triple_integrable psi 1 (by norm_num)
@@ -1758,13 +1808,13 @@ theorem aux_integralFctKernel_integrable (psi : SchwartzMap ℝ ℝ) :
         fun u => ∫ t : ℝ in Icc (1 : ℝ) 2, k t u := by
     funext u
     change (↑(∫ t : ℝ in Icc (1 : ℝ) 2,
-      aux_realRescaled t (fun x => psi x) (u 0) *
-        aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹) : ℂ) = _
+      aux_bf_realRescaled t (fun x => psi x) (u 0) *
+        aux_bf_realRescaled t (fun x => psi x) (u 1) * t⁻¹) : ℂ) = _
     simpa [k] using
       (integral_ofReal (𝕜 := ℂ) (μ := volume.restrict (Icc (1 : ℝ) 2))
         (f := fun t : ℝ =>
-          aux_realRescaled t (fun x => psi x) (u 0) *
-            aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹)).symm
+          aux_bf_realRescaled t (fun x => psi x) (u 0) *
+            aux_bf_realRescaled t (fun x => psi x) (u 1) * t⁻¹)).symm
   rw [hkernel]
   exact hk.integral_prod_right
 
@@ -1774,8 +1824,8 @@ theorem aux_integralFctKernel_fourier_eq (psi : SchwartzMap ℝ ℝ) :
         (integralFctKernel (fun x => psi x) u : ℂ)) =
       aux_integralFctFourierKernel psi := by
   let k : ℝ → EuclideanSpace ℝ (Fin 2) → ℂ := fun t u =>
-    (aux_realRescaled t (fun x => psi x) (u 0) *
-      aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹ : ℂ)
+    (aux_bf_realRescaled t (fun x => psi x) (u 0) *
+      aux_bf_realRescaled t (fun x => psi x) (u 1) * t⁻¹ : ℂ)
   have hk : Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) => k q.1 q.2)
       ((volume.restrict (Icc (1 : ℝ) 2)).prod volume) := by
     simpa [k] using aux_integralFctKernelAtScale_triple_integrable psi 1 (by norm_num)
@@ -1785,21 +1835,21 @@ theorem aux_integralFctKernel_fourier_eq (psi : SchwartzMap ℝ ℝ) :
         fun u => ∫ t : ℝ in Icc (1 : ℝ) 2, k t u := by
     funext u
     change (↑(∫ t : ℝ in Icc (1 : ℝ) 2,
-      aux_realRescaled t (fun x => psi x) (u 0) *
-        aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹) : ℂ) = _
+      aux_bf_realRescaled t (fun x => psi x) (u 0) *
+        aux_bf_realRescaled t (fun x => psi x) (u 1) * t⁻¹) : ℂ) = _
     simpa [k] using
       (integral_ofReal (𝕜 := ℂ) (μ := volume.restrict (Icc (1 : ℝ) 2))
         (f := fun t : ℝ =>
-          aux_realRescaled t (fun x => psi x) (u 0) *
-            aux_realRescaled t (fun x => psi x) (u 1) * t⁻¹)).symm
+          aux_bf_realRescaled t (fun x => psi x) (u 0) *
+            aux_bf_realRescaled t (fun x => psi x) (u 1) * t⁻¹)).symm
   funext xi
   rw [hkernel, aux_fourier_setIntegral_swap_of_integrable k 1 2 xi hk]
   apply integral_congr_ae
   filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
   have htpos : 0 < t := lt_of_lt_of_le zero_lt_one ht.1
   have hkt : k t = fun u =>
-      (aux_realRescaled t (fun x => psi x) (u 0) : ℂ) *
-        (aux_realRescaled t (fun x => psi x) (u 1) : ℂ) * (t⁻¹ : ℂ) := by
+      (aux_bf_realRescaled t (fun x => psi x) (u 0) : ℂ) *
+        (aux_bf_realRescaled t (fun x => psi x) (u 1) : ℂ) * (t⁻¹ : ℂ) := by
     funext u
     dsimp [k]
     push_cast
@@ -1808,9 +1858,11 @@ theorem aux_integralFctKernel_fourier_eq (psi : SchwartzMap ℝ ℝ) :
     aux_realRescaled_fourier t htpos, aux_realRescaled_fourier t htpos]
   rw [Complex.ofReal_inv]
 
-/-- The Fourier transform of the compact scale-integrated tensor kernel.
+/--
+The Fourier transform of the compact scale-integrated tensor kernel.
 This explicit form makes the cancellation on the diagonal available to the
-short-variation estimates. -/
+short-variation estimates.
+-/
 theorem integralFctKernel_fourier_eq (psi : SchwartzMap ℝ ℝ) :
     FourierTransform.fourier
       (fun u : EuclideanSpace ℝ (Fin 2) =>
@@ -1821,9 +1873,11 @@ theorem integralFctKernel_fourier_eq (psi : SchwartzMap ℝ ℝ) :
             ((t⁻¹ : ℝ) : ℂ) := by
   exact aux_integralFctKernel_fourier_eq psi
 
-/-- A Schwartz realization of the compact scale-integrated tensor kernel.
+/--
+A Schwartz realization of the compact scale-integrated tensor kernel.
 Its Fourier-side construction is identified with `integralFctKernel` by
-`integralFctKernelSchwartz_apply`. -/
+`integralFctKernelSchwartz_apply`.
+-/
 noncomputable def integralFctKernelSchwartz (psi : SchwartzMap ℝ ℝ)
     (hsupp : Function.support
       (FourierTransform.fourier (fun x : ℝ => (psi x : ℂ))) ⊆
@@ -1832,8 +1886,10 @@ noncomputable def integralFctKernelSchwartz (psi : SchwartzMap ℝ ℝ)
   SchwartzMap.postcompCLM Complex.reCLM
     (FourierTransform.fourierInv (aux_integralFctFourierKernelSchwartz psi hsupp))
 
-/-- The coercion of `integralFctKernelSchwartz` is the original physical
-kernel. -/
+/--
+The coercion of `integralFctKernelSchwartz` is the original physical
+kernel.
+-/
 theorem integralFctKernelSchwartz_apply (psi : SchwartzMap ℝ ℝ)
     (hsupp : Function.support
       (FourierTransform.fourier (fun x : ℝ => (psi x : ℂ))) ⊆
@@ -1859,8 +1915,10 @@ theorem integralFctKernelSchwartz_apply (psi : SchwartzMap ℝ ℝ)
   rw [integralFctKernelSchwartz, SchwartzMap.postcompCLM_apply]
   simpa [f] using congrArg Complex.re hcomplex
 
-/-- The Fourier-support inclusion in the first part of the conclusion of
-`integralFct` (Lemma [`Codex.Reduction.BumpFunctions.integralFct`]). -/
+/--
+The Fourier-support inclusion in the first part of the conclusion of
+`integralFct` (Lemma [`Codex.integralFct`]).
+-/
 theorem aux_integralFct_fourier_support
     (psi : SchwartzMap ℝ ℝ)
     (hpsi : Function.support (FourierTransform.fourier (fun x : ℝ ↦ (psi x : ℂ))) ⊆
@@ -1876,8 +1934,8 @@ theorem aux_integralFct_fourier_support
   let s : ℝ := (2 : ℝ) ^ ell
   have hs : 0 < s := zpow_pos (by norm_num) _
   let k : ℝ → EuclideanSpace ℝ (Fin 2) → ℂ := fun t u =>
-    (aux_realRescaled (s * t) (fun x => psi x) (u 0) *
-      aux_realRescaled (s * t) (fun x => psi x) (u 1) * t⁻¹ : ℂ)
+    (aux_bf_realRescaled (s * t) (fun x => psi x) (u 0) *
+      aux_bf_realRescaled (s * t) (fun x => psi x) (u 1) * t⁻¹ : ℂ)
   have hk : Integrable (fun q : ℝ × EuclideanSpace ℝ (Fin 2) => k q.1 q.2)
       ((volume.restrict (Set.Icc 1 2)).prod volume) := by
     simpa [s, k] using aux_integralFctKernelAtScale_triple_integrable psi s hs
@@ -1890,8 +1948,8 @@ theorem aux_integralFct_fourier_support
     simpa [k] using
       (integral_ofReal (𝕜 := ℂ) (μ := volume.restrict (Set.Icc (1 : ℝ) 2))
         (f := fun t : ℝ =>
-          aux_realRescaled (s * t) (fun x => psi x) (u 0) *
-            aux_realRescaled (s * t) (fun x => psi x) (u 1) * t⁻¹)).symm
+          aux_bf_realRescaled (s * t) (fun x => psi x) (u 0) *
+            aux_bf_realRescaled (s * t) (fun x => psi x) (u 1) * t⁻¹)).symm
   rw [show ((2 : ℝ) ^ ell) = s by rfl, hkernel]
   rw [aux_fourier_setIntegral_swap_of_integrable k 1 2 xi hk]
   apply integral_eq_zero_of_ae
@@ -1900,8 +1958,8 @@ theorem aux_integralFct_fourier_support
   rcases not_and_or.mp hx with hx0 | hx1
   · have hst : 0 < s * t := mul_pos hs (lt_of_lt_of_le zero_lt_one ht.1)
     have hk_t : k t = fun u =>
-        (aux_realRescaled (s * t) (fun x => psi x) (u 0) : ℂ) *
-          (aux_realRescaled (s * t) (fun x => psi x) (u 1) : ℂ) * (t⁻¹ : ℂ) := by
+        (aux_bf_realRescaled (s * t) (fun x => psi x) (u 0) : ℂ) *
+          (aux_bf_realRescaled (s * t) (fun x => psi x) (u 1) : ℂ) * (t⁻¹ : ℂ) := by
       funext u
       dsimp [k]
       push_cast
@@ -1913,8 +1971,8 @@ theorem aux_integralFct_fourier_support
     simp
   · have hst : 0 < s * t := mul_pos hs (lt_of_lt_of_le zero_lt_one ht.1)
     have hk_t : k t = fun u =>
-        (aux_realRescaled (s * t) (fun x => psi x) (u 0) : ℂ) *
-          (aux_realRescaled (s * t) (fun x => psi x) (u 1) : ℂ) * (t⁻¹ : ℂ) := by
+        (aux_bf_realRescaled (s * t) (fun x => psi x) (u 0) : ℂ) *
+          (aux_bf_realRescaled (s * t) (fun x => psi x) (u 1) : ℂ) * (t⁻¹ : ℂ) := by
       funext u
       dsimp [k]
       push_cast
@@ -1926,33 +1984,36 @@ theorem aux_integralFct_fourier_support
     simp
 
 /--
-\begin{lemma}
-         \label{lem:int_fct}
-Let $\psi:\R\to \R$ be a Schwartz function and assume that
-          \begin{equation}
-              \label{int_fct_assumption}
+**Lemma.**
+
+Let $\psi:\mathbb{R}\to \mathbb{R}$ be a Schwartz function and assume that
+
+$$
               \textup{supp}(\widehat{\psi})
 \subset  [-1,-2^{-2}]\cup [2^{-2},1]
-          \end{equation}
-     Let $\Psi:\R^2\to \R$ be defined as
-     \begin{equation}\label{auto:integrated-tensor-kernel}\Psi(u,v) =
-     \int_1^2 \psi_{(t)}(u) \psi_{(t)}(v) \tfrac{dt}{t}\end{equation}
-     and let $\ell\in\Z$.
+$$
+
+Let $\Psi:\mathbb{R}^2\to \mathbb{R}$ be defined as
+
+$$
+\Psi(u,v) = \int_1^2 \psi_{(t)}(u) \psi_{(t)}(v) \tfrac{dt}{t}
+$$
+
+and let $\ell\in\mathbb{Z}$.
    Then
-        \begin{enumerate}
-    \item  \label{int_fct_symm} For all $(u,v)\in \R^2$,
-    $\Psi_{(2^\ell)}(u,v) = \Psi_{(2^\ell)}(v,u)$
-     \item \label{int_fct_pos}  For all bounded functions $f:\R\to\R$,
-     \begin{equation}\label{auto:integrated-tensor-positivity}
-         \int_{\R^2} f(u){f(v)} \Psi_{(2^\ell)}(u,v)\,dudv
-         \ge 0
-     \end{equation}
-     \item  \label{int_fct_supp}
-     $         \textup{supp}(\widehat{\Psi_{(2^\ell)}})
-\subset  ([-2^{-\ell},-2^{-3-\ell}]\cup [2^{-3-\ell},2^{-\ell}])^2
-\subset \textup{Ann}_1(2^{-\ell},2^3)^2$
-     \end{enumerate}
-\end{lemma}
+
+1. For all $(u,v)\in \mathbb{R}^2$,  $\Psi_{(2^\ell)}(u,v) = \Psi_{(2^\ell)}(v,u)$
+
+1. For all bounded functions $f:\mathbb{R}\to\mathbb{R}$,
+
+   $$
+   \int_{\mathbb{R}^2} f(u){f(v)} \Psi_{(2^\ell)}(u,v)\,dudv
+   \ge 0
+   $$
+
+1. $         \textup{supp}(\widehat{\Psi_{(2^\ell)}})
+\subset  ([-2^{-\ell},-2^{-3-\ell}]\cup [2^{-3-\ell},2^{-\ell}])^2 \subset
+   \textup{Ann}_1(2^{-\ell},2^3)^2$
 -/
 theorem integralFct (psi : SchwartzMap ℝ ℝ)
     (hpsi : Function.support
@@ -2010,19 +2071,21 @@ theorem integralFct (psi : SchwartzMap ℝ ℝ)
     exact ⟨hband hx0, hband hx1⟩
 
 /--
-\begin{lemma}\label{lem:Phipos_v2}
+**Lemma.**
+
 Let
-$\Psi:\mathbb{R}^2\to \mathbb{R}$ be such   that $\Psi(u_0,u_1)=\Psi(u_1,u_0)$
-for all $(u_0,u_1)\in \R^2$ and such that
-for all bounded functions $g:\R\to\R$,
-\begin{equation}\label{nonneg_assumption_v2}
-    \int_{\R^2} g(u_0){g(u_1)} \Psi(u)\,du \ge 0
-\end{equation}
-Then for all $\xi\in \R$,
-\begin{equation}\label{auto:positive-kernel-diagonal-Fourier}
+$\Psi:\mathbb{R}^2\to \mathbb{R}$ be such   that $\Psi(u_0,u_1)=\Psi(u_1,u_0)$ for all $(u_0,u_1)\in
+\mathbb{R}^2$ and such that
+for all bounded functions $g:\mathbb{R}\to\mathbb{R}$,
+
+$$
+    \int_{\mathbb{R}^2} g(u_0){g(u_1)} \Psi(u)\,du \ge 0
+$$
+
+Then for all $\xi\in \mathbb{R}$,
+$$
 \widehat{\Psi}(\xi,-\xi)\geq 0.
-\end{equation}
-\end{lemma}
+$$
 -/
 theorem phiPosV2 (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
     (hsym : ∀ u : EuclideanSpace ℝ (Fin 2), Psi u = Psi (aux_swapTwo u))
@@ -2179,8 +2242,10 @@ theorem aux_fourier_diagonal_even_of_swap (Psi : EuclideanSpace ℝ (Fin 2) → 
             change (Psi (aux_swapTwoLinearIsometry u) : ℂ) = (Psi u : ℂ)
             rw [← hsym u]
 
-/-- For a real coordinate-symmetric two-dimensional function, its Fourier transform on the
-anti-diagonal is real and even. -/
+/--
+For a real coordinate-symmetric two-dimensional function, its Fourier transform on the
+anti-diagonal is real and even.
+-/
 theorem fourierDiagonalRealEven (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
     (hsym : ∀ u : EuclideanSpace ℝ (Fin 2), Psi u = Psi (aux_swapTwo u)) :
     (∀ xi : ℝ, ∃ r : ℝ,
@@ -2222,4 +2287,4 @@ theorem fourierDiagonalRealEven (Psi : EuclideanSpace ℝ (Fin 2) → ℝ)
 
 end
 
-end Codex.Reduction.BumpFunctions
+end Codex
