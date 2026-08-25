@@ -14,7 +14,7 @@ The finite variation seminorms used in the reduction argument.
 
 @[expose] public section
 
-namespace Codex
+namespace Auto
 
 open MeasureTheory Set
 open scoped BigOperators ENNReal
@@ -1164,4 +1164,4 @@ theorem ftcCsR (J : ℕ) {α β : ℝ} (hα : 0 < α) (hαβ : α < β)
     exact aux_chain_first_ftc hα hαβ a ha t.1 t.2
   · exact aux_second_ftcCsR hα a ha
 
-end Codex
+end Auto

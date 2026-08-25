@@ -316,7 +316,7 @@ where we have identified $\R^{n+m}$ with $\R^n\times \R^m$. For $d\in\N$ also de
 
 
 \begin{definition}\label{gaussian}\uses{}\usesdefs{}
-\lean{Codex.gaussian}
+\lean{Auto.gaussian}
 The standard Gaussian on $\R$ is defined by
 \begin{equation}\label{standard Gaussian formula}
 \g(x)=e^{-\pi x^2}
@@ -339,7 +339,7 @@ We shall use freely the fact that if a function, or distribution $f$ on $\R^n$ i
 
 
 \begin{definition}[bracket bump]\label{bracket bump}\uses{}\usesdefs{}
-\lean{Codex.bracketBump,Codex.scaledBracketBump,Codex.scaledBracketBumpReal}
+\lean{Auto.bracketBump,Auto.scaledBracketBump,Auto.scaledBracketBumpReal}
 Define
 \begin{equation}\label{auto:bracket-weight-definition}
     \left<x\right>=(1+|x|)^{-1}\, .
@@ -362,7 +362,7 @@ In this paper we will only use the space $W_0$, which is the closed subspace of 
 The exact definition follows below.
 
 \begin{proposition}\label{auto:local-supremum-measurability}\uses{}\usesdefs{closed ball}
-\lean{Codex.localSupremumMeasurability}
+\lean{Auto.localSupremumMeasurability}
 \leanok
 Let $d\in \N$ and $f:\R^d\to \mathbb{K}$ be continuous.
 Then for $r\in (0,\infty)$, the function $g:\R^d\to [0,\infty]$  defined by
@@ -385,7 +385,7 @@ is finite and upper semi continuous and measurable.
  \end{proof}
 
 \begin{definition}\label{auto:Wiener-space-definition}\uses{auto:local-supremum-measurability}\usesdefs{}
-\lean{Codex.wienerEnvelope,Codex.MemW0,Codex.wienerNorm,Codex.wienerNormOne}
+\lean{Auto.wienerEnvelope,Auto.MemW0,Auto.wienerNorm,Auto.wienerNormOne}
 Let $d\in \N$.  By Proposition \ref{auto:local-supremum-measurability}, the integrand in the following definition is finite and measurable. Define
 \begin{equation}\label{auto:Wiener-local-norm}
 \|f\|_{W_0,d,r}=    \int_{\R^d} \sup_{|x-y|\le r} |f(y)|\,dx.
@@ -404,7 +404,7 @@ determines $d$.
 
 
 \begin{proposition}\label{W_0 radius independence}\uses{auto:local-supremum-measurability}\usesdefs{closed ball,auto:Wiener-space-definition}
-\lean{Codex.wienerNorm_le_max_one_three_mul_div_pow_mul,Codex.memW0_iff_integrable_wienerEnvelope}
+\lean{Auto.wienerNorm_le_max_one_three_mul_div_pow_mul,Auto.memW0_iff_integrable_wienerEnvelope}
 \leanok
 Let $d\in \N$.
 Let $0<r,s<\infty$ and set
@@ -449,7 +449,7 @@ The characterization of $W_0(X)$ by arbitrary $r$ follows.
 
 
 \begin{proposition}\label{P:lp-embedding}\uses{}\usesdefs{closed ball,auto:Wiener-space-definition}
-\lean{Codex.MemW0.memLp}
+\lean{Auto.MemW0.memLp}
 \leanok
 Let $d\in \N$ be given and set
 \begin{equation}\label{auto:Wiener-Lp-embedding-constant}
@@ -485,7 +485,7 @@ Inequality \eqref{Lp W_0} follows by logarithmic convexity of the $L^p$ norms.
 
 
 \begin{proposition}\label{W_0 fiber integrals}\uses{P:lp-embedding,W_0 radius independence,auto:local-supremum-measurability}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinearMap_bound}
+\lean{Auto.exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinearMap_bound}
 \leanok
 For every injective linear map $\pi:\R^{m}\times \R^{l}\to \R^n$ with $m,l\in\N$, $1\le m+l\le n$
 there are $0<C_{\ref{W_0 fiber integrals},\pi,1},C_{\ref{W_0 fiber integrals},\pi,2}<\infty$ such that the following holds. For every $f\in W_0(n)$ and $u\in\R^m$, the function $h_u$ defined by
@@ -553,7 +553,7 @@ C_{\ref{W_0 radius independence},n,1,R}.
 
 
 \begin{proposition}\label{tensor Wiener}\uses{auto:local-supremum-measurability}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.MemW0.fintype_tensor,Codex.fintype_tensor_wienerNorm_le}
+\lean{Auto.MemW0.fintype_tensor,Auto.fintype_tensor_wienerNorm_le}
 \leanok
     Let $J\in \N$ with $J\ge 1$. For $j\in [J)$, let $I_j\subset \N$ and assume the $I_j$ are pairwise disjoint.
     Set $I=\bigcup_{j\in [J)}I_j$. Let $f_j:\R^{|I_j|}\to \mathbb{K}$ in $W_0(|I_j|)$ and define
@@ -587,7 +587,7 @@ By Proposition \ref{auto:local-supremum-measurability}, each factor on the right
 \end{proof}
 
 \begin{proposition}\label{W_0 Brascamp Lieb}\uses{tensor Wiener,W_0 fiber integrals}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.exists_brascamp_lieb_memW0}
+\lean{Auto.exists_brascamp_lieb_memW0}
 \leanok
  Let  $m,l\in\N$, $m+l\le n$ and assume $l\neq 0$.
 Let $J\in \N$ with $J\ge 1$. For $j\in [J)$, let $l_j\in \N$ and let  $\Pi_j:\R^m\times \R^l \to \R^{l_j}$
@@ -645,7 +645,7 @@ C=C_{\ref{W_0 fiber integrals},\Pi,2}.
 
 
 \begin{proposition}\label{P:schwartz-into-wiener}\uses{auto:local-supremum-measurability}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.SchwartzMap.memW0}
+\lean{Auto.SchwartzMap.memW0}
 \leanok
 We have $\mathcal{S}(\R^n)\subset W_0(\R^n)$.
 \end{proposition}
@@ -667,14 +667,14 @@ Proposition \ref{auto:local-supremum-measurability} shows that the local supremu
 
 
 \begin{definition}[Convolution along a vector]\label{auto:convolution-along-vector-definition}\uses{}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.convolutionAlongVector}
+\lean{Auto.convolutionAlongVector}
 For $\rho\in W_0(\R^n), \varphi\in W_0(\R)$ and a vector $\alpha\in\mathbb{R}^n$ define for $x\in\mathbb{R}^n$,
 \begin{equation}\label{auto:convolution-along-vector-formula} (\rho *_\alpha \varphi)(x) = \int_{\R} \rho(x-p\alpha) \varphi(p)\,dp \end{equation}
 \end{definition}
 
 \begin{proposition}[Properties of convolution along a vector]
 \label{convolution vector}\uses{W_0 Brascamp Lieb}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition}
-\lean{Codex.memW0_convolutionAlongVector,Codex.fourier_convolutionAlongVector}
+\lean{Auto.memW0_convolutionAlongVector,Auto.fourier_convolutionAlongVector}
 \leanok
 For $\rho \in W_0(\R^n), \varphi\in W_0(\R), \alpha,\xi\in\mathbb{R}^n$ we have $\rho *_\alpha \varphi\in W_0(\R^n)$ and
 \begin{equation}\label{auto:convolution-along-vector-Fourier-transform} \widehat{\rho *_\alpha \varphi}(\xi) = \widehat{\rho}(\xi)\widehat{\varphi}(\alpha\cdot\xi). \end{equation}
@@ -692,7 +692,7 @@ which equals the right-hand side.
 
 
 \begin{definition}[normalized function tuples]\label{normalized function tuples}\uses{}\usesdefs{}
-\lean{Codex.normalizedFunctionTuples}
+\lean{Auto.normalizedFunctionTuples}
  Let $\mathfrak{F}$ be the set of tuples
 $\F=(F_i)_{i\in [n)}$ of real-valued functions in $\mathcal{S}(\R^n)$
 
@@ -710,7 +710,7 @@ In other words,
 The word cube in the following definition stands for the parameter set $[2)^k$, which can be interpreted as a $k$ dimensional cube.
 
 \begin{definition}[cube Brascamp--Lieb form]\label{cube Brascamp--Lieb}\uses{W_0 Brascamp Lieb}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.cubeBrascampLiebForm}
+\lean{Auto.cubeBrascampLiebForm}
 Define for $k\in\N$ with $1 \le k\le  n$
 and  $L\in W_0(\R^k)$ and $F\in W_0(\R^n)$
 \begin{equation}\label{auto:cube-Brascamp-Lieb-form} \Theta_{{\rm cube}}(k,L)(F) = \int_{(\R^2)^k} \int_{\R^{n-k}} L(y^1-y^0) \Big(\prod_{h\in [2)^k} F(y^h, x_{[k,n)})\Big)^{2^{\min(n-k,1)}}\;dx_{[k,n)}\,dy.\end{equation}
@@ -719,7 +719,7 @@ Note that the integrand in $\Theta_{{\rm cube}}(k, L)(F)$ is in $W_0$ by Proposi
 
 
 \begin{proposition}[cube BL inequality]\label{cube BL inequality}\uses{}\usesdefs{auto:Wiener-space-definition,cube Brascamp--Lieb}
-\lean{Codex.cubeBLInequality}
+\lean{Auto.cubeBLInequality}
 \leanok
 Let $k\in\N$ satisfy $1 \le k\le n$.  Let $L\in W_0(\R^k)$. Then, for all $F\in W_0(\R^n)$ with $\|F\|_{2^{k+\min(n-k,1)}}=1$,
 \begin{equation}\label{cube-k-m-bound}
@@ -749,7 +749,7 @@ hence both cases $k=n-1$ and $k=n$ can be identified with a cube.
 
 
 \begin{definition}[prism Brascamp--Lieb form]\label{prism Brascamp--Lieb}\uses{W_0 Brascamp Lieb}\usesdefs{auto:Wiener-space-definition,normalized function tuples}
-\lean{Codex.prismBrascampLiebForm}
+\lean{Auto.prismBrascampLiebForm}
 Define for integers $1 \le k\le  n$
 and  $K\in W_0(\R^{k+1})$ and $\F\in \mathfrak{F}$,
 
@@ -765,7 +765,7 @@ while
 the argument of $F_{i-1}$  is split as $\R^{k}\times \R^{n-k}$. Recall that superscripts $0$ and $1$ as in $y^0$ and $y^1$ are not powers but just superscripts.
 
 \begin{proposition}[prism BL inequality]\label{prism BL inequality}\uses{}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb}
-\lean{Codex.prismBLInequality}
+\lean{Auto.prismBLInequality}
 \leanok
 
 Let $k\in\N$ satisfy $1\le k\le n$ and $K\in W_0(\R^{k+1})$ and $\F\in \mathfrak{F}$. Then
@@ -816,7 +816,7 @@ Each $\pi_{h,i}$ is invertible and measure preserving, so this is equal to one b
 
 The following proposition concerns the special case $k=n$.
 \begin{proposition}[simplification 1 prism]\label{simplification 1 prism}\uses{}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb}
-\lean{Codex.simplificationOnePrism}
+\lean{Auto.simplificationOnePrism}
 \leanok
     Let $K\in W_0(\R^{n+1})$. If for all $z\in \R^{n+1}$ we have
     \begin{equation}\label{1 prism mean zero assumption}
@@ -842,7 +842,7 @@ a cancellation if the function $\phi_j$ has integral zero.
 
 
 \begin{proposition}[singly cancellative Cauchy-Schwarz]\label{single cancellative Cauchy-Schwarz}\uses{cube BL inequality,W_0 Brascamp Lieb}\usesdefs{auto:Wiener-space-definition,normalized function tuples,cube Brascamp--Lieb,prism Brascamp--Lieb}
-\lean{Codex.singlyCancellativeKernel_memW0,Codex.singlyCancellativeLift_memW0,Codex.singlyCancellativeCauchySchwarz_bound}
+\lean{Auto.singlyCancellativeKernel_memW0,Auto.singlyCancellativeLift_memW0,Auto.singlyCancellativeCauchySchwarz_bound}
 \leanok
 Let $J\ge 1$ and $1\le k<n$ be integers. For
 $(\rho_j)_{j\in [J)}\subset W_0(\R^{k+1})$, and
@@ -948,7 +948,7 @@ If $k=n-1$, one may do an even more careful Cauchy-Schwarz, preserving cancellat
 
 
 \begin{proposition}[doubly cancellative Cauchy-Schwarz, $k=n-1$]\label{doubly cancellative Cauchy-Schwarz}\uses{}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb}
-\lean{Codex.doublyCancellativeKernel_memW0,Codex.doublyCancellativeLift_memW0,Codex.doublyCancellativeCauchySchwarz_bound}
+\lean{Auto.doublyCancellativeKernel_memW0,Auto.doublyCancellativeLift_memW0,Auto.doublyCancellativeCauchySchwarz_bound}
 \leanok
 Let $J\ge 1$ be an integer. For $(\rho_j)_{j\in[J)}\subset W_0(\R^n)$ and
 $(\phi_j)_{j\in [J)}\subset W_0(\R)$ define for $u\in \R^n$,
@@ -1052,7 +1052,7 @@ which implies the claim since $\tilde{F}$ is again in $\mathfrak{F}$.
 The terms on the right-hand-side of Cauchy-Schwarz are by nature positive. This is
 stated independently in the following proposition.
 \begin{proposition}[Positivity]\label{Positivity K}\uses{}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb}
-\lean{Codex.positivityKernel_memW0,Codex.positivityKernel_nonnegative}
+\lean{Auto.positivityKernel_memW0,Auto.positivityKernel_nonnegative}
 \leanok
  Let $1\le k\le n-1$. Let $\rho\in W_0(\R^{k+1})$ be non-negative and
 $\phi\in W_0(\R)$. Set for $u\in\R^{k+2}$ and $i\in [k+1)$
@@ -1103,7 +1103,7 @@ which is non-negative.
 
 
 \begin{proposition}[Monotonicity]\label{Monotonicity K}\uses{Positivity K}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb}In the situation of Proposition \ref{Positivity K},
-\lean{Codex.monotonicityK}
+\lean{Auto.monotonicityK}
 \leanok
 in particular, if $\rho\le \tilde{\rho}$ and
 \begin{equation}\label{auto:kernel-monotonicity-K-rho} K_\rho(u)=\int_\R \rho(u_{[k)}, u_{k+1}-q) \phi(u_{k}+q) \phi(q) \, dq\end{equation}
@@ -1117,7 +1117,7 @@ then
 \subsection{\texorpdfstring{$M$}{M} kernels}
 
 \begin{proposition}[$M$ to $K$]\label{M to K}\uses{W_0 Brascamp Lieb}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.mToK,Codex.mToK_integrand_memW0,Codex.mToK_memW0,Codex.mToK_eLpNorm_one_le}
+\lean{Auto.mToK,Auto.mToK_integrand_memW0,Auto.mToK_memW0,Auto.mToK_eLpNorm_one_le}
 \leanok
 Let $k\in\N$ satisfy $1\le k\le n$. Let $M\in W_0((\R^2)^k)$.
 Define for $z\in \R^{k+1}$,
@@ -1149,13 +1149,13 @@ Note that $K_k(M)$ can also be written as
 \end{rem}
 
 \begin{definition}[prism form]\label{auto:prism-form-definition}\uses{M to K}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb}
-\lean{Codex.prismForm}
+\lean{Auto.prismForm}
 Let $1\le k\le n$. By Proposition \ref{M to K}, $K_k(M)\in W_0(\R^{k+1})$ for every $M\in W_0((\R^2)^k)$. We define for such $M$ and $\mathbf{F}\in\mathfrak{F}$,
 \begin{equation}\label{auto:prism-form-formula}\Lambda_k(M)(\mathbf{F}) = \Theta_k(K_k(M))(\mathbf{F}).\end{equation}
 \end{definition}
 
 \begin{proposition}[Positivity]\label{Positivity M}\uses{tensor Wiener,Positivity K}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb,auto:prism-form-definition}
-\lean{Codex.positivityM_memW0,Codex.positivityM_nonnegative}
+\lean{Auto.positivityM_memW0,Auto.positivityM_nonnegative}
 \leanok
 Let $1\le k\le n$ and $i\in [k)$. Let $\tilde{M}\in W_0((\R^2)^{k-1})$ be nonnegative
 and let $\phi\in W_0(\R)$ be real valued. Define for $y\in (\R^2)^k$,
@@ -1174,7 +1174,7 @@ Then $M\in W_0((\R^2)^k)$ and for all $\F\in {\mathfrak{F}}$,
 
 
 \begin{proposition}[Cauchy-Schwarz at $k$]\label{Cauchy-Schwarz at k}\uses{single cancellative Cauchy-Schwarz,Monotonicity K,M to K}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,normalized function tuples,auto:prism-form-definition}
-\lean{Codex.cauchySchwarzKernel_memW0,Codex.cauchySchwarzLift_memW0,Codex.cauchySchwarzAtK_bound}
+\lean{Auto.cauchySchwarzKernel_memW0,Auto.cauchySchwarzLift_memW0,Auto.cauchySchwarzAtK_bound}
 \leanok
 Let $k,J\in\N$ with $1\le k<n-1$ and $J\ge1$. For $j\in[J)$, let $\rho_j\in W_0((\R^2)^k)$ and let $\varphi_j\in W_0(\R)$ be real valued. Let $i\in[k)$. Let $M\in W_0((\R^2)^k)$ and $\widetilde M\in W_0((\R^2)^{k+1})$ be defined by
 \begin{equation}\label{before CS}
@@ -1214,7 +1214,7 @@ which equals $K_{k+1}(\widetilde M)(z)$. This proves \eqref{Cauchy Schwarz at k 
 
 
 \begin{proposition}[Cauchy-Schwarz at $n-1$]\label{Cauchy-Schwarz at n-1}\uses{doubly cancellative Cauchy-Schwarz,Monotonicity K}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,normalized function tuples,prism Brascamp--Lieb,auto:prism-form-definition}
-\lean{Codex.doublyCauchySchwarzKernel_memW0,Codex.cauchySchwarzLift_memW0,Codex.cauchySchwarzAtNMinusOne_bound,Codex.cauchySchwarzAtNMinusOne}
+\lean{Auto.doublyCauchySchwarzKernel_memW0,Auto.cauchySchwarzLift_memW0,Auto.cauchySchwarzAtNMinusOne_bound,Auto.cauchySchwarzAtNMinusOne}
 \leanok
 Let $J\in\N$ with $J\ge1$ and, for $j\in [J)$, let
 $\rho_j\in W_0((\R^2)^{n-1})$  and $\varphi_j\in W_0(\R)$ be real valued.
@@ -1258,7 +1258,7 @@ By Proposition \ref{Monotonicity K} we may replace $|K_{n-1}(\rho_j)|$ by $K_{n-
 \subsection{Multiplicatively spaced monotone sequences}
 
 \begin{definition}[Multiplicatively spaced monotone sequences]\label{multiplicatively spaced monotone sequences}\uses{}\usesdefs{}
-\lean{Codex.SpacedSequence,Codex.A}
+\lean{Auto.SpacedSequence,Auto.A}
 A sequence $a:\Z\to\R$ with $a(j)>0$ for every $j\in\Z$ is called multiplicatively spaced if, for each $j\in\Z$
 \begin{equation}\label{auto:spaced-sequence-growth}
     2a(j)\le a(j+1)\, .
@@ -1268,7 +1268,7 @@ Let ${\rm A}$ be the set of such sequences.
 
 
 \begin{proposition}[Extension of sequences]\label{Extension of sequences}\uses{}\usesdefs{multiplicatively spaced monotone sequences}
-\lean{Codex.extensionOfSequences}
+\lean{Auto.extensionOfSequences}
 \leanok
 Let $J\in\N$ with $J\ge1$ and let $a:[J)\to\R$ satisfy $a(j)>0$ for every $j\in[J)$ and, for all $j\in[J-1)$, we have $a(j+1)\ge 2a(j)$.
 Then there is a unique $b\in A$ such that for all $j\in [J)$ we have $a(j)=b(j)$ and for $j\ge J$ we have $b(j)=2^{j-J+1} a(J-1)$ and for $j<0$ we have $b(j)=2^j a(0)$\, .
@@ -1317,7 +1317,7 @@ $\Z$ and are disjoint. Hence such a $b$ is unique.
 
 
 \begin{proposition}[Operations on spaced sequences]\label{Operations on spaced sequences}\uses{}\usesdefs{multiplicatively spaced monotone sequences}
-\lean{Codex.max_mem_A,Codex.smul_mem_A,Codex.shift_mem_A,Codex.sqrt_sq_add_sq_mem_A}
+\lean{Auto.max_mem_A,Auto.smul_mem_A,Auto.shift_mem_A,Auto.sqrt_sq_add_sq_mem_A}
 \leanok
     Let $a,b\in {\rm A}$. Then the following hold:
 
@@ -1356,7 +1356,7 @@ Thus each sequence belongs to ${\rm A}$.
 
 
 \begin{definition}[Distance of spaced sequences]\label{Distance of spaced sequences}\uses{}\usesdefs{multiplicatively spaced monotone sequences}
-\lean{Codex.WithinSequenceDistance,Codex.SequenceDistance}
+\lean{Auto.WithinSequenceDistance,Auto.SequenceDistance}
 Given $a,b\in {\rm A}$, define
 \begin{equation}\label{auto:spaced-sequence-distance}
     \dist(a,b)=\min\{k\in\mathbb{Z}_{\ge 0}\,:\,\forall j, a(j-k)\le b(j)\le a(j+k)\}
@@ -1365,7 +1365,7 @@ with the understanding that the value is $\infty$ if there is no such $k$.
 \end{definition}
 
 \begin{proposition}[Properties of distance of sequences]\label{Properties of distance of sequences}\uses{}\usesdefs{multiplicatively spaced monotone sequences,Distance of spaced sequences}
-\lean{Codex.sequenceDistance_zero_eq,Codex.sequenceDistance_comm,Codex.sequenceDistance_triangle,Codex.sequenceDistance_shift_le,Codex.sequenceDistance_smul,Codex.sequenceDistance_pow_two_smul_le}
+\lean{Auto.sequenceDistance_zero_eq,Auto.sequenceDistance_comm,Auto.sequenceDistance_triangle,Auto.sequenceDistance_shift_le,Auto.sequenceDistance_smul,Auto.sequenceDistance_pow_two_smul_le}
 \leanok
     Let $a,b,c\in {\rm A}$.
     Then
@@ -1498,7 +1498,7 @@ so $\dist(a,2^h a)\le -h=|h|$.
 \end{proof}
 
 \begin{definition}[Closed balls in $\mathrm{A}$]\label{closed balls in A}\uses{}\usesdefs{multiplicatively spaced monotone sequences,Distance of spaced sequences}
-\lean{Codex.sequenceDistanceBall}
+\lean{Auto.sequenceDistanceBall}
 For $a\in\mathrm{A}$ and $r>0$ denote
 \begin{equation}\label{auto:spaced-sequence-distance-ball}B_{\mathrm{dist}}(a,r)=\{b\in\mathrm{A}\,:\,\dist(a,b)\le r\}.\end{equation}
 \end{definition}
@@ -1508,7 +1508,7 @@ For $a\in\mathrm{A}$ and $r>0$ denote
 Recall that $\g(x)=e^{-\pi x^2}$ for $x\in\R$.
 
 \begin{proposition}\label{square root one minus Gaussian}\uses{}\usesdefs{gaussian}
-\lean{Codex.sqrtOneMinusGaussian,Codex.sqrtOneMinusGaussian_wellDefined,Codex.continuous_sqrtOneMinusGaussian,Codex.sqrtOneMinusGaussian_lower,Codex.sqrtOneMinusGaussian_bounds}
+\lean{Auto.sqrtOneMinusGaussian,Auto.sqrtOneMinusGaussian_wellDefined,Auto.continuous_sqrtOneMinusGaussian,Auto.sqrtOneMinusGaussian_lower,Auto.sqrtOneMinusGaussian_bounds}
 \leanok
     The function
     \begin{equation}\label{auto:square-root-one-minus-Gaussian}
@@ -1550,7 +1550,7 @@ $a\in[0,1]$ we have $a\le \sqrt a\le 1$, so with $a=1-\g(x)$ this gives
 \end{proof}
 
 \begin{proposition}\label{Gaussian bump decay}\uses{}\usesdefs{gaussian,bracket bump}
-\lean{Codex.gaussianBumpDecay}
+\lean{Auto.gaussianBumpDecay}
 \leanok
 For every $x\in\R$, $m,N\in\N$,
 \begin{equation}\label{auto:Gaussian-derivative-decay} |\g^{(m)}(x)|\le C_{\ref{Gaussian bump decay},m,N} \langle x\rangle^N, \end{equation}
@@ -1638,7 +1638,7 @@ This proves the claim.
 \end{proof}
 
 \begin{proposition}[Elementary Gaussian properties]\label{Elementary Gaussian properties}\uses{Gaussian bump decay}\usesdefs{gaussian,auto:Wiener-space-definition}
-\lean{Codex.gaussian_memSchwartz,Codex.gaussian_memW0,Codex.gaussian_fourier_fixed,Codex.gaussianRescale_convolution,Codex.gaussianRescale_fourier}
+\lean{Auto.gaussian_memSchwartz,Auto.gaussian_memW0,Auto.gaussian_fourier_fixed,Auto.gaussianRescale_convolution,Auto.gaussianRescale_fourier}
 \leanok
 
 (i) $\g\in \mathcal{S}(\R)\subset W_0(\R)$
@@ -1712,7 +1712,7 @@ Fourier inversion gives
 \end{proof}
 
 \begin{proposition}\label{poisson to abel}\uses{}\usesdefs{}
-\lean{Codex.poissonKernel,Codex.poissonKernel_fourier}
+\lean{Auto.poissonKernel,Auto.poissonKernel_fourier}
 \leanok
 Let
 \begin{equation}\label{auto:Gaussian-comparison-function}
@@ -1751,7 +1751,7 @@ Using this for $a=2\pi x$ for \(x\in\R\)
 
 
 \begin{proposition}\label{auxiliary function B}\uses{square root one minus Gaussian,poisson to abel}\usesdefs{gaussian}
-\lean{Codex.auxiliaryFunctionB_properties}
+\lean{Auto.auxiliaryFunctionB_properties}
 \leanok
     With $p$ as in Proposition \ref{poisson to abel}, define $B:\R\to \R$ by
 \begin{equation}\label{auto:Gaussian-square-root-remainder}
@@ -1881,7 +1881,7 @@ the single point \(0\).
 \end{proof}
 
 \begin{proposition}[square root of Gaussian decay]\label{square root of Gaussian decay}\uses{auxiliary function B,poisson to abel,Elementary Gaussian properties}\usesdefs{gaussian,bracket bump,auto:Wiener-space-definition}
-\lean{Codex.sqrtGaussianDecay}
+\lean{Auto.sqrtGaussianDecay}
 \leanok
 For $x\in\R$ let
 \begin{equation}\label{auto:inverse-Fourier-square-root-Gaussian} \rho(x) = \mathcal{F}^{-1}(\xi \mapsto 1- \sqrt{1-\g(\xi)})(x). \end{equation}
@@ -2012,7 +2012,7 @@ Every term on the right-hand side is non-negative, so \(\rho(x)\ge 0\) for every
 
 \begin{lemma}
 \label{lem:smoothdecay}\uses{}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.smoothDecay}
+\lean{Auto.smoothDecay}
 \leanok
 Let $N\geq 2$ be an integer. Let $\zeta:\R\to\C$ be an $N$ times continuously differentiable function with compact support. Then the function $\phi=\mathcal F^{-1}\zeta$ belongs to $W_0(\R)$ and we have for all $x\in\R$, $x\neq0$, the estimate
 
@@ -2049,7 +2049,7 @@ Combining \eqref{xleone} and \eqref{xgeone} gives that $\phi \in W_0(\R)$. By th
 
 \begin{lemma}
     \label{lem: min and bracket}\uses{}\usesdefs{bracket bump} Let $N\ge 1$ be an integer, then
-\lean{Codex.min_and_bracket}
+\lean{Auto.min_and_bracket}
 \leanok
 \begin{equation}\label{auto:min-power-bracket-bound}\min(1, |x|^{-N})\le 2^N   \langle x\rangle^{N}\, .\end{equation}
 \end{lemma}
@@ -2062,7 +2062,7 @@ We will mainly use these lemmas when we have control on the $L^\infty$ norm and 
 
 \begin{lemma}
    \label{lem:smoothdecay2}\uses{lem:smoothdecay,lem: min and bracket}\usesdefs{bracket bump,auto:Wiener-space-definition}
-\lean{Codex.smoothDecay2}
+\lean{Auto.smoothDecay2}
 \leanok
 Let $N\geq 2$ be an integer. Let $\zeta:\R\to\C$ be an $N$ times continuously differentiable function with compact support.
 Then the function $\phi=\mathcal F^{-1} \zeta$ belongs to $W_0(\R)$ and we have for all $x\in \R$ the estimate
@@ -2084,7 +2084,7 @@ Using this twice and Lemma \ref{lem:smoothdecay} estimates $|\phi(x)|$ by
 \end{proof}
 
 \begin{proposition}[mean value bump estimate]\label{mean value bump estimate 2}\uses{lem:smoothdecay2,lem: min and bracket}\usesdefs{bracket bump,auto:Wiener-space-definition}
-\lean{Codex.meanValueBumpEstimate}
+\lean{Auto.meanValueBumpEstimate}
 \leanok
 Let $N\in\mathbb N$ with $N\ge1$ and let $\rho$ be a $W_0(1)$ function with
 $\widehat{\rho}$ supported in $[-1,1]$ and $\widehat{\rho}$ being $N$ times continuously differentiable.
@@ -2156,7 +2156,7 @@ and \eqref{auto:mean-value-bump-bound} follows.
 
 
 \begin{definition}[standard bump]\label{standard bump}\uses{}\usesdefs{}
-\lean{Codex.standardBumpFinite,Codex.standardBump,Codex.standardBumpRescale}
+\lean{Auto.standardBumpFinite,Auto.standardBump,Auto.standardBumpRescale}
 Define, for \(l\in\N\) with \(l\ge1\),
 \begin{equation}\label{auto:standard-bump-finite-product}
  \Phi_l
@@ -2173,7 +2173,7 @@ For $x\in\R$, define
 
 
 \begin{proposition}[standard bump]\label{standard bump properties}\uses{lem:smoothdecay2}\usesdefs{bracket bump,standard bump}
-\lean{Codex.standardBumpProperties,Codex.standardBumpProperties_l1Convergence,Codex.standardBumpProperties_linfConvergence,Codex.standardBumpProperties_schwartz,Codex.standardBumpProperties_fourierShape,Codex.standardBumpProperties_fourierDerivativeEstimate,Codex.standardBumpProperties_derivativeDecay}
+\lean{Auto.standardBumpProperties,Auto.standardBumpProperties_l1Convergence,Auto.standardBumpProperties_linfConvergence,Auto.standardBumpProperties_schwartz,Auto.standardBumpProperties_fourierShape,Auto.standardBumpProperties_fourierDerivativeEstimate,Auto.standardBumpProperties_derivativeDecay}
 \leanok
 The limit $\lim_{l\to \infty} \Phi_l$ exists in $L^\infty$  and $L^1$ sense and is a Schwartz function $\Phi$
 whose Fourier transform takes values in $[0,1]$, is supported in $[-1,1]$, and constant $1$
@@ -2238,7 +2238,7 @@ In particular, $\widehat\Phi$ is smooth and compactly supported, so $\Phi$ is a 
 
 
 \begin{proposition}\label{compare brackets}\uses{}\usesdefs{bracket bump}
-\lean{Codex.compare_brackets}
+\lean{Auto.compare_brackets}
 \leanok
 Let $0<\lambda\le\mu$ with $1\le\mu$ and let $\lambda|y|\le\mu|x|$. Then for every $s,N>0$,
 \begin{equation}\label{compare brackets estimate}
@@ -2255,7 +2255,7 @@ Pulling out the factors $\mu$ and $\lambda$ proves the proposition.
 \end{proof}
 
 \begin{proposition}[two bump estimate]\label{two bump estimate}\uses{}\usesdefs{bracket bump}
-\lean{Codex.twoBumpEstimate}
+\lean{Auto.twoBumpEstimate}
 \leanok
     Consider real numbers $x_i$ and  $s_i>0$ and $n_i>1$ for $i=0,1$.  Assume $s_0\ge s_1$ and define
 \begin{equation}\label{tb0}
@@ -2289,7 +2289,7 @@ maximized by $i=0$.
 
 
 \begin{proposition}\label{orthogonal domination}\uses{}\usesdefs{}
-\lean{Codex.orthogonalDomination}
+\lean{Auto.orthogonalDomination}
 \leanok
 Let     $\alpha_0 ,\alpha_1\in\mathbb{R}^2$ be linearly independent unit vectors.
 Then for every $x\in \R^2$ we have
@@ -2328,7 +2328,7 @@ Writing $\alpha_1^\perp$ in the same basis, we obtain
 Thus the second asserted inequality holds.
 \end{proof}
 \begin{proposition}[orthogonal decay]\label{orthogonal decay}\uses{compare brackets,orthogonal domination}\usesdefs{bracket bump}
-\lean{Codex.orthogonalDecay}
+\lean{Auto.orthogonalDecay}
 \leanok
 Let $\alpha_0,\alpha_1\in\mathbb{R}^2$ be linearly independent unit vectors.
 Let $\alpha_{m}^\perp$ be unit vectors orthogonal to $\alpha_m$ and note that $\alpha_0\cdot \alpha_1^\perp\neq 0$. Setting \begin{equation}\label{auto:orthogonal-decay-constant}
@@ -2347,7 +2347,7 @@ This follows from Propositions \ref{compare brackets} and \ref{orthogonal domina
 \end{proof}
 
 \begin{proposition}[bump triangle]\label{bump triangle}\uses{compare brackets}\usesdefs{bracket bump}
-\lean{Codex.bump_triangle}
+\lean{Auto.bump_triangle}
 \leanok
 Let $\alpha_0,\alpha_1\in\mathbb{R}^2$ and let $\alpha_2=c_0\alpha_0+c_1\alpha_1$ be a non-trivial linear combination of $\alpha_0,\alpha_1$, i.e. $c_0\not=0, c_1\not=0$.
 Let
@@ -2377,7 +2377,7 @@ If $2|c_i|< 1$, apply Proposition \ref{compare brackets} with $\lambda=2|c_i|$ a
 Recall the Gaussian $\g(x)=e^{-\pi x^2}$ for $x\in\R$.
 
 \begin{proposition}[Gaussian domination]\label{Gaussian domination}\uses{}\usesdefs{gaussian,bracket bump}
-\lean{Codex.gaussianDomination}
+\lean{Auto.gaussianDomination}
 \leanok
     Let
     $N,s\in\R$, $N>1$, and $s>0$. Then
@@ -2398,7 +2398,7 @@ where $C_{\ref{Gaussian domination}}=e^\pi$.
 
 
 \begin{proposition}[diagonal square root]\label{diagonal square root}\uses{square root of Gaussian decay,Gaussian bump decay,two bump estimate}\usesdefs{gaussian,bracket bump,auto:Wiener-space-definition}
-\lean{Codex.diagonalSquareRoot,Codex.diagonalSquareRoot_bound,Codex.diagonalSquareRoot_memW0}
+\lean{Auto.diagonalSquareRoot,Auto.diagonalSquareRoot_bound,Auto.diagonalSquareRoot_memW0}
 \leanok
 For $t_0,t_1\in\R$ with $0<2t_0\le t_1$ define
 \begin{equation}\label{auto:diagonal-square-root-definition} s = \mathcal{F}^{-1}(\xi\mapsto \sqrt{\g(t_0 \xi)- \g(t_1 \xi)}), \end{equation}
@@ -2455,7 +2455,7 @@ Since $\sigma=t_0 2^{-\frac12}$ and $\frac{\sqrt{3}}{2}t_1\le r\le t_1$, we obta
  \end{proof}
 
 \begin{lemma}[constant $C_{\ref{diagonal square root},N}$ \auto]\label{constant diagonal square root}\uses{Gaussian bump decay,two bump estimate,square root of Gaussian decay,diagonal square root}\usesdefs{}
-\lean{Codex.constantDiagonalSquareRoot}
+\lean{Auto.constantDiagonalSquareRoot}
 \leanok
 For every $N\ge1$,
 \begin{equation}\label{constant diagonal square root bound}
@@ -2492,7 +2492,7 @@ Substitution in the defining maximum proves the first estimate. At $N=2$, the se
 
 
 \begin{proposition}[derivative of diagonal square root]\label{derivative of diagonal square root}\uses{square root of Gaussian decay,Elementary Gaussian properties,Gaussian bump decay,two bump estimate,diagonal square root}\usesdefs{gaussian,bracket bump}
-\lean{Codex.derivativeDiagonalSquareRoot_differentiable,Codex.derivativeDiagonalSquareRoot_bound}
+\lean{Auto.derivativeDiagonalSquareRoot_differentiable,Auto.derivativeDiagonalSquareRoot_bound}
 \leanok
 Let $t_0,t_1,s$ be as in Proposition \ref{diagonal square root}.
 Then for all $N\in\N$ with $N\ge1$ and all $x\in\R$:
@@ -2628,7 +2628,7 @@ The desired estimate follows.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{derivative of diagonal square root},N}$ \auto]\label{constant derivative diagonal square root}\uses{Gaussian bump decay,two bump estimate,derivative of diagonal square root}\usesdefs{}
-\lean{Codex.constantDerivativeDiagonalSquareRoot}
+\lean{Auto.constantDerivativeDiagonalSquareRoot}
 \leanok
 For every $N\ge1$,
 \begin{equation}\label{constant derivative diagonal square root bound}
@@ -2660,7 +2660,7 @@ The second entry in the defining maximum is therefore $18432\sqrt2<2^{15}$. Subs
 
 
 \begin{lemma}\label{L:gaussian-estimate}\uses{}\usesdefs{gaussian}
-\lean{Codex.gaussianEstimate}
+\lean{Auto.gaussianEstimate}
 \leanok
 Let $N\in \N$. Then for $\xi \in \R$, $|\xi|\leq 1$, we have
 \begin{equation}\label{auto:inverse-Gaussian-derivative-bound}
@@ -2678,7 +2678,7 @@ We have $\g^{-1}(\xi)=e^{\pi\xi^2}$. The desired estimate then follows from the 
 \end{proof}
 
 \begin{lemma}\label{L:gaussian-bump-estimate}\uses{L:gaussian-estimate}\usesdefs{gaussian,auto:Wiener-space-definition}
-\lean{Codex.gaussianBumpEstimate}
+\lean{Auto.gaussianBumpEstimate}
 \leanok
 Let $c>0$, $N \in \mathbb N$ and assume that $\phi$ is a $W_0(\R)$ function such that $\widehat{\phi}$ is supported in $[-1,1]$, $\widehat{\phi}$ is $N$ times continuously differentiable and $\max_{0\leq m \leq N} \|\widehat{\phi}^{(m)}\|_{\infty} \leq c$.
 For $\mu \in (0,1]$ and $\xi \in \R$, we define
@@ -2698,7 +2698,7 @@ This follows from the Leibniz rule, Lemma~\ref{L:gaussian-estimate} and from the
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{L:gaussian-bump-estimate},N}$ \auto]\label{constant gaussian bump estimate}\uses{L:gaussian-estimate,L:gaussian-bump-estimate}\usesdefs{}
-\lean{Codex.constantGaussianBumpEstimate}
+\lean{Auto.constantGaussianBumpEstimate}
 \leanok
 For every $N\in\N$,
 \begin{equation}\label{constant gaussian bump estimate bound}
@@ -2738,7 +2738,7 @@ which gives the four displayed bounds.
 
 
 \begin{lemma}\label{L:derivative-estimate-for-G}\uses{}\usesdefs{}
-\lean{Codex.derivativeEstimateForG}
+\lean{Auto.derivativeEstimateForG}
 \leanok
 Let $N\in \N$, $\nu\in [-1,0)$ and let $H(x)=(1-x)^{\nu}-1$ for $x\in [0,1)$. Then for $x\in [0,e^{-3\pi/16}]$, we have
 \begin{equation}\label{auto:exponential-composition-derivative-bound}
@@ -2765,7 +2765,7 @@ This yields the claim.
 
 
 \begin{lemma}\label{L:faa-di-bruno}\uses{L:derivative-estimate-for-G,Gaussian bump decay}\usesdefs{gaussian,bracket bump}
-\lean{Codex.faaDiBruno}
+\lean{Auto.faaDiBruno}
 \leanok
 Let $N\in\N$, $\nu\in[-1,0)$, $t\ge\sqrt3/2$, and let $S(\xi)=(1-\g(t\xi))^\nu-1$ for $\xi\ne0$. For $|\xi|\ge1/2$,
 \begin{equation}\label{E:S}
@@ -2817,7 +2817,7 @@ This proves \eqref{E:S}.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{L:faa-di-bruno},N}$ \auto]\label{constant faa di bruno}\uses{L:faa-di-bruno,L:derivative-estimate-for-G,Gaussian bump decay}\usesdefs{}
-\lean{Codex.constantFaaDiBruno}
+\lean{Auto.constantFaaDiBruno}
 \leanok
 For every $N\in\N$,
 \begin{equation}\label{constant faa di bruno bound}
@@ -2874,7 +2874,7 @@ Using $\sqrt6<5/2$, $\sqrt2<3/2$, and $\sqrt3<7/4$, this is smaller than
 
 
 \begin{lemma}\label{L:second-gaussian-estimate}\uses{L:gaussian-bump-estimate,L:faa-di-bruno}\usesdefs{gaussian,auto:Wiener-space-definition}
-\lean{Codex.secondGaussianEstimate}
+\lean{Auto.secondGaussianEstimate}
 \leanok
 Let $c>0$, $N\in \mathbb N$ and assume that $\phi$ is a $W_0(\R)$ function such that
 $\widehat{\phi}$ is supported in $[-1,1]$ and equal to $1$ on $[-1/2,1/2]$ and $\widehat{\phi}$ is $N$ times continuously differentiable and $\max_{0\leq m \leq N} \|\widehat{\phi}^{(m)}\|_{\infty} \leq c$.
@@ -2911,7 +2911,7 @@ This yields~\eqref{E:estimate-R}.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{L:second-gaussian-estimate},N}$ \auto]\label{constant second gaussian estimate}\uses{L:gaussian-bump-estimate,L:faa-di-bruno,constant gaussian bump estimate,constant faa di bruno,L:second-gaussian-estimate}\usesdefs{}
-\lean{Codex.constantSecondGaussianEstimate}
+\lean{Auto.constantSecondGaussianEstimate}
 \leanok
 For every $N\in\N$,
 \begin{equation}\label{constant second gaussian estimate bound}
@@ -2938,7 +2938,7 @@ which proves the displayed estimates.
 \end{proof}
 
 \begin{lemma}\label{L:gaussian-bump-decomposition}\uses{L:gaussian-estimate,L:second-gaussian-estimate}\usesdefs{gaussian,auto:Wiener-space-definition}
-\lean{Codex.gaussianBumpDecomposition}
+\lean{Auto.gaussianBumpDecomposition}
 \leanok
 Let $\phi$ be a $W_0(\R)$ function such that
 $\widehat{\phi}$ is supported in $[-1,1]$ and equal to $1$ on $[-1/2,1/2]$.
@@ -2975,7 +2975,7 @@ Additionally, $\rho$ is real-valued because it is the inverse Fourier transform 
 \end{proof}
 
 \begin{proposition}[four scale Gaussian kernel estimate]\label{four scale Gaussian kernel}\uses{L:gaussian-bump-decomposition,lem:smoothdecay2,L:gaussian-bump-estimate,lem:smoothdecay,lem: min and bracket,L:second-gaussian-estimate}\usesdefs{gaussian,bracket bump,auto:Wiener-space-definition}
-\lean{Codex.fourScaleGaussianKernel}
+\lean{Auto.fourScaleGaussianKernel}
 \leanok
 Let $c>0$, $N\in \mathbb N$ with $N\geq 2$ and assume that $\phi$ is a $W_0(\R)$ function such that
 $\widehat{\phi}$ is supported in $[-1,1]$ and equal to $1$ on $[-1/2,1/2]$ and $\widehat{\phi}$ is $N$ times continuously differentiable and $\max_{0\leq m \leq N} \|\widehat{\phi}^{(m)}\|_{\infty} \leq c$.
@@ -3006,7 +3006,7 @@ Applying the decomposition~\eqref{E:decomposition-rho}, we get the desired estim
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{four scale Gaussian kernel},N}$ \auto]\label{constant four scale Gaussian kernel}\uses{lem:smoothdecay2,L:gaussian-bump-estimate,L:second-gaussian-estimate,constant gaussian bump estimate,constant second gaussian estimate,four scale Gaussian kernel}\usesdefs{}
-\lean{Codex.constantFourScaleGaussianKernel}
+\lean{Auto.constantFourScaleGaussianKernel}
 \leanok
 For every $N\in\N$,
 \begin{equation}\label{constant four scale Gaussian kernel bound}
@@ -3043,7 +3043,7 @@ respectively.
 
 
 \begin{proposition}[mean value four scale Gaussian kernel estimate]\label{mean four scale Gaussian kernel}\uses{L:gaussian-bump-decomposition,mean value bump estimate 2,L:gaussian-bump-estimate,L:second-gaussian-estimate}\usesdefs{gaussian,bracket bump,auto:Wiener-space-definition}
-\lean{Codex.meanFourScaleGaussianKernel}
+\lean{Auto.meanFourScaleGaussianKernel}
 \leanok
 Let $c>0$, $N\in \mathbb N$ with $N\geq 2$ and assume that $\phi$ is a $W_0(\R)$ function such that
 $\widehat{\phi}$ is supported in $[-1,1]$ and equal to $1$ on $[-1/2,1/2]$ and $\widehat{\phi}$ is $N$ times continuously differentiable and $\max_{0\leq m \leq N} \|\widehat{\phi}^{(m)}\|_{\infty} \leq c$.
@@ -3095,7 +3095,7 @@ Using the decomposition~\eqref{E:decomposition-rho}, we get~\eqref{E:mean-value}
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{mean four scale Gaussian kernel},N}$ \auto]\label{constant mean four scale Gaussian kernel}\uses{mean value bump estimate 2,L:gaussian-bump-estimate,L:second-gaussian-estimate,constant gaussian bump estimate,constant second gaussian estimate,mean four scale Gaussian kernel}\usesdefs{}
-\lean{Codex.constantMeanFourScaleGaussianKernel}
+\lean{Auto.constantMeanFourScaleGaussianKernel}
 \leanok
 For every $N\in\N$,
 \begin{equation}\label{constant mean four scale Gaussian kernel bound}
@@ -3123,7 +3123,7 @@ The main theorem of this section is Theorem \ref{induct positive terms theorem} 
 We first introduce  and discuss some geometric parameters useful to describe a family of kernels in Definition \ref{sandwich kernel}.
 
 \begin{definition}[geometric parameters]\label{geometric parameters}\uses{}\usesdefs{multiplicatively spaced monotone sequences,Distance of spaced sequences}
-\lean{Codex.GeometricParameters,Codex.sequencePairDistance,Codex.geometricDelta}
+\lean{Auto.GeometricParameters,Auto.sequencePairDistance,Auto.geometricDelta}
   Let $\Gamma$ be the set of triples $(k,u,a)$ with $k\in\N$, $1\le k\le n$, $u\in[2)^k$, $a\in ({\rm A}^{2})^k$  so that $\dist(a_{i}^0,a_{i}^1)<\infty$ for all $i\in [k)$.
   For a sequence pair $\alpha=(\alpha_0,\alpha_1)\in {\rm A}^2$ we write $\Delta(\alpha) = \mathrm{dist}(\alpha_{0}, \alpha_1)$
   and for $\gamma\in\Gamma$ let
@@ -3131,7 +3131,7 @@ We first introduce  and discuss some geometric parameters useful to describe a f
 \end{definition}
 
 \begin{definition}[two unitary matrices]\label{auto:unitary-matrices-definition}\uses{}\usesdefs{}
-\lean{Codex.W}
+\lean{Auto.W}
 For $u\in [2)$ define unitary matrices $W_u\in\R^{2\times 2}$ as follows:
 Let $W_0$ be the $2\times 2$ identity matrix and $W_1=\frac{1}{\sqrt{2}}\begin{pmatrix}1 & 1\\-1 & 1\end{pmatrix}$.
 \end{definition}
@@ -3141,7 +3141,7 @@ Next, we introduce some functions and functional concepts involved in the family
 
 
 \begin{definition}[double sequence of 2D functions]\label{double sequence of 2D functions}\uses{}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.DoubleSequence,Codex.MemDoubleSequence}
+\lean{Auto.DoubleSequence,Auto.MemDoubleSequence}
   For $1\le k\le n$, let $\mathcal{X}_k$ be the set of
   double sequences
   \begin{equation}\label{auto:sandwich-data-array}
@@ -3155,7 +3155,7 @@ The kernels of interest in Definition \ref{sandwich kernel} will be partial sums
 We introduce this concept of kernel sequences.
 
 \begin{definition}[kernel sequences]\label{kernel sequences}\uses{}\usesdefs{auto:Wiener-space-definition,normalized function tuples,auto:prism-form-definition}
-\lean{Codex.KernelSequence,Codex.MemKernelSequence,Codex.kernelSequenceSeminorm}
+\lean{Auto.KernelSequence,Auto.MemKernelSequence,Auto.kernelSequenceSeminorm}
 Let $k\in\N$ with $1\le k\le n$. Let ${\rm M}(k)$ be the space of sequences $\M=(M_j)_{j\in \Z}$ such that for $j\in \Z$ we have
 $M_j\in W_0((\R^2)^k)$. Define
 \begin{equation}\label{auto:M-k-norm-definition}
@@ -3169,7 +3169,7 @@ Note $\min(1,J^{-1+2^{k-n+1}})$ equals $J^{-1+2^{k-n+1}}$ if $k\le n-1$ and equa
 
 
 \begin{definition}[2D Gaussians]\label{2D Gaussians}\uses{}\usesdefs{gaussian,geometric parameters,auto:unitary-matrices-definition}
-\lean{Codex.twoDimensionalGaussian,Codex.gammaGaussian}
+\lean{Auto.twoDimensionalGaussian,Auto.gammaGaussian}
 For $q\in\R^2$ with $q_0,q_1>0$, $u\in[2)$, and $v\in\mathbb R^2$, define
 \begin{equation}\label{auto:rotated-Gaussian-kernel} G_{q,u}(v) = \g_{(q_0)}((W_u v)_0) \g_{(q_1)}((W_u v)_1). \end{equation}
 For $\gamma=(k,u,a)\in \Gamma$, define
@@ -3181,7 +3181,7 @@ A sandwich kernel is a product, most factors of which are two dimensional Gaussi
 using the data $\gamma$, while one
 factor, which is  sandwiched between these Gaussians, is different and determined by an element of $\mathcal{X}_k$.
 \begin{definition}[sandwich kernel]\label{sandwich kernel}\uses{}\usesdefs{geometric parameters,double sequence of 2D functions,2D Gaussians}
-\lean{Codex.sandwichKernel}
+\lean{Auto.sandwichKernel}
 Let $\gamma=(k,u,a)\in \Gamma$, $X\in \mathcal{X}_k$, and $i\in [k)$. Define for  $j\in \Z$ and $y\in (\R^{2})^k$,
 \begin{equation}\label{auto:sandwich-kernel-definition} (\M(\gamma,X,i))_j(y) =  \Big(\prod_{m\in [i)} (G_{\gamma})_{m,j}(y_m) \Big) X_{i,j}(y_i) \Big(\prod_{m=i+1}^{k-1} (G_{\gamma})_{m,j-1}(y_m) \Big).\end{equation}
 \end{definition}
@@ -3192,13 +3192,13 @@ Generally, $\M(\gamma,X,i)$ does not depend on $u_i, a_i$.
 \end{rem}
 
 \begin{definition}[difference of 2D Gaussians]\label{auto:Gaussian-difference-kernel-definition}\uses{}\usesdefs{geometric parameters,2D Gaussians}
-\lean{Codex.gaussianDifference}
+\lean{Auto.gaussianDifference}
 Let $\gamma=(k,u,a)\in \Gamma$.  For $i\in [k)$, $j\in \Z$, define
 \begin{equation}\label{auto:Gaussian-difference-kernel} (Y_\gamma)_{i,j} = (G_\gamma)_{i,j-1} - (G_\gamma)_{i,j}\ .\end{equation}
 \end{definition}
 
 \begin{proposition}[telescoping terms]\label{telescoping terms}\uses{P:schwartz-into-wiener,prism BL inequality,M to K}\usesdefs{geometric parameters,double sequence of 2D functions,kernel sequences,2D Gaussians,sandwich kernel,auto:Gaussian-difference-kernel-definition}
-\lean{Codex.telescopingTerms}
+\lean{Auto.telescopingTerms}
 \leanok
 Let $\gamma=(k,u,a)\in \Gamma$.
 Then $Y_\gamma\in \mathcal{X}_k$ and
@@ -3222,7 +3222,7 @@ Estimate each with Propositions \ref{prism BL inequality} and \ref{M to K} and t
 
 
 \begin{proposition}[positive terms]\label{positive terms}\uses{Positivity M}\usesdefs{auto:Wiener-space-definition,normalized function tuples,auto:prism-form-definition,geometric parameters,double sequence of 2D functions,sandwich kernel}
-\lean{Codex.positiveTerms}
+\lean{Auto.positiveTerms}
 \leanok
 Let $\gamma=(k,u,a)\in \Gamma$. Let $X\in \mathcal{X}_k$ and assume for each $i\in [k)$ and  $j\in \Z$ we have
  $X_{i,j}(u,v)=f_{i,j}(u)f_{i,j}(v)$ for some real valued $f_{i,j}\in W_0(\R)$.
@@ -3239,14 +3239,14 @@ This follows from Proposition \ref{Positivity M}.
 \subsection{\texorpdfstring{Multipliers $H$, $L$, $N$}{Multipliers H, L, N}}
 
 \begin{definition}[square root Gaussian difference]\label{square root Gaussian difference}\uses{}\usesdefs{gaussian,multiplicatively spaced monotone sequences}
-\lean{Codex.squareRootGaussianDifference}
+\lean{Auto.squareRootGaussianDifference}
 Let $a\in A$ and $j\in\Z$.
 Define the function $s(a,j):\R \to \R$ by
 \begin{equation}\label{auto:diagonal-Gaussian-square-root}s(a,j) = \mathcal{F}^{-1}(\xi \mapsto \sqrt{\g(a(j-1)\xi)-\g(a(j) \xi)}).\end{equation}
 \end{definition}
 
 \begin{definition}[$s$ multiplier]\label{s multiplier}\uses{}\usesdefs{geometric parameters,square root Gaussian difference}
-\lean{Codex.sMultiplier}
+\lean{Auto.sMultiplier}
     Let $\gamma=(k,u,a)\in \Gamma$. Let $i\in [k)$ and
     $j\in \Z$. Define  $(s_{\gamma})_{i,j}: \R \to \R$ by
 \begin{equation}\label{E:b-definition}
@@ -3264,7 +3264,7 @@ if $u_i=1$.
 \end{definition}
 
 \begin{proposition}\label{square root Gaussian difference W0}\uses{diagonal square root,Operations on spaced sequences}\usesdefs{auto:Wiener-space-definition,multiplicatively spaced monotone sequences,geometric parameters,square root Gaussian difference,s multiplier}
-\lean{Codex.squareRootGaussianDifference_memW0,Codex.sMultiplier_memW0}
+\lean{Auto.squareRootGaussianDifference_memW0,Auto.sMultiplier_memW0}
 \leanok
   For every $a\in\mathrm{A}$ and $j\in\mathbb{Z}$
   we have that $s(a,j)$ is a well-defined function in $W_0(\R)$. Consequently, if $\gamma \in \Gamma$ and $i\in [k)$, $j\in \Z$, then $(s_{\gamma})_{i,j}$ is a well-defined function in $W_0(\R)$.
@@ -3278,7 +3278,7 @@ Note that $\widehat{s(a,j)}$ is not smooth at the origin, due to the square root
 
 
 \begin{definition}[H multiplier]\label{H multiplier}\uses{}\usesdefs{geometric parameters,auto:Gaussian-difference-kernel-definition,s multiplier}
-\lean{Codex.hMultiplier}
+\lean{Auto.hMultiplier}
 Let $\gamma=(k,u,a)\in \Gamma$. Define
     $H_{\gamma}=(H_\gamma)_{i\in [k),j\in \Z}$ by
 \begin{equation}\label{auto:H-kernel-definition}
@@ -3289,7 +3289,7 @@ for every $i\in [k), j\in\mathbb{Z}$.
 \end{definition}
 
 \begin{proposition}\label{H-in-X}\uses{tensor Wiener,telescoping terms,square root Gaussian difference W0}\usesdefs{geometric parameters,double sequence of 2D functions,H multiplier}
-\lean{Codex.hMultiplier_memDoubleSequence}
+\lean{Auto.hMultiplier_memDoubleSequence}
 \leanok
 Let $\gamma=(k,u,a)\in \Gamma$. Then $H_{\gamma}\in \mathcal{X}_k$.
 \end{proposition}
@@ -3299,7 +3299,7 @@ This follows from Propositions~\ref{tensor Wiener}, \ref{telescoping terms} and 
 
 
 \begin{proposition}[H vanishing]\label{H vanishing}\uses{Elementary Gaussian properties,square root Gaussian difference W0}\usesdefs{gaussian,geometric parameters,2D Gaussians,auto:Gaussian-difference-kernel-definition,square root Gaussian difference,s multiplier,H multiplier}
-\lean{Codex.hMultiplier_fourier_diagonal_vanishing}
+\lean{Auto.hMultiplier_fourier_diagonal_vanishing}
 \leanok
     For $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$, and $\xi\in \R$,
 \begin{equation}\label{auto:H-kernel-diagonal-cancellation-Fourier}
@@ -3319,7 +3319,7 @@ The formulas above use Proposition \ref{Elementary Gaussian properties}. The pro
 
 
 \begin{proposition}[H vanishing integral]\label{H vanishing integral}\uses{H vanishing}\usesdefs{geometric parameters,H multiplier}
-\lean{Codex.hMultiplier_vanishing_integral}
+\lean{Auto.hMultiplier_vanishing_integral}
 \leanok
     For $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$, and $z\in \R$,
 \begin{equation}\label{auto:H-kernel-diagonal-cancellation-integral}
@@ -3333,7 +3333,7 @@ This follows from Proposition~\ref{H vanishing}.
 
 
 \begin{definition}\label{auto:L-kernel-definition}\uses{}\usesdefs{auto:convolution-along-vector-definition,standard bump,geometric parameters,H multiplier}
-\lean{Codex.lMultiplierAtScale}
+\lean{Auto.lMultiplierAtScale}
 Let $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$. For $t>0$, we set
 \begin{equation}\label{auto:L-kernel-convolution}
 (L_{\gamma,t})_{i,j} =(H_{\gamma})_{i,j} \ast_{(1,1)} \Phi_{(t)}.
@@ -3341,7 +3341,7 @@ Let $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$. For $t>0$, we set
 \end{definition}
 
 \begin{lemma}\label{L:F_t}
-\lean{Codex.lMultiplierAtScale_memDoubleSequence,Codex.lMultiplierAtScale_tendsto_hMultiplier}
+\lean{Auto.lMultiplierAtScale_memDoubleSequence,Auto.lMultiplierAtScale_tendsto_hMultiplier}
 \leanok
 \uses{P:schwartz-into-wiener,convolution vector,H-in-X}\usesdefs{standard bump,geometric parameters,double sequence of 2D functions,H multiplier,auto:L-kernel-definition}
 Let $\gamma=(k,u,a)\in \Gamma$ and $t>0$. Then $L_{\gamma,t} \in \mathcal{X}_k$ and for $i\in [k)$, $j\in \Z$, we have
@@ -3372,7 +3372,7 @@ By the continuity of the $L^1$ norm, we have $\lim_{t\to 0_+} \omega(tq)=0$ for 
 \end{proof}
 
 \begin{lemma}\label{L:ft-infty}
-\lean{Codex.lMultiplierAtScale_tendsto_zero}
+\lean{Auto.lMultiplierAtScale_tendsto_zero}
 \leanok
 \uses{H vanishing integral}\usesdefs{standard bump,geometric parameters,H multiplier,auto:L-kernel-definition}
 Let $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$, $j\in \Z$, $t>0$. Then
@@ -3404,7 +3404,7 @@ By the continuity of the $L^1$ norm, we have $\lim_{t\to \infty} \omega(q/t)=0$ 
 \end{proof}
 
 \begin{definition}[L multiplier]\label{L multiplier}\uses{}\usesdefs{auto:convolution-along-vector-definition,standard bump,geometric parameters,H multiplier}
-\lean{Codex.multiplierIndexSet,Codex.lMultiplier}
+\lean{Auto.multiplierIndexSet,Auto.lMultiplier}
 Let $\gamma=(k,u,a)\in \Gamma$.
 
 Define the index set
@@ -3432,7 +3432,7 @@ Note that we could have equivalently used $a_{i}^0$ in place of $a_i^1$.
 
 
 \begin{definition}[Summation over $\mathcal I_{\gamma}$]\label{summation-definition}\uses{}\usesdefs{geometric parameters,L multiplier}
-\lean{Codex.sumOverMultiplierIndex}
+\lean{Auto.sumOverMultiplierIndex}
 Let $X$ be a normed $\R$-vector space.
 Let $\gamma=(k,u,a)\in \Gamma$ and let $D_\iota \in X$ for $\iota \in \mathcal{I}_{\gamma}$. We define
 \begin{equation}\label{auto:symmetric-series-definition}
@@ -3442,7 +3442,7 @@ where the limit is taken in $X$.
 \end{definition}
 
 \begin{proposition}[Properties of L multipliers]\label{sum L multiplier convergence-L1}
-\lean{Codex.sumLMultiplierConvergenceL1}
+\lean{Auto.sumLMultiplierConvergenceL1}
 \leanok
 \uses{P:schwartz-into-wiener,convolution vector,H-in-X,L:F_t,L:ft-infty}\usesdefs{auto:Wiener-space-definition,geometric parameters,double sequence of 2D functions,H multiplier,auto:L-kernel-definition,L multiplier,summation-definition}
 Let $\gamma=(k,u,a)\in \Gamma$ and $\iota \in\mathcal{I}_{\gamma}$. Then
@@ -3467,7 +3467,7 @@ An application of Lemmas~\ref{L:F_t} and~\ref{L:ft-infty} yields~\eqref{E:L2-con
 \end{proof}
 
 \begin{lemma}\label{sandwich sums L1}
-\lean{Codex.sandwichSumsL1}
+\lean{Auto.sandwichSumsL1}
 \leanok
 \uses{}\usesdefs{geometric parameters,double sequence of 2D functions,2D Gaussians,sandwich kernel,L multiplier,summation-definition}
 Let $\gamma=(k,u,a)\in \Gamma$.
@@ -3496,7 +3496,7 @@ The Gaussian factors have finite $L^1$ norms independent of $N$. The assumed $L^
 
 
 \begin{lemma}\label{prism sum le sum prism-L1}
-\lean{Codex.prismSumLeSumPrismL1}
+\lean{Auto.prismSumLeSumPrismL1}
 \leanok
 \uses{prism BL inequality,M to K}\usesdefs{auto:Wiener-space-definition,normalized function tuples,auto:prism-form-definition,geometric parameters,L multiplier,summation-definition}
 Let $\gamma=(k,u,a)\in \Gamma$.
@@ -3528,7 +3528,7 @@ Letting $N\to\infty$ proves the claim.
 
 
 \begin{definition}[N multiplier]\label{N multiplier}\uses{}\usesdefs{geometric parameters,square root Gaussian difference,L multiplier}
-\lean{Codex.sigmaMultiplier,Codex.nMultiplier}
+\lean{Auto.sigmaMultiplier,Auto.nMultiplier}
   Let $\gamma=(k,u,a)\in \Gamma$ and assume $k\le n-1$.
 Let $\nu=1$ if $k<n-1$ and $\nu=2$ if $k=n-1$ and let $i\in [k)$, $j\in \Z$.
 For $\iota\in\mathcal{I}_{\gamma}$ define functions $\sigma_{\gamma,\iota,i,j}:\R\to\R$ so that
@@ -3546,7 +3546,7 @@ For every $\iota\in\mathcal{I}_{\gamma}$ we define $N_{\gamma,\iota}= (N_{\gamma
 \end{definition}
 
 \begin{proposition}\label{auto:N-kernel-well-definedness}
-\lean{Codex.nKernelWellDefinedness}
+\lean{Auto.nKernelWellDefinedness}
 \leanok
 \uses{four scale Gaussian kernel,H-in-X,convolution vector}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,geometric parameters,double sequence of 2D functions,H multiplier,L multiplier,N multiplier}
 Let $\gamma=(k,u,a)\in \Gamma$ and assume $k\le n-1$. Then for every $\iota\in\mathcal{I}_{\gamma}$, the double sequence $N_{\gamma,\iota}$ is well-defined and belongs to $\mathcal{X}_k$.
@@ -3566,7 +3566,7 @@ Thanks to Proposition~\ref{four scale Gaussian kernel}, we have $\rho \in W_0(\R
 \subsection{Gaussian domination}
 
 \begin{proposition}[Kernel estimate for Gaussian domination]\label{H kernel estimate Gaussian domination}
-\lean{Codex.hKernelEstimateGaussianDomination}
+\lean{Auto.hKernelEstimateGaussianDomination}
 \leanok
 \uses{Operations on spaced sequences,Properties of distance of sequences,diagonal square root,Gaussian bump decay}\usesdefs{gaussian,bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,auto:Gaussian-difference-kernel-definition,square root Gaussian difference,s multiplier,H multiplier}
 Let $\gamma=(k,u,a)\in \Gamma$ and let $i\in [k)$.
@@ -3682,7 +3682,7 @@ Together Proposition~\ref{Gaussian bump decay} we obtain the claim.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{H kernel estimate Gaussian domination}}$ \auto]\label{constant H kernel estimate Gaussian domination}
-\lean{Codex.constantHKernelEstimateGaussianDomination}
+\lean{Auto.constantHKernelEstimateGaussianDomination}
 \leanok
 \uses{constant diagonal square root,diagonal square root,Gaussian bump decay,H kernel estimate Gaussian domination}\usesdefs{}
 \begin{equation}\label{constant H kernel estimate Gaussian domination bound}
@@ -3703,7 +3703,7 @@ C_{\ref{H kernel estimate Gaussian domination}}
 
 
 \begin{proposition}[Kernel derivative estimate for Gaussian domination]\label{H kernel derivative estimate Gaussian domination}
-\lean{Codex.hKernelDerivativeEstimateGaussianDomination}
+\lean{Auto.hKernelDerivativeEstimateGaussianDomination}
 \leanok
 \uses{H kernel estimate Gaussian domination,diagonal square root,derivative of diagonal square root,Gaussian bump decay}\usesdefs{bracket bump,closed balls in A,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,auto:Gaussian-difference-kernel-definition,s multiplier,H multiplier}
 Let $\gamma=(k,u,a)\in \Gamma$ and let $i\in [k)$.
@@ -3761,7 +3761,7 @@ The claim follows from Definition \ref{H multiplier}.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{H kernel derivative estimate Gaussian domination}}$ \auto]\label{constant H kernel derivative estimate Gaussian domination}
-\lean{Codex.constantHKernelDerivativeEstimateGaussianDomination}
+\lean{Auto.constantHKernelDerivativeEstimateGaussianDomination}
 \leanok
 \uses{constant diagonal square root,constant derivative diagonal square root,diagonal square root,derivative of diagonal square root,Gaussian bump decay,H kernel derivative estimate Gaussian domination}\usesdefs{}
 \begin{equation}\label{constant H kernel derivative estimate Gaussian domination bound}
@@ -3791,7 +3791,7 @@ Using $\sqrt2<3/2$, the defining sum in Proposition \ref{H kernel derivative est
 
 
 \begin{proposition}[Gaussian domination, combined]\label{Gaussian domination combined}\uses{Gauss domination case 1,Gauss domination case 2,Gauss domination case 3,Gauss domination constant}\usesdefs{multiplicatively spaced monotone sequences,geometric parameters,2D Gaussians,L multiplier,N multiplier}
-\lean{Codex.gaussianDominationCombined}
+\lean{Auto.gaussianDominationCombined}
 \leanok
 Set
 \begin{equation}\label{Gaussian domination combined constants}
@@ -3821,7 +3821,7 @@ The nonnegative series on the right converges for every $v\in\R^2$ and has finit
 The proof of this proposition is split into three cases: Propositions \ref{Gauss domination case 1}, \ref{Gauss domination case 2}, and \ref{Gauss domination case 3}, below. Their common constant is verified in Lemma \ref{Gauss domination constant}.
 
 \begin{proposition}[Gaussian domination, near case]\label{Gauss domination case 1}\uses{standard bump properties,mean four scale Gaussian kernel,H kernel estimate Gaussian domination,two bump estimate,bump triangle,Operations on spaced sequences,H vanishing integral,Properties of distance of sequences,orthogonal decay,Gaussian domination}\usesdefs{gaussian,bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,standard bump,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,square root Gaussian difference,H multiplier,L multiplier,N multiplier}
-\lean{Codex.gaussDominationCase1}
+\lean{Auto.gaussDominationCase1}
 \leanok
 The conclusion of Proposition \ref{Gaussian domination combined} holds in the case $\iota=(h,0)$, $h>0$, with the constant in \eqref{Gaussian domination main estimate} equal to
 \begin{equation}\label{auto:Gaussian-domination-case-one-constant}
@@ -3960,7 +3960,7 @@ The series converges pointwise and in $L^1$ by comparison with the product of tw
 \end{proof}
 
 \begin{proposition}[Gaussian domination, far case]\label{Gauss domination case 2}\uses{standard bump properties,four scale Gaussian kernel,H kernel derivative estimate Gaussian domination,bump triangle,two bump estimate,Operations on spaced sequences,orthogonal decay,H kernel estimate Gaussian domination,Properties of distance of sequences,Gaussian domination}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,standard bump,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,square root Gaussian difference,H multiplier,L multiplier,N multiplier}
-\lean{Codex.gaussDominationCase2}
+\lean{Auto.gaussDominationCase2}
 \leanok
 The conclusion of Proposition \ref{Gaussian domination combined} holds in the case $\iota=(h,0)$, $h<0$, with the constant in \eqref{Gaussian domination main estimate} equal to
 \begin{equation}\label{auto:Gaussian-domination-case-two-constant}
@@ -4119,7 +4119,7 @@ The series converges pointwise and has finite $L^1$ norm by comparison with the 
 \end{proof}
 
 \begin{proposition}[Gaussian domination, intermediate case]\label{Gauss domination case 3}\uses{standard bump properties,four scale Gaussian kernel,H kernel estimate Gaussian domination,bump triangle,two bump estimate,Operations on spaced sequences,orthogonal decay,Properties of distance of sequences,Gaussian domination}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,standard bump,geometric parameters,auto:unitary-matrices-definition,2D Gaussians,square root Gaussian difference,H multiplier,L multiplier,N multiplier}
-\lean{Codex.gaussDominationCase3}
+\lean{Auto.gaussDominationCase3}
 \leanok
 The conclusion of Proposition \ref{Gaussian domination combined} holds in the case $\iota=(0,l)$, $|l|\le\Delta_\gamma$, with the constant in \eqref{Gaussian domination main estimate} equal to
 \begin{equation}\label{auto:Gaussian-domination-case-three-constant}
@@ -4258,7 +4258,7 @@ The series converges pointwise and has finite $L^1$ norm by comparison with the 
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{Gaussian domination combined},2}$ \auto]\label{Gauss domination constant}\uses{standard bump properties,constant four scale Gaussian kernel,constant mean four scale Gaussian kernel,four scale Gaussian kernel,mean four scale Gaussian kernel,constant H kernel estimate Gaussian domination,constant H kernel derivative estimate Gaussian domination,H kernel estimate Gaussian domination,H kernel derivative estimate Gaussian domination,two bump estimate,bump triangle,Gauss domination case 1,Gauss domination case 2,Gauss domination case 3}\usesdefs{}
-\lean{Codex.gaussDominationConstant}
+\lean{Auto.gaussDominationConstant}
 \leanok
 We have
 \begin{equation}\label{auto:Gaussian-domination-case-constant-bounds}
@@ -4341,7 +4341,7 @@ C_{\ref{Gauss domination case 3}}
 
 \newcommand{\InductPositiveTerms}[1]{{\hyperref[induct positive terms]{{\rm InductPositiveTerms}(#1)}}}
 \begin{definition}[induct positive terms]\label{induct positive terms}\uses{}\usesdefs{geometric parameters,kernel sequences,sandwich kernel,s multiplier}
-\lean{Codex.InductPositiveTerms}
+\lean{Auto.InductPositiveTerms}
 Let $k\in \N$ with $1\le k\le n$ and $C\in [1,\infty)$.
 We say that $\InductPositiveTerms{k,C}$ holds if
 
@@ -4353,7 +4353,7 @@ for all $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$,
 
 \newcommand{\VanishingDiagonal}[1]{{\hyperref[vanishing diagonal]{{\rm VanishingDiagonal}(#1)}}}
 \begin{definition}[vanishing diagonal]\label{vanishing diagonal}\uses{}\usesdefs{geometric parameters,kernel sequences,sandwich kernel,H multiplier}
-\lean{Codex.VanishingDiagonal}
+\lean{Auto.VanishingDiagonal}
 Let $k\in \N$ with $1\le k\le n$ and $C\in [1,\infty)$.
 We say that $\VanishingDiagonal{k,C}$ holds if
 
@@ -4366,7 +4366,7 @@ for all $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$,
 
 \newcommand{\DiagonalBand}[1]{{\hyperref[diagonal band]{{\rm DiagonalBand}(#1)}}}
 \begin{definition}[diagonal band]\label{diagonal band}\uses{}\usesdefs{geometric parameters,kernel sequences,sandwich kernel,L multiplier,summation-definition}
-\lean{Codex.DiagonalBand}
+\lean{Auto.DiagonalBand}
 Let $k\in \N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
 We say that $\DiagonalBand{k,C}$ holds if
 
@@ -4381,7 +4381,7 @@ for all $\gamma=(k,u,a)\in \Gamma$, $i\in [k)$,
 
 \newcommand{\IncreaseData}[1]{{\hyperref[increase data]{{\rm IncreaseData}(#1)}}}
 \begin{definition}[increase data]\label{increase data}\uses{}\usesdefs{geometric parameters,kernel sequences,2D Gaussians,L multiplier,N multiplier}
-\lean{Codex.IncreaseData}
+\lean{Auto.IncreaseData}
 Let $k\in \N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
 We say that $\IncreaseData{k,C}$ holds if
 
@@ -4414,7 +4414,7 @@ Theorem \ref{induct positive terms theorem} below follows by induction on $k$.
 
 \begin{proposition}
 \label{vanishing diagonal implies induct positive terms}\uses{positive terms,telescoping terms}\usesdefs{geometric parameters,kernel sequences,sandwich kernel,auto:Gaussian-difference-kernel-definition,s multiplier,H multiplier,induct positive terms,vanishing diagonal}
-\lean{Codex.vanishingDiagonal_implies_inductPositiveTerms}
+\lean{Auto.vanishingDiagonal_implies_inductPositiveTerms}
 \leanok
 Let $k\in\N$ with $1\le k\le n$ and $C\in [1,\infty)$.
 If $\VanishingDiagonal{k,C}$ holds, then $\InductPositiveTerms{k,kC+2}$ holds.
@@ -4436,7 +4436,7 @@ $\le (kC+2) \Delta_\gamma^{2-2^{k-n+1}}$.
 
 \begin{proposition}
 \label{diagonal band implies vanishing diagonal}\uses{sum L multiplier convergence-L1,prism sum le sum prism-L1,sandwich sums L1}\usesdefs{kernel sequences,sandwich kernel,H multiplier,L multiplier,summation-definition,vanishing diagonal,diagonal band}
-\lean{Codex.diagonalBand_implies_vanishingDiagonal}
+\lean{Auto.diagonalBand_implies_vanishingDiagonal}
 \leanok
 Let $k\in\N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
 If $\DiagonalBand{k,C}$ holds, then $\VanishingDiagonal{k,C}$ holds.
@@ -4450,7 +4450,7 @@ The claim follows from $\DiagonalBand{k,C}$.
 \end{proof}
 
 \begin{proposition}[vanishing kernel integral]\label{vanishing kernel integral}\uses{simplification 1 prism,H vanishing integral,M to K}\usesdefs{geometric parameters,kernel sequences,sandwich kernel,H multiplier,vanishing diagonal}
-\lean{Codex.vanishingKernelIntegral}
+\lean{Auto.vanishingKernelIntegral}
 \leanok
 Let $\gamma=(n,w,a)\in \Gamma$.
 For every $i\in [n)$,
@@ -4484,7 +4484,7 @@ observing by Proposition \ref{H vanishing integral} that
 \end{proof}
 
 \begin{proposition}\label{increase data implies diagonal band}\uses{Gaussian domination combined,Cauchy-Schwarz at k,Cauchy-Schwarz at n-1}\usesdefs{auto:convolution-along-vector-definition,normalized function tuples,auto:prism-form-definition,geometric parameters,kernel sequences,2D Gaussians,sandwich kernel,L multiplier,N multiplier,diagonal band,increase data}
-\lean{Codex.increaseData_implies_diagonalBand}
+\lean{Auto.increaseData_implies_diagonalBand}
 \leanok
 Let $k\in\N$ with $1\le k\le n-1$ and $C\in[1,\infty)$. Suppose that $\IncreaseData{k,C}$ holds. Then:
 
@@ -4576,7 +4576,7 @@ Summing in $\iota$ proves (i), since $2^{9/2}2^{10}\le2^{15}$, and proves (ii).
 
 \begin{proposition}
 \label{induct positive terms imply increase data}\uses{Gaussian domination combined,Monotonicity K}\usesdefs{multiplicatively spaced monotone sequences,geometric parameters,kernel sequences,sandwich kernel,s multiplier,L multiplier,N multiplier,induct positive terms,increase data}
-\lean{Codex.inductPositiveTerms_implies_increaseData}
+\lean{Auto.inductPositiveTerms_implies_increaseData}
 \leanok
 Let $k\in\N$ with $1\le k\le n-1$ and $C\in [1,\infty)$.
 Assume that $\InductPositiveTerms{k+1,C}$ holds. Then $\IncreaseData{k,C\cdot C_{\ref{induct positive terms imply increase data}}}$ holds, where
@@ -4635,7 +4635,7 @@ and $\sum_{m\in\N^2} 2^{-\frac{|m|}{2}} (1+|m|)^2\le 2^{10}$.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{induct positive terms imply increase data}}$ \auto]\label{constant induct positive terms imply increase data}\uses{Gaussian domination combined,induct positive terms imply increase data}\usesdefs{}
-\lean{Codex.constantInductPositiveTermsImplyIncreaseData}
+\lean{Auto.constantInductPositiveTermsImplyIncreaseData}
 \leanok
 \begin{equation}\label{constant induct positive terms imply increase data bound}
 C_{\ref{induct positive terms imply increase data}}<2^{172}.
@@ -4651,7 +4651,7 @@ Using the defining product in Proposition \ref{induct positive terms imply incre
 
 
 \begin{proposition}\label{P:C_k-induction}\uses{vanishing diagonal implies induct positive terms,vanishing kernel integral,induct positive terms imply increase data,increase data implies diagonal band,diagonal band implies vanishing diagonal}\usesdefs{induct positive terms}
-\lean{Codex.inductPositiveTermsByInduction}
+\lean{Auto.inductPositiveTermsByInduction}
 \leanok
 For every $k\in\N$ with $1\le k\le n$, $\InductPositiveTerms{k,C_k}$ holds, where
 \begin{equation}\label{auto:positive-induction-recursion}
@@ -4676,7 +4676,7 @@ follows by applying Proposition \ref{induct positive terms imply increase data},
 \end{proof}
 
 \begin{lemma}[constant $C_k$ \auto]\label{P:better-induction}\uses{P:C_k-induction,Gaussian domination combined,induct positive terms imply increase data}\usesdefs{induct positive terms}
-\lean{Codex.betterInduction}
+\lean{Auto.betterInduction}
 \leanok
 For every $k\in\N$ with $1\le k\le n-1$,
 \begin{equation}\label{auto:positive-induction-local-bound}
@@ -4718,7 +4718,7 @@ We only need to use the previous proposition for $k=2$. The result then holds wi
 \end{rem}
 
 \begin{theorem}\label{induct positive terms theorem}\uses{P:better-induction,P:C_k-induction}\usesdefs{induct positive terms}
-\lean{Codex.inductPositiveTermsTheorem}
+\lean{Auto.inductPositiveTermsTheorem}
 \leanok
 $\InductPositiveTerms{2,C_{\ref{induct positive terms theorem}}}$ holds, where
 \begin{equation}\label{auto:positive-induction-constant-definition}
@@ -4733,7 +4733,7 @@ This follows from Proposition~\ref{P:better-induction} if $n\ge 3$ and from Prop
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{induct positive terms theorem}}$ \auto]\label{constant induct positive terms theorem}\uses{induct positive terms imply increase data,Gaussian domination combined,induct positive terms theorem}\usesdefs{}
-\lean{Codex.constantInductPositiveTermsTheorem}
+\lean{Auto.constantInductPositiveTermsTheorem}
 \leanok
 \begin{equation}\label{constant induct positive terms theorem bound}
 C_{\ref{induct positive terms theorem}}<2^{359}.
@@ -4765,7 +4765,7 @@ In this section we prove Theorem \ref{thm:nct main real} from Theorem \ref{induc
 \subsubsection{\texorpdfstring{$A$ to $\Lambda_1$}{Average to prism form}}
 
 \begin{lemma}[$A$ to $\Lambda_1$]\label{A to Lambda}\uses{}\usesdefs{A_def,auto:prism-form-definition}
-\lean{Codex.aToLambda}
+\lean{Auto.aToLambda}
 \leanok
 Let $\phi\in \mathcal{S}(\R)$.
 Let $\mathbf{f}=(f_0,\dots,f_{n-1})$ be functions in $\mathcal{S}(\R^n)$.
@@ -4852,7 +4852,7 @@ $\|a\|_{V_{r,J}(2^\mathbb{Z}; B)}.$
 For more on variation (semi)norms see \cite{JonesSeegerWright08}.
 
 \begin{lemma}\label{lem:shortlongjumps}\uses{}\usesdefs{}
-\lean{Codex.shortlongJumps}
+\lean{Auto.shortlongJumps}
 \leanok
 For every increasing sequence of positive real numbers $(t_j)_{j\in[J+1)}$,
 \begin{equation}\label{auto:short-long-variation-decomposition}
@@ -4887,7 +4887,7 @@ The third boundary terms are bounded by the same expression. The middle terms us
 
 
 \begin{lemma}\label{lem:ftccs-R}\uses{}\usesdefs{}   Let $0<\alpha < \beta$ and $a:[\alpha,\beta]\to \R$ be continuously differentiable.
-\lean{Codex.ftcCsR}
+\lean{Auto.ftcCsR}
 \leanok
     Then
 \begin{equation}\label{ftccs1-R}
@@ -4943,7 +4943,7 @@ Squaring proves \eqref{ftccs2-R}.
 \subsubsection{Bump functions}\label{sec:bump red}
 
 \begin{lemma}\label{lem:ft_deriv_mul}\uses{}\usesdefs{}
-\lean{Codex.fourierDerivativeMul}
+\lean{Auto.fourierDerivativeMul}
 \leanok
 For a Schwartz function $\phi:\mathbb{R}\to\mathbb{C}$ let
 $T\phi(x)=\frac{d}{dx} (x \phi(x))|_x$. Then
@@ -4963,7 +4963,7 @@ Suppose the claim holds for $m$. Then by inductive hypothesis and the product ru
 
 
 \begin{lemma} \label{lem:widebump}\uses{}\usesdefs{bracket bump}
-\lean{Codex.wideBump}
+\lean{Auto.wideBump}
 \leanok
 Let $k \leq 2$, $t\in [2^{1-k}, 2^{2-k}]$. Then for every $u\in \R$ and $N\ge 0$,
 \begin{equation}\label{auto:wide-bump-translation-bound}\langle u-t\rangle^{N} \le C_{\ref{lem:widebump},N} 2^{-kN}\langle u\rangle^{N},\end{equation}
@@ -4983,7 +4983,7 @@ Taking reciprocal $N$th powers proves the claim.
 
 
 \begin{lemma}\label{lem:thetat_offcenter}\uses{lem:widebump}\usesdefs{bracket bump}
-\lean{Codex.thetaTOffcenter}
+\lean{Auto.thetaTOffcenter}
 \leanok
 Let $k\le-1$. Then for every $v\in\R^2$,
 \begin{equation}\label{E:two-terms}
@@ -5061,7 +5061,7 @@ This proves \eqref{E:two-terms}.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:thetat_offcenter}}$ \auto]\label{constant off center bump}\uses{lem:thetat_offcenter}\usesdefs{}
-\lean{Codex.constantOffCenterBump}
+\lean{Auto.constantOffCenterBump}
 \leanok
 \begin{equation}\label{constant off center bump bound}
 C_{\ref{lem:thetat_offcenter}}\le133.
@@ -5078,7 +5078,7 @@ For a function $\phi$ we define
 
    \begin{lemma}
          \label{lem:int_fct}\uses{}\usesdefs{}
-\lean{Codex.integralFct}
+\lean{Auto.integralFct}
 \leanok
           Let $\psi:\R\to \R$ be a Schwartz function and assume that
           \begin{equation}
@@ -5124,7 +5124,7 @@ Then the bound \eqref{int_fct_supp}
 
 
 \begin{lemma}\label{lem:Phipos_v2}\uses{}\usesdefs{}
-\lean{Codex.phiPosV2}
+\lean{Auto.phiPosV2}
 \leanok
 Let
 $\Psi:\mathbb{R}^2\to \mathbb{R}$ be such   that $\Psi(u_0,u_1)=\Psi(u_1,u_0)$ for all $(u_0,u_1)\in \R^2$ and such that
@@ -5156,7 +5156,7 @@ the right-hand side is the sum of the two expressions in \eqref{nonneg_assumptio
 
 \subsubsection{Windows and pairs}\label{sec:windows}
 \begin{definition}[$(c,N)$-window]\label{def:cn-window}\uses{}\usesdefs{}
-\lean{Codex.cnWindow}
+\lean{Auto.cnWindow}
 Let $c > 0$, $N\in\mathbb{N}$. A {\em $(c,N)$-window} is a Schwartz function $\phi:\R\to\R$ such that
 \begin{enumerate}
 \item For all $\xi\in \R$, $\widehat{\phi}$ is real and
@@ -5178,7 +5178,7 @@ Let $c > 0$, $N\in\mathbb{N}$. A {\em $(c,N)$-window} is a Schwartz function $\p
 
 \begin{definition}[$(c,N)$-pair]
 \label{def:cpair}\uses{}\usesdefs{def:cn-window}
-\lean{Codex.cPair}
+\lean{Auto.cPair}
 Let $c > 0$, $N\in\mathbb{N}$.  A pair $(\phi_0,\phi_1)$ of $(c,N)$-windows is a {\em $(c,N)$-pair} if
 \begin{equation}\label{windowsum}
 (\widehat{\phi_0})^2+(1-\widehat{\phi_1})^2=1.
@@ -5191,7 +5191,7 @@ for $i\in [2), k\in\mathbb{Z}$
 Existence of $(c,N)$-pairs is shown in Lemma \ref{lem:cpair}.
 
 \begin{definition}[Universal pair]\label{def:unipair}\uses{}\usesdefs{def:cpair}
-\lean{Codex.uniPair}
+\lean{Auto.uniPair}
 Set
 \begin{equation}\label{universal pair parameters}
 N_{\ref{def:unipair}}=3,
@@ -5204,11 +5204,11 @@ A universal pair is a $(C_{\ref{def:unipair}},N_{\ref{def:unipair}})$-pair.
 \end{definition}
 
 \begin{definition}[Windows]\label{def:window}\uses{}\usesdefs{def:unipair}
-\lean{Codex.window}
+\lean{Auto.window}
 A function is a window if it is one of the two components of a universal pair.
 \end{definition}
 
-\begin{lemma}[Existence of a universal pair]\label{lem:cpair}\lean{Codex.existsUniversalPair}\leanok\uses{standard bump properties}\usesdefs{standard bump,def:cn-window,def:cpair,def:unipair}
+\begin{lemma}[Existence of a universal pair]\label{lem:cpair}\lean{Auto.existsUniversalPair}\leanok\uses{standard bump properties}\usesdefs{standard bump,def:cn-window,def:cpair,def:unipair}
 There exists a universal pair.
 \end{lemma}
 
@@ -5258,7 +5258,7 @@ These are bounded by the three displayed powers of two. Thus every derivative of
 In this section we  decompose the characteristic function $\mathbf{1}_{[0,1)}$ into smoother functions.
 
 \begin{definition}[Window-based bump functions]\label{defn:window based bump functions}\uses{lem:cpair}\usesdefs{def:unipair}
-\lean{Codex.windowBasedBumpFunctions}
+\lean{Auto.windowBasedBumpFunctions}
 Let $(\phi_0,\phi_1)$ be a universal pair.
 Define
 \begin{equation}\label{eqn:thetadef}
@@ -5282,7 +5282,7 @@ Let
 where $\widetilde{\theta}=\mathbf{1}_{[0,\infty)}*\theta$ (a primitive of $\theta$).
 \end{definition}
 
-\begin{lemma}\label{lem:bumpbasic}\lean{Codex.bumpBasic}\leanok\uses{}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
+\begin{lemma}\label{lem:bumpbasic}\lean{Auto.bumpBasic}\leanok\uses{}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
 Let $\theta$ be as in \eqref{eqn:thetadef}.\\
 
 (i) We have
@@ -5303,7 +5303,7 @@ Since $2^{-N}$ converges   to $0$ as $N\to \infty$, the conclusion follows.
 \end{proof}
 
 \begin{lemma}\label{lem:chardecomp}\uses{}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
-\lean{Codex.charDecomp}
+\lean{Auto.charDecomp}
 \leanok
 With $\phi_0,\theta$ defined as in \eqref{eqn:thetadef}, the identity
  \begin{equation}\label{auto:indicator-smoothing-decomposition} \mathbf{1}_{[0,1]} = \mathbf{1}_{[0,1]}* \phi_0 +  \sum_{\ell=-\infty}^{-1} \mathbf{1}_{[0,1]} * \theta_{(2^\ell)}  \end{equation}
@@ -5341,7 +5341,7 @@ which tends to zero.
 
 
 \begin{lemma}[Smoothing decomposition]\label{lem:smoothingdecomp}\uses{lem:chardecomp,lem:bumpbasic}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
-\lean{Codex.smoothingDecomp}
+\lean{Auto.smoothingDecomp}
 \leanok
 The identity
 \begin{equation}\label{eq:seriesexpansion}
@@ -5377,7 +5377,7 @@ The  second equality is justified, for example, by uniform convergence.
 \end{proof}
 
 \begin{lemma}\label{lem:theta_decay}\uses{lem:smoothdecay2,lem: min and bracket}\usesdefs{bracket bump,def:cn-window,def:unipair,defn:window based bump functions}
-\lean{Codex.thetaDecay}
+\lean{Auto.thetaDecay}
 \leanok
 Let $1\le N\le3$. Then
 \begin{equation}\label{auto:theta-decay}
@@ -5414,7 +5414,7 @@ If $N\in\{2,3\}$, Lemma \ref{lem:smoothdecay2}, applied with $m=N$, gives
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:theta_decay},N}$ \auto]\label{constant theta decay}\uses{lem:theta_decay}\usesdefs{def:unipair}
-\lean{Codex.constantThetaDecay}
+\lean{Auto.constantThetaDecay}
 \leanok
 For $1\le N\le3$,
 \begin{equation}\label{constant theta decay bound}
@@ -5427,7 +5427,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in \eqref{auto:theta-decay-constant-de
 
 
 \begin{lemma}\label{lem:ft_phi3_eq}\uses{}\usesdefs{defn:window based bump functions}
-\lean{Codex.fourierPhiThreeEq}
+\lean{Auto.fourierPhiThreeEq}
 \leanok
 For $k\in\mathbb{Z}$ and $\xi\in\mathbb{R}$,
 \begin{equation}\label{auto:varphi-three-Fourier-transform} \widehat{\varphi_{3,k}}(\xi) = 2^k(\widehat{\mathbf{1}_{[0,1)}}-1)(2^{-k}\xi)\widehat{\phi_0}(2^{-k}\xi)\widehat{\theta}(\xi) \end{equation}
@@ -5441,7 +5441,7 @@ By the convolution theorem,
 \end{proof}
 
 \begin{lemma}\label{lem:abs_deriv_ft_phi3_le}\uses{lem:ft_phi3_eq}\usesdefs{def:cn-window,def:unipair,defn:window based bump functions}
-\lean{Codex.absDerivFourierPhiThreeLe}
+\lean{Auto.absDerivFourierPhiThreeLe}
 \leanok
 Let $m\in[4)$, $k\in\Z$, and $|\xi|\le1$. Then
 \begin{equation}\label{auto:varphi-three-Fourier-derivative-bound}
@@ -5517,7 +5517,7 @@ These are the defining values.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:abs_deriv_ft_phi3_le},m}$ \auto]\label{constant phi three derivative}\uses{lem:abs_deriv_ft_phi3_le}\usesdefs{def:unipair}
-\lean{Codex.constantPhiThreeDerivative}
+\lean{Auto.constantPhiThreeDerivative}
 \leanok
 For $m=0$,
 \begin{equation}\label{constant phi three derivative bound}
@@ -5541,7 +5541,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in the four defining values.
 \end{proof}
 
 \begin{lemma}\label{lem:abs_deriv_ft_Tphi3_le}\uses{lem:ft_deriv_mul,lem:abs_deriv_ft_phi3_le}\usesdefs{def:unipair,defn:window based bump functions}
-\lean{Codex.absDerivFourierTPhiThreeLe}
+\lean{Auto.absDerivFourierTPhiThreeLe}
 \leanok
 Let $m\in[3)$, $k\in\Z$, and $|\xi|\le1$. Then
 \begin{equation}\label{auto:T-varphi-three-Fourier-derivative-bound}
@@ -5578,7 +5578,7 @@ Substitution of the defining values from Lemma \ref{lem:abs_deriv_ft_phi3_le} gi
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:abs_deriv_ft_Tphi3_le},m}$ \auto]\label{constant T phi three derivative}\uses{lem:abs_deriv_ft_Tphi3_le}\usesdefs{def:unipair}
-\lean{Codex.constantTPhiThreeDerivative}
+\lean{Auto.constantTPhiThreeDerivative}
 \leanok
 For $m=0$,
 \begin{equation}\label{constant T phi three derivative bound}
@@ -5598,7 +5598,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in the three exact values from Lemma \
 \end{proof}
 
 \begin{lemma}\label{lem:theta_prim}\uses{lem:smoothdecay2}\usesdefs{bracket bump,def:cn-window,def:unipair,defn:window based bump functions}
-\lean{Codex.thetaPrimitive}
+\lean{Auto.thetaPrimitive}
 \leanok
 Let $\widetilde\theta$ be the primitive of $\theta$ fixed above. Then
 \begin{equation}\label{thetaprim_supp}
@@ -5671,7 +5671,7 @@ for $2\le N<N_{\ref{def:unipair}}$. This proves \eqref{thetaprim_decay} and \eqr
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:theta_prim},N}$ \auto]\label{constant theta primitive}\uses{lem:theta_prim}\usesdefs{def:unipair}
-\lean{Codex.constantThetaPrimitive}
+\lean{Auto.constantThetaPrimitive}
 \leanok
 For $2\le N<N_{\ref{def:unipair}}$,
 \begin{equation}\label{constant theta primitive bound}
@@ -5687,7 +5687,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in \eqref{auto:theta-primitive-constan
 \end{proof}
 
 \begin{lemma}\label{lem:phi4_supp}\uses{lem:theta_prim,lem:ft_deriv_mul}\usesdefs{defn:window based bump functions} We have
-\lean{Codex.phiFourSupport}
+\lean{Auto.phiFourSupport}
 \leanok
 (a) $\textup{supp}(\widehat{\varphi_{4,k}})
 \subset  [-1,-2^{-2}]\cup [2^{-2},1]$\\
@@ -5713,7 +5713,7 @@ Let $\mathbf{f}=(f_0,\dots,f_{n-1})$ be real-valued Schwartz functions satisfyin
 
 
 \begin{lemma}[Rescaling]\label{lem:rescaling}\uses{}\usesdefs{A_def}Let $\phi\in L^1(\mathbb{R})$.
-\lean{Codex.rescaling}
+\lean{Auto.rescaling}
 \leanok
 For all $r,q,\lambda>0$,
 \begin{equation}\label{auto:variation-rescaling-invariance} \|A_t({\phi_{(\lambda)}})\|_{V_{r,J}(t\in (0,\infty); L^q)} =  \|A_t({\phi})\|_{V_{r,J}(t\in (0,\infty); L^q)}. \end{equation}
@@ -5725,7 +5725,7 @@ By replacing $t_j \lambda\mapsto t_j$ in the supremum defining the variation sem
 
 
 \begin{lemma}\label{lem:norm_A_sum_le_sum}\uses{}\usesdefs{A_def,bracket bump}
-\lean{Codex.normASumLeSum}
+\lean{Auto.normASumLeSum}
 \leanok
 If $\phi=\sum_{j=1}^\infty \phi_j$ holds in $L^2$ (with $L^2$ functions $\phi, \phi_j$), then
 \begin{equation}\label{auto:twisted-average-series-triangle} \|A(\phi, \mathbf{f})\|_{L^2(\mathbb{R}^n)} \le \sum_{j=1}^\infty \|A({\phi_j}, \mathbf{f})\|_{L^2(\mathbb{R}^n)}. \end{equation}
@@ -5757,7 +5757,7 @@ and $|f_i|\le C$ for $i\ge2$. After the change of variables $y=x_0+s$, the resul
 \end{proof}
 
 \begin{lemma}\label{lem:form_pos}\uses{M to K,prism BL inequality}\usesdefs{auto:Wiener-space-definition,normalized function tuples,prism Brascamp--Lieb,auto:prism-form-definition}
-\lean{Codex.formPos}
+\lean{Auto.formPos}
 \leanok
 (i) Let $\Psi\in W_0(\R^2)$ be real-valued and assume that
 \begin{equation}\label{eqn:hyp_form_pos}
@@ -5807,7 +5807,7 @@ Part (i) gives the result.
 \end{proof}
 
 \begin{lemma} \label{lem:ftc_ATphi}\uses{}\usesdefs{A_def}
-\lean{Codex.ftcATphi}
+\lean{Auto.ftcATphi}
 \leanok
 Let $x\in \R^n$, $\phi$ a Schwartz function,  $t\in [2^k, 2^{k+1}]$, $k\in \Z$. Let $a(t)=A_t(\phi)(x)$. Then
 \begin{equation}\label{auto:average-logarithmic-derivative-identity} \|ta'(t)\|_{L^2(t\in [2^k, 2^{k+1}],\tfrac{dt}{t})}^2 = \int_{1}^2 |A_{2^k t}(T\phi)(x)|^2\,\tfrac{dt}{t}. \end{equation}
@@ -5828,7 +5828,7 @@ the claim follows.
 
 \begin{lemma}
 \label{lem:Phij_prop}\uses{lem:Phipos_v2}\usesdefs{def:cn-window,def:unipair}
-\lean{Codex.phiJProperties}
+\lean{Auto.phiJProperties}
 \leanok
 Let $\Psi:\mathbb{R}^2\to\mathbb{R}$ be a non-zero Schwartz function such that for all $u=(u_0,u_1)\in\R^2$,
 \begin{equation}\label{auto:Phij-symmetry-assumption}
@@ -5907,7 +5907,7 @@ The derivative estimate follows.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:Phij_prop}}$ \auto]\label{constant Phij proposition}\uses{lem:Phij_prop}\usesdefs{def:unipair}
-\lean{Codex.constantPhiJProposition}
+\lean{Auto.constantPhiJProposition}
 \leanok
 \begin{equation}\label{constant Phij proposition bound}
 C_{\ref{lem:Phij_prop}}=2^{27}.
@@ -5920,7 +5920,7 @@ This follows from \eqref{auto:Phij-constant-definition} and $C_{\ref{def:unipair
 
 \begin{lemma}[Bootstrapping]
 \label{lem:bootstrap}\uses{}\usesdefs{A_def}
-\lean{Codex.bootstrap}
+\lean{Auto.bootstrap}
 \leanok
 Let $\phi:\R\to \R$ be a Schwartz function.
 Then
@@ -5962,7 +5962,7 @@ Throughout this section, let
 $\nu=1$ if $n>2$ and $\nu=2$ if $n=2$.
 
 \begin{lemma}[$\rho$ kernels - reduction variant] \label{lem:rho-kernels-reduction}\uses{mean four scale Gaussian kernel,standard bump properties,four scale Gaussian kernel}\usesdefs{gaussian,bracket bump,auto:Wiener-space-definition,multiplicatively spaced monotone sequences,standard bump}  Let $a\in A$. For $h\in\N$ with $h\ge1$ and $j\in\Z$, define
-\lean{Codex.rhoKernelsReduction}
+\lean{Auto.rhoKernelsReduction}
 \leanok
 \begin{equation}\label{auto:rho-lambda-scales}
 \lambda_{h,j}^-=2^{h-1}a(j),
@@ -6066,7 +6066,7 @@ If $h\in \N$, we use  Proposition~\ref{four scale Gaussian kernel}   with $N=2$,
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:rho-kernels-reduction}}$ \auto]\label{constant rho kernels reduction}\uses{lem:rho-kernels-reduction,constant mean four scale Gaussian kernel,constant four scale Gaussian kernel,mean four scale Gaussian kernel,four scale Gaussian kernel}\usesdefs{}
-\lean{Codex.constantRhoKernelsReduction}
+\lean{Auto.constantRhoKernelsReduction}
 \leanok
 \begin{equation}\label{constant rho kernels reduction bound}
 C_{\ref{lem:rho-kernels-reduction}}
@@ -6095,7 +6095,7 @@ extension supplied by Proposition~\ref{four scale Gaussian kernel}.
 
 \begin{lemma}[affine diagonal cancellation - reduction variant]
 \label{lem:affine-diagonal-cancellation-reduction}\uses{W_0 fiber integrals}\usesdefs{auto:Wiener-space-definition}
-\lean{Codex.affineDiagonalCancellationReduction}
+\lean{Auto.affineDiagonalCancellationReduction}
 \leanok
 Let \(M\in W_0(\mathbb R^2)\) satisfy for every \(\xi\in\mathbb R\)
 \begin{equation}\label{auto:affine-diagonal-cancellation-assumption}
@@ -6136,7 +6136,7 @@ Injectivity of the Fourier transform on \(L^1\) and continuity of $G$ give
 
 \begin{proposition}[bracket domination - reduction variant]
 \label{lem:increase-data-bracket-domination}\uses{lem:rho-kernels-reduction,two bump estimate,bump triangle,orthogonal decay,convolution vector,lem:affine-diagonal-cancellation-reduction,Properties of distance of sequences,Operations on spaced sequences}\usesdefs{gaussian,bracket bump,auto:Wiener-space-definition,auto:convolution-along-vector-definition,multiplicatively spaced monotone sequences,Distance of spaced sequences,closed balls in A,standard bump,geometric parameters,auto:unitary-matrices-definition,square root Gaussian difference}
-\lean{Codex.increaseDataBracketDomination}
+\lean{Auto.increaseDataBracketDomination}
 \leanok
 Let \(a\in A\), and let
 $
@@ -6782,7 +6782,7 @@ which is
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:increase-data-bracket-domination},1}$ \auto]\label{constant increase data bracket domination}\uses{lem:increase-data-bracket-domination,lem:rho-kernels-reduction,constant rho kernels reduction}\usesdefs{}
-\lean{Codex.constantIncreaseDataBracketDomination}
+\lean{Auto.constantIncreaseDataBracketDomination}
 \leanok
 \begin{equation}\label{constant increase data bracket domination bound}
 C_{\ref{lem:increase-data-bracket-domination},1}
@@ -6796,7 +6796,7 @@ Use $C_{\ref{lem:increase-data-bracket-domination},1}=2^{10}C_{\ref{lem:rho-kern
 
 \begin{proposition}[Gaussian domination - reduction variant]
 \label{lem:increase-data-Gaussian-expansion}\uses{Gaussian domination,lem:increase-data-bracket-domination,Operations on spaced sequences,Properties of distance of sequences}\usesdefs{gaussian,bracket bump,multiplicatively spaced monotone sequences,Distance of spaced sequences,geometric parameters,auto:unitary-matrices-definition,2D Gaussians}
-\lean{Codex.increaseDataGaussianExpansion}
+\lean{Auto.increaseDataGaussianExpansion}
 \leanok
 Let the notation and conclusions of Proposition~
 \ref{lem:increase-data-bracket-domination} hold. For
@@ -7061,7 +7061,7 @@ The series therefore converges absolutely in
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:increase-data-Gaussian-expansion}}$ \auto]\label{constant increase data Gaussian expansion}\uses{lem:increase-data-bracket-domination,constant increase data bracket domination,constant rho kernels reduction,lem:rho-kernels-reduction,Gaussian domination,lem:increase-data-Gaussian-expansion}\usesdefs{}
-\lean{Codex.constantIncreaseDataGaussianExpansion}
+\lean{Auto.constantIncreaseDataGaussianExpansion}
 \leanok
 \begin{equation}\label{constant increase data Gaussian expansion bound}
 C_{\ref{lem:increase-data-Gaussian-expansion}}
@@ -7085,7 +7085,7 @@ Using the exact upper bound from Lemma \ref{constant rho kernels reduction}, and
 
 \begin{lemma}
 \label{lem:N-reduction}\uses{lem:rho-kernels-reduction,convolution vector,lem:increase-data-bracket-domination}\usesdefs{bracket bump,auto:Wiener-space-definition,auto:convolution-along-vector-definition,multiplicatively spaced monotone sequences,auto:unitary-matrices-definition} Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$, and $(N_{h,j})_{h\in \N,j\in \Z}$,  be as in Proposition~\ref{lem:increase-data-bracket-domination}.
-\lean{Codex.nReduction}
+\lean{Auto.nReduction}
 \leanok
 Then for each $h\in \N$ and $j\in \Z$,   $N_{h,j}\in W_0(\R^2)$ and
 \begin{equation}
@@ -7161,7 +7161,7 @@ C_{\ref{lem:N-reduction}}.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:N-reduction}}$ \auto]\label{constant N reduction}\uses{lem:N-reduction,lem:rho-kernels-reduction,constant rho kernels reduction}\usesdefs{}
-\lean{Codex.constantNReduction}
+\lean{Auto.constantNReduction}
 \leanok
 \begin{equation}\label{constant N reduction bound}
 C_{\ref{lem:N-reduction}}
@@ -7175,7 +7175,7 @@ Use $C_{\ref{lem:N-reduction}}=2^9C_{\ref{lem:rho-kernels-reduction}}$ and Lemma
 
 \begin{proposition}[increase data - reduction variant]
 \label{P:increase-data-reduction}\uses{lem:N-reduction,square root Gaussian difference W0,tensor Wiener,lem:increase-data-Gaussian-expansion,induct positive terms theorem,Monotonicity K,prism BL inequality,lem:increase-data-bracket-domination}\usesdefs{auto:Wiener-space-definition,multiplicatively spaced monotone sequences,geometric parameters,kernel sequences,2D Gaussians,sandwich kernel,square root Gaussian difference,s multiplier}
-\lean{Codex.increaseDataReduction}
+\lean{Auto.increaseDataReduction}
 \leanok
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$, and $(N_{h,j})_{h\in\N,j\in\Z}$ be as in Proposition~\ref{lem:increase-data-bracket-domination}.
  For $j\in \Z$ and $y\in (\R^2)^2$ let
@@ -7315,7 +7315,7 @@ as desired.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:increase-data-reduction}}$ \auto]\label{constant increase data reduction}\uses{constant induct positive terms theorem,constant increase data Gaussian expansion,constant rho kernels reduction,lem:increase-data-bracket-domination,P:increase-data-reduction}\usesdefs{}
-\lean{Codex.constantIncreaseDataReduction}
+\lean{Auto.constantIncreaseDataReduction}
 \leanok
 \begin{equation}\label{constant increase data reduction bound}
 C_{\ref{P:increase-data-reduction}}
@@ -7335,7 +7335,7 @@ C_{\ref{P:increase-data-reduction}}
 \subsection{On-diagonal from off-diagonal estimates}\label{sec:on-diag}
 \begin{proposition}[diagonal band - reduction variant]
 \label{P:diagonal-band-reduction}\uses{P:increase-data-reduction,convolution vector,Cauchy-Schwarz at k,lem:N-reduction,Cauchy-Schwarz at n-1}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,standard bump,kernel sequences,square root Gaussian difference}
-\lean{Codex.diagonalBandReduction}
+\lean{Auto.diagonalBandReduction}
 \leanok
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$ be as in Proposition~\ref{P:increase-data-reduction}. For $h\in\N$ with $h\ge1$ and $j\in\Z$, define
 \begin{equation}\label{auto:diagonal-band-positive-scale}
@@ -7483,7 +7483,7 @@ Summing in $h\in \N$ finishes the proof.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:diagonal-band-reduction}}$ \auto]\label{constant diagonal band reduction}\uses{constant N reduction,constant increase data reduction,P:diagonal-band-reduction}\usesdefs{}
-\lean{Codex.constantDiagonalBandReduction}
+\lean{Auto.constantDiagonalBandReduction}
 \leanok
 \begin{equation}\label{constant diagonal band reduction bound}
 C_{\ref{P:diagonal-band-reduction}}
@@ -7508,7 +7508,7 @@ Since $2^{280}<2^{-6}2^{480}$, their sum is smaller than
 
 
 \begin{lemma}\label{lem:L1-reduction}\uses{lem:affine-diagonal-cancellation-reduction}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,multiplicatively spaced monotone sequences,standard bump}
-\lean{Codex.lOneReduction}
+\lean{Auto.lOneReduction}
 \leanok
 
 Let $a\in A$ and suppose that $(M_j)_{j\in\Z}\subset W_0(\R^2)$ satisfies for all $\xi \in \R$ and $j\in \Z$
@@ -7567,7 +7567,7 @@ The claim now follows by the
 
 \begin{proposition}[vanishing diagonal - reduction variant]
 \label{P:vanishing-diagonal-reduction}\uses{P:diagonal-band-reduction,prism BL inequality,M to K,lem:L1-reduction,P:increase-data-reduction}\usesdefs{auto:Wiener-space-definition,auto:convolution-along-vector-definition,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,standard bump,kernel sequences}
-\lean{Codex.vanishingDiagonalReduction}
+\lean{Auto.vanishingDiagonalReduction}
 \leanok
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \Z}$ be as in Proposition~\ref{P:increase-data-reduction}. In addition, assume that $\widehat{M_j}(\xi,\eta)$ is supported in the set where $|\xi+\eta| \leq 2^{-1} (a(j-1))^{-1}$.
 Let $\mathbf{M}=(M_j)_{j\in \Z}$. Then
@@ -7601,7 +7601,7 @@ Fix a universal pair $(\phi_0,\phi_1)$. For $\lambda>0$ and $i\in[2)$ write
 \begin{equation}\label{auto:rescaled-window-continuous-notation} \phi_{i,\lambda} = (\phi_i)_{(\lambda)}. \end{equation}
 
 \begin{proposition}\label{P:one-scale-estimate-window}\uses{prism BL inequality,M to K,lem:smoothdecay2}\usesdefs{bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,kernel sequences,def:cn-window,def:unipair}
-\lean{Codex.oneScaleEstimateWindow}
+\lean{Auto.oneScaleEstimateWindow}
 \leanok
 Let $a\in A$. For $j\in \Z$, we set
 \begin{equation}\label{auto:one-scale-window-kernel}
@@ -7638,7 +7638,7 @@ Since $\int_\R\langle x\rangle^2\,dx=2$, we have $\|\phi_0\|_1\le16C_{\ref{def:u
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:one-scale-estimate-window}}$ \auto]\label{auto:constant-one-scale-window}\uses{P:one-scale-estimate-window}\usesdefs{def:unipair}
-\lean{Codex.constantOneScaleWindow}
+\lean{Auto.constantOneScaleWindow}
 \leanok
 \begin{equation}\label{auto:constant-one-scale-window-bound}
 C_{\ref{P:one-scale-estimate-window}}=2^{39}.
@@ -7649,7 +7649,7 @@ Substitute $C_{\ref{def:unipair}}=2^{15}$ in the defining value $2^9C_{\ref{def:
 \end{proof}
 
 \begin{lemma}\label{L:fourier-transform-window}\uses{}\usesdefs{multiplicatively spaced monotone sequences,def:cn-window,def:cpair,def:unipair}
-\lean{Codex.fourierTransformWindow}
+\lean{Auto.fourierTransformWindow}
 \leanok
 Let $a\in A$. Then for any $j\in \Z$,
 \begin{equation}\label{auto:window-square-Fourier-identity}
@@ -7672,7 +7672,7 @@ The conclusion follows by applying~\eqref{windowsum}.
 \end{proof}
 
 \begin{lemma} \label{lem:scaleest}\uses{}\usesdefs{bracket bump}
-\lean{Codex.scaleEstimate}
+\lean{Auto.scaleEstimate}
 \leanok
     For any $x\in \R$ and $\lambda, s>0$,
     \begin{equation}\label{auto:scaled-bracket-comparison}\langle x \rangle^2_{(\lambda s)} \le \max\{\lambda,\lambda^{-1}\}\langle x \rangle^2_{(s)}\end{equation}
@@ -7689,7 +7689,7 @@ The conclusion follows by applying~\eqref{windowsum}.
 
 \begin{proposition}[induct positive terms - reduction variant, non-Whitney]
 \label{P:induct-positive-terms-reduction-non-whitney}\uses{P:one-scale-estimate-window,L:fourier-transform-window,Operations on spaced sequences,lem:smoothdecay2,lem:scaleest,P:vanishing-diagonal-reduction,P:diagonal-band-reduction}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,auto:unitary-matrices-definition,kernel sequences,def:cn-window,def:unipair}
-\lean{Codex.inductPositiveTermsReductionNonWhitney}
+\lean{Auto.inductPositiveTermsReductionNonWhitney}
 \leanok
 Let $a\in A$ and let
 \begin{equation}\label{auto:non-Whitney-kernel}M_j=({\phi}_{0,a(j-1)}-{\phi}_{1,a(j)})^{\otimes 2}.\end{equation}
@@ -7745,7 +7745,7 @@ where $\mathcal P$ consists of all triples of the form $(t_0,t_1,0)$, where for 
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-non-whitney}}$ \auto]\label{constant non Whitney reduction}\uses{auto:constant-one-scale-window,lem:smoothdecay2,P:diagonal-band-reduction,constant diagonal band reduction,P:induct-positive-terms-reduction-non-whitney}\usesdefs{def:unipair}
-\lean{Codex.constantNonWhitneyReduction}
+\lean{Auto.constantNonWhitneyReduction}
 \leanok
 \begin{equation}\label{constant non Whitney reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-non-whitney}}
@@ -7764,7 +7764,7 @@ The first term is $2^{39}<\frac19 2^{541}$, which proves the claim.
 
 \begin{proposition}[induct positive terms - reduction variant, non-Whitney, skip terms]
 \label{P:induct-positive-terms-reduction-non-whitney-skip}\uses{positive terms,P:induct-positive-terms-reduction-non-whitney}\usesdefs{normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,geometric parameters,double sequence of 2D functions,kernel sequences,def:unipair}
-\lean{Codex.inductPositiveTermsReductionNonWhitneySkip}
+\lean{Auto.inductPositiveTermsReductionNonWhitneySkip}
 \leanok
 Let $a\in A$ and let
 \begin{equation}\label{auto:skipped-non-Whitney-kernel}\tilde{M}_j=({\phi}_{0,a(2j)}-{\phi}_{1,a(2j+1)})^{\otimes 2}.\end{equation}
@@ -7799,7 +7799,7 @@ This yields~\eqref{E:est-skipped-terms}.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-non-whitney-skip}}$ \auto]\label{constant non Whitney skip reduction}\uses{constant non Whitney reduction,P:induct-positive-terms-reduction-non-whitney-skip}\usesdefs{}
-\lean{Codex.constantNonWhitneySkipReduction}
+\lean{Auto.constantNonWhitneySkipReduction}
 \leanok
 \begin{equation}\label{constant non Whitney skip reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-non-whitney-skip}}
@@ -7813,7 +7813,7 @@ The factor $2^{1-2^{2-n}}$ is at most $2$. Lemma \ref{constant non Whitney reduc
 
 \begin{proposition}[induct positive terms - reduction variant, Whitney, with gap]
 \label{P:induct-positive-terms-reduction-whitney-gap}\uses{lem:Phij_prop,lem:form_pos,P:induct-positive-terms-reduction-non-whitney-skip,P:vanishing-diagonal-reduction,lem:smoothdecay2,lem:scaleest,P:diagonal-band-reduction}\usesdefs{bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,auto:unitary-matrices-definition,kernel sequences,def:cn-window,def:unipair}
-\lean{Codex.inductPositiveTermsReductionWhitneyGap}
+\lean{Auto.inductPositiveTermsReductionWhitneyGap}
 \leanok
 Let $a\in {\rm A}$ satisfy $a(j)\geq 2^{11}a(j-1)$ for every $j\in\mathbb Z$. Let $M_j:\mathbb{R}^2\to \mathbb{R}$ be of the form
 \begin{equation}\label{auto:Whitney-gap-kernel}
@@ -7941,7 +7941,7 @@ which proves the claim.
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-whitney-gap}}$ \auto]\label{constant Whitney gap reduction}\uses{constant non Whitney skip reduction,P:induct-positive-terms-reduction-whitney-gap,constant Phij proposition,constant diagonal band reduction}\usesdefs{def:unipair}
-\lean{Codex.constantWhitneyGapReduction}
+\lean{Auto.constantWhitneyGapReduction}
 \leanok
 \begin{equation}\label{constant Whitney gap reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-whitney-gap}}
@@ -7962,7 +7962,7 @@ The sum of these two bounds is smaller than $\frac{127}{128}2^{553}$.
 
 \begin{proposition}[induct positive terms - reduction variant, Whitney]
 \label{P:induct-positive-terms-reduction-whitney}\uses{P:induct-positive-terms-reduction-whitney-gap}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,auto:unitary-matrices-definition,kernel sequences}
-\lean{Codex.inductPositiveTermsReductionWhitney}
+\lean{Auto.inductPositiveTermsReductionWhitney}
 \leanok
 Let $a\in {\rm A}$. Let $M_j:\mathbb{R}^2\to \mathbb{R}$ be of the form
 \begin{equation}\label{auto:Whitney-kernel}
@@ -8001,7 +8001,7 @@ Split any finite sum into these eleven residue classes and apply Proposition \re
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-whitney}}$ \auto]\label{constant Whitney reduction}\uses{constant Whitney gap reduction,P:induct-positive-terms-reduction-whitney}\usesdefs{}
-\lean{Codex.constantWhitneyReduction}
+\lean{Auto.constantWhitneyReduction}
 \leanok
 \begin{equation}\label{constant Whitney reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-whitney}}
@@ -8020,7 +8020,7 @@ C_{\ref{P:induct-positive-terms-reduction-whitney}}
 
 \begin{proposition}[induct positive terms - reduction variant, Whitney, product-type]
 \label{P:induct-positive-terms-reduction-whitney-product}\uses{P:induct-positive-terms-reduction-whitney,lem:smoothdecay2}\usesdefs{bracket bump,multiplicatively spaced monotone sequences,kernel sequences}
-\lean{Codex.inductPositiveTermsReductionWhitneyProduct}
+\lean{Auto.inductPositiveTermsReductionWhitneyProduct}
 \leanok
 Let $a\in A$ and let
 \begin{equation}\label{auto:Whitney-product-kernel}
@@ -8064,7 +8064,7 @@ so \eqref{p1-on-W_decay} holds. Proposition \ref{P:induct-positive-terms-reducti
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{P:induct-positive-terms-reduction-whitney-product}}$ \auto]\label{constant Whitney product reduction}\uses{constant Whitney reduction,P:induct-positive-terms-reduction-whitney-product}\usesdefs{}
-\lean{Codex.constantWhitneyProductReduction}
+\lean{Auto.constantWhitneyProductReduction}
 \leanok
 \begin{equation}\label{constant Whitney product reduction bound}
 C_{\ref{P:induct-positive-terms-reduction-whitney-product}}
@@ -8100,7 +8100,7 @@ In what follows we denote
 \end{equation}
 
 \begin{lemma}\label{lem:main_aux1}\uses{Extension of sequences,A to Lambda,P:induct-positive-terms-reduction-whitney-product}\usesdefs{A_def,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences}
-\lean{Codex.mainAuxOne}
+\lean{Auto.mainAuxOne}
 \leanok
 Suppose that $\psi:\R\to\R$ is a Schwartz function with
 \begin{equation}\label{main_aux1_supp}
@@ -8141,7 +8141,7 @@ for $m\in[3)$, which verifies \eqref{auto:Whitney-product-Fourier-derivative-ass
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:main_aux1}}$ \auto]\label{constant main auxiliary one}\uses{constant Whitney product reduction,lem:main_aux1}\usesdefs{}
-\lean{Codex.constantMainAuxiliaryOne}
+\lean{Auto.constantMainAuxiliaryOne}
 \leanok
 \begin{equation}\label{constant main auxiliary one bound}
 C_{\ref{lem:main_aux1}}<2^{573}.
@@ -8152,7 +8152,7 @@ Use Lemma \ref{constant Whitney product reduction} in \eqref{auto:main-auxiliary
 \end{proof}
 
 \begin{lemma}[Long and short variation]\label{lem:shortlongftc_reduction}\uses{lem:shortlongjumps,lem:ftccs-R,lem:ftc_ATphi,lem:main_aux1}\usesdefs{A_def}
-\lean{Codex.shortLongFtcReduction}
+\lean{Auto.shortLongFtcReduction}
 \leanok
 Let $J\ge 1$ and $\phi$ a Schwartz function.
 Assume that the function $T\phi(s) = (s \phi(s))'$ satisfies \eqref{main_aux1_supp} and \eqref{auto:main-auxiliary-one-Fourier-derivative-assumption}.
@@ -8224,7 +8224,7 @@ The claim now follows from
 
 
 \begin{lemma}\label{lem:mainbump1_long1}\uses{lem:main_aux1}\usesdefs{A_def,def:cn-window,def:unipair}
-\lean{Codex.mainBumpOneLongOne}
+\lean{Auto.mainBumpOneLongOne}
 \leanok
 For every $J\ge1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
 \begin{equation}\label{mainbump1_long1}
@@ -8247,7 +8247,7 @@ The Fourier transform of $\phi_0-\phi_1$ is supported in $\mathrm{Ann}_1(1,2)$. 
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1_long1}}$ \auto]\label{constant main bump one long one}\uses{constant main auxiliary one,lem:mainbump1_long1}\usesdefs{def:unipair}
-\lean{Codex.constantMainBumpOneLongOne}
+\lean{Auto.constantMainBumpOneLongOne}
 \leanok
 \begin{equation}\label{constant main bump one long one bound}
 C_{\ref{lem:mainbump1_long1}}<2^{605}.
@@ -8258,7 +8258,7 @@ Use $C_{\ref{def:unipair}}=2^{15}$ and Lemma \ref{constant main auxiliary one} i
 \end{proof}
 
 \begin{lemma}\label{lem:mainbump1_long2}\uses{Extension of sequences,A to Lambda,P:induct-positive-terms-reduction-non-whitney-skip,Operations on spaced sequences}\usesdefs{A_def,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,def:unipair}
-\lean{Codex.mainBumpOneLongTwo}
+\lean{Auto.mainBumpOneLongTwo}
 \leanok
 For every $J\ge 1$ and every strictly increasing sequence of integers $(m_j)_{j\in[J+1)}$,
 \begin{equation}\label{mainbump1_long2}
@@ -8282,7 +8282,7 @@ Split this sum according to the parity of $j$. The even terms are an initial par
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1_long2}}$ \auto]\label{constant main bump one long two}\uses{P:induct-positive-terms-reduction-non-whitney-skip,constant non Whitney skip reduction,lem:mainbump1_long2}\usesdefs{}
-\lean{Codex.constantMainBumpOneLongTwo}
+\lean{Auto.constantMainBumpOneLongTwo}
 \leanok
 \begin{equation}\label{constant main bump one long two bound}
 C_{\ref{lem:mainbump1_long2}}<\tfrac89 2^{543}<2^{543}.
@@ -8293,7 +8293,7 @@ The defining constant is twice the constant in Proposition \ref{P:induct-positiv
 \end{proof}
 
 \begin{lemma}\label{lem:mainbump1_long}\uses{lem:mainbump1_long2,lem:mainbump1_long1}\usesdefs{A_def,def:unipair}
-\lean{Codex.mainBumpOneLong}
+\lean{Auto.mainBumpOneLong}
 \leanok
 Let $J\ge 1$. Then
 \begin{equation}\label{mainbump1_long}
@@ -8314,7 +8314,7 @@ By Lemma \ref{lem:mainbump1_long2} and Lemma \ref{lem:mainbump1_long1} this is
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1_long}}$ \auto]\label{constant main bump one long}\uses{constant main bump one long one,constant main bump one long two,lem:mainbump1_long}\usesdefs{}
-\lean{Codex.constantMainBumpOneLong}
+\lean{Auto.constantMainBumpOneLong}
 \leanok
 \begin{equation}\label{constant main bump one long bound}
 C_{\ref{lem:mainbump1_long}}<\tfrac{11}{16}2^{606}<2^{606}.
@@ -8325,7 +8325,7 @@ Use Lemmas \ref{constant main bump one long one} and \ref{constant main bump one
 \end{proof}
 
 \begin{lemma}\label{lem:mainbump1}\uses{lem:shortlongftc_reduction,lem:mainbump1_long,lem:ft_deriv_mul}\usesdefs{A_def,def:cn-window,def:unipair}
-\lean{Codex.mainBumpOne}
+\lean{Auto.mainBumpOne}
 \leanok
 Let $J\ge1$. Then
 \begin{equation}\label{mainbump1}
@@ -8355,7 +8355,7 @@ By Lemma \ref{lem:ft_deriv_mul}, $\widehat{T\phi_0}$ is supported in $\mathrm{An
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump1}}$ \auto]\label{constant main bump one}\uses{constant main auxiliary one,lem:mainbump1,constant main bump one long}\usesdefs{def:unipair}
-\lean{Codex.constantMainBumpOne}
+\lean{Auto.constantMainBumpOne}
 \leanok
 \begin{equation}\label{constant main bump one bound}
 C_{\ref{lem:mainbump1}}<\tfrac78 2^{610}<2^{610}.
@@ -8374,7 +8374,7 @@ The sum is smaller than $\frac78 2^{610}$.
 \end{proof}
 
 \begin{lemma}\label{lem:main_aux2}\uses{lem:shortlongftc_reduction,lem:main_aux1,lem:bootstrap}\usesdefs{A_def}
-\lean{Codex.mainAuxTwo}
+\lean{Auto.mainAuxTwo}
 \leanok
 Let $\psi$ satisfy \eqref{main_aux1_supp} and \eqref{auto:main-auxiliary-one-Fourier-derivative-assumption}. Assume also that
 \begin{equation}\label{auto:main-auxiliary-two-Fourier-derivative-assumption}
@@ -8416,7 +8416,7 @@ Lemma \ref{lem:main_aux1}, applied with $t=1$, gives \eqref{eq:main_aux2_long} b
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:main_aux2}}$ \auto]\label{constant main auxiliary two}\uses{constant main auxiliary one,lem:main_aux2}\usesdefs{}
-\lean{Codex.constantMainAuxiliaryTwo}
+\lean{Auto.constantMainAuxiliaryTwo}
 \leanok
 \begin{equation}\label{constant main auxiliary two bound}
 C_{\ref{lem:main_aux2}}<2^{578}.
@@ -8432,7 +8432,7 @@ C_{\ref{lem:main_aux2}}
 \end{proof}
 
 \begin{lemma}\label{lem:mainbump2}\uses{lem:rescaling,lem:main_aux2,lem:abs_deriv_ft_Tphi3_le,lem:ft_phi3_eq,lem:abs_deriv_ft_phi3_le,lem:ft_deriv_mul}\usesdefs{A_def,defn:window based bump functions}
-\lean{Codex.mainBumpTwo}
+\lean{Auto.mainBumpTwo}
 \leanok
 For all $k\ge-2$,
 \begin{equation}\label{mainbump2}
@@ -8466,7 +8466,7 @@ The support of $\widehat{T\varphi_{3,k}}$ is contained in the same annulus by Le
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:mainbump2}}$ \auto]\label{constant main bump two}\uses{constant main auxiliary two,lem:abs_deriv_ft_Tphi3_le,constant T phi three derivative,lem:mainbump2}\usesdefs{def:unipair}
-\lean{Codex.constantMainBumpTwo}
+\lean{Auto.constantMainBumpTwo}
 \leanok
 \begin{equation}\label{constant main bump two bound}
 C_{\ref{lem:mainbump2}}<\tfrac{27}{32}2^{658}<2^{658}.
@@ -8489,7 +8489,7 @@ C_{\ref{lem:mainbump2}}
 \end{proof}
 
 \begin{lemma}\label{lem:leftbump}\uses{lem:rescaling,lem:main_aux2,lem:theta_prim}\usesdefs{A_def,def:unipair,defn:window based bump functions}
-\lean{Codex.leftBump}
+\lean{Auto.leftBump}
 \leanok
 For every $k\le-1$,
 \begin{equation}\label{leftbump}
@@ -8518,7 +8518,7 @@ bound the Fourier derivatives of both functions through order $2$ by $2^{14}C_{\
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump}}$ \auto]\label{constant left bump}\uses{constant main auxiliary two,lem:leftbump}\usesdefs{def:unipair}
-\lean{Codex.constantLeftBump}
+\lean{Auto.constantLeftBump}
 \leanok
 \begin{equation}\label{constant left bump bound}
 C_{\ref{lem:leftbump}}<\tfrac{33}{64}2^{636}<2^{636}.
@@ -8534,7 +8534,7 @@ C_{\ref{lem:leftbump}}
 \end{proof}
 
 \begin{lemma}\label{lem:leftbump1_short1}\uses{Extension of sequences,A to Lambda,lem:theta_prim,lem:thetat_offcenter,P:induct-positive-terms-reduction-whitney,lem:int_fct,lem:phi4_supp}\usesdefs{A_def,bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,defn:window based bump functions}
-\lean{Codex.leftBumpOneShortOne}
+\lean{Auto.leftBumpOneShortOne}
 \leanok
 Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
 \begin{equation}\label{auto:left-bump-one-short-one-bound}
@@ -8594,7 +8594,7 @@ Thus \eqref{p1-on-W_der} holds. Proposition \ref{P:induct-positive-terms-reducti
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1_short1}}$ \auto]\label{constant left bump one short one}\uses{constant Whitney reduction,constant theta primitive,constant off center bump,lem:leftbump1_short1}\usesdefs{}
-\lean{Codex.constantLeftBumpOneShortOne}
+\lean{Auto.constantLeftBumpOneShortOne}
 \leanok
 \begin{equation}\label{constant left bump one short one bound}
 C_{\ref{lem:leftbump1_short1}}
@@ -8612,7 +8612,7 @@ C_{\ref{lem:leftbump1_short1}}
 
 
 \begin{lemma}\label{lem:leftbump1_short2}\uses{Extension of sequences,A to Lambda,lem:theta_prim,lem:theta_decay,lem:thetat_offcenter,P:induct-positive-terms-reduction-whitney,lem:int_fct,lem:phi4_supp,lem:ft_deriv_mul}\usesdefs{A_def,bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,defn:window based bump functions}
-\lean{Codex.leftBumpOneShortTwo}
+\lean{Auto.leftBumpOneShortTwo}
 \leanok
 Let $\gamma=\frac12$. For every $k\le-1$ and every strictly increasing sequence of integers $(k_j)_{j\in[J)}$,
 \begin{equation}\label{auto:left-bump-one-short-two-bound}
@@ -8683,7 +8683,7 @@ Thus \eqref{p1-on-W_der} holds, and Proposition \ref{P:induct-positive-terms-red
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1_short2}}$ \auto]\label{constant left bump one short two}\uses{lem:theta_prim,constant theta primitive,constant theta decay,constant Whitney reduction,constant off center bump,lem:leftbump1_short2}\usesdefs{}
-\lean{Codex.constantLeftBumpOneShortTwo}
+\lean{Auto.constantLeftBumpOneShortTwo}
 \leanok
 \begin{equation}\label{constant left bump one short two bound}
 C_{\ref{lem:leftbump1_short2}}
@@ -8705,7 +8705,7 @@ C_{\ref{lem:leftbump1_short2}}
 
 
 \begin{lemma}\label{lem:leftbump1_long}\uses{lem:bootstrap,Extension of sequences,A to Lambda,lem:theta_prim,P:induct-positive-terms-reduction-whitney,lem:phi4_supp,lem:form_pos}\usesdefs{A_def,bracket bump,normalized function tuples,auto:prism-form-definition,multiplicatively spaced monotone sequences,defn:window based bump functions}
-\lean{Codex.leftBumpOneLong}
+\lean{Auto.leftBumpOneLong}
 \leanok
 Let $\gamma=\frac12$. For every $k\le-1$,
 \begin{equation}\label{auto:left-bump-one-long-bound}
@@ -8780,7 +8780,7 @@ Thus \eqref{p1-on-W_der} holds. Proposition \ref{P:induct-positive-terms-reducti
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1_long}}$ \auto]\label{constant left bump one long}\uses{constant Whitney reduction,constant theta primitive,lem:leftbump1_long}\usesdefs{}
-\lean{Codex.constantLeftBumpOneLong}
+\lean{Auto.constantLeftBumpOneLong}
 \leanok
 \begin{equation}\label{constant left bump one long bound}
 C_{\ref{lem:leftbump1_long}}<2^{625}.
@@ -8792,7 +8792,7 @@ Use Lemmas \ref{constant Whitney reduction} and \ref{constant theta primitive} i
 
 
 \begin{lemma}\label{lem:leftbump1}\uses{lem:rescaling,lem:shortlongjumps,lem:leftbump1_long,lem:leftbump1_short1,lem:leftbump1_short2,lem:ftccs-R,lem:ftc_ATphi}\usesdefs{A_def,defn:window based bump functions}
-\lean{Codex.leftBumpOne}
+\lean{Auto.leftBumpOne}
 \leanok
 
 Let $\gamma=\frac12$. For every $k\le -1$,
@@ -8861,7 +8861,7 @@ where we used $(J+1)^{\alpha(n)}\le2J^{\alpha(n)}$. This shows \eqref{leftbump_s
 \end{proof}
 
 \begin{lemma}[constant $C_{\ref{lem:leftbump1}}$ \auto]\label{constant left bump one}\uses{constant left bump one short one,constant left bump one short two,constant left bump one long,lem:leftbump1}\usesdefs{}
-\lean{Codex.constantLeftBumpOne}
+\lean{Auto.constantLeftBumpOne}
 \leanok
 \begin{equation}\label{constant left bump one bound}
 C_{\ref{lem:leftbump1}}<\tfrac{23}{32}2^{636}<2^{636}.
@@ -8947,7 +8947,7 @@ The purpose of this section is to prove Theorem \ref{thm:ergodicthm} from Theore
 This section is the only place in the blueprint where we invoke two external theorems, i.e. theorems that are not proved in this blueprint. These are Theorem \ref{multilinear interpolation external} (multilinear complex interpolation) and Theorem \ref{Calderon transference external} (Calder\'on transference principle).
 The latter was recently formalized in Lean by Pernegger \cite{Pernegger2025}.
 
-\begin{proposition}[Permutation of the endpoint estimate]\label{permutation of endpoint estimate}\lean{Codex.permutation_of_endpoint_estimate}\leanok\uses{thm:nct main real}\usesdefs{A_def}
+\begin{proposition}[Permutation of the endpoint estimate]\label{permutation of endpoint estimate}\lean{Auto.permutation_of_endpoint_estimate}\leanok\uses{thm:nct main real}\usesdefs{A_def}
 Let $n\ge 2$, let $\pi$ be a permutation of $[n)$, and let $J\ge 1$ and $0<t_0<\cdots<t_J$. For real-valued Schwartz functions $(f_i)_{i\in[n)}$,
 \begin{equation}\label{permuted endpoint estimate}
 \sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_2^2
@@ -8960,7 +8960,7 @@ Let $n\ge 2$, let $\pi$ be a permutation of $[n)$, and let $J\ge 1$ and $0<t_0<\
 Apply Theorem \ref{thm:nct main real} after permuting the coordinate axes by $\pi$ and permuting the functions by the same permutation. Lebesgue measure, the $L^2$ norm, and the kernel $\mathbf 1_{[0,1]}$ are unchanged by this coordinate permutation. The normalization in Theorem \ref{thm:nct main real} becomes the product on the right-hand side of \eqref{permuted endpoint estimate}; homogeneity gives the stated form.
 \end{proof}
 
-\begin{exttheorem}[Multilinear interpolation]\label{multilinear interpolation external}\lean{Codex.multilinear_interpolation_external}\leanok\uses{}\usesdefs{}
+\begin{exttheorem}[Multilinear interpolation]\label{multilinear interpolation external}\lean{Auto.multilinear_interpolation_external}\leanok\uses{}\usesdefs{}
 Let $m,n\ge 1$ be integers, let $(X_i,\mu_i)$ and $(Y,\nu)$ be measure spaces, let $p\in[1,\infty]$, and let $T$ be an $n$-linear map on $n$-tuples of complex-valued simple functions with values in $L^p(Y)$. For $a\in[m)$ and $i\in[n)$, let $q_{a,i}\in[1,\infty]$, and assume
 \begin{equation}\label{multilinear interpolation endpoint}
 \|T(f_0,\ldots,f_{n-1})\|_{L^p(Y)}\le A_a\prod_{i\in[n)}\|f_i\|_{L^{q_{a,i}}(X_i)}.
@@ -8977,7 +8977,7 @@ Then $T$ extends to an $n$-linear map from $\prod_{i\in[n)}L^{p_i}(X_i)$ to $L^p
 
 This is a standard result in interpolation theory, see e.g. \cite{BerghLofstrom}.
 
-\begin{proposition}[Range of exponents]\label{exponent polytope}\lean{Codex.exponent_polytope,Codex.exponent_polytope_of_exponents}\leanok\uses{}\usesdefs{}
+\begin{proposition}[Range of exponents]\label{exponent polytope}\lean{Auto.exponent_polytope,Auto.exponent_polytope_of_exponents}\leanok\uses{}\usesdefs{}
 Let $p_i\in[1,\infty]$ for $i\in[n)$. The vector $(p_i^{-1})_{i\in[n)}$ belongs to the convex hull of the permutations of
 \begin{equation}\label{endpoint reciprocal vector}
 (2^{-2},2^{-3},\ldots,2^{-n},2^{-n})
@@ -9013,7 +9013,7 @@ Let $c\in\R^n$ and simultaneously relabel the coordinates of $c$ and $x$ so that
 The last expression is the maximum of $\sum_i c_i y_i$ over the permutations $y$ of \eqref{endpoint reciprocal vector}. The finite-dimensional separation theorem therefore places $x$ in their convex hull.
 \end{proof}
 
-\begin{proposition}[Interpolated real-variable estimate]\label{interpolated real variable estimate}\lean{Codex.interpolated_real_variable_estimate}\leanok\uses{permutation of endpoint estimate,exponent polytope,multilinear interpolation external}\usesdefs{A_def}
+\begin{proposition}[Interpolated real-variable estimate]\label{interpolated real variable estimate}\lean{Auto.interpolated_real_variable_estimate}\leanok\uses{permutation of endpoint estimate,exponent polytope,multilinear interpolation external}\usesdefs{A_def}
 Let $n\ge 2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}. For every $J\ge1$, every $0<t_0<\cdots<t_J$, and every $n$-tuple of complex-valued measurable functions $f_i\in L^{p_i}(\R^n)$,
 \begin{equation}\label{interpolated real estimate}
 \sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
@@ -9030,7 +9030,7 @@ For fixed $J$ and $(t_j)_{j\in[J+1)}$, consider the $n$-linear map whose value i
 in $L^2(\R^n;\ell^2([J)))$. Proposition \ref{permutation of endpoint estimate} gives its endpoint norm at every permutation of \eqref{endpoint reciprocal vector}. Since all endpoint exponents are finite, approximation by Schwartz functions and the endpoint estimate extend this map uniquely to the corresponding products of real $L^p$ spaces. For complex inputs, expand each $f_i$ into real and imaginary parts and use the triangle inequality. This multiplies every endpoint norm by at most $2^n$. Proposition \ref{exponent polytope} and Theorem \ref{multilinear interpolation external} give \eqref{interpolated real estimate} for complex-valued simple functions. Since \eqref{exponent polytope inequalities} for singleton sets gives $p_i<\infty$, approximation by simple functions and the interpolated estimate extend the map to all $f_i\in L^{p_i}(\R^n)$.
 \end{proof}
 
-\begin{exttheorem}[Calder\'on transference principle]\label{Calderon transference external}\lean{Codex.calderon_transference_external}\leanok\uses{}\usesdefs{ergodic averages,A_def}
+\begin{exttheorem}[Calder\'on transference principle]\label{Calderon transference external}\lean{Auto.calderon_transference_external}\leanok\uses{}\usesdefs{ergodic averages,A_def}
 Let $n\ge2$, let $p_i\in(1,\infty)$ satisfy $\sum_{i\in[n)}p_i^{-1}=1/2$, and let $g:\N\to[1,\infty)$. Assume that for some $C>0$, every $J\ge1$, every $0<t_0<\cdots<t_J$, and every real-valued $f_i\in L^{p_i}(\R^n)$ satisfy
 \begin{equation}\label{Calderon transference assumption}
 \sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf1_{[0,1]},\mathbf f)\|_2^2
@@ -9050,7 +9050,7 @@ C_{\ref{Calderon transference external},n}
 \end{equation}
 \end{exttheorem}
 This is a standard result and can be found e.g. as Theorem 2.5 of \cite{Pernegger2025}, up to slight restatement with an explicit constant and the specific real-variable averages and ergodic averages used here.
-\begin{theorem}[Ergodic jump estimate with general exponents]\label{thm:ergodicthm-interpolation}\lean{Codex.ergodic_jump_estimate_interpolation}\leanok\uses{interpolated real variable estimate,Calderon transference external}\usesdefs{ergodic averages}
+\begin{theorem}[Ergodic jump estimate with general exponents]\label{thm:ergodicthm-interpolation}\lean{Auto.ergodic_jump_estimate_interpolation}\leanok\uses{interpolated real variable estimate,Calderon transference external}\usesdefs{ergodic averages}
 Let $n\ge2$, and let $(p_i)_{i\in[n)}$ satisfy \eqref{exponent polytope sum} and \eqref{exponent polytope inequalities}. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be complex-valued functions with $f_i\in L^{p_i}(X)$. For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
 \begin{equation}\label{ergodic jump general exponents}
 \sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
@@ -9070,7 +9070,7 @@ C_{\ref{thm:ergodicthm-interpolation},n,(p_i)_{i\in[n)}}
 Apply Proposition \ref{interpolated real variable estimate} to real-valued inputs and then Theorem \ref{Calderon transference external} with $g(J)=J^{1-2^{2-n}}$. This gives the factor $C_{\ref{Calderon transference external},n}$ in addition to the constant $2^{2n}C_{\ref{thm:nct main real}}$ from Proposition \ref{interpolated real variable estimate}. For complex inputs, expand every $f_i$ into real and imaginary parts. The triangle inequality in $L^2(X;\ell^2([J)))$ contributes at most another factor $2^n$ to the operator norm. Squaring gives the factor $2^{2n}$ in \eqref{ergodic interpolation constant}.
 \end{proof}
 
-\begin{theorem}[Symmetric ergodic jump estimate]\label{thm:ergodicthmJ}\lean{Codex.symmetric_ergodic_jump_estimate}\leanok\uses{thm:ergodicthm-interpolation}\usesdefs{ergodic averages}
+\begin{theorem}[Symmetric ergodic jump estimate]\label{thm:ergodicthmJ}\lean{Auto.symmetric_ergodic_jump_estimate}\leanok\uses{thm:ergodicthm-interpolation}\usesdefs{ergodic averages}
 Let $n\ge2$. Let $(X,\Sigma,\mu)$ be a measure space, let $(T_i)_{i\in[n)}$ be mutually commuting measure preserving transformations, and let $(f_i)_{i\in[n)}$ be complex-valued functions in $L^{2n}(X)$. For every $J\ge1$ and positive integers $N_0<\cdots<N_J$,
 \begin{equation}\label{symmetric ergodic jump estimate}
 \sum_{j\in[J)}\|M_{N_{j+1}}(\mathbf f)-M_{N_j}(\mathbf f)\|_2^2
@@ -9092,7 +9092,7 @@ We have $\sum_{i\in[n)}(2n)^{-1}=1/2$. If $I\subset[n)$ has $m\ge1$ elements, th
 because $m2^{n-m}\ge n$ for $1\le m\le n$. Thus Theorem \ref{thm:ergodicthm-interpolation} applies.
 \end{proof}
 
-\begin{lemma}[From jump estimates to variation]\label{jump estimates imply variation}\lean{Codex.jump_estimates_imply_variation_enorm,Codex.jump_estimates_imply_variation_endpoint_enorm}\leanok\uses{}\usesdefs{}
+\begin{lemma}[From jump estimates to variation]\label{jump estimates imply variation}\lean{Auto.jump_estimates_imply_variation_enorm,Auto.jump_estimates_imply_variation_endpoint_enorm}\leanok\uses{}\usesdefs{}
 Let $B$ be a seminormed space, let $a:\N\to B$, let $r_0\ge2$, and let $D>0$. Assume that, for every $J\ge1$ and every $0<N_0<\cdots<N_J$,
 \begin{equation}\label{abstract jump estimate}
 \sum_{j\in[J)}\|a(N_{j+1})-a(N_j)\|^2\le D J^{1-2/r_0}.

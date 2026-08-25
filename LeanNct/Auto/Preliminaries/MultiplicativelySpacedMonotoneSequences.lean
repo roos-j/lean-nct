@@ -15,7 +15,7 @@ manuscript.
 
 @[expose] public section
 
-namespace Codex
+namespace Auto
 
 open Set
 
@@ -31,7 +31,7 @@ $$
 
 Let ${\rm A}$ be the set of such sequences.
 
-See also [`Codex.A`].
+See also [`Auto.A`].
 -/
 def SpacedSequence (a : ℤ → ℝ) : Prop :=
   ∀ j : ℤ, 0 < a j ∧ 2 * a j ≤ a (j + 1)
@@ -48,7 +48,7 @@ $$
 
 Let ${\rm A}$ be the set of such sequences.
 
-See also [`Codex.SpacedSequence`].
+See also [`Auto.SpacedSequence`].
 -/
 def A : Set (ℤ → ℝ) := {a | SpacedSequence a}
 
@@ -91,7 +91,7 @@ theorem aux_pow_two_mul_shift_le {a : ℤ → ℝ} (ha : SpacedSequence a) (j : 
 
 /--
 Auxiliary explicit extension used in Proposition
- [`Codex.extensionOfSequences`], formalized by
+ [`Auto.extensionOfSequences`], formalized by
 `extensionOfSequences`.
 -/
 noncomputable def aux_extensionOfSequence (J : ℕ) (a : ℤ → ℝ) : ℤ → ℝ := fun j =>
@@ -221,9 +221,9 @@ $j\in\mathbb{Z}$, then $c\in {\rm A}$.
 (iv) If $c:\mathbb{Z}\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all
 $j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-See also [`Codex.smul_mem_A`],
-[`Codex.shift_mem_A`],
-[`Codex.sqrt_sq_add_sq_mem_A`].
+See also [`Auto.smul_mem_A`],
+[`Auto.shift_mem_A`],
+[`Auto.sqrt_sq_add_sq_mem_A`].
 -/
 theorem max_mem_A {a b : ℤ → ℝ} (ha : SpacedSequence a) (hb : SpacedSequence b) :
     SpacedSequence (fun j => max (a j) (b j)) := by
@@ -252,9 +252,9 @@ $j\in\mathbb{Z}$, then $c\in {\rm A}$.
 (iv) If $c:\mathbb{Z}\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all
 $j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-See also [`Codex.max_mem_A`],
-[`Codex.shift_mem_A`],
-[`Codex.sqrt_sq_add_sq_mem_A`].
+See also [`Auto.max_mem_A`],
+[`Auto.shift_mem_A`],
+[`Auto.sqrt_sq_add_sq_mem_A`].
 -/
 theorem smul_mem_A {a : ℤ → ℝ} (ha : SpacedSequence a) {t : ℝ} (ht : 0 < t) :
     SpacedSequence (fun j => t * a j) := by
@@ -280,9 +280,9 @@ $j\in\mathbb{Z}$, then $c\in {\rm A}$.
 (iv) If $c:\mathbb{Z}\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all
 $j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-See also [`Codex.max_mem_A`],
-[`Codex.smul_mem_A`],
-[`Codex.sqrt_sq_add_sq_mem_A`].
+See also [`Auto.max_mem_A`],
+[`Auto.smul_mem_A`],
+[`Auto.sqrt_sq_add_sq_mem_A`].
 -/
 theorem shift_mem_A {a : ℤ → ℝ} (ha : SpacedSequence a) (n : ℤ) :
     SpacedSequence (fun j => a (j + n)) := by
@@ -306,9 +306,9 @@ $j\in\mathbb{Z}$, then $c\in {\rm A}$.
 (iv) If $c:\mathbb{Z}\to (0,\infty)$ is defined by $c(j)=\sqrt{a(j)^2+b(j)^2}$ for all
 $j\in\mathbb{Z}$, then $c\in {\rm A}$.
 
-See also [`Codex.max_mem_A`],
-[`Codex.smul_mem_A`],
-[`Codex.shift_mem_A`].
+See also [`Auto.max_mem_A`],
+[`Auto.smul_mem_A`],
+[`Auto.shift_mem_A`].
 -/
 theorem sqrt_sq_add_sq_mem_A {a b : ℤ → ℝ} (ha : SpacedSequence a) (hb : SpacedSequence b) :
     SpacedSequence (fun j => Real.sqrt (a j ^ 2 + b j ^ 2)) := by
@@ -341,7 +341,7 @@ $$
 
 with the understanding that the value is $\infty$ if there is no such $k$.
 
-See also [`Codex.SequenceDistance`].
+See also [`Auto.SequenceDistance`].
 -/
 def WithinSequenceDistance (a b : ℤ → ℝ) (k : ℕ) : Prop :=
   ∀ j : ℤ, a (j - k) ≤ b j ∧ b j ≤ a (j + k)
@@ -357,7 +357,7 @@ $$
 
 with the understanding that the value is $\infty$ if there is no such $k$.
 
-See also [`Codex.WithinSequenceDistance`].
+See also [`Auto.WithinSequenceDistance`].
 -/
 noncomputable def SequenceDistance (a b : ℤ → ℝ) : WithTop ℕ :=
   by
@@ -438,11 +438,11 @@ Then
 (vi) For all $h\in\mathbb{Z}$,
 $\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.sequenceDistance_comm`],
-[`Codex.sequenceDistance_triangle`],
-[`Codex.sequenceDistance_shift_le`],
-[`Codex.sequenceDistance_smul`],
-[`Codex.sequenceDistance_pow_two_smul_le`].
+See also [`Auto.sequenceDistance_comm`],
+[`Auto.sequenceDistance_triangle`],
+[`Auto.sequenceDistance_shift_le`],
+[`Auto.sequenceDistance_smul`],
+[`Auto.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_zero_eq {a b : ℤ → ℝ} (h : SequenceDistance a b = 0) : a = b := by
   classical
@@ -475,11 +475,11 @@ Then
 (vi) For all $h\in\mathbb{Z}$,
 $\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.sequenceDistance_zero_eq`],
-[`Codex.sequenceDistance_triangle`],
-[`Codex.sequenceDistance_shift_le`],
-[`Codex.sequenceDistance_smul`],
-[`Codex.sequenceDistance_pow_two_smul_le`].
+See also [`Auto.sequenceDistance_zero_eq`],
+[`Auto.sequenceDistance_triangle`],
+[`Auto.sequenceDistance_shift_le`],
+[`Auto.sequenceDistance_smul`],
+[`Auto.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_comm (a b : ℤ → ℝ) :
     SequenceDistance a b = SequenceDistance b a := by
@@ -520,11 +520,11 @@ Then
 (vi) For all $h\in\mathbb{Z}$,
 $\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.sequenceDistance_zero_eq`],
-[`Codex.sequenceDistance_comm`],
-[`Codex.sequenceDistance_shift_le`],
-[`Codex.sequenceDistance_smul`],
-[`Codex.sequenceDistance_pow_two_smul_le`].
+See also [`Auto.sequenceDistance_zero_eq`],
+[`Auto.sequenceDistance_comm`],
+[`Auto.sequenceDistance_shift_le`],
+[`Auto.sequenceDistance_smul`],
+[`Auto.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_triangle (a b c : ℤ → ℝ) :
     SequenceDistance a c ≤ SequenceDistance a b + SequenceDistance b c := by
@@ -561,11 +561,11 @@ Then
 (vi) For all $h\in\mathbb{Z}$,
 $\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.sequenceDistance_zero_eq`],
-[`Codex.sequenceDistance_comm`],
-[`Codex.sequenceDistance_triangle`],
-[`Codex.sequenceDistance_smul`],
-[`Codex.sequenceDistance_pow_two_smul_le`].
+See also [`Auto.sequenceDistance_zero_eq`],
+[`Auto.sequenceDistance_comm`],
+[`Auto.sequenceDistance_triangle`],
+[`Auto.sequenceDistance_smul`],
+[`Auto.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_shift_le {a b c : ℤ → ℝ}
     (ha : SpacedSequence a) (hb : SpacedSequence b)
@@ -612,11 +612,11 @@ Then
 (vi) For all $h\in\mathbb{Z}$,
 $\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.sequenceDistance_zero_eq`],
-[`Codex.sequenceDistance_comm`],
-[`Codex.sequenceDistance_triangle`],
-[`Codex.sequenceDistance_shift_le`],
-[`Codex.sequenceDistance_pow_two_smul_le`].
+See also [`Auto.sequenceDistance_zero_eq`],
+[`Auto.sequenceDistance_comm`],
+[`Auto.sequenceDistance_triangle`],
+[`Auto.sequenceDistance_shift_le`],
+[`Auto.sequenceDistance_pow_two_smul_le`].
 -/
 theorem sequenceDistance_smul (a b : ℤ → ℝ) {t : ℝ} (ht : 0 < t) :
     SequenceDistance (fun j => t * a j) (fun j => t * b j) = SequenceDistance a b := by
@@ -666,11 +666,11 @@ Then
 (vi) For all $h\in\mathbb{Z}$,
 $\operatorname{dist}(a,2^h a)\le |h|$.
 
-See also [`Codex.sequenceDistance_zero_eq`],
-[`Codex.sequenceDistance_comm`],
-[`Codex.sequenceDistance_triangle`],
-[`Codex.sequenceDistance_shift_le`],
-[`Codex.sequenceDistance_smul`].
+See also [`Auto.sequenceDistance_zero_eq`],
+[`Auto.sequenceDistance_comm`],
+[`Auto.sequenceDistance_triangle`],
+[`Auto.sequenceDistance_shift_le`],
+[`Auto.sequenceDistance_smul`].
 -/
 theorem sequenceDistance_pow_two_smul_le {a : ℤ → ℝ} (ha : SpacedSequence a) (h : ℤ) :
     SequenceDistance a (fun j => (2 : ℝ) ^ h * a j) ≤ (Int.natAbs h : WithTop ℕ) := by
@@ -721,4 +721,4 @@ $$
 def sequenceDistanceBall (a : ℤ → ℝ) (r : WithTop ℕ) : Set (ℤ → ℝ) :=
   {b | SpacedSequence b ∧ SequenceDistance a b ≤ r}
 
-end Codex
+end Auto

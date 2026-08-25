@@ -14,7 +14,7 @@ The manuscript's coordinate and analytic notation that is not already supplied b
 
 @[expose] public section
 
-namespace Codex
+namespace Auto
 
 open MeasureTheory
 open scoped BigOperators ENNReal
@@ -114,8 +114,8 @@ $$
     .\right\rangle^N)_{(s)}(x)=s^{-1}(1+|s^{-1}x|)^{-N}\, .
 $$
 
-See also [`Codex.scaledBracketBump`],
-[`Codex.scaledBracketBumpReal`].
+See also [`Auto.scaledBracketBump`],
+[`Auto.scaledBracketBumpReal`].
 -/
 noncomputable def bracketBump (x : ℝ) : ℝ :=
   (1 + |x|)⁻¹
@@ -136,8 +136,8 @@ $$
     .\right\rangle^N)_{(s)}(x)=s^{-1}(1+|s^{-1}x|)^{-N}\, .
 $$
 
-See also [`Codex.bracketBump`],
-[`Codex.scaledBracketBumpReal`].
+See also [`Auto.bracketBump`],
+[`Auto.scaledBracketBumpReal`].
 -/
 noncomputable def scaledBracketBump (N : ℕ) (s x : ℝ) : ℝ :=
   s⁻¹ * (1 + |s⁻¹ * x|)⁻¹ ^ N
@@ -158,10 +158,10 @@ $$
     .\right\rangle^N)_{(s)}(x)=s^{-1}(1+|s^{-1}x|)^{-N}\, .
 $$
 
-See also [`Codex.bracketBump`],
-[`Codex.scaledBracketBump`].
+See also [`Auto.bracketBump`],
+[`Auto.scaledBracketBump`].
 -/
 noncomputable def scaledBracketBumpReal (N s x : ℝ) : ℝ :=
   s⁻¹ * Real.rpow (1 + |s⁻¹ * x|) (-N)
 
-end Codex
+end Auto

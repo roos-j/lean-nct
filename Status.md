@@ -36,7 +36,7 @@ Lean file: Defs.lean
 
 ## From real to ergodic
 
-Lean file: Codex/RealToErgodic.lean
+Lean file: Auto/RealToErgodic.lean
 
 #### Theorems
 
@@ -58,11 +58,11 @@ Lean file: Codex/RealToErgodic.lean
 
 ## Preliminaries
 
-Lean file: Codex/Preliminaries
+Lean file: Auto/Preliminaries
 
 ### Notation
 
-Lean file: Codex/Preliminaries/Notation.lean
+Lean file: Auto/Preliminaries/Notation.lean
 
 #### Definitions
 
@@ -71,7 +71,7 @@ Lean file: Codex/Preliminaries/Notation.lean
 
 ### The Wiener space $W_0$
 
-Lean file: Codex/WienerSpace.lean
+Lean file: Auto/WienerSpace.lean
 
 #### Definitions
 
@@ -89,7 +89,7 @@ Lean file: Codex/WienerSpace.lean
 
 ### Convolution along a vector
 
-Lean file: Codex/Preliminaries/ConvolutionAlongVector.lean
+Lean file: Auto/Preliminaries/ConvolutionAlongVector.lean
 
 #### Definitions
 
@@ -101,7 +101,7 @@ Lean file: Codex/Preliminaries/ConvolutionAlongVector.lean
 
 ### K kernels
 
-Lean file: Codex/Preliminaries/KKernels.lean
+Lean file: Auto/Preliminaries/KKernels.lean
 
 #### Definitions
 
@@ -121,7 +121,7 @@ Lean file: Codex/Preliminaries/KKernels.lean
 
 ### M kernels
 
-Lean file: Codex/Preliminaries/MKernels.lean
+Lean file: Auto/Preliminaries/MKernels.lean
 
 #### Definitions
 
@@ -136,7 +136,7 @@ Lean file: Codex/Preliminaries/MKernels.lean
 
 ### Multiplicatively spaced monotone sequences
 
-Lean file: Codex/Preliminaries/MultiplicativelySpacedMonotoneSequences.lean
+Lean file: Auto/Preliminaries/MultiplicativelySpacedMonotoneSequences.lean
 
 #### Definitions
 
@@ -152,7 +152,7 @@ Lean file: Codex/Preliminaries/MultiplicativelySpacedMonotoneSequences.lean
 
 ### Gaussians
 
-Lean file: Codex/Preliminaries/Gaussians.lean
+Lean file: Auto/Preliminaries/Gaussians.lean
 
 #### Theorems
 
@@ -165,7 +165,7 @@ Lean file: Codex/Preliminaries/Gaussians.lean
 
 ### Bumps and their estimates
 
-Lean file: Codex/Preliminaries/BumpsAndEstimates.lean
+Lean file: Auto/Preliminaries/BumpsAndEstimates.lean
 
 #### Definitions
 
@@ -204,11 +204,11 @@ Lean file: Codex/Preliminaries/BumpsAndEstimates.lean
 
 ## The main argument
 
-Lean file: Codex/MainArgument
+Lean file: Auto/MainArgument
 
 ### The sandwich kernel
 
-Lean file: Codex/MainArgument/SandwichKernel.lean
+Lean file: Auto/MainArgument/SandwichKernel.lean
 
 #### Definitions
 
@@ -227,7 +227,7 @@ Lean file: Codex/MainArgument/SandwichKernel.lean
 
 ### Multipliers $H$, $L$, $N$
 
-Lean file: Codex/MainArgument/MultipliersHLN.lean
+Lean file: Auto/MainArgument/MultipliersHLN.lean
 
 #### Definitions
 
@@ -254,7 +254,7 @@ Lean file: Codex/MainArgument/MultipliersHLN.lean
 
 ### Gaussian domination
 
-Lean file: Codex/MainArgument/GaussianDomination.lean
+Lean file: Auto/MainArgument/GaussianDomination.lean
 
 #### Theorems
 
@@ -270,7 +270,7 @@ Lean file: Codex/MainArgument/GaussianDomination.lean
 
 ### Main induction
 
-Lean file: Codex/MainArgument/MainInduction.lean
+Lean file: Auto/MainArgument/MainInduction.lean
 
 #### Definitions
 
@@ -294,11 +294,11 @@ Lean file: Codex/MainArgument/MainInduction.lean
 
 ## Reduction to the main argument
 
-Lean file: Codex/Reduction
+Lean file: Auto/Reduction
 
 ### Further preliminaries for the reduction / Average to prism form
 
-Lean file: Codex/Reduction/AToLambda.lean
+Lean file: Auto/Reduction/AToLambda.lean
 
 #### Theorems
 
@@ -306,7 +306,7 @@ Lean file: Codex/Reduction/AToLambda.lean
 
 ### Further preliminaries for the reduction / Variation seminorms
 
-Lean file: Codex/Reduction/VariationSeminorms.lean
+Lean file: Auto/Reduction/VariationSeminorms.lean
 
 #### Theorems
 
@@ -315,7 +315,7 @@ Lean file: Codex/Reduction/VariationSeminorms.lean
 
 ### Further preliminaries for the reduction / Bump functions
 
-Lean file: Codex/Reduction/BumpFunctions.lean
+Lean file: Auto/Reduction/BumpFunctions.lean
 
 #### Theorems
 
@@ -328,7 +328,7 @@ Lean file: Codex/Reduction/BumpFunctions.lean
 
 ### Further preliminaries for the reduction / Windows and pairs
 
-Lean file: Codex/Reduction/WindowsAndPairs.lean
+Lean file: Auto/Reduction/WindowsAndPairs.lean
 
 #### Definitions
 
@@ -343,7 +343,7 @@ Lean file: Codex/Reduction/WindowsAndPairs.lean
 
 ### Further preliminaries for the reduction / A smoothing decomposition
 
-Lean file: Codex/Reduction/SmoothingDecomposition.lean
+Lean file: Auto/Reduction/SmoothingDecomposition.lean
 
 #### Definitions
 
@@ -367,7 +367,7 @@ Lean file: Codex/Reduction/SmoothingDecomposition.lean
 
 ### Further preliminaries for the reduction / Miscellany
 
-Lean file: Codex/Reduction/Miscellany.lean
+Lean file: Auto/Reduction/Miscellany.lean
 
 #### Theorems
 
@@ -381,7 +381,7 @@ Lean file: Codex/Reduction/Miscellany.lean
 
 ### On-diagonal from main argument
 
-Lean file: Codex/Reduction/OnDiagonalMainArgument.lean
+Lean file: Auto/Reduction/OnDiagonalMainArgument.lean
 
 #### Theorems
 
@@ -399,7 +399,7 @@ Lean file: Codex/Reduction/OnDiagonalMainArgument.lean
 
 ### On-diagonal from off-diagonal estimates
 
-Lean file: Codex/Reduction/OnDiagonalOffDiagonal.lean
+Lean file: Auto/Reduction/OnDiagonalOffDiagonal.lean
 
 #### Theorems
 
@@ -424,7 +424,7 @@ Lean file: Codex/Reduction/OnDiagonalOffDiagonal.lean
 
 ### Final reduction: proof of main theorem
 
-Lean file: Codex/Reduction/FinalReduction.lean
+Lean file: Auto/Reduction/FinalReduction.lean
 
 #### Theorems
 

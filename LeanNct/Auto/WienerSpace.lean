@@ -16,7 +16,7 @@ metric.  We use a predicate `MemW0`, rather than introducing a subtype for the s
 
 @[expose] public section
 
-namespace Codex
+namespace Auto
 
 open MeasureTheory Metric Set Filter Topology
 open scoped BigOperators ENNReal Function
@@ -24,7 +24,7 @@ open scoped BigOperators ENNReal Function
 /--
 **Definition.**
 
-Let $d\in \mathbb{N}$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
+Let $d\in \mathbb{N}$.  By Proposition [`Auto.localSupremumMeasurability`], the integrand in the
 following definition is finite and measurable. Define
 
 $$
@@ -49,7 +49,7 @@ $$
 We also say that $f$ is in $W_0$ as again the type of $f$
 determines $d$.
 
-See also [`Codex.MemW0`], [`Codex.wienerNorm`], [`Codex.wienerNormOne`].
+See also [`Auto.MemW0`], [`Auto.wienerNorm`], [`Auto.wienerNormOne`].
 -/
 noncomputable def wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
     (f : E → F) (r : ℝ) (x : E) : ℝ :=
@@ -72,7 +72,7 @@ theorem aux_wienerEnvelope_eq_sSup {E F : Type*} [NormedAddCommGroup E] [NormedA
     · simp
 
 /--
-Auxiliary for Proposition [`Codex.localSupremumMeasurability`]; it proves the stronger
+Auxiliary for Proposition [`Auto.localSupremumMeasurability`]; it proves the stronger
 continuity assertion used by localSupremumMeasurability.
 -/
 theorem continuous_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
@@ -84,7 +84,7 @@ theorem continuous_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSp
     (show Continuous (fun p : E × E ↦ ‖f (p.1 + p.2)‖) by fun_prop)
 
 /--
-The measurability conclusion of Proposition [`Codex.localSupremumMeasurability`]; see
+The measurability conclusion of Proposition [`Auto.localSupremumMeasurability`]; see
 localSupremumMeasurability.
 -/
 theorem measurable_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
@@ -104,7 +104,7 @@ theorem aux_exists_wienerEnvelope_eq_and_ge {E F : Type*} [NormedAddCommGroup E]
   exact ⟨z, hz, hEq, hzmax⟩
 
 /--
-The upper-semicontinuity conclusion of Proposition [`Codex.localSupremumMeasurability`];
+The upper-semicontinuity conclusion of Proposition [`Auto.localSupremumMeasurability`];
 see localSupremumMeasurability.
 -/
 theorem upperSemicontinuous_wienerEnvelope {E F : Type*} [NormedAddCommGroup E] [ProperSpace E]
@@ -132,7 +132,7 @@ theorem localSupremumMeasurability {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 
 /--
 **Definition.**
 
-Let $d\in \mathbb{N}$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
+Let $d\in \mathbb{N}$.  By Proposition [`Auto.localSupremumMeasurability`], the integrand in the
 following definition is finite and measurable. Define
 
 $$
@@ -157,7 +157,7 @@ $$
 We also say that $f$ is in $W_0$ as again the type of $f$
 determines $d$.
 
-See also [`Codex.wienerEnvelope`], [`Codex.wienerNorm`], [`Codex.wienerNormOne`].
+See also [`Auto.wienerEnvelope`], [`Auto.wienerNorm`], [`Auto.wienerNormOne`].
 -/
 def MemW0 {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpace E] [NormedAddCommGroup 𝕜]
     (f : E → 𝕜) : Prop :=
@@ -166,7 +166,7 @@ def MemW0 {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpace E] [NormedAddCom
 /--
 **Definition.**
 
-Let $d\in \mathbb{N}$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
+Let $d\in \mathbb{N}$.  By Proposition [`Auto.localSupremumMeasurability`], the integrand in the
 following definition is finite and measurable. Define
 
 $$
@@ -191,7 +191,7 @@ $$
 We also say that $f$ is in $W_0$ as again the type of $f$
 determines $d$.
 
-See also [`Codex.wienerEnvelope`], [`Codex.MemW0`], [`Codex.wienerNormOne`].
+See also [`Auto.wienerEnvelope`], [`Auto.MemW0`], [`Auto.wienerNormOne`].
 -/
 noncomputable def wienerNorm {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpace E]
     [NormedAddCommGroup 𝕜] (f : E → 𝕜) (r : ℝ) : ℝ≥0∞ :=
@@ -200,7 +200,7 @@ noncomputable def wienerNorm {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpa
 /--
 **Definition.**
 
-Let $d\in \mathbb{N}$.  By Proposition [`Codex.localSupremumMeasurability`], the integrand in the
+Let $d\in \mathbb{N}$.  By Proposition [`Auto.localSupremumMeasurability`], the integrand in the
 following definition is finite and measurable. Define
 
 $$
@@ -225,7 +225,7 @@ $$
 We also say that $f$ is in $W_0$ as again the type of $f$
 determines $d$.
 
-See also [`Codex.wienerEnvelope`], [`Codex.MemW0`], [`Codex.wienerNorm`].
+See also [`Auto.wienerEnvelope`], [`Auto.MemW0`], [`Auto.wienerNorm`].
 -/
 noncomputable abbrev wienerNormOne {E 𝕜 : Type*} [NormedAddCommGroup E] [MeasureSpace E]
     [NormedAddCommGroup 𝕜] (f : E → 𝕜) : ℝ≥0∞ :=
@@ -886,7 +886,7 @@ theorem aux_integral_wienerEnvelope_le_max_one_three_mul_div_pow_mul {d : ℕ} {
         mul_le_mul_of_nonneg_right (le_max_right _ _) hnon
 
 /--
-Constant specified in Proposition [`Codex.wienerNorm_le_max_one_three_mul_div_pow_mul`], formalized
+Constant specified in Proposition [`Auto.wienerNorm_le_max_one_three_mul_div_pow_mul`], formalized
 by `wienerNorm_le_max_one_three_mul_div_pow_mul`.
 -/
 noncomputable def C_wienerNormRadiusIndependence (d : ℕ) (r s : ℝ) : ℝ :=
@@ -912,8 +912,8 @@ $$
 In particular, for every $0<r<\infty$, a  continuous
 $f:\mathbb{R}^d\to \mathbb{K}$ is in $W_0$ if and only if $\|f\|_{W_0,r}<\infty$.
 
-See also [`Codex.memW0_iff_integrable_wienerEnvelope`],
-[`Codex.wienerNorm_le_max_one_three_mul_div_pow_mul`].
+See also [`Auto.memW0_iff_integrable_wienerEnvelope`],
+[`Auto.wienerNorm_le_max_one_three_mul_div_pow_mul`].
 -/
 theorem wienerNorm_le_max_one_three_mul_div_pow_mul {d : ℕ} {𝕜 : Type*}
     [NormedAddCommGroup 𝕜] {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : Continuous f)
@@ -971,7 +971,7 @@ $$
 In particular, for every $0<r<\infty$, a  continuous
 $f:\mathbb{R}^d\to \mathbb{K}$ is in $W_0$ if and only if $\|f\|_{W_0,r}<\infty$.
 
-See also [`Codex.wienerNorm_le_max_one_three_mul_div_pow_mul`].
+See also [`Auto.wienerNorm_le_max_one_three_mul_div_pow_mul`].
 -/
 theorem memW0_iff_integrable_wienerEnvelope {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : Continuous f) {r : ℝ} (hr : 0 < r) :
@@ -1087,7 +1087,7 @@ $$
 \|f\|_p\le C_{\text{P:lp-embedding},d}^{\tfrac 1p -1}\|f\|_{W_0}    \, .
 $$
 
-See also [`Codex.MemW0.memLp`].
+See also [`Auto.MemW0.memLp`].
 -/
 theorem MemW0.memLp {d : ℕ} {𝕜 : Type*} [NormedAddCommGroup 𝕜]
     {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : MemW0 f) {p : ℝ≥0∞} (hp : 1 ≤ p) :
@@ -1319,7 +1319,7 @@ $$
 \|f\|_p\le C_{\text{P:lp-embedding},d}^{\frac 1p -1}\|f\|_{W_0}    \, .
 $$
 
-See also [`Codex.MemW0.memLp`].
+See also [`Auto.MemW0.memLp`].
 -/
 theorem MemW0.eLpNorm_toReal_le_wienerEnvelope {d : ℕ} {𝕜 : Type*}
     [NormedAddCommGroup 𝕜] {f : EuclideanSpace ℝ (Fin d) → 𝕜} (hf : MemW0 f)
@@ -2298,7 +2298,7 @@ $$
 $$
 
 See also
-[`Codex.exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinearMap_bound`].
+[`Auto.exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinearMap_bound`].
 -/
 theorem exists_wienerEnvelope_fiber_and_integral_comp_injective_continuousLinearMap_bound
     {m l n : ℕ} {K : Type*} [NormedAddCommGroup K] [NormedSpace ℝ K]
@@ -2574,7 +2574,7 @@ $$
         \|f\|_{W_0}\le \prod_{j\in [J)}\|f_j\|_{W_0}\, .
 $$
 
-See also [`Codex.fintype_tensor_wienerNorm_le`].
+See also [`Auto.fintype_tensor_wienerNorm_le`].
 -/
 theorem MemW0.fintype_tensor {ι : Type*} [Fintype ι]
     {d : ι → ℕ} {𝕜 : Type*} [NormedField 𝕜]
@@ -2610,7 +2610,7 @@ $$
         \|f\|_{W_0}\le \prod_{j\in [J)}\|f_j\|_{W_0}\, .
 $$
 
-See also [`Codex.MemW0.fintype_tensor`].
+See also [`Auto.MemW0.fintype_tensor`].
 -/
 theorem fintype_tensor_wienerNorm_le {ι : Type*} [Fintype ι]
     {d : ι → ℕ} {𝕜 : Type*} [NormedField 𝕜]
@@ -2879,4 +2879,4 @@ theorem aux_brascamp_lieb_of_memW0_pullback
       _ ≤ C * ∏ i, ∫ x, wienerEnvelope (f i) 1 x :=
         mul_le_mul_of_nonneg_left (fintype_tensor_wienerNorm_le hf) hC
 
-end Codex
+end Auto

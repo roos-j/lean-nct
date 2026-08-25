@@ -15,7 +15,7 @@ real-variable and ergodic-average definitions used by the application in
 `RealToErgodic`.
 -/
 
-namespace Codex
+namespace Auto
 
 universe u
 
@@ -3138,4 +3138,4 @@ theorem ct_calderon_transference_external {n : ℕ} (hn : 2 ≤ n)
 
 end
 
-end Codex
+end Auto

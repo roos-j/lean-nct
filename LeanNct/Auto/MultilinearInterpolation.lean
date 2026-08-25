@@ -42,7 +42,7 @@ open MeasureTheory Complex.HadamardThreeLines Real Filter Topology ENNReal Asymp
   MeromorphicOn
 open scoped BigOperators
 
-namespace Codex
+namespace Auto
 
 /--
 Turns the pointwise growth hypothesis used in Stein's theorem into the filter formulation
@@ -9474,4 +9474,4 @@ theorem aux_eLpNorm_sq_packLpCMLM_eq_sum_raw {J : ℕ} {ι Y : Type*} {X : ι �
 end
 
 
-end Codex
+end Auto
