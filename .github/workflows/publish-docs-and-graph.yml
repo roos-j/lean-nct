@@ -45,14 +45,37 @@ jobs:
           mk_all-check: false
 
       - name: Compile API documentation
-        uses: leanprover-community/docgen-action@7b5b9a1822650bd45aaeb4182d94bceba2030f89 # 2026-04-14
-        with:
-          api-docs: true
-          blueprint: false
-          build-page: false
-          deploy: false
-          homepage: docs
-          use-github-cache: true
+        env:
+          # Generate pages for LeanNct only; every other module root (Mathlib,
+          # Batteries, Aesop, ..., and core Init/Std/Lean/Lake) is treated as
+          # external and linked out to the URL below instead of being built.
+          DOCGEN_LOCAL_MODULE_ROOTS: LeanNct
+          DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
+        run: |
+          mkdir -p docbuild
+          cp lean-toolchain docbuild/
+          cat > docbuild/lakefile.toml <<'EOF'
+          name = "docbuild"
+          reservoir = false
+          version = "0.1.0"
+          packagesDir = "../.lake/packages"
+
+          [[require]]
+          name = "LeanNct"
+          path = "../"
+
+          [[require]]
+          name = "doc-gen4"
+          git = "https://github.com/roos-j/doc-gen4"
+          rev = "91b8628f3867e12e85e4cead0d9986c79592a841"
+          EOF
+          cd docbuild
+          MATHLIB_NO_CACHE_ON_UPDATE=1 ~/.elan/bin/lake update LeanNct
+          ~/.elan/bin/lake build LeanNct:docs
+          cd ..
+          mkdir -p _site/docs
+          cp -r docbuild/.lake/build/doc/. _site/docs/
+          echo '<!doctype html><meta http-equiv="refresh" content="0; url=docs/">' > _site/index.html
 
       - name: Build dependency graph
         uses: xu-cheng/texlive-action@22c04326a5d855880f9d39bb955138bf11c6df80 # v3
@@ -62,8 +85,8 @@ jobs:
             apk add --no-cache graphviz nodejs npm python3
             npm install --no-save --prefix /tmp/mathjax mathjax-full@3.2.2
             python3 dependency_graph/latex_to_graph_json.py blueprint/blueprint.tex /tmp/graph.json
-            mkdir -p docs/dependency_graph
-            python3 dependency_graph/graph_json_to_html.py /tmp/graph.json docs/dependency_graph/index.html \
+            mkdir -p _site/dependency_graph
+            python3 dependency_graph/graph_json_to_html.py /tmp/graph.json _site/dependency_graph/index.html \
               --mathjax-js /tmp/mathjax/node_modules/mathjax-full/es5/tex-svg-full.js \
               --lean-url-pattern 'https://roos-j.github.io/lean-nct/docs/find/?pattern={lean_name}&strict=false#doc'
 
@@ -73,7 +96,7 @@ jobs:
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
