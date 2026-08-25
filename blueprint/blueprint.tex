@@ -115,17 +115,41 @@ mathx10
 
 \title[Norm-variation of multiple ergodic averages]{A blueprint for the formalization of norm-variation of multiple ergodic averages for commuting transformations}
 
+\author[van Doorn]{Floris van Doorn}
+\address{Mathematical Institute, \newline
+	University of Bonn,
+	Endenicher Allee 60, 53115 Bonn,
+	Germany}
+\email{vdoorn@math.uni-bonn.de}
+
+\author[Durcik]{Polona Durcik}
+\address{Schmid College of Science and Technology, \newline  Chapman University, One University Drive, Orange, CA 92866, USA}
+\email{durcik@chapman.edu}
+
+\author[Roos]{Joris Roos}
+ \address{Department of Mathematics and Statistics, \newline
+	University of Massachussetts Lowell, 1 University Ave,
+	Lowell, MA 01854, USA}
+\email{joris\_roos@uml.edu}
+
+
+\author[Slav\'ikov\'a]{Lenka Slav\'ikov\'a}
+\address{Department of Mathematical Analysis, Faculty of Mathematics and Physics, \newline Charles University, Sokolovsk\'a 83, 186 75 Praha 8, Czech Republic}
+\email{slavikova@karlin.mff.cuni.cz}
+
+\author[Thiele]{Christoph Thiele}
+ \address{Mathematical Institute, \newline
+	University of Bonn,
+	Endenicher Allee 60, 53115 Bonn,
+	Germany}
+\email{thiele@math.uni-bonn.de}
+
 
 \date{\today}
 \subjclass[2020]{Primary 42B20, 68V20; Secondary 42B15, 37A30.}
 
 \begin{document}
 \tdplotsetmaincoords{70}{110}
-
-\begin{center}
-    {\color{red}{This document is currently undergoing automated editing through multiple passes with human feedback.
-    This is the document of PASS 9.}}
-\end{center}
 
 \begin{abstract}
 This blueprint serves as a companion to a forthcoming, shorter traditional mathematical paper. The purpose of this blueprint is two-fold: first, it has served as the foundation for a formalization in Lean 4 of these results. This formalization has been completed largely automatically, making essential use of current frontier large language models. Second, it will serve as a resource to readers of the main paper who are interested in further technical details of the proofs.
@@ -138,12 +162,12 @@ The main result concerns norm-variation estimates for multiple ergodic averages 
 
 Let $n$ be a natural number, $X$ a measurable space and $\mu$ a measure on $X$. 
 Recall that that $T: X \to X$ is a {\em measure preserving transformation} if for every measurable $A\subset X$ the set $T^{-1}(A)$ is measurable and has the
-same measure as $A$.
+same measure as $A$. For a non-negative integer $n$ let $[n)=\{k\,:\,0\le k<n\}$.
 
 \begin{definition}[Multiple ergodic average]\label{ergodic averages}\lean{nCT.multipleErgodicAverage}\uses{}\usesdefs{}
 Let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $n$-tuple of complex-valued functions on $X$ and let $(T_j)_{j\in [n)}$ be an $n$-tuple of maps $X\to X$. For every positive integer $N$ and every $x\in X$, define the multiple ergodic average
 \begin{equation}\label{eq:averages-multiple}
-M_{N}(\mathbf{f})(x) = N^{-1} \sum_{0\le i<N} \prod_{0\le j<n} f_j(T_j^i x).
+M_{N}(\mathbf{f})(x) = N^{-1} \sum_{i \in [N)} \prod_{j \in [n)} f_j(T_j^i x).
 \end{equation}
 \end{definition}
 
@@ -161,7 +185,7 @@ positive integer $N$ and
 \begin{equation}\label{main ergodic variation estimate}
  \| M_{N} (\mathbf{f}) \|_{V_{r}(L^2(X))}
 \le C_{\ref{thm:ergodicthm},n,r}
- \prod_{j=0}^{n-1} \|f_j\|_{2n},
+ \prod_{j\in [n)} \|f_j\|_{2n},
 \end{equation}
 where for $n=2$,
 $C_{\ref{thm:ergodicthm},2,r}=2^{344}$,
@@ -171,22 +195,21 @@ $C_{\ref{thm:ergodicthm},n,r}
 2^{4n+337}
 \Big(\frac{r}{r-2^{n-1}}\Big)^{1/r}.$
 \end{theorem}
-(See Definition \ref{variation seminorm on positive integers} for the definition of the $r$-variation norm.)
-
-Since finite variation of a sequence implies convergence of the sequence and since $L^\infty(X)\subset L^{2n}(X)$ if $X$ is a probability space, Theorem \ref{thm:ergodicthm} immediately recovers Tao's theorem  \cite[Theorem 1.1]{Tao07} for $n\ge 2$, which concerned {\em qualitative} norm convergence. Ergodic-theoretic proofs of Tao's theorem were also given by Austin \cite{Austin10}, Host \cite{Host09}, and a generalization to nilpotent groups was proved in \cite{Walsh12}.
-Norm-convergence for a single ergodic average ($n=1$) for $r\ge 2$ was proved by Jones--Ostrovskii--Rosenblatt \cite{JonesOstrovskiiRosenblatt96}. 
+  The definition of the $r$-variation norm is given in Definition \ref{variation seminorm on positive integers}.
+Since finite variation of a sequence implies convergence of the sequence and since $L^\infty(X)\subset L^{2n}(X)$ if $X$ is a probability space, Theorem \ref{thm:ergodicthm} immediately recovers Tao's theorem  \cite[Theorem 1.1]{Tao07} for $n\ge 2$, which concerned qualitative norm convergence. Ergodic-theoretic proofs of Tao's theorem were also given by Austin \cite{Austin10}, Host \cite{Host09}, and a generalization to nilpotent groups was proved in \cite{Walsh12}.
+Norm-convergence for a single ergodic average with $n=1$ and  $r\ge 2$ was proved by Jones, Ostrovskii, and Rosenblatt \cite{JonesOstrovskiiRosenblatt96}. 
 Theorem \ref{thm:ergodicthm} resolves an open problem that was stated by Avigad and Rute in the closing section of \cite{AvigadRute15}. 
 Versions of Theorem \ref{thm:ergodicthm} were proved for $n=2$ in \cite{DurcikKovacSkrebThiele19,Kovac16}, and for $n=3$ in \cite{DurcikSlavikovaThiele26}.
 
-Theorem~\ref{thm:ergodicthm} has been reduced by the Calder\'on transference principle to Theorem~\ref{thm:nct main real} below --- extending the cases $n = 2$ and $n = 3$ --- by Pernegger \cite{Pernegger2025}, who also formalized this reduction. \jr{discuss} Theorem~\ref{thm:nct main real} is an {\em a priori} estimate over the real numbers. The proof of this latter estimate is the heart of the matter of this paper. It is closely related to the study of certain singular Brascamp--Lieb inequalities in real harmonic analysis, which can be viewed as generalizations of Kova\v{c}'s twisted paraproduct \cite{Kovac12}.  Also see the survey \cite{DurcikThiele21survey} and \cite{DurcikKovacThiele19,DurcikThiele20, DurcikSlavikovaThiele22}. 
+Theorem~\ref{thm:ergodicthm} is  reduced  to Theorem~\ref{thm:nct main real} below  by the Calder\'on transference principle; see  \cite{DurcikKovacSkrebThiele19} and  Pernegger \cite{Pernegger2025}, who also formalized this reduction.  Theorem~\ref{thm:nct main real} is an a priori estimate over the real numbers. The proof of this latter estimate is the heart of the matter of this paper. 
+It is closely related to the study of cancellation estimates for the simplex Hilbert transform \cite{DurcikKovacThiele19}  and  the singular Brascamp--Lieb estimates  \cite{Kovac12,DurcikSlavikovaThiele22} in real harmonic analysis, but for more general kernels with multi-parameter features. We also refer the reader to   the survey \cite{DurcikThiele21survey}. 
 
-\pd{I would suggest to explicitly mention cancellation estimates for the simplex Hilbert transform rather than the twisted paraproduct (we can still include it in SBL literature, of course). These  averages  lead to simplex HT and I think we should mention the operator of the correct complexity (twisted paraproduct is associated with smoother averages, the so-called cubic averages)
-something short like this: 
+ 
 
-The proof of this latter estimate is the heart of the matter of this paper.  It is closely related to the study of cancellation estimates for the simplex Hilbert transform \cite{DurcikKovacThiele19}  and  the singular Brascamp--Lieb estimates  \cite{Kovac12,DurcikThiele20, DurcikSlavikovaThiele22} in real harmonic analysis.}\jr{Yes please implement change}
+
 
 \begin{definition}[Twisted average]\lean{nCT.twistedAverage,nCT.rescaledTwistedAverage}
-Let $n\in\mathbb{N}$. For an $n$-tuple of real-valued functions $\mathbf f = (f_i)_{i\in \mathbb{N}, i<n}$ on $\R^n$, a function $\chi:\R\to\R$ and $x\in\mathbb{R}^n$ denote
+Let $n\in\mathbb{N}$. For an $n$-tuple of real-valued functions $\mathbf f = (f_i)_{i\in [n)}$ on $\R^n$, a function $\chi:\R\to\R$ and $x\in\mathbb{R}^n$ denote
 \begin{equation}\label{A_def}\uses{}\usesdefs{}
 A(\chi,\mathbf f)(x) = \int_{\mathbb{R}} \chi(s)\Big(\prod_{i\in [n)} f_i(x+se_i)\Big)\,ds,
 \end{equation}
@@ -199,26 +222,21 @@ Also set $A_t(\chi,\mathbf{f})=A(\chi_{(t)},\mathbf{f})$, where $\chi_{(t)}(x)=t
 \leanok
 Let $n\ge 2$ be an integer. For every $J\in\mathbb{N}$, positive real numbers $t_0<t_1<\cdots<t_J$, and every $n$-tuple of real-valued Schwartz functions ${\mathbf f}=(f_i)_{i\in[n)}$ satisfying
 \begin{equation}\label{main twisted normalization}
-\|f_i\|_{2^{i+\min(n-i,2)}}=1
+\|f_i\|_{2^{\min(n,i+2)}}=1
 \end{equation}
 for $i\in[n)$, we have 
-% that the function $A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f) -
-%   A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)$ is measurable with finite $L^2(\R^n)$ norm for every $j\in [J)$, and
 \begin{equation}\label{e:ncommuting_real}
 \sum_{j\in[J)}\|A_{t_{j+1}}(\mathbf 1_{[0,1]},\mathbf f)-A_{t_j}(\mathbf 1_{[0,1]},\mathbf f)\|_{L^2(\R^n)}^2
 \le C_{\ref{thm:nct main real}}J^{1-2^{-n+2}},
 \end{equation}
-where
-\begin{equation}\label{main twisted theorem constant}
-C_{\ref{thm:nct main real}}=2^{666}.
-\end{equation}
+where $C_{\ref{thm:nct main real}}=2^{666}$.
 \end{theorem}
 
 \subsection{Use of automation}\label{sec:comments-on-automation}
 A first draft of this blueprint was entirely human-written.
 In particular, all mathematical decisions about the statements, the organization of the proof, and the dependencies are entirely human.
 
-At the final editing stage when all the statements and definitions, and most of the proofs were in place, parts of the blueprint, and eventually the entire blueprint, were given to GPT-5.6-Sol-Pro with detailed instructions. Over several automation passes with human feedback, the present manuscript was produced.
+At the final editing stage when all the statements and definitions, and most of the proofs were in place, parts of the blueprint, and eventually the entire blueprint, were given to \texttt{GPT-5.6-Sol-Pro} with detailed instructions. Over several automation passes with human feedback, the present manuscript was produced.
 A major goal of the automation was to compute and optimize the explicit constants and minimize the possibility of mistakes and small inaccuracies in the arguments.
 Another goal was to fill in routine arguments, or arguments by analogy that were initially left out.
 
@@ -235,21 +253,24 @@ After this blueprint was completed, its contents were formally verified using th
 \begin{center}
 \href{https://github.com/roos-j/lean-nct}{https://github.com/roos-j/lean-nct}
 \end{center}
-The formalization made heavy use of emerging autoformalization capabilities of current frontier models, specifically OpenAI's \texttt{Codex/5.6-terra-ultra}. While the statements of Theorem \ref{thm:ergodicthm} and Theorem \ref{thm:nct main real} and its associated definitions have been carefully formalized by hand, virtually all of the remaining formalization was machine-generated across many extended sessions during a one-week period, with a custom instruction set and careful human supervision. The timeline and required amount of human effort are in striking contrast to those of previous large formalization projects in analysis such as the Carleson project \cite{CarlesonBlueprint}, \cite{CarlesonPaper}, which was predominantly human-generated and concluded its main objectives \pd{maybe remove "its main objectives"?}\jr{no, because the Carleson project still has pending objectives, refactoring, upstreaming} \pd{OK, I just thought "main objectives" sounded AI-like} before the current set of highly formalization-capable models was made publicly available.
-Both the instruction set and the structure of the blueprint were designed with autoformalization in mind and to mitigate some of the problems with current Codex models during long formalization tasks, such as drifting away from target, avoiding the actual task in favor of creating more and more trivial wrappers, and creating an opaque zoo of auxiliary statements and files.
+and is registered on \href{TODO}{Palomar} and archived at \href{TODO}{Zenodo}.
+The formalization made heavy use of emerging autoformalization capabilities of current frontier models. The bulk of the work was completed using OpenAI's \texttt{Codex/5.6-terra-ultra}. While the statements of Theorem \ref{thm:ergodicthm} and Theorem \ref{thm:nct main real} and its associated definitions have been carefully formalized by hand, virtually all of the remaining formalization was machine-generated across many extended sessions during a one-week period, with a custom instruction set and careful human supervision. The timeline and required amount of human effort are in striking contrast to those of previous large formalization projects in analysis such as the Carleson project \cite{CarlesonBlueprint}, \cite{CarlesonPaper}, which was predominantly human-generated and concluded its main goals before the current set of highly formalization-capable models was made publicly available.
+Both the instruction set and the structure of the blueprint were designed with autoformalization in mind and to mitigate some of the problems with current coding agents during long formalization tasks, such as drifting away from target, avoiding the actual task in favor of creating more and more trivial wrappers, and creating an opaque zoo of auxiliary statements and files.
 
-\subsection{Blueprint conventions}
+\subsection{Blueprint choices}
 Several convention choices were crucial in guiding both the structure and the content of this blueprint.
 
 \begin{itemize}
 \item {\em Strict forward reasoning.} After the introduction, all theorems and definitions must exclusively use theorems that were either previously stated and proved, or are standard theorems. The proof of a theorem must directly follow the corresponding statement (with the exception of the theorems in the introduction).
 This naturally aligns the blueprint with the structure of the formalization.
-\item {\em Mathlib awareness.} Generally, only facts that are currently available in mathlib in some shape or form can pass as `standard theorems` that require no proof. %As a consequence, this blueprint proves various facts, that could otherwise be considered `standard`, such as elementary properties of Wiener spaces and various properties of bump functions.
-We make two exceptions to this rule: an instance of the Calder\'on transference principle (Theorem \ref{Calderon transference external}, and a multilinear complex interpolation theorem (Theorem \ref{multilinear interpolation external}). These were essentially already formalized prior to this formalization project (the Calder\'on transference principle was hand-formalized by Pernegger \cite{Pernegger2025}; complex interpolation was autoformalized by one of the authors).
-\item {\em Explicit dependencies.} Whenever a named theorem is used in a proof it must be referred to explicitly. The parameters of the theorem should also usually be made explicit, unless it is clear from context. This includes proofs of hypotheses.
+\item {\em Mathlib awareness.} Generally, only facts that are currently available in mathlib in some shape or form can pass as `standard theorems' that require no proof. 
+We make two exceptions to this rule: an instance of the Calder\'on transference principle (Theorem \ref{Calderon transference external}), and a multilinear complex interpolation theorem (Theorem \ref{multilinear interpolation external}). These were essentially already formalized prior to this formalization project: the Calder\'on transference principle was first hand-formalized by Pernegger \cite{Pernegger2025}; complex interpolation was autoformalized by one of the authors.
+\item {\em Explicit dependencies.} Whenever a named theorem is used in a proof it must be referred to explicitly. The parameters of the theorem should also usually be made explicit, unless it is clear from context (including proofs of hypotheses). This allows for reliable automatic generation of dependency graph metadata.
 \item {\em Treatment of constants.} Every claimed inequality must come with an explicitly defined constant, rather than a constant introduced by an existential quantifier. Every constant must be named after the corresponding statement, e.g. $C_{\ref{H kernel derivative estimate Gaussian domination}}$ for the constant of Proposition \ref{H kernel derivative estimate Gaussian domination}. All dependencies on parameters must be explicitly specified and all constants must be recursively defined in terms of previously introduced constants.
 Most statements with such constants also have a separate lemma following it that unravels the recursion and provides an explicit estimate not depending on any other constants. The latter are exclusively automatically generated.
 \end{itemize}
+
+In this blueprint we also make use of a somewhat unconventional test function space, the Wiener space $W_0$ (see \S \ref{sec:wiener}). This space enjoys convenient invariance properties with respect to the fiberwise constructions common in this project (see e.g. Proposition \ref{W_0 fiber integrals}), and contains certain bump functions lacking rapid decay that play an important role in the argument (see Proposition \ref{diagonal square root}).
 
 \subsection*{Acknowledgments}
 
@@ -257,6 +278,7 @@ FvD and CT were supported by
 ERC Synergy Grant 101224275 and Germany's
 Excellence Strategy grant
  EXC-2047/1 - 390685813.
+% For blueprint, CT supported by ERC. For human paper, CT supported by CRC
 PD, JR, and LS acknowledge support by 
 the ERC Synergy Grant 101224275 during research stays at Bonn. PD was supported in part by NSF grant DMS-2554859 and a grant from the Simons Foundation. JR was supported in part by NSF grant DMS-2154835 and a grant from the Simons Foundation.
 LS was partially supported by the grant no.\ 26-21107S of the Czech Science Foundation.
@@ -269,7 +291,7 @@ LS was partially supported by the grant no.\ 26-21107S of the Czech Science Foun
 
 \subsection{Notation}
 We use indexing starting at zero rather than starting at one. For example, if $x$ is a vector in $\R^n$ we write $x=(x_0,\dots,x_{n-1})$. By $\N$ we always denote the natural numbers including zero.
-For $n\in\N$ let
+For $n\in\N$ recall that
 \begin{equation}\label{auto:index-set-definition} [n)=\{0,\dots,n-1\}. \end{equation}
 For a vector $x\in\R^n$ we denote by $|x|$ its standard Euclidean norm. For a multiindex $m\in\N^n$ we denote
 \begin{equation}\label{auto:multiindex-length} |m| = \sum_{i\in [n)}m_i. \end{equation}
@@ -351,7 +373,7 @@ We agree on the following parsing, which interprets the power first:
 \end{definition}
 
 
-\subsection{The Wiener space \texorpdfstring{$W_0$}{}}
+\subsection{The Wiener space \texorpdfstring{$W_0$}{}}\label{sec:wiener}
 Let $\mathbb{K}$ be $\R$ or $\C$.
 Functions in this section are $\mathbb{K}$-valued.
 
@@ -2403,10 +2425,7 @@ where $C_{\ref{Gaussian domination}}=e^\pi$.
 For $t_0,t_1\in\R$ with $0<2t_0\le t_1$ define
 \begin{equation}\label{auto:diagonal-square-root-definition} s = \mathcal{F}^{-1}(\xi\mapsto \sqrt{\g(t_0 \xi)- \g(t_1 \xi)}), \end{equation}
 where the function under the square root is nonnegative. Then
-
 $s\in W_0(\R)$.
-
-
 For all $N\in \mathbb N$ with $N\geq 1$ and $x\in \R$, the following estimate holds:
 \begin{equation}\label{E:s-estimate}
     |s(x)|\le  C_{\ref{diagonal square root},N} ( \left<x\right>^N_{(t_0)}+ \left<x\right>^2_{(t_1)}),
@@ -9193,11 +9212,6 @@ Local bounds for singular Brascamp--Lieb forms with cubical structure,
 P.~Durcik, L.~Slav\'ikov\'a, and C.~Thiele,
 Norm-variation of triple ergodic averages for commuting transformations,
 \emph{Anal. PDE} \textbf{19} (2026), 539--586.
-
-\bibitem{DurcikThiele20}
-P.~Durcik and C.~Thiele,
-Singular Brascamp--Lieb inequalities with cubical structure,
-\emph{Bull. London Math. Soc.} \textbf{52} (2020), 283--298.
 
 \bibitem{DurcikThiele21survey}
 P.~Durcik and C.~Thiele,
