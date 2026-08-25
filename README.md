@@ -8,11 +8,30 @@
 
 ### Comparator
 
-You can check this formalization using Comparator, the gold standard for checking whether a formalization is correct. (This requires running a UNIX system.)
-* Follow installation instructions here: https://github.com/leanprover/comparator
-  * Make sure that both `comparator` and `lean4export` use the same version as specified by [`lean-toolchain`](lean-toolchain).
-  * Make sure the programs are in the PATH by running
-  `sudo cp .lake/build/bin/comparator /usr/local/bin/` and `sudo cp .lake/build/bin/lean4export /usr/local/bin/` in the respective repositories
+You can check this formalization using Comparator, the gold standard for checking whether a formalization is correct. (This requires running a UNIX system, including WSL.)
+* Clone and build [`landrun`](https://github.com/Zouuup/landrun) using
+```
+git clone https://github.com/zouuup/landrun.git
+cd landrun
+go build -o landrun cmd/landrun/main.go
+sudo cp landrun /usr/local/bin/
+```
+* Clone and build [`lean4export`](https://github.com/leanprover/lean4export/). The version of `lean4export` and `comparator` have to match the contents of `lean-toolchain` in this project.
+```
+git clone https://github.com/leanprover/lean4export.git
+cd lean4export
+git checkout v4.33.0-rc2
+lake build
+sudo cp .lake/build/bin/lean4export /usr/local/bin/
+```
+* Clone and build [`comparator`](https://github.com/leanprover/comparator)
+```
+git clone https://github.com/leanprover/comparator.git
+cd comparator
+git checkout v4.33.0-rc2
+lake build
+sudo cp .lake/build/bin/comparator /usr/local/bin/
+```
 * Run
 ```
 systemd-run --property=RestrictAddressFamilies=~AF_UNIX --user --pty -E PATH="$PATH" --working-directory "$(pwd)" -- bash -c 'lake env comparator comparator.json'
