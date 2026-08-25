@@ -9,6 +9,9 @@
 ### Comparator
 
 You can check this formalization using Comparator, the gold standard for checking whether a formalization is correct. (This requires running a UNIX system, including WSL.)
+
+For this you need to clone and build 3 repositories first (anywhere you'd like)
+
 * Clone and build [`landrun`](https://github.com/Zouuup/landrun) using
 ```
 git clone https://github.com/zouuup/landrun.git
@@ -32,7 +35,7 @@ git checkout v4.33.0-rc2
 lake build
 sudo cp .lake/build/bin/comparator /usr/local/bin/
 ```
-* Run
+* To actually run comparator, run (in the `lean-nct` directory)
 ```
 systemd-run --property=RestrictAddressFamilies=~AF_UNIX --user --pty -E PATH="$PATH" --working-directory "$(pwd)" -- bash -c 'lake env comparator comparator.json'
 ```
