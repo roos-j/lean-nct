@@ -176,7 +176,7 @@ theorem aux_nCT_main_twisted_theorem {n : ℕ} (hn : 2 ≤ n) {J : ℕ}
     {t : Fin (J + 1) → ℝ} (ht : ∀ i, 0 < t i)
     (ht' : StrictMono t)
     {f : Fin n → SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ}
-    (hf : ∀ i, eLpNorm (f i) ((2 : ℝ≥0∞) ^ (i.val + min (n - i.val) 2)) volume = 1) :
+    (hf : ∀ i, eLpNorm (f i) ((2 : ℝ≥0∞) ^ min n (i.val + 2)) volume = 1) :
     ∑ j : Fin J, eLpNorm
         (fun x ↦ nCT.rescaledTwistedAverage (t j.succ)
             ((Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ))
@@ -187,8 +187,13 @@ theorem aux_nCT_main_twisted_theorem {n : ℕ} (hn : 2 ≤ n) {J : ℕ}
         2 volume ^ 2 ≤
       (2 : ℝ≥0∞) ^ 666 * (J : ℝ≥0∞) ^
         (1 - (2 : ℝ) ^ (-(n : ℝ) + 2)) := by
+  have hf' : ∀ i, eLpNorm (f i) ((2 : ℝ≥0∞) ^
+      (i.val + min (n - i.val) 2)) volume = 1 := by
+    intro i
+    rw [show i.val + min (n - i.val) 2 = min n (i.val + 2) by omega]
+    exact hf i
   by_cases hJ : 0 < J
-  · have hmain := aux_main_twisted_theorem hn J hJ t ht' ht f hf
+  · have hmain := aux_main_twisted_theorem hn J hJ t ht' ht f hf'
     have hJreal : (0 : ℝ) < (J : ℝ) := by exact_mod_cast hJ
     simpa [nCT.rescaledTwistedAverage, nCT.rescale, nCT.twistedAverage,
       nCT.unitVector, EuclideanSpace.single, aux_rte_twistedAverageAtScale,
