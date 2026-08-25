@@ -54,7 +54,7 @@ noncomputable abbrev ctTwistedAverageAtScale {n : ℕ} (t : ℝ) (χ : ℝ → �
   aux_ct_twistedAverageAtScale t χ f
 
 /--
-The kernel `\mathbf 1_{[0,1)}` used in the transference principle.  This
+The kernel $\mathbf 1_{[0,1)}$ used in the transference principle.  This
 is the half-open representative of the usual unit-interval kernel; the two
 versions agree almost everywhere for Lebesgue integration.
 -/

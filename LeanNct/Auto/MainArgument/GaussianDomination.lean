@@ -22,7 +22,7 @@ open scoped BigOperators ENNReal Real FourierTransform
 noncomputable section
 /--
 This auxiliary directional derivative is needed to write the manuscript's
-`(\partial_0+\partial_1)` in the raw product-coordinate model of `\mathbb R^2`.
+$(\partial_0+\partial_1)$ in the raw product-coordinate model of $\mathbb R^2$.
 -/
 def aux_diagonalDerivative (f : RealPlane → ℝ) (v : RealPlane) : ℝ :=
   deriv (fun t : ℝ => f (v.1 + t, v.2 + t)) 0
@@ -391,20 +391,20 @@ theorem aux_abs_diagonalDerivative_twoDimensionalGaussian_one_le
       simp only [b₀, b₁]
 
 /--
-This auxiliary abbreviation records the `\ell^1` size `|m|` of an element of
-`\mathbb N^2`, used in the displayed Gaussian series.
+This auxiliary abbreviation records the $\ell^1$ size `|m|` of an element of
+$\mathbb N^2$, used in the displayed Gaussian series.
 -/
 def aux_natPairWeight (m : Fin 2 → ℕ) : ℕ := m 0 + m 1
 
 /--
-This auxiliary weight is the coefficient `2^{-|m|/2}` in the Gaussian domination
+This auxiliary weight is the coefficient $2^{-|m|/2}$ in the Gaussian domination
 series.
 -/
 def aux_gaussianDominationWeight (m : Fin 2 → ℕ) : ℝ :=
   Real.rpow 2 (-((aux_natPairWeight m : ℕ) : ℝ) / 2)
 
 /--
-This auxiliary term is the two-dimensional Gaussian `G_{p(j),u}` occurring in the
+This auxiliary term is the two-dimensional Gaussian $G_{p(j),u}$ occurring in the
 Gaussian-domination conclusion.
 -/
 def aux_dominatingGaussianTerm (p : SequencePair) (u : Fin 2) (j : ℤ)
@@ -412,13 +412,13 @@ def aux_dominatingGaussianTerm (p : SequencePair) (u : Fin 2) (j : ℤ)
   twoDimensionalGaussian (fun r => p r j) u v
 
 
-/-- Constant from [`Auto.hKernelEstimateGaussianDomination`]. -/
+/-- Constant from `Auto.hKernelEstimateGaussianDomination`. -/
 def C_hKernelEstimateGaussianDomination : ℝ :=
   4 * C_diagonalSquareRoot 2 ^ 2 + C_gaussianBumpDecay 0 2 ^ 2
 
 /--
 Constant from
-[`Auto.hKernelDerivativeEstimateGaussianDomination`].
+`Auto.hKernelDerivativeEstimateGaussianDomination`.
 -/
 def C_hKernelDerivativeEstimateGaussianDomination : ℝ :=
   4 * C_diagonalSquareRoot 2 * C_derivativeDiagonalSquareRoot 2 +
@@ -455,16 +455,16 @@ theorem aux_C_hKernelDerivativeEstimateGaussianDomination_nonneg :
     (mul_nonneg (mul_nonneg (by norm_num) hdiagonal) hderivative)
     (mul_nonneg (mul_nonneg (by norm_num) (hgaussian 0 2)) (hgaussian 1 2))
 
-/-- Constant from [`Auto.gaussianDominationCombined`]. -/
+/-- Constant from `Auto.gaussianDominationCombined`. -/
 def C_gaussianDominationCombinedCard : ℕ := 36
 
-/-- Constant from [`Auto.gaussianDominationCombined`]. -/
+/-- Constant from `Auto.gaussianDominationCombined`. -/
 def C_gaussianDominationCombinedDistance : ℕ := 2
 
-/-- Constant from [`Auto.gaussianDominationCombined`]. -/
+/-- Constant from `Auto.gaussianDominationCombined`. -/
 def C_gaussianDominationCombined : ℝ := (2 : ℝ) ^ (153 : ℕ)
 
-/-- Constant from [`Auto.gaussDominationCase1`]. -/
+/-- Constant from `Auto.gaussDominationCase1`. -/
 noncomputable def C_gaussDominationCase1 : ℝ :=
   2 * ((2 : ℝ) ^ (7 : ℕ) * Real.pi * Real.exp (2 * Real.pi) *
     C_standardBumpPropertiesTilde 0 2 * C_meanFourScaleGaussianKernel 2 *
@@ -473,14 +473,14 @@ noncomputable def C_gaussDominationCase1 : ℝ :=
       (4 * C_bumpTriangle (-(1 / 2)) (1 / 2) (3 / 2) (3 / 2) *
         C_twoBumpEstimate (3 / 2) (3 / 2)))
 
-/-- Constant from [`Auto.gaussDominationCase2`]. -/
+/-- Constant from `Auto.gaussDominationCase2`. -/
 noncomputable def C_gaussDominationCase2 : ℝ :=
   3 * (2 : ℝ) ^ (7 : ℕ) * Real.exp (2 * Real.pi) *
     C_standardBumpPropertiesTilde 0 3 * C_fourScaleGaussianKernel 3 *
     C_hKernelDerivativeEstimateGaussianDomination * C_bumpTriangle 1 1 2 2 *
     C_twoBumpEstimate 2 2
 
-/-- Constant from [`Auto.gaussDominationCase3`]. -/
+/-- Constant from `Auto.gaussDominationCase3`. -/
 noncomputable def C_gaussDominationCase3 : ℝ :=
   (2 : ℝ) ^ (7 : ℕ) * Real.exp (2 * Real.pi) *
     C_standardBumpPropertiesTilde 0 2 * C_fourScaleGaussianKernel 2 *
@@ -528,7 +528,7 @@ theorem aux_abs_gaussianDifference_le {n : ℕ} (γ : GeometricParameters n)
 
 /--
 This auxiliary estimate reduces the kernel bound to estimates for the two factors of
-`s_\gamma` and the two Gaussian terms.
+$s_\gamma$ and the two Gaussian terms.
 -/
 theorem aux_abs_hMultiplier_le {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) (v : RealPlane) :
@@ -579,7 +579,7 @@ theorem aux_withinSequenceDistance_of_sequenceDistance_le {a b : ℤ → ℝ}
 
 /--
 This auxiliary bound says that the distance of the two scale sequences at a fixed index
-is absorbed by the manuscript's global parameter `\Delta_\gamma`.
+is absorbed by the manuscript's global parameter $\Delta_\gamma$.
 -/
 theorem aux_sequencePairDistance_succ_le_geometricDelta {n : ℕ}
     (γ : GeometricParameters n) (i : Fin γ.k) :
@@ -881,7 +881,7 @@ theorem aux_sqrt_sq_add_sq_between_max_and_two_mul_max {x y : ℝ}
 
 /--
 This auxiliary sequence packages the two cases in the definition of the manuscript's
-`s_\gamma` multiplier, so that its diagonal-square-root estimates can be applied uniformly.
+$s_\gamma$ multiplier, so that its diagonal-square-root estimates can be applied uniformly.
 -/
 noncomputable def aux_sMultiplierScale {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) : ℤ → ℝ :=
@@ -1144,7 +1144,7 @@ theorem aux_C_diagonalSquareRoot_two_nonneg :
 
 /--
 This auxiliary predicate gives the exact membership condition
-`\mathcal P\subset B_{\mathrm{dist}}(a_i^1,\Delta_\gamma)^2\times[2)`
+$\mathcal P\subset B_{\mathrm{dist}}(a_i^1,\Delta_\gamma)^2\times[2)$
 for a multiset, including multiplicities.
 -/
 def aux_ValidKernelGaussianPackage {n : ℕ} (γ : GeometricParameters n)
@@ -1172,7 +1172,7 @@ theorem aux_kernelBracketProduct_nonneg (q : SequencePair × Fin 2)
 
 /--
 This auxiliary sequence is the shifted scale
-`t_{m,\ell}(j)=a_i^\ell(j+m-1)` used to construct the six-term multiset in the
+$t_{m,\ell}(j)=a_i^\ell(j+m-1)$ used to construct the six-term multiset in the
 kernel Gaussian estimate.
 -/
 def aux_hKernelShiftedScale {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k)
@@ -1181,7 +1181,7 @@ def aux_hKernelShiftedScale {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k
 
 /--
 This auxiliary scale is the manuscript's
-`t_m^+=\max(t_{m,0},t_{m,1})`.
+$t_m^+=\max(t_{m,0},t_{m,1})$.
 -/
 def aux_hKernelMaxScale {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k)
     (m : Fin 2) : ℤ → ℝ :=
@@ -1951,7 +1951,7 @@ theorem hKernelEstimateGaussianDomination {n : ℕ} (γ : GeometricParameters n)
 /--
 Blueprint label `constant H kernel estimate Gaussian domination`.
 
-The constant from [`Auto.hKernelEstimateGaussianDomination`]
+The constant from `Auto.hKernelEstimateGaussianDomination`
 satisfies
 
 $$
@@ -2416,7 +2416,7 @@ theorem hKernelDerivativeEstimateGaussianDomination {n : ℕ}
 Blueprint label `constant H kernel derivative estimate Gaussian domination`.
 
 The constant from
-[`Auto.hKernelDerivativeEstimateGaussianDomination`] satisfies
+`Auto.hKernelDerivativeEstimateGaussianDomination` satisfies
 
 $$
 C_{\mathrm{H\ kernel\ derivative\ estimate\ Gaussian\ domination}}
@@ -2656,12 +2656,12 @@ case}},C_{\text{Gaussian domination, intermediate case}}\bigr)
 \le C_{\text{Gaussian domination, combined},2}.
 $$
 
-Thus Proposition [`Auto.gaussianDominationCombined`] holds with the claimed constant in (`Gaussian
+Thus Proposition `Auto.gaussianDominationCombined` holds with the claimed constant in (`Gaussian
 domination main estimate`).
 
-See also [`Auto.gaussDominationCase1`],
-[`Auto.gaussDominationCase2`], and
-[`Auto.gaussDominationCase3`].
+See also `Auto.gaussDominationCase1`,
+`Auto.gaussDominationCase2`, and
+`Auto.gaussDominationCase3`.
 -/
 theorem gaussDominationConstant :
     C_gaussDominationCase1 < (2 : ℝ) ^ (117 : ℕ) ∧
@@ -2677,8 +2677,8 @@ theorem gaussDominationConstant :
 
 /--
 This auxiliary structure is a direct finite-set encoding of the data in the conclusion of
-Gaussian domination.  Its fields are exactly the set `\mathcal B`, orientations `u_b`, and
-sequence pairs `p_{b,m}` from the manuscript.
+Gaussian domination.  Its fields are exactly the set $\mathcal B$, orientations `u_b`, and
+sequence pairs $p_{b,m}$ from the manuscript.
 -/
 structure aux_GaussianDominationWitness {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ) (C : ℝ) where
@@ -2706,7 +2706,7 @@ structure aux_GaussianDominationWitness {n : ℕ} (γ : GeometricParameters n)
 
 /--
 This auxiliary predicate packages precisely the conclusion of
-[`Auto.gaussianDominationCombined`] for a fixed index.
+`Auto.gaussianDominationCombined` for a fixed index.
 -/
 def aux_GaussianDominationConclusion {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ) (C : ℝ) : Prop :=
@@ -7817,7 +7817,7 @@ theorem aux_caseOne_slot_sum_gaussian_majorant {n : ℕ}
 /--
 **Proposition (Gaussian domination, near case).**
 
-The conclusion of Proposition [`Auto.gaussianDominationCombined`] holds in the case $\iota=(h,0)$,
+The conclusion of Proposition `Auto.gaussianDominationCombined` holds in the case $\iota=(h,0)$,
 $h>0$, with the constant in (`Gaussian domination main estimate`) equal to
 
 $$
@@ -11958,7 +11958,7 @@ end aux_caseTwo
 /--
 **Proposition (Gaussian domination, far case).**
 
-The conclusion of Proposition [`Auto.gaussianDominationCombined`] holds in the case $\iota=(h,0)$,
+The conclusion of Proposition `Auto.gaussianDominationCombined` holds in the case $\iota=(h,0)$,
 $h<0$, with the constant in (`Gaussian domination main estimate`) equal to
 
 $$
@@ -14116,7 +14116,7 @@ end aux_caseThree
 /--
 **Proposition (Gaussian domination, intermediate case).**
 
-The conclusion of Proposition [`Auto.gaussianDominationCombined`] holds in the case $\iota=(0,l)$,
+The conclusion of Proposition `Auto.gaussianDominationCombined` holds in the case $\iota=(0,l)$,
 $|l|\le\Delta_\gamma$, with the constant in (`Gaussian domination main estimate`) equal to
 
 $$
@@ -14174,10 +14174,10 @@ holds with $C=C_{\text{Gaussian domination, combined},2}$.
 The nonnegative series on the right converges for every $v\in\mathbb{R}^2$ and has finite $L^1$
 norm.
 
-See also [`Auto.gaussDominationCase1`],
-[`Auto.gaussDominationCase2`],
-[`Auto.gaussDominationCase3`], and
-[`Auto.gaussDominationConstant`].
+See also `Auto.gaussDominationCase1`,
+`Auto.gaussDominationCase2`,
+`Auto.gaussDominationCase3`, and
+`Auto.gaussDominationConstant`.
 -/
 theorem gaussianDominationCombined {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) :

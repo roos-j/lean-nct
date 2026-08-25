@@ -30,7 +30,7 @@ noncomputable def multiplicationOperatorX {E : Type*} [NormedAddCommGroup E]
 
 /--
 The logarithmic-derivative operator $T\phi=(X\phi)'$ used in
-Lemma [`Auto.fourierDerivativeMul`].
+Lemma `Auto.fourierDerivativeMul`.
 -/
 noncomputable def aux_T {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (phi : ℝ → E) : ℝ → E :=
@@ -196,7 +196,7 @@ theorem fourierDerivativeMul (phi : SchwartzMap ℝ ℂ) (m : ℕ) (xi : ℝ) :
         ring
   simpa [smul_eq_mul] using congrFun (hformula m) xi
 
-/-- The explicit constant in Lemma [`Auto.wideBump`]. -/
+/-- The explicit constant in Lemma `Auto.wideBump`. -/
 noncomputable def C_wideBump (N : ℝ) : ℝ :=
   Real.rpow 2 (3 * N)
 
@@ -211,7 +211,7 @@ $$
 
 where $C_{\text{lem:widebump},N}=2^{3N}$.
 
-See also [`Auto.wideBump`].
+See also `Auto.wideBump`.
 -/
 theorem wideBump (k : ℤ) (hk : k ≤ 2) (t : ℝ)
     (ht : t ∈ Set.Icc ((2 : ℝ) ^ (1 - k)) ((2 : ℝ) ^ (2 - k)))
@@ -278,7 +278,7 @@ theorem wideBump (k : ℤ) (hk : k ≤ 2) (t : ℝ)
             (Real.rpow_add (x := (2 : ℝ)) (by norm_num : (0 : ℝ) < 2)
               (3 * N) (-((k : ℝ) * N)))
 
-/-- The constant in Lemma [`Auto.thetaTOffcenter`]. -/
+/-- The constant in Lemma `Auto.thetaTOffcenter`. -/
 noncomputable def C_thetaTOffcenter : ℝ := 133
 
 theorem thetaTOffcenter_bracket_pos (x : ℝ) : 0 < bracketBump x := by
@@ -676,7 +676,7 @@ $$
 C_{\text{lem:thetat\_offcenter}}=133.
 $$
 
-See also [`Auto.thetaTOffcenter`].
+See also `Auto.thetaTOffcenter`.
 -/
 theorem thetaTOffcenter (k : ℤ) (hk : k ≤ -1) (v₀ v₁ : ℝ) :
     Real.rpow 2 ((k : ℝ) / 2) *
@@ -851,21 +851,21 @@ $$
 C_{\text{lem:thetat\_offcenter}}\le133.
 $$
 
-See also [`Auto.thetaTOffcenter`].
+See also `Auto.thetaTOffcenter`.
 -/
 theorem constantOffCenterBump : C_thetaTOffcenter ≤ 133 := by
   norm_num [C_thetaTOffcenter]
 
 /--
 The one-dimensional $L^1$-normalized dilation used in Lemma
-[`Auto.integralFct`].
+`Auto.integralFct`.
 -/
 noncomputable def aux_bf_realRescaled (t : ℝ) (psi : ℝ → ℝ) : ℝ → ℝ :=
   fun x ↦ t⁻¹ * psi (t⁻¹ * x)
 
 /--
 The tensor kernel defined by the integral in Lemma
-[`Auto.integralFct`].
+`Auto.integralFct`.
 -/
 noncomputable def integralFctKernel (psi : ℝ → ℝ) :
     EuclideanSpace ℝ (Fin 2) → ℝ :=
@@ -879,7 +879,7 @@ noncomputable def aux_integralFctKernelAtScale (s : ℝ) (psi : ℝ → ℝ) :
 
 /--
 The frequency set in the support conclusion of Lemma
-[`Auto.integralFct`].
+`Auto.integralFct`.
 -/
 noncomputable def aux_integralFctBand (ell : ℤ) : Set ℝ :=
   Set.Icc (-((2 : ℝ) ^ (-ell))) (-((2 : ℝ) ^ (-3 - ell))) ∪
@@ -895,7 +895,7 @@ def aux_productSet (s : Set ℝ) : Set (EuclideanSpace ℝ (Fin 2)) :=
 
 /--
 The coordinate swap on $mathbb R^2$ used in the symmetry assertion of
-Lemma [`Auto.integralFct`].
+Lemma `Auto.integralFct`.
 -/
 noncomputable def aux_swapTwo (u : EuclideanSpace ℝ (Fin 2)) :
     EuclideanSpace ℝ (Fin 2) :=
@@ -903,15 +903,15 @@ noncomputable def aux_swapTwo (u : EuclideanSpace ℝ (Fin 2)) :
 
 /--
 A bounded measurable real function, in the sense needed by the Lebesgue-integral
-positivity statements in Lemmas [`Auto.integralFct`] and
-[`Auto.phiPosV2`].
+positivity statements in Lemmas `Auto.integralFct` and
+`Auto.phiPosV2`.
 -/
 def aux_bounded (f : ℝ → ℝ) : Prop :=
   Measurable f ∧ Bornology.IsBounded (Set.range f)
 
 /--
 Auxiliary scaling identity for the Fourier-support part of
-`integralFct` (Lemma [`Auto.integralFct`]).
+`integralFct` (Lemma `Auto.integralFct`).
 -/
 theorem aux_realRescaled_fourier (t : ℝ) (ht : 0 < t) (f : ℝ → ℝ) (xi : ℝ) :
     FourierTransform.fourier (fun x : ℝ => (aux_bf_realRescaled t f x : ℂ)) xi =
@@ -1124,7 +1124,7 @@ theorem aux_contDiff_infty_setIntegral_Icc_of_contDiffOn
 
 /--
 The product Fourier factorization used in the support calculation of
-`integralFct` (Lemma [`Auto.integralFct`]).
+`integralFct` (Lemma `Auto.integralFct`).
 -/
 theorem aux_fourier_tensor_two (f g : ℝ → ℝ) (xi : EuclideanSpace ℝ (Fin 2)) :
     FourierTransform.fourier (fun u : EuclideanSpace ℝ (Fin 2) =>
@@ -1190,7 +1190,7 @@ theorem aux_fourier_tensor_two_eq (f g : ℝ → ℝ) (xi : EuclideanSpace ℝ (
 
 /--
 Integrability of the three-variable Fubini integrand in the positivity part of
-`integralFct` (Lemma [`Auto.integralFct`]).
+`integralFct` (Lemma `Auto.integralFct`).
 -/
 theorem aux_integralFct_triple_integrable
     (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s)
@@ -1334,7 +1334,7 @@ theorem integralFctKernelAtScale_eq
 
 /--
 The product-square form of the Fubini integral in the positivity part of
-`integralFct` (Lemma [`Auto.integralFct`]) is nonnegative.
+`integralFct` (Lemma `Auto.integralFct`) is nonnegative.
 -/
 theorem aux_integralFct_triple_nonnegative (A : ℝ × ℝ → ℝ)
     (hH : Integrable (fun q : ℝ × (ℝ × ℝ) =>
@@ -1366,7 +1366,7 @@ theorem aux_integralFct_triple_nonnegative (A : ℝ × ℝ → ℝ)
 
 /--
 Fubini interchange for the compact scale integral in the Fourier-support
-calculation of `integralFct` (Lemma [`Auto.integralFct`]).
+calculation of `integralFct` (Lemma `Auto.integralFct`).
 -/
 theorem aux_fourier_setIntegral_swap
     {V} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
@@ -1410,7 +1410,7 @@ theorem aux_fourier_setIntegral_swap_of_integrable
 
 /--
 The unit Fourier band, after a scale in `[1,2]`, lies in the band used by
-`integralFct` (Lemma [`Auto.integralFct`]).
+`integralFct` (Lemma `Auto.integralFct`).
 -/
 theorem aux_integralFct_scale_band_mem (s t x : ℝ) (hs : 0 < s)
     (ht : t ∈ Set.Icc 1 2)
@@ -1452,7 +1452,7 @@ theorem aux_integralFct_scale_band_mem (s t x : ℝ) (hs : 0 < s)
 /--
 A coordinate outside the scaled band forces the corresponding Fourier factor
 to vanish in the support proof of `integralFct` (Lemma
-[`Auto.integralFct`]).
+`Auto.integralFct`).
 -/
 theorem aux_integralFct_fourier_zero_outside_band
     (psi : SchwartzMap ℝ ℝ)
@@ -1496,7 +1496,7 @@ theorem aux_band_subset_annulus (r : ℝ) (hr : 0 ≤ r) :
 /--
 The scale-integrated tensor kernel has nonnegative quadratic forms.  This is
 the positivity assertion used by `integralFct` (Lemma
-[`Auto.integralFct`]).
+`Auto.integralFct`).
 -/
 theorem aux_integralFctKernelAtScale_nonnegative
     (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s)
@@ -1568,7 +1568,7 @@ theorem aux_integralFctKernelAtScale_nonnegative
 /--
 Integrability of the complex scale-integrated tensor used to exchange the
 Fourier and scale integrals in `integralFct` (Lemma
-[`Auto.integralFct`]).
+`Auto.integralFct`).
 -/
 theorem aux_integralFctKernelAtScale_triple_integrable
     (psi : SchwartzMap ℝ ℝ) (s : ℝ) (hs : 0 < s) :
@@ -1917,7 +1917,7 @@ theorem integralFctKernelSchwartz_apply (psi : SchwartzMap ℝ ℝ)
 
 /--
 The Fourier-support inclusion in the first part of the conclusion of
-`integralFct` (Lemma [`Auto.integralFct`]).
+`integralFct` (Lemma `Auto.integralFct`).
 -/
 theorem aux_integralFct_fourier_support
     (psi : SchwartzMap ℝ ℝ)

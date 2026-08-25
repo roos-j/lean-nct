@@ -22,11 +22,11 @@ open scoped BigOperators ENNReal FourierTransform Real
 
 
 noncomputable section
-/-- The exponent \(\nu\) fixed at the start of the on-diagonal reduction. -/
+/-- The exponent $\nu$ fixed at the start of the on-diagonal reduction. -/
 noncomputable def aux_reductionNu (n : ℕ) : ℝ :=
   if n = 2 then -1 else -(1 / 2 : ℝ)
 
-/-- A member of the finite family \(\mathcal P\) in the reduction argument. -/
+/-- A member of the finite family $\mathcal P$ in the reduction argument. -/
 structure ReductionScaleTriple (a : ℤ → ℝ) where
   left : ℤ → ℝ
   right : ℤ → ℝ
@@ -39,10 +39,10 @@ structure ReductionScaleTriple (a : ℤ → ℝ) where
   right_le_base : ∀ j : ℤ, right j ≤ a j
 
 /--
-The hypotheses on \(a\), \(\mathcal P\), and \((M_j)_j\) shared by the
+The hypotheses on $a$, $\mathcal P$, and $(M_j)_j$ shared by the
 reduction variants of the on-diagonal propositions.  It directly packages
 the hypotheses preceding Proposition
-[`Auto.increaseDataBracketDomination`].
+`Auto.increaseDataBracketDomination`.
 -/
 structure ReductionData where
   a : ℤ → ℝ
@@ -58,25 +58,25 @@ structure ReductionData where
       scaledBracketBumpReal (3 / 2 : ℝ) (q.left j) ((W q.orientation v).1) *
         scaledBracketBumpReal (3 / 2 : ℝ) (q.right j) ((W q.orientation v).2)
 
-/-- The lower scale \(\lambda^-_{h,j}\) in the definition of \(\rho_{h,j}\). -/
+/-- The lower scale $\lambda^-_{h,j}$ in the definition of $\rho_{h,j}$. -/
 noncomputable def rhoLowerScale (a : ℤ → ℝ) (h : ℕ) (j : ℤ) : ℝ :=
   if h = 0 then a (j - 1) else (2 : ℝ) ^ (h - 1) * a j
 
-/-- The upper scale \(\lambda^+_{h,j}\) in the definition of \(\rho_{h,j}\). -/
+/-- The upper scale $\lambda^+_{h,j}$ in the definition of $\rho_{h,j}$. -/
 noncomputable def rhoUpperScale (a : ℤ → ℝ) (h : ℕ) (j : ℤ) : ℝ :=
   (2 : ℝ) ^ h * a j
 
-/-- The lower Gaussian scale \(\mu^-_{h,j}\). -/
+/-- The lower Gaussian scale $\mu^-_{h,j}$. -/
 noncomputable def rhoGaussianLowerScale (a : ℤ → ℝ) (h : ℕ) (j : ℤ) : ℝ :=
   (2 : ℝ) ^ h * a (j - 1)
 
-/-- The upper Gaussian scale \(\mu^+_{h,j}\). -/
+/-- The upper Gaussian scale $\mu^+_{h,j}$. -/
 noncomputable def rhoGaussianUpperScale (a : ℤ → ℝ) (h : ℕ) (j : ℤ) : ℝ :=
   (2 : ℝ) ^ h * a j
 
 /--
-The kernel \(\rho_{h,j}\) of Lemma
-[`Auto.rhoKernelsReduction`], expressed
+The kernel $\rho_{h,j}$ of Lemma
+`Auto.rhoKernelsReduction`, expressed
 through the existing four-scale Gaussian kernel construction.
 -/
 noncomputable def rhoKernel (n : ℕ) (a : ℤ → ℝ) (h : ℕ) (j : ℤ) : ℝ → ℝ :=
@@ -85,23 +85,23 @@ noncomputable def rhoKernel (n : ℕ) (a : ℤ → ℝ) (h : ℕ) (j : ℤ) : �
     (rhoGaussianLowerScale a h j) (rhoGaussianUpperScale a h j)
     (rhoLowerScale a h j) (rhoUpperScale a h j) (aux_reductionNu n) x).re
 
-/-- The diagonal convolution producing \(N_{h,j}\) in the reduction. -/
+/-- The diagonal convolution producing $N_{h,j}$ in the reduction. -/
 noncomputable def reductionNKernel (n : ℕ) (D : ReductionData) (h : ℕ) (j : ℤ) :
     RealPlane → ℝ :=
   fun v => ∫ p : ℝ, D.kernel j (v.1 - p, v.2 - p) * rhoKernel n D.a h j p
 
-/-- The square-root Gaussian multiplier \(\sigma_{h,j}=s(2^h a,j)\). -/
+/-- The square-root Gaussian multiplier $\sigma_{h,j}=s(2^h a,j)$. -/
 noncomputable def reductionSigma (D : ReductionData) (h : ℕ) (j : ℤ) : ℝ → ℝ :=
   squareRootGaussianDifference (fun r => (2 : ℝ) ^ h * D.a r)
     (smul_mem_A D.a_spaced (by positivity)) j
 
-/-- The majorant kernel \(\widetilde M_{h,j}\) used in `increaseDataReduction`. -/
+/-- The majorant kernel $\widetilde M_{h,j}$ used in `increaseDataReduction`. -/
 noncomputable def reductionMajorantKernel (n : ℕ) (D : ReductionData) (h : ℕ) (j : ℤ) :
     MKernel 2 :=
   fun y => |reductionNKernel n D h j (y.1 0, y.2 0)| *
     reductionSigma D h j (y.1 1) * reductionSigma D h j (y.2 1)
 
-/-- The rescaled pair \(p_{h,b,m}\) in Gaussian expansion. -/
+/-- The rescaled pair $p_{h,b,m}$ in Gaussian expansion. -/
 noncomputable def gaussianExpansionPair (beta : SequencePair) (m : Fin 2 → ℕ) : SequencePair :=
   fun r j => (2 : ℝ) ^ (m r) * beta r j
 
@@ -111,7 +111,7 @@ noncomputable def gaussianExpansionWeight (m : Fin 2 → ℕ) : ℝ :=
 
 /--
 The numerical constant in Lemma
-[`Auto.rhoKernelsReduction`].
+`Auto.rhoKernelsReduction`.
 -/
 noncomputable def C_rhoKernelsReduction : ℝ :=
   (2 : ℝ) ^ (21 : ℕ) *
@@ -478,7 +478,7 @@ $$
 \mu_{h,j}^+=2^ha(j).
 $$
 
-Let \(\rho_{h,j}\) be the function whose Fourier transform is
+Let $\rho_{h,j}$ be the function whose Fourier transform is
 
 $$
 \widehat{\rho_{h,j}}(\zeta)
@@ -495,12 +495,12 @@ $$
 \bigr)^{-\nu/2}.
 $$
 
-Then \(\rho_{h,j}\in W_0(\mathbb R)\). Moreover, if \(h\geq1\), then, with $\lambda=2^ha(j)$,
+Then $\rho_{h,j}\in W_0(\mathbb R)$. Moreover, if $h\geq1$, then, with $\lambda=2^ha(j)$,
 
 $$
     |\rho_{h,j}(x+p)-\rho_{h,j}(x)|
     \leq
-    C_{\text{\$ rho\$ kernels - reduction variant}}
+    C_{\rho\text{ kernels - reduction variant}}
     \min(1,\lambda^{-1}|p|)
     \left(
     \langle x+p\rangle_{(\lambda)}^2
@@ -514,7 +514,7 @@ and if $h\in \mathbb{N}$, then
 $$
     |\rho_{h,j}(x)|
     \leq
-    C_{\text{\$ rho\$ kernels - reduction variant}}
+    C_{\rho\text{ kernels - reduction variant}}
     \big(
     \langle x\rangle_{(\lambda_{h,j}^-)}^2
     +
@@ -522,12 +522,12 @@ $$
     \big),
 $$
 
-where $C_{\text{\$ rho\$ kernels - reduction variant}} = 2^{21} (C_{\text{mean value four scale
+where $C_{\rho\text{ kernels - reduction variant}} = 2^{21} (C_{\text{mean value four scale
 Gaussian kernel estimate},2}+C_{\text{four scale Gaussian kernel estimate},2})$.
 
-See also [`Auto.rhoKernelsReduction`],
-[`Auto.meanFourScaleGaussianKernel`],
-[`Auto.fourScaleGaussianKernel`].
+See also `Auto.rhoKernelsReduction`,
+`Auto.meanFourScaleGaussianKernel`,
+`Auto.fourScaleGaussianKernel`.
 -/
 theorem rhoKernelsReduction {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
     (ha : SpacedSequence a) (h : ℕ) (j : ℤ) :
@@ -544,14 +544,14 @@ theorem rhoKernelsReduction {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
   exact aux_rho_kernels_reduction hn a ha h j
 
 /--
-**Lemma (constant $C_{\text{\$ rho\$ kernels - reduction variant}}$).**
+**Lemma (constant $C_{\rho\text{ kernels - reduction variant}}$).**
 
 $$
-C_{\text{\$ rho\$ kernels - reduction variant}}
+C_{\rho\text{ kernels - reduction variant}}
 <2^{66}.
 $$
 
-See also [`Auto.rhoKernelsReduction`].
+See also `Auto.rhoKernelsReduction`.
 -/
 theorem constantRhoKernelsReduction : C_rhoKernelsReduction < (2 : ℝ) ^ (66 : ℕ) := by
   have hmean : C_meanFourScaleGaussianKernel 2 < 20397963318112 :=
@@ -597,13 +597,13 @@ theorem aux_rhoKernelsReduction_lt_three_fifths_two_pow_66 :
 /--
 **Lemma (affine diagonal cancellation - reduction variant).**
 
-Let \(M\in W_0(\mathbb R^2)\) satisfy for every \(\xi\in\mathbb R\)
+Let $M\in W_0(\mathbb R^2)$ satisfy for every $\xi\in\mathbb R$
 
 $$
 \widehat M(\xi,-\xi)=0
 $$
 
- Then for every \(x\in\mathbb R\),
+ Then for every $x\in\mathbb R$,
 
 $$
     \int_{\mathbb R}M(x+q,q)\,dq=0
@@ -3123,7 +3123,7 @@ theorem aux_reductionBracket_card (D : ReductionData) :
 
 /--
 The pointwise constant in Proposition
-[`Auto.increaseDataBracketDomination`].
+`Auto.increaseDataBracketDomination`.
 -/
 noncomputable def C_increaseDataBracketDomination : ℝ :=
   (2 : ℝ) ^ (10 : ℕ) * C_rhoKernelsReduction
@@ -4690,7 +4690,7 @@ theorem aux_reductionBracket_zero_majorant {n : ℕ} (hn : 2 ≤ n)
 /--
 The positive-height analytic bracket majorant.  Diagonal cancellation,
 the rho mean-difference gain, and the tagged positive-height slot table give
-the exact `2^{-h/3}` bound used to build the reduction witness.
+the exact $2^{-h/3}$ bound used to build the reduction witness.
 -/
 theorem aux_reductionBracket_positive_majorant {n : ℕ} (hn : 2 ≤ n)
     (D : ReductionData) (h : ℕ) (hh : 1 ≤ h) (j : ℤ) (v : RealPlane) :
@@ -4910,7 +4910,7 @@ theorem aux_reductionBracket_positive_majorant {n : ℕ} (hn : 2 ≤ n)
 
 /--
 A labeled finite family witnessing the conclusion of
-[`Auto.increaseDataBracketDomination`].  The labels are
+`Auto.increaseDataBracketDomination`.  The labels are
 kept separate
 from their decoded orientations and scale pairs so that coincident generated
 bracket products retain their multiplicities, exactly as in the manuscript.
@@ -4972,7 +4972,7 @@ theorem aux_reductionBracketWitness_of_analytic {n : ℕ} (D : ReductionData)
 /--
 **Proposition (bracket domination - reduction variant).**
 
-Let \(a\in A\), and let
+Let $a\in A$, and let
 $
 \mathcal P\subset B_{\operatorname{dist}}(a,1)^2\times[2)$ be such that $\#\mathcal P\leq5$. Assume
 additionally that
@@ -4983,8 +4983,8 @@ $$
     t_1(j)\leq a(j)
 $$
 
-for every \((t_0,t_1,u)\in\mathcal P\) and \(j\in\mathbb Z\).
-Suppose that \(M_j\in W_0(\mathbb R^2)\) satisfies
+for every $(t_0,t_1,u)\in\mathcal P$ and $j\in\mathbb Z$.
+Suppose that $M_j\in W_0(\mathbb R^2)$ satisfies
 
 $$
 \widehat M_j(\xi,-\xi)=0
@@ -5000,7 +5000,7 @@ $$
 \langle(W_uv)_1\rangle_{(t_1(j))}^{3/2}.
 $$
 
-Let $\lambda_{h,j}^-,\lambda_{h,j}^+$ be as in Lemma [`Auto.rhoKernelsReduction`].
+Let $\lambda_{h,j}^-,\lambda_{h,j}^+$ be as in Lemma `Auto.rhoKernelsReduction`.
 For $h\in\mathbb{N}$, $j\in \mathbb{Z}$, we define
 $
 \sigma_{h,j} = s(2^{h} a,j)
@@ -5014,8 +5014,8 @@ N_{h,j} =
 \widehat{\sigma_{h,j}}(\xi+\eta)^{-\nu} \widehat{M_j}(\xi,\eta)\right),
 $$
 
-Then for every \(h\in\mathbb N\), there exist a finite set
-\(\mathcal B_h\), numbers \(u_{h,b}\in[2)\), and pairs
+Then for every $h\in\mathbb N$, there exist a finite set
+$\mathcal B_h$, numbers $u_{h,b}\in[2)$, and pairs
 
 $$
 \beta_{h,b}
@@ -5038,7 +5038,7 @@ $$
      (1+h)
 $$
 
-for every \(b\in\mathcal B_h\) and \(\ell\in[2)\), and
+for every $b\in\mathcal B_h$ and $\ell\in[2)$, and
 
 $$
 |N_{h,j}(v)| \leq C_{\text{bracket domination - reduction variant},1} 2^{-h/3} \sum_{b\in\mathcal
@@ -5049,7 +5049,7 @@ $$
 where $C_{\text{bracket domination - reduction variant},0}=2^6$, $C_{\text{bracket domination -
 reduction variant},1}
 =
-2^{10}C_{\text{\$ rho\$ kernels - reduction variant}}$.
+2^{10}C_{\rho\text{ kernels - reduction variant}}$.
 In particular,
 
 $$
@@ -5058,8 +5058,8 @@ $$
     2(1+h).
 $$
 
-See also [`Auto.increaseDataBracketDomination`],
-[`Auto.rhoKernelsReduction`].
+See also `Auto.increaseDataBracketDomination`,
+`Auto.rhoKernelsReduction`.
 -/
 theorem increaseDataBracketDomination {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (h : ℕ) :
@@ -5080,7 +5080,7 @@ C_{\text{bracket domination - reduction variant},1}
 <\tfrac35 2^{76}<2^{76}.
 $$
 
-See also [`Auto.increaseDataBracketDomination`].
+See also `Auto.increaseDataBracketDomination`.
 -/
 theorem constantIncreaseDataBracketDomination :
     C_increaseDataBracketDomination < (3 / 5 : ℝ) * (2 : ℝ) ^ (76 : ℕ) := by
@@ -5094,7 +5094,7 @@ theorem constantIncreaseDataBracketDomination :
 
 /--
 The constant in Proposition
-[`Auto.increaseDataGaussianExpansion`].
+`Auto.increaseDataGaussianExpansion`.
 -/
 noncomputable def C_increaseDataGaussianExpansion : ℝ :=
   (2 : ℝ) ^ (3 : ℕ) * C_gaussianDomination ^ (2 : ℕ) *
@@ -5102,7 +5102,7 @@ noncomputable def C_increaseDataGaussianExpansion : ℝ :=
 
 /--
 The label-preserving Gaussian expansion of the bracket witness from
-Proposition [`Auto.increaseDataBracketDomination`].
+Proposition `Auto.increaseDataBracketDomination`.
 Keeping the original
 finite labels prevents coincident decoded scale pairs from losing their
 multiplicity.
@@ -5638,9 +5638,9 @@ theorem aux_reductionBracket_to_gaussian_estimate {n : ℕ} (D : ReductionData)
 **Proposition (Gaussian domination - reduction variant).**
 
 Let the notation and conclusions of Proposition
-[`Auto.increaseDataBracketDomination`] hold. For
-\(b\in\mathcal B_h\) and
-\(m=(m_0,m_1)\in\mathbb N^2\), define
+`Auto.increaseDataBracketDomination` hold. For
+$b\in\mathcal B_h$ and
+$m=(m_0,m_1)\in\mathbb N^2$, define
 
 $$
 p_{h,b,m}
@@ -5672,11 +5672,11 @@ where $ C_{\text{Gaussian domination - reduction variant}}
 =
 2^3C_{\text{Gaussian domination}}^2C_{\text{bracket domination - reduction variant},1}.$
 The   series on the right-hand side converges for every
-\(v\in\mathbb R^2\) and in \(L^1(\mathbb R^2)\).
+$v\in\mathbb R^2$ and in $L^1(\mathbb R^2)$.
 
-See also [`Auto.increaseDataGaussianExpansion`],
-[`Auto.gaussianDomination`],
-[`Auto.increaseDataBracketDomination`].
+See also `Auto.increaseDataGaussianExpansion`,
+`Auto.gaussianDomination`,
+`Auto.increaseDataBracketDomination`.
 -/
 theorem increaseDataGaussianExpansion {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (h : ℕ) :
@@ -5712,7 +5712,7 @@ C_{\text{Gaussian domination - reduction variant}}
 <\tfrac{123}{128}2^{91}<2^{91}.
 $$
 
-See also [`Auto.increaseDataGaussianExpansion`].
+See also `Auto.increaseDataGaussianExpansion`.
 -/
 theorem constantIncreaseDataGaussianExpansion :
     C_increaseDataGaussianExpansion < (123 / 128 : ℝ) * (2 : ℝ) ^ (91 : ℕ) := by
@@ -5745,7 +5745,7 @@ theorem constantIncreaseDataGaussianExpansion :
       gcongr
     _ < (123 / 128 : ℝ) * (2 : ℝ) ^ (91 : ℕ) := by norm_num
 
-/-- The constant in Lemma [`Auto.nReduction`]. -/
+/-- The constant in Lemma `Auto.nReduction`. -/
 noncomputable def C_nReduction : ℝ := (2 : ℝ) ^ (9 : ℕ) * C_rhoKernelsReduction
 
 /-- The `L¹` mass estimate for the reduction rho kernel used in `nReduction`. -/
@@ -5993,7 +5993,7 @@ theorem aux_reduction_diagonal_convolution_l1_bound
 **Lemma.**
 
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \mathbb{Z}}$, and $(N_{h,j})_{h\in \mathbb{N},j\in
-\mathbb{Z}}$,  be as in Proposition [`Auto.increaseDataBracketDomination`].
+\mathbb{Z}}$,  be as in Proposition `Auto.increaseDataBracketDomination`.
 
 Then for each $h\in \mathbb{N}$ and $j\in \mathbb{Z}$,   $N_{h,j}\in W_0(\mathbb{R}^2)$ and
 
@@ -6001,10 +6001,10 @@ $$
     \|N_{h,j}\|_1\leq  C_{\text{lem:N-reduction}}
 $$
 
-with $C_{\text{lem:N-reduction}} = 2^9C_{\text{\$ rho\$ kernels - reduction variant}}$
+with $C_{\text{lem:N-reduction}} = 2^9C_{\rho\text{ kernels - reduction variant}}$
 
-See also [`Auto.nReduction`],
-[`Auto.rhoKernelsReduction`].
+See also `Auto.nReduction`,
+`Auto.rhoKernelsReduction`.
 -/
 theorem nReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) (h : ℕ) (j : ℤ) :
     MemW0 (reductionNKernel n D h j) ∧
@@ -6063,7 +6063,7 @@ C_{\text{lem:N-reduction}}
 <\tfrac35 2^{75}<2^{75}.
 $$
 
-See also [`Auto.nReduction`].
+See also `Auto.nReduction`.
 -/
 theorem constantNReduction : C_nReduction < (3 / 5 : ℝ) * (2 : ℝ) ^ (75 : ℕ) := by
   unfold C_nReduction
@@ -6895,7 +6895,7 @@ theorem aux_reductionDecay_summable (h : ℕ) {q : ℝ} (_hq0 : 0 ≤ q) (hq : q
     mul_nonneg (Real.rpow_nonneg (by norm_num) _)
       (Real.rpow_nonneg (by positivity) _)) hpoint hG
 
-/-- The constant in Proposition [`Auto.increaseDataReduction`]. -/
+/-- The constant in Proposition `Auto.increaseDataReduction`. -/
 noncomputable def C_increaseDataReduction : ℝ :=
   (2 : ℝ) ^ (22 : ℕ) * C_inductPositiveTermsTheorem *
     C_increaseDataGaussianExpansion * C_increaseDataBracketDominationCard
@@ -7185,7 +7185,7 @@ theorem aux_reduction_partial_bound {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
 
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \mathbb{Z}}$, and
 $(N_{h,j})_{h\in\mathbb{N},j\in\mathbb{Z}}$ be as in Proposition
-[`Auto.increaseDataBracketDomination`].
+`Auto.increaseDataBracketDomination`.
  For $j\in \mathbb{Z}$ and $y\in (\mathbb{R}^2)^2$ let
 
 $$
@@ -7202,10 +7202,10 @@ where $C_{\text{increase data - reduction variant}} = 2^{22}C_{\text{induct posi
 theorem}}C_{\text{Gaussian domination - reduction variant}}C_{\text{bracket domination -
 reduction variant},0}$
 
-See also [`Auto.increaseDataReduction`],
-[`Auto.inductPositiveTermsTheorem`],
-[`Auto.increaseDataGaussianExpansion`],
-[`Auto.increaseDataBracketDomination`].
+See also `Auto.increaseDataReduction`,
+`Auto.inductPositiveTermsTheorem`,
+`Auto.increaseDataGaussianExpansion`,
+`Auto.increaseDataBracketDomination`.
 -/
 theorem increaseDataReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) (h : ℕ) :
     kernelSequenceSeminorm n 2 (by omega) hn
@@ -7277,7 +7277,7 @@ C_{\text{increase data - reduction variant}}
 <\tfrac{31}{32}2^{477}<2^{477}.
 $$
 
-See also [`Auto.increaseDataReduction`].
+See also `Auto.increaseDataReduction`.
 -/
 theorem constantIncreaseDataReduction :
     C_increaseDataReduction < (31 / 32 : ℝ) * (2 : ℝ) ^ (477 : ℕ) := by

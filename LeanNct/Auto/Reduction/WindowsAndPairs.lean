@@ -75,10 +75,10 @@ def cPair (c : ℝ) (N : ℕ) (φ₀ φ₁ : SchwartzMap ℝ ℝ) : Prop :=
       FourierTransform.fourier (fun x : ℝ => (φ₀ x : ℂ)) ξ ^ 2 +
         (1 - FourierTransform.fourier (fun x : ℝ => (φ₁ x : ℂ)) ξ) ^ 2 = 1
 
-/-- The order fixed in Definition [`Auto.uniPair`]. -/
+/-- The order fixed in Definition `Auto.uniPair`. -/
 def N_uniPair : ℕ := 3
 
-/-- The derivative constant fixed in Definition [`Auto.uniPair`]. -/
+/-- The derivative constant fixed in Definition `Auto.uniPair`. -/
 def C_uniPair : ℝ := 2 ^ 15
 
 /--
@@ -98,7 +98,7 @@ $$
 
 A universal pair is a $(C_{\text{Universal pair}},N_{\text{Universal pair}})$-pair.
 
-See also [`Auto.uniPair`].
+See also `Auto.uniPair`.
 -/
 def uniPair (φ₀ φ₁ : SchwartzMap ℝ ℝ) : Prop :=
   cPair C_uniPair N_uniPair φ₀ φ₁

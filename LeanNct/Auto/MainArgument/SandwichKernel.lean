@@ -23,24 +23,24 @@ open scoped BigOperators ENNReal
 
 
 noncomputable section
-/-- The coordinate model used here for `\mathbb R^2`. -/
+/-- The coordinate model used here for $\mathbb R^2$. -/
 abbrev RealPlane := ℝ × ℝ
 
-/-- A sequence pair in `\mathrm A^2`. -/
+/-- A sequence pair in $\mathrm A^2$. -/
 abbrev SequencePair := Fin 2 → ℤ → ℝ
 
 /--
 Blueprint label `double sequence of 2D functions`.
 
-See also [`Auto.MemDoubleSequence`].
+See also `Auto.MemDoubleSequence`.
 -/
 abbrev DoubleSequence (k : ℕ) := Fin k → ℤ → RealPlane → ℝ
 
 /--
 Blueprint label `kernel sequences`.
 
-See also [`Auto.MemKernelSequence`] and
-[`Auto.kernelSequenceSeminorm`].
+See also `Auto.MemKernelSequence` and
+`Auto.kernelSequenceSeminorm`.
 -/
 abbrev KernelSequence (k : ℕ) := ℤ → MKernel k
 
@@ -56,7 +56,7 @@ $$
 
   with $X_{i,j}\in W_0(\mathbb{R}^2)$.
 
-See also [`Auto.DoubleSequence`].
+See also `Auto.DoubleSequence`.
 -/
 def MemDoubleSequence (k : ℕ) (X : DoubleSequence k) : Prop :=
   ∀ i j, Auto.MemW0 (X i j)
@@ -64,8 +64,8 @@ def MemDoubleSequence (k : ℕ) (X : DoubleSequence k) : Prop :=
 /--
 Blueprint label `kernel sequences`.
 
-See also [`Auto.KernelSequence`] and
-[`Auto.kernelSequenceSeminorm`].
+See also `Auto.KernelSequence` and
+`Auto.kernelSequenceSeminorm`.
 -/
 def MemKernelSequence (k : ℕ) (M : KernelSequence k) : Prop :=
   ∀ j, Auto.MemW0 (M j)
@@ -83,8 +83,8 @@ $$
 \Delta_\gamma= 1+\sum_{i\in [k)} \Delta(a_i).
 $$
 
-See also [`Auto.sequencePairDistance`] and
-[`Auto.geometricDelta`].
+See also `Auto.sequencePairDistance` and
+`Auto.geometricDelta`.
 -/
 structure GeometricParameters (n : ℕ) where
   k : ℕ
@@ -99,8 +99,8 @@ structure GeometricParameters (n : ℕ) where
 /--
 Blueprint label `geometric parameters`.
 
-See also [`Auto.GeometricParameters`] and
-[`Auto.geometricDelta`].
+See also `Auto.GeometricParameters` and
+`Auto.geometricDelta`.
 -/
 noncomputable def sequencePairDistance (a : SequencePair) : WithTop ℕ :=
   SequenceDistance (a 0) (a 1)
@@ -108,8 +108,8 @@ noncomputable def sequencePairDistance (a : SequencePair) : WithTop ℕ :=
 /--
 Blueprint label `geometric parameters`.
 
-See also [`Auto.GeometricParameters`] and
-[`Auto.sequencePairDistance`].
+See also `Auto.GeometricParameters` and
+`Auto.sequencePairDistance`.
 -/
 noncomputable def geometricDelta {n : ℕ} (γ : GeometricParameters n) : ℕ :=
   1 + ∑ i, (sequencePairDistance (γ.scales i)).untop (ne_of_lt (γ.finite_distance i))
@@ -193,7 +193,7 @@ $$
 (G_{\gamma})_{i,j} = G_{a_i(j),u(i)}.
 $$
 
-See also [`Auto.gammaGaussian`].
+See also `Auto.gammaGaussian`.
 -/
 noncomputable def twoDimensionalGaussian (q : Fin 2 → ℝ) (u : Fin 2) (v : RealPlane) : ℝ :=
   gaussianRescale (q 0) (W u v).1 * gaussianRescale (q 1) (W u v).2
@@ -201,7 +201,7 @@ noncomputable def twoDimensionalGaussian (q : Fin 2 → ℝ) (u : Fin 2) (v : Re
 /--
 Blueprint label `2D Gaussians`.
 
-See also [`Auto.twoDimensionalGaussian`].
+See also `Auto.twoDimensionalGaussian`.
 -/
 noncomputable def gammaGaussian {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) :
     RealPlane → ℝ :=
@@ -248,8 +248,8 @@ $$
 F}\min(1,J^{-1+2^{k-n+1}}) |\Lambda_k(\sum_{j\in [J)} M_j)(\mathbf{F})| \, .
 $$
 
-See also [`Auto.KernelSequence`] and
-[`Auto.MemKernelSequence`].
+See also `Auto.KernelSequence` and
+`Auto.MemKernelSequence`.
 -/
 noncomputable def kernelSequenceSeminorm (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n)
     (M : KernelSequence k) : ℝ≥0∞ :=

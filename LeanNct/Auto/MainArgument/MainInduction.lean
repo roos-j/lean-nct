@@ -24,7 +24,7 @@ noncomputable section
 /--
 The raw tensor square of the one-dimensional multiplier. This auxiliary
 definition is needed to express the manuscript's repeated notation
-`s_\gamma \otimes s_\gamma` as a double sequence on the concrete product
+$s_\gamma \otimes s_\gamma$ as a double sequence on the concrete product
 coordinate model.
 -/
 noncomputable def aux_sMultiplierTensorSquare {n : ℕ} (γ : GeometricParameters n) :
@@ -49,9 +49,9 @@ theorem aux_sMultiplierTensorSquare_sandwich_eq {n : ℕ}
   ring
 
 /--
-The raw kernel appearing in the definition of `\mathrm{IncreaseData}`. It is
+The raw kernel appearing in the definition of $\mathrm{IncreaseData}$. It is
 introduced only to give a Lean name to the displayed sequence
-`\mathcal M_{i,\iota}` in that definition.
+$\mathcal M_{i,\iota}$ in that definition.
 -/
 noncomputable def aux_increaseDataKernel {n : ℕ} (γ : GeometricParameters n)
     (hkn : γ.k ≤ n - 1) (i : Fin γ.k) (ι : MultiplierIndex γ) :
@@ -1051,7 +1051,7 @@ theorem aux_diagonalBand_mono {n k : ℕ} {C D : ℝ}
 
 /--
 Constant used by
-[`Auto.inductPositiveTerms_implies_increaseData`].
+`Auto.inductPositiveTerms_implies_increaseData`.
 -/
 noncomputable def C_inductPositiveTermsImplyIncreaseData : ℝ :=
   (2 : ℝ) ^ (10 : ℕ) * C_gaussianDominationCombinedCard *
@@ -1060,7 +1060,7 @@ noncomputable def C_inductPositiveTermsImplyIncreaseData : ℝ :=
 /--
 Blueprint label `constant induct positive terms imply increase data`.
 
-The constant from [`Auto.inductPositiveTerms_implies_increaseData`]
+The constant from `Auto.inductPositiveTerms_implies_increaseData`
 satisfies
 
 $$
@@ -2374,7 +2374,7 @@ combined},0} (1+C_{\text{Gaussian domination, combined},1})^2 C_{\text{Gaussian 
 combined},2}.
 $$
 
-[`Auto.gaussianDominationCombined`] supplies the
+`Auto.gaussianDominationCombined` supplies the
 Gaussian-domination constants.
 -/
 theorem inductPositiveTerms_implies_increaseData
@@ -2467,7 +2467,7 @@ theorem inductPositiveTerms_implies_increaseData
     rw [hkernel]
     simpa [mul_assoc, mul_left_comm, mul_comm] using hmain
 
-/-- Constant used by [`Auto.betterInduction`]. -/
+/-- Constant used by `Auto.betterInduction`. -/
 noncomputable def C_betterInduction (k : ℕ) : ℝ :=
   ((2 : ℝ) ^ (15 : ℕ) * (k + 2 : ℕ) *
       Real.sqrt
@@ -2516,7 +2516,7 @@ theorem aux_one_le_C_betterInduction (k : ℕ) : 1 ≤ C_betterInduction k := by
         Real.sqrt 2) ^ (2 : ℕ) :=
       (sq_le_sq₀ hroot hsumnonneg).2 hsum
 
-/-- Constant in [`Auto.inductPositiveTermsTheorem`]. -/
+/-- Constant in `Auto.inductPositiveTermsTheorem`. -/
 noncomputable def C_inductPositiveTermsTheorem : ℝ :=
   ((2 : ℝ) ^ (17 : ℕ) *
       Real.sqrt
@@ -2526,7 +2526,7 @@ noncomputable def C_inductPositiveTermsTheorem : ℝ :=
 /--
 Blueprint label `constant induct positive terms theorem`.
 
-The constant from [`Auto.inductPositiveTermsTheorem`] satisfies
+The constant from `Auto.inductPositiveTermsTheorem` satisfies
 
 $$
 C_{\mathrm{induct\ positive\ terms\ theorem}}<2^{359}.
@@ -2616,7 +2616,7 @@ theorem aux_one_le_C_inductPositiveTermsTheorem :
 
 /--
 Output constant from
-[`Auto.vanishingDiagonal_implies_inductPositiveTerms`].
+`Auto.vanishingDiagonal_implies_inductPositiveTerms`.
 -/
 def C_vanishingDiagonalImpliesInductPositiveTerms (k : ℕ) (C : ℝ) : ℝ :=
   k * C + 2
@@ -3055,7 +3055,7 @@ theorem diagonalBand_implies_vanishingDiagonal {n k : ℕ} {C : ℝ}
   intro γ hγ i
   exact (aux_hMultiplier_seminorm_le_symmetricLMultiplierSum γ i).trans (hband γ hγ i)
 
-/-- Output constant from [`Auto.increaseData_implies_diagonalBand`]. -/
+/-- Output constant from `Auto.increaseData_implies_diagonalBand`. -/
 noncomputable def C_increaseDataImpliesDiagonalBand (k n : ℕ) (C : ℝ) : ℝ :=
   if k < n - 1 then
     (2 : ℝ) ^ (15 : ℕ) * Real.sqrt C_gaussianDominationCombined * Real.sqrt C
@@ -5048,7 +5048,7 @@ holds.
 
 (ii) If $k=n-1$, then $\mathrm{DiagonalBand}(n-1,2^{10}C)$ holds.
 
-[`Auto.gaussianDominationCombined`] supplies the displayed
+`Auto.gaussianDominationCombined` supplies the displayed
 constant.
 -/
 theorem increaseData_implies_diagonalBand {n k : ℕ} {C : ℝ}
@@ -5059,7 +5059,7 @@ theorem increaseData_implies_diagonalBand {n k : ℕ} {C : ℝ}
   aux_increaseDataDiagonal.impl hk hkn hC
 
 /--
-Recursive constants from [`Auto.inductPositiveTermsByInduction`].
+Recursive constants from `Auto.inductPositiveTermsByInduction`.
 The argument is the reverse distance from `n`.
 -/
 noncomputable def C_inductPositiveTermsByInduction (n : ℕ) : ℕ → ℝ
@@ -5247,12 +5247,12 @@ C_k=2+k2^{15}C_{\text{Gaussian domination, combined},2}^{1/2}
 (C_{\text{induct positive terms imply increase data}}C_{k+1})^{1/2}.
 $$
 
-See also [`Auto.vanishingDiagonal_implies_inductPositiveTerms`],
-[`Auto.vanishingKernelIntegral`],
-[`Auto.inductPositiveTerms_implies_increaseData`],
-[`Auto.increaseData_implies_diagonalBand`],
-[`Auto.diagonalBand_implies_vanishingDiagonal`], and
-[`Auto.gaussianDominationCombined`].
+See also `Auto.vanishingDiagonal_implies_inductPositiveTerms`,
+`Auto.vanishingKernelIntegral`,
+`Auto.inductPositiveTerms_implies_increaseData`,
+`Auto.increaseData_implies_diagonalBand`,
+`Auto.diagonalBand_implies_vanishingDiagonal`, and
+`Auto.gaussianDominationCombined`.
 -/
 theorem inductPositiveTermsByInduction (n k : ℕ)
     (hk : 1 ≤ k) (hkn : k ≤ n) :
@@ -5484,8 +5484,8 @@ $$
 
 holds.
 
-See also [`Auto.inductPositiveTermsByInduction`] and
-[`Auto.gaussianDominationCombined`].
+See also `Auto.inductPositiveTermsByInduction` and
+`Auto.gaussianDominationCombined`.
 -/
 theorem betterInduction (n k : ℕ)
     (hk : 1 ≤ k) (hkn : k ≤ n - 1) :
@@ -5513,10 +5513,10 @@ C_{\text{induct positive terms theorem}}
 data}})^{1/2}+2^{1/2}\bigr)^2.
 $$
 
-See also [`Auto.betterInduction`],
-[`Auto.inductPositiveTermsByInduction`],
-[`Auto.gaussianDominationCombined`], and
-[`Auto.inductPositiveTerms_implies_increaseData`].
+See also `Auto.betterInduction`,
+`Auto.inductPositiveTermsByInduction`,
+`Auto.gaussianDominationCombined`, and
+`Auto.inductPositiveTerms_implies_increaseData`.
 -/
 theorem inductPositiveTermsTheorem (n : ℕ) (hn : 2 ≤ n) :
     InductPositiveTerms n 2 C_inductPositiveTermsTheorem (by omega) hn

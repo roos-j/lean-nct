@@ -104,18 +104,18 @@ noncomputable def tensorPower {𝕜 : Type*} [CommMonoid 𝕜]
 Define
 
 $$
-    \left\langlex\right\rangle=(1+|x|)^{-1}\, .
+    \left\langle x\right\rangle=(1+|x|)^{-1}\, .
 $$
 
 We agree on the following parsing, which interprets the power first:
 
 $$
-\left\langlex\right\rangle^N_{(s)}=(\left\langle
+\left\langle x\right\rangle^N_{(s)}=(\left\langle
     .\right\rangle^N)_{(s)}(x)=s^{-1}(1+|s^{-1}x|)^{-N}\, .
 $$
 
-See also [`Auto.scaledBracketBump`],
-[`Auto.scaledBracketBumpReal`].
+See also `Auto.scaledBracketBump`,
+`Auto.scaledBracketBumpReal`.
 -/
 noncomputable def bracketBump (x : ℝ) : ℝ :=
   (1 + |x|)⁻¹
@@ -126,18 +126,18 @@ noncomputable def bracketBump (x : ℝ) : ℝ :=
 Define
 
 $$
-    \left\langlex\right\rangle=(1+|x|)^{-1}\, .
+    \left\langle x\right\rangle=(1+|x|)^{-1}\, .
 $$
 
 We agree on the following parsing, which interprets the power first:
 
 $$
-\left\langlex\right\rangle^N_{(s)}=(\left\langle
+\left\langle x\right\rangle^N_{(s)}=(\left\langle
     .\right\rangle^N)_{(s)}(x)=s^{-1}(1+|s^{-1}x|)^{-N}\, .
 $$
 
-See also [`Auto.bracketBump`],
-[`Auto.scaledBracketBumpReal`].
+See also `Auto.bracketBump`,
+`Auto.scaledBracketBumpReal`.
 -/
 noncomputable def scaledBracketBump (N : ℕ) (s x : ℝ) : ℝ :=
   s⁻¹ * (1 + |s⁻¹ * x|)⁻¹ ^ N
@@ -148,18 +148,18 @@ noncomputable def scaledBracketBump (N : ℕ) (s x : ℝ) : ℝ :=
 Define
 
 $$
-    \left\langlex\right\rangle=(1+|x|)^{-1}\, .
+    \left\langle x\right\rangle=(1+|x|)^{-1}\, .
 $$
 
 We agree on the following parsing, which interprets the power first:
 
 $$
-\left\langlex\right\rangle^N_{(s)}=(\left\langle
+\left\langle x\right\rangle^N_{(s)}=(\left\langle
     .\right\rangle^N)_{(s)}(x)=s^{-1}(1+|s^{-1}x|)^{-N}\, .
 $$
 
-See also [`Auto.bracketBump`],
-[`Auto.scaledBracketBump`].
+See also `Auto.bracketBump`,
+`Auto.scaledBracketBump`.
 -/
 noncomputable def scaledBracketBumpReal (N s x : ℝ) : ℝ :=
   s⁻¹ * Real.rpow (1 + |s⁻¹ * x|) (-N)

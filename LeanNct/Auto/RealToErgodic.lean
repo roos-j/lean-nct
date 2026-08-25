@@ -151,7 +151,7 @@ $$
 C_{\text{main twisted theorem}}=2^{666}.
 $$
 
-For the displayed named constants, see [`Auto.aux_main_twisted_theorem`].
+For the displayed named constants, see `Auto.aux_main_twisted_theorem`.
 -/
 theorem aux_main_twisted_theorem {n : ℕ} (hn : 2 ≤ n) :
     ∀ (J : ℕ), 0 < J → ∀ (t : Fin (J + 1) → ℝ),
@@ -1216,7 +1216,7 @@ $$
 \|a\|_{V_2(N\in\mathbb{N},\ N\ge1;B)}\le D^{1/2}.
 $$
 
-See also [`Auto.jump_estimates_imply_variation_endpoint_enorm`].
+See also `Auto.jump_estimates_imply_variation_endpoint_enorm`.
 -/
 theorem jump_estimates_imply_variation_enorm {B : Type*} [SeminormedAddCommGroup B]
     (a : ℕ → B) {r0 D r : ℝ} (hr0 : 2 ≤ r0) (hD : 0 ≤ D) (hr : r0 < r)
@@ -1252,7 +1252,7 @@ $$
 \|a\|_{V_2(N\in\mathbb{N},\ N\ge1;B)}\le D^{1/2}.
 $$
 
-See also [`Auto.jump_estimates_imply_variation_enorm`].
+See also `Auto.jump_estimates_imply_variation_enorm`.
 -/
 theorem jump_estimates_imply_variation_endpoint_enorm {B : Type*}
     [SeminormedAddCommGroup B] (a : ℕ → B) {D : ℝ} (hD : 0 ≤ D)
@@ -1787,7 +1787,7 @@ $$
 \sum_{i\in I}p_i^{-1}\ge 2^{|I|-n-1}.
 $$
 
-See also [`Auto.exponent_polytope_of_exponents`].
+See also `Auto.exponent_polytope_of_exponents`.
 -/
 theorem exponent_polytope {m : ℕ} (hm : 2 ≤ m) (x : Fin m → ℝ) :
     x ∈ endpointPolytope m ↔
@@ -1845,7 +1845,7 @@ $$
 \sum_{i\in I}p_i^{-1}\ge 2^{|I|-n-1}.
 $$
 
-See also [`Auto.exponent_polytope`].
+See also `Auto.exponent_polytope`.
 -/
 theorem exponent_polytope_of_exponents {m : ℕ} (hm : 2 ≤ m)
     (p : Fin m → ℝ≥0∞) (_hp : ∀ i, 1 ≤ p i) :
@@ -2306,7 +2306,7 @@ $$
 \prod_{i\in[n)}\|f_i\|_{2^{\pi(i)+\min(n-\pi(i),2)}}^2.
 $$
 
-For the displayed named constants, see [`Auto.aux_main_twisted_theorem`].
+For the displayed named constants, see `Auto.aux_main_twisted_theorem`.
 -/
 theorem permutation_of_endpoint_estimate {n : ℕ} (hn : 2 ≤ n)
     (π : Equiv.Perm (Fin n)) (J : ℕ) (hJ : 0 < J)
@@ -2630,7 +2630,7 @@ theorem one_le_jumpGrowth {n J : ℕ} (hn : 2 ≤ n) (hJ : 0 < J) :
 
 /--
 The real-variable interpolation constant in
-Proposition [`Auto.interpolated_real_variable_estimate`].
+Proposition `Auto.interpolated_real_variable_estimate`.
 -/
 noncomputable def C_interpolated_real_variable_estimate (n : ℕ) : ℝ :=
   (2 : ℝ) ^ (2 * n) * (2 : ℝ) ^ 666
@@ -5273,7 +5273,7 @@ $$
 \prod_{i\in[n)}\|f_i\|_{p_i}^2.
 $$
 
-For the displayed named constants, see [`Auto.aux_main_twisted_theorem`].
+For the displayed named constants, see `Auto.aux_main_twisted_theorem`.
 -/
 theorem interpolated_real_variable_estimate {n : ℕ} (hn : 2 ≤ n)
     (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
@@ -5535,7 +5535,7 @@ $$
 C_{\text{Calderón transference},n}=2^{4n+6},
 $$
 
-For the displayed named constants, see [`Auto.calderon_transference_external`].
+For the displayed named constants, see `Auto.calderon_transference_external`.
 -/
 noncomputable def C_calderon_transference_external (n : ℕ)
     : ℝ :=
@@ -5571,7 +5571,7 @@ C_{\text{Calderón transference principle},n}
 2^{4n+6}.
 $$
 
-For the displayed named constant, see [`Auto.C_calderon_transference_external`].
+For the displayed named constant, see `Auto.C_calderon_transference_external`.
 -/
 theorem calderon_transference_external {n : ℕ} (hn : 2 ≤ n)
     (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 < p i ∧ p i < ∞)
@@ -5597,7 +5597,7 @@ theorem calderon_transference_external {n : ℕ} (hn : 2 ≤ n)
   rw [ct_energy_eq S N f] at h
   exact h
 
-/-- The constant in Theorem [`Auto.ergodic_jump_estimate_interpolation`]. -/
+/-- The constant in Theorem `Auto.ergodic_jump_estimate_interpolation`. -/
 noncomputable def C_ergodic_jump_estimate_interpolation (n : ℕ)
     (_p : Fin n → ℝ≥0∞) : ℝ :=
   (2 : ℝ) ^ (2 * n) * C_calderon_transference_external n *
@@ -5627,9 +5627,9 @@ C_{\text{Ergodic jump estimate with general exponents},n,(p_i)_{i\in[n)}}
 $$
 
 For the displayed named constants, see
-[`Auto.ergodic_jump_estimate_interpolation`],
-[`Auto.calderon_transference_external`],
-[`Auto.aux_main_twisted_theorem`].
+`Auto.ergodic_jump_estimate_interpolation`,
+`Auto.calderon_transference_external`,
+`Auto.aux_main_twisted_theorem`.
 -/
 theorem ergodic_jump_estimate_interpolation {n : ℕ} (hn : 2 ≤ n)
     (p : Fin n → ℝ≥0∞) (hp : ∀ i, 1 ≤ p i)
@@ -5740,7 +5740,7 @@ theorem aux_symmetric_exponent_conditions {n : ℕ} (hn : 2 ≤ n) :
     intro i _
     exact heq i
 
-/-- The constant in Theorem [`Auto.symmetric_ergodic_jump_estimate`]. -/
+/-- The constant in Theorem `Auto.symmetric_ergodic_jump_estimate`. -/
 noncomputable def C_symmetric_ergodic_jump_estimate (n : ℕ) : ℝ :=
   (2 : ℝ) ^ (8 * n + 672)
 
@@ -5770,9 +5770,9 @@ C_{\text{Symmetric ergodic jump estimate},n}
 =2^{8n+672}.
 $$
 
-For the displayed named constants, see [`Auto.symmetric_ergodic_jump_estimate`],
-[`Auto.calderon_transference_external`],
-[`Auto.aux_main_twisted_theorem`].
+For the displayed named constants, see `Auto.symmetric_ergodic_jump_estimate`,
+`Auto.calderon_transference_external`,
+`Auto.aux_main_twisted_theorem`.
 -/
 theorem symmetric_ergodic_jump_estimate {n : ℕ} (hn : 2 ≤ n)
     (X : Type u) [MeasurableSpace X] (μ : Measure X)
@@ -5864,7 +5864,7 @@ theorem aux_one_div_two_rpow_sub_one (n : ℕ) :
   ring
 
 /--
-The constant in Theorem [`Auto.aux_main_ergodic_theorem`], with the
+The constant in Theorem `Auto.aux_main_ergodic_theorem`, with the
 explicit values from the blueprint.
 -/
 noncomputable def C_main_ergodic_theorem (n : ℕ) (r : ℝ) : ℝ :=
@@ -5895,7 +5895,7 @@ and, for $n\ge3$,
 $C_{\text{main ergodic theorem},n,r}=2^{4n+337}
 \left(\tfrac{r}{r-2^{n-1}}\right)^{1/r}$.
 
-For the displayed named constant, see [`Auto.aux_main_ergodic_theorem`].
+For the displayed named constant, see `Auto.aux_main_ergodic_theorem`.
 -/
 theorem aux_main_ergodic_theorem {X : Type u} [MeasurableSpace X]
     {μ : Measure X} [SigmaFinite μ] {n : ℕ} (hn : 2 ≤ n)

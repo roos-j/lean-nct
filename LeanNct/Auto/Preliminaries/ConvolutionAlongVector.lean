@@ -162,7 +162,7 @@ $$
 \widehat{\rho *_\alpha \varphi}(\xi) = \widehat{\rho}(\xi)\widehat{\varphi}(\alpha\cdot\xi).
 $$
 
-See also [`Auto.fourier_convolutionAlongVector`].
+See also `Auto.fourier_convolutionAlongVector`.
 -/
 theorem memW0_convolutionAlongVector {n : ℕ}
     {𝕜 : Type*} [NormedField 𝕜] [NormedSpace ℝ 𝕜] [CompleteSpace 𝕜]
@@ -196,7 +196,7 @@ $$
 \widehat{\rho *_\alpha \varphi}(\xi) = \widehat{\rho}(\xi)\widehat{\varphi}(\alpha\cdot\xi).
 $$
 
-See also [`Auto.memW0_convolutionAlongVector`].
+See also `Auto.memW0_convolutionAlongVector`.
 -/
 theorem fourier_convolutionAlongVector {n : ℕ}
     {rho : EuclideanSpace ℝ (Fin n) → ℂ} {phi : ℝ → ℂ}

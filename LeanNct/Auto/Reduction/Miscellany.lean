@@ -1119,7 +1119,7 @@ theorem formPos {n : ℕ} (hn : 1 ≤ n) (Psi : MKernel 1) (hPsi : MemW0 Psi)
       _ = ∫ q : RealVector (d + 1) × (ℝ × ℝ), Q q := hT.integral_comp' Q
       _ ≥ 0 := hnonneg
 
-/-- The tensor-square specialization in Lemma [`Auto.formPos`]. -/
+/-- The tensor-square specialization in Lemma `Auto.formPos`. -/
 theorem aux_formPos_tensorSquare {n : ℕ} (hn : 1 ≤ n) (psi : ℝ → ℝ)
     (hpsi : MemW0 psi) (F : Fin n → SchwartzMap (RealVector n) ℝ) :
     0 ≤ prismForm n 1 (by omega) hn
@@ -1484,7 +1484,7 @@ theorem ftcATphi {n : ℕ} (phi : SchwartzMap ℝ ℝ)
       intro t ht
       rfl
 
-/-- The fixed constant in Lemma [`Auto.phiJProperties`]. -/
+/-- The fixed constant in Lemma `Auto.phiJProperties`. -/
 noncomputable def C_phiJProperties : ℝ := 2 ^ 12 * C_uniPair
 
 /- Private Fourier-profile infrastructure for `phiJProperties`. -/
@@ -2432,7 +2432,7 @@ $\psi:\mathbb{R}\to \mathbb{R}$ such that
    C_{\text{lem:Phij\_prop}}=2^{12}C_{\text{Universal pair}}.
    $$
 
-See also [`Auto.phiJProperties`], [`Auto.uniPair`].
+See also `Auto.phiJProperties`, `Auto.uniPair`.
 -/
 theorem phiJProperties (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
     (Psi : SchwartzMap (EuclideanSpace ℝ (Fin 2)) ℝ) (hPsi : Psi ≠ 0)
@@ -2606,7 +2606,7 @@ $$
 C_{\text{lem:Phij\_prop}}=2^{27}.
 $$
 
-See also [`Auto.phiJProperties`].
+See also `Auto.phiJProperties`.
 -/
 theorem constantPhiJProposition : C_phiJProperties = (2 : ℝ) ^ 27 := by
   unfold C_phiJProperties C_uniPair

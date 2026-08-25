@@ -77,7 +77,7 @@ def aux_mainAuxiliaryFourierHypotheses (psi : ℝ → ℝ) : Prop :=
 def aux_mainAuxiliaryHypotheses (psi : SchwartzMap ℝ ℝ) : Prop :=
   aux_mainAuxiliaryFourierHypotheses (fun x ↦ psi x)
 
-/-- The additional `T\psi` hypothesis in `mainAuxTwo`. -/
+/-- The additional $T\psi$ hypothesis in `mainAuxTwo`. -/
 def aux_mainAuxiliaryTwoHypotheses (psi : SchwartzMap ℝ ℝ) : Prop :=
   aux_mainAuxiliaryHypotheses psi ∧
     ∀ m : ℕ, m < 3 → ∀ xi : ℝ,
@@ -98,7 +98,7 @@ def aux_dyadicVariationBound {n : ℕ} (C : ℝ) (chi : ℝ → ℝ)
     aux_dyadicJumpEnergy chi f J k ≤
       ENNReal.ofReal C * ENNReal.ofReal ((J : ℝ) ^ variationExponent n)
 
-/-- The constant in Lemma [`Auto.mainAuxOne`]. -/
+/-- The constant in Lemma `Auto.mainAuxOne`. -/
 noncomputable def C_mainAuxOne (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 4 * C_inductPositiveTermsReductionWhitneyProduct n
 
@@ -562,8 +562,8 @@ C_{\text{lem:main\_aux1}}
 =2^4C_{\text{induct positive terms - reduction variant, Whitney, product-type}}.
 $$
 
-See also [`Auto.mainAuxOne`],
-[`Auto.inductPositiveTermsReductionWhitneyProduct`].
+See also `Auto.mainAuxOne`,
+`Auto.inductPositiveTermsReductionWhitneyProduct`.
 -/
 theorem mainAuxOne {n : ℕ} (hn : 2 ≤ n) (psi : SchwartzMap ℝ ℝ)
     (hpsi : aux_mainAuxiliaryHypotheses psi)
@@ -702,7 +702,7 @@ $$
 C_{\text{lem:main\_aux1}}<2^{573}.
 $$
 
-See also [`Auto.mainAuxOne`].
+See also `Auto.mainAuxOne`.
 -/
 theorem constantMainAuxiliaryOne {n : ℕ} (hn : 2 ≤ n) :
     C_mainAuxOne n < (2 : ℝ) ^ 573 := by
@@ -1922,7 +1922,7 @@ $$
 2A.
 $$
 
-See also [`Auto.mainAuxOne`].
+See also `Auto.mainAuxOne`.
 -/
 theorem shortLongFtcReduction {n : ℕ} (hn : 2 ≤ n) (phi : SchwartzMap ℝ ℝ)
     (hTphi : aux_mainAuxiliaryFourierHypotheses
@@ -1936,7 +1936,7 @@ theorem shortLongFtcReduction {n : ℕ} (hn : 2 ≤ n) (phi : SchwartzMap ℝ �
   intro J hJ kappa hcard
   exact aux_shortLong_local_finset_bound hn phi f tau htau htauHyp J hJ kappa hcard
 
-/-- The constant in Lemma [`Auto.mainBumpOneLongOne`]. -/
+/-- The constant in Lemma `Auto.mainBumpOneLongOne`. -/
 noncomputable def C_mainBumpOneLongOne (n : ℕ) : ℝ :=
   (2 * C_uniPair) ^ 2 * C_mainAuxOne n
 
@@ -2226,9 +2226,9 @@ C_{\text{lem:mainbump1\_long1}}
 =(2C_{\text{Universal pair}})^2C_{\text{lem:main\_aux1}}.
 $$
 
-See also [`Auto.mainBumpOneLongOne`],
-[`Auto.uniPair`],
-[`Auto.mainAuxOne`].
+See also `Auto.mainBumpOneLongOne`,
+`Auto.uniPair`,
+`Auto.mainAuxOne`.
 -/
 theorem mainBumpOneLongOne {n : ℕ} (hn : 2 ≤ n)
     (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
@@ -2335,7 +2335,7 @@ $$
 C_{\text{lem:mainbump1\_long1}}<2^{605}.
 $$
 
-See also [`Auto.mainBumpOneLongOne`].
+See also `Auto.mainBumpOneLongOne`.
 -/
 theorem constantMainBumpOneLongOne {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpOneLongOne n < (2 : ℝ) ^ 605 := by
@@ -2351,7 +2351,7 @@ theorem constantMainBumpOneLongOne {n : ℕ} (hn : 2 ≤ n) :
         _ = (2 : ℝ) ^ (32 + 573) := by rw [← pow_add]
         _ = (2 : ℝ) ^ 605 := by norm_num
 
-/-- The constant in Lemma [`Auto.mainBumpOneLongTwo`]. -/
+/-- The constant in Lemma `Auto.mainBumpOneLongTwo`. -/
 noncomputable def C_mainBumpOneLongTwo (n : ℕ) : ℝ :=
   2 * C_inductPositiveTermsReductionNonWhitneySkip n
 
@@ -2659,8 +2659,8 @@ $$
 where $C_{\text{lem:mainbump1\_long2}}=2 C_{\text{induct positive terms - reduction variant,
 non-Whitney, skip terms}}$.
 
-See also [`Auto.mainBumpOneLongTwo`],
-[`Auto.inductPositiveTermsReductionNonWhitneySkip`].
+See also `Auto.mainBumpOneLongTwo`,
+`Auto.inductPositiveTermsReductionNonWhitneySkip`.
 -/
 theorem mainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n)
     (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
@@ -2846,7 +2846,7 @@ $$
 C_{\text{lem:mainbump1\_long2}}<\tfrac89 2^{543}<2^{543}.
 $$
 
-See also [`Auto.mainBumpOneLongTwo`].
+See also `Auto.mainBumpOneLongTwo`.
 -/
 theorem constantMainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpOneLongTwo n < (8 / 9 : ℝ) * (2 : ℝ) ^ 543 := by
@@ -2864,7 +2864,7 @@ theorem constantMainBumpOneLongTwo {n : ℕ} (hn : 2 ≤ n) :
         _ = (8 / 9 : ℝ) * (2 : ℝ) ^ (1 + 542) := by rw [← pow_add]
         _ = (8 / 9 : ℝ) * (2 : ℝ) ^ 543 := by norm_num
 
-/-- The constant in Lemma [`Auto.mainBumpOneLong`]. -/
+/-- The constant in Lemma `Auto.mainBumpOneLong`. -/
 noncomputable def C_mainBumpOneLong (n : ℕ) : ℝ :=
   2 * (C_mainBumpOneLongOne n + C_mainBumpOneLongTwo n)
 
@@ -2976,9 +2976,9 @@ $$
 where $C_{\text{lem:mainbump1\_long}}=2(C_{\text{lem:mainbump1\_long2}} +
 C_{\text{lem:mainbump1\_long1}})$.
 
-See also [`Auto.mainBumpOneLong`],
-[`Auto.mainBumpOneLongTwo`],
-[`Auto.mainBumpOneLongOne`].
+See also `Auto.mainBumpOneLong`,
+`Auto.mainBumpOneLongTwo`,
+`Auto.mainBumpOneLongOne`.
 -/
 theorem mainBumpOneLong {n : ℕ} (hn : 2 ≤ n)
     (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
@@ -3115,7 +3115,7 @@ $$
 C_{\text{lem:mainbump1\_long}}<\tfrac{11}{16}2^{606}<2^{606}.
 $$
 
-See also [`Auto.mainBumpOneLong`].
+See also `Auto.mainBumpOneLong`.
 -/
 theorem constantMainBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpOneLong n < (11 / 16 : ℝ) * (2 : ℝ) ^ 606 := by
@@ -3149,7 +3149,7 @@ theorem constantMainBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
       set_option exponentiation.threshold 1000 in
         ring
 
-/-- The constant in Lemma [`Auto.mainBumpOne`]. -/
+/-- The constant in Lemma `Auto.mainBumpOne`. -/
 noncomputable def C_mainBumpOne (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 4 * (3 * C_uniPair) ^ 2 * C_mainAuxOne n +
     2 * C_mainBumpOneLong n
@@ -3610,10 +3610,10 @@ C_{\text{lem:mainbump1}}
 +2C_{\text{lem:mainbump1\_long}}.
 $$
 
-See also [`Auto.mainBumpOne`],
-[`Auto.uniPair`],
-[`Auto.mainAuxOne`],
-[`Auto.mainBumpOneLong`].
+See also `Auto.mainBumpOne`,
+`Auto.uniPair`,
+`Auto.mainAuxOne`,
+`Auto.mainBumpOneLong`.
 -/
 theorem mainBumpOne {n : ℕ} (hn : 2 ≤ n)
     (phi0 phi1 : SchwartzMap ℝ ℝ) (hpair : uniPair phi0 phi1)
@@ -3685,7 +3685,7 @@ $$
 C_{\text{lem:mainbump1}}<\tfrac78 2^{610}<2^{610}.
 $$
 
-See also [`Auto.mainBumpOne`].
+See also `Auto.mainBumpOne`.
 -/
 theorem constantMainBumpOne {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpOne n < (7 / 8 : ℝ) * (2 : ℝ) ^ 610 := by
@@ -3704,7 +3704,7 @@ theorem constantMainBumpOne {n : ℕ} (hn : 2 ≤ n) :
       set_option exponentiation.threshold 1000 in
         norm_num [C_uniPair]
 
-/-- The constant in Lemma [`Auto.mainAuxTwo`]. -/
+/-- The constant in Lemma `Auto.mainAuxTwo`. -/
 noncomputable def C_mainAuxTwo (n : ℕ) : ℝ :=
   24 * C_mainAuxOne n
 
@@ -3890,8 +3890,8 @@ $$
 
 where $C_{\text{lem:main\_aux2}}=24C_{\text{lem:main\_aux1}}$.
 
-See also [`Auto.mainAuxTwo`],
-[`Auto.mainAuxOne`].
+See also `Auto.mainAuxTwo`,
+`Auto.mainAuxOne`.
 -/
 theorem mainAuxTwo {n : ℕ} (hn : 2 ≤ n) (psi : SchwartzMap ℝ ℝ)
     (hpsi : aux_mainAuxiliaryTwoHypotheses psi)
@@ -3912,7 +3912,7 @@ $$
 C_{\text{lem:main\_aux2}}<2^{578}.
 $$
 
-See also [`Auto.mainAuxTwo`].
+See also `Auto.mainAuxTwo`.
 -/
 theorem constantMainAuxiliaryTwo {n : ℕ} (hn : 2 ≤ n) :
     C_mainAuxTwo n < (2 : ℝ) ^ 578 := by
@@ -3935,7 +3935,7 @@ theorem constantMainAuxiliaryTwo {n : ℕ} (hn : 2 ≤ n) :
         _ = (2 : ℝ) ^ (2 + 576) := by rw [← pow_add]
         _ = (2 : ℝ) ^ 578 := by norm_num
 
-/-- The constant in Lemma [`Auto.mainBumpTwo`]. -/
+/-- The constant in Lemma `Auto.mainBumpTwo`. -/
 noncomputable def C_mainBumpTwo (n : ℕ) : ℝ :=
   C_mainAuxTwo n * C_absDerivFourierTPhiThreeLe 2 ^ 2
 
@@ -4326,9 +4326,9 @@ C_{\text{lem:mainbump2}}
 =C_{\text{lem:main\_aux2}}C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},2}^2.
 $$
 
-See also [`Auto.mainBumpTwo`],
-[`Auto.mainAuxTwo`],
-[`Auto.absDerivFourierTPhiThreeLe`].
+See also `Auto.mainBumpTwo`,
+`Auto.mainAuxTwo`,
+`Auto.absDerivFourierTPhiThreeLe`.
 -/
 theorem mainBumpTwo {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
@@ -4414,7 +4414,7 @@ $$
 C_{\text{lem:mainbump2}}<\tfrac{27}{32}2^{658}<2^{658}.
 $$
 
-See also [`Auto.mainBumpTwo`].
+See also `Auto.mainBumpTwo`.
 -/
 theorem constantMainBumpTwo {n : ℕ} (hn : 2 ≤ n) :
     C_mainBumpTwo n < (27 / 32 : ℝ) * (2 : ℝ) ^ 658 := by
@@ -4459,7 +4459,7 @@ theorem constantMainBumpTwo {n : ℕ} (hn : 2 ≤ n) :
       set_option exponentiation.threshold 1000 in
         ring
 
-/-- The constant in Lemma [`Auto.leftBump`]. -/
+/-- The constant in Lemma `Auto.leftBump`. -/
 noncomputable def C_leftBump (n : ℕ) : ℝ :=
   C_mainAuxTwo n * ((2 : ℝ) ^ 14 * C_uniPair) ^ 2
 
@@ -4656,9 +4656,9 @@ C_{\text{lem:leftbump}}
 =C_{\text{lem:main\_aux2}}(2^{14}C_{\text{Universal pair}})^2.
 $$
 
-See also [`Auto.leftBump`],
-[`Auto.mainAuxTwo`],
-[`Auto.uniPair`].
+See also `Auto.leftBump`,
+`Auto.mainAuxTwo`,
+`Auto.uniPair`.
 -/
 theorem leftBump {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
@@ -4731,7 +4731,7 @@ $$
 C_{\text{lem:leftbump}}<\tfrac{33}{64}2^{636}<2^{636}.
 $$
 
-See also [`Auto.leftBump`].
+See also `Auto.leftBump`.
 -/
 theorem constantLeftBump {n : ℕ} (hn : 2 ≤ n) :
     C_leftBump n < (33 / 64 : ℝ) * (2 : ℝ) ^ 636 := by
@@ -6906,7 +6906,7 @@ theorem aux_leftBumpOneShort_scaled_integralM_prefix
 
 /--
 The first short-variation constant in Lemma
-[`Auto.leftBumpOneShortOne`].
+`Auto.leftBumpOneShortOne`.
 -/
 noncomputable def C_leftBumpOneShortOne (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 2 * C_inductPositiveTermsReductionWhitney n * C_thetaPrimitive 2 ^ 2 *
@@ -6932,10 +6932,10 @@ C_{\text{lem:leftbump1\_short1}}
 C_{\text{lem:theta\_prim},2}^2C_{\text{lem:thetat\_offcenter}}.
 $$
 
-See also [`Auto.leftBumpOneShortOne`],
-[`Auto.inductPositiveTermsReductionWhitney`],
-[`Auto.thetaPrimitive`],
-[`Auto.thetaTOffcenter`].
+See also `Auto.leftBumpOneShortOne`,
+`Auto.inductPositiveTermsReductionWhitney`,
+`Auto.thetaPrimitive`,
+`Auto.thetaTOffcenter`.
 -/
 theorem leftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n)
@@ -7030,7 +7030,7 @@ C_{\text{lem:leftbump1\_short1}}
 <2^{628}.
 $$
 
-See also [`Auto.leftBumpOneShortOne`].
+See also `Auto.leftBumpOneShortOne`.
 -/
 theorem constantLeftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOneShortOne n <
@@ -7068,14 +7068,14 @@ theorem constantLeftBumpOneShortOne {n : ℕ} (hn : 2 ≤ n) :
 
 /--
 The second short-variation auxiliary constant in Lemma
-[`Auto.leftBumpOneShortTwo`].
+`Auto.leftBumpOneShortTwo`.
 -/
 noncomputable def C_leftBumpOneShortTwoAuxiliary : ℝ :=
   max (C_thetaPrimitive 2) (max (C_thetaDecay 2) (C_thetaDecay 3))
 
 /--
 The second short-variation constant in Lemma
-[`Auto.leftBumpOneShortTwo`].
+`Auto.leftBumpOneShortTwo`.
 -/
 noncomputable def C_leftBumpOneShortTwo (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 4 * C_inductPositiveTermsReductionWhitney n * C_thetaTOffcenter *
@@ -8245,11 +8245,11 @@ C_{\text{lem:leftbump1\_short2}}
 C_{\text{lem:thetat\_offcenter}}C^2.
 $$
 
-See also [`Auto.leftBumpOneShortTwo`],
-[`Auto.thetaPrimitive`],
-[`Auto.thetaDecay`],
-[`Auto.inductPositiveTermsReductionWhitney`],
-[`Auto.thetaTOffcenter`].
+See also `Auto.leftBumpOneShortTwo`,
+`Auto.thetaPrimitive`,
+`Auto.thetaDecay`,
+`Auto.inductPositiveTermsReductionWhitney`,
+`Auto.thetaTOffcenter`.
 -/
 theorem leftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n)
@@ -8359,7 +8359,7 @@ C_{\text{lem:leftbump1\_short2}}
 <2^{630}.
 $$
 
-See also [`Auto.leftBumpOneShortTwo`].
+See also `Auto.leftBumpOneShortTwo`.
 -/
 theorem constantLeftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOneShortTwo n < (2 : ℝ) ^ 630 := by
@@ -8431,7 +8431,7 @@ theorem constantLeftBumpOneShortTwo {n : ℕ} (hn : 2 ≤ n) :
           set_option exponentiation.threshold 1000 in
             ring
 
-/-- The long-variation constant in Lemma [`Auto.leftBumpOneLong`]. -/
+/-- The long-variation constant in Lemma `Auto.leftBumpOneLong`. -/
 noncomputable def C_leftBumpOneLong (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 6 * C_inductPositiveTermsReductionWhitney n * C_thetaPrimitive 2 ^ 2
 
@@ -9346,9 +9346,9 @@ C_{\text{lem:leftbump1\_long}}
 C_{\text{lem:theta\_prim},2}^2.
 $$
 
-See also [`Auto.leftBumpOneLong`],
-[`Auto.inductPositiveTermsReductionWhitney`],
-[`Auto.thetaPrimitive`].
+See also `Auto.leftBumpOneLong`,
+`Auto.inductPositiveTermsReductionWhitney`,
+`Auto.thetaPrimitive`.
 -/
 theorem leftBumpOneLong {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
@@ -9444,7 +9444,7 @@ $$
 C_{\text{lem:leftbump1\_long}}<2^{625}.
 $$
 
-See also [`Auto.leftBumpOneLong`].
+See also `Auto.leftBumpOneLong`.
 -/
 theorem constantLeftBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOneLong n < (2 : ℝ) ^ 625 := by
@@ -9456,12 +9456,12 @@ theorem constantLeftBumpOneLong {n : ℕ} (hn : 2 ≤ n) :
       · positivity
       · norm_num
 
-/-- The constant in Lemma [`Auto.leftBumpOne`]. -/
+/-- The constant in Lemma `Auto.leftBumpOne`. -/
 noncomputable def C_leftBumpOne (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 7 * Real.sqrt (C_leftBumpOneShortOne n) *
       Real.sqrt (C_leftBumpOneShortTwo n) + 2 * C_leftBumpOneLong n
 
-/-- Lemma [`Auto.leftBumpOne`]. -/
+/-- Lemma `Auto.leftBumpOne`. -/
 theorem aux_leftBumpOne_logarithmic_setIntegral_rescale (a : ℝ) (ha : 0 < a)
     (g : ℝ → ℝ) :
     (∫ t : ℝ in Set.Icc a (a * 2), |g t| ^ 2 * t⁻¹) =
@@ -11181,10 +11181,10 @@ where  $C_{\text{lem:leftbump1}}
 =2^7C_{\text{lem:leftbump1\_short1}}^{1/2}C_{\text{lem:leftbump1\_short2}}^{1/2}
 +2C_{\text{lem:leftbump1\_long}}$.
 
-See also [`Auto.leftBumpOne`],
-[`Auto.leftBumpOneShortOne`],
-[`Auto.leftBumpOneShortTwo`],
-[`Auto.leftBumpOneLong`].
+See also `Auto.leftBumpOne`,
+`Auto.leftBumpOneShortOne`,
+`Auto.leftBumpOneShortTwo`,
+`Auto.leftBumpOneLong`.
 -/
 theorem leftBumpOne {n : ℕ} (hn : 2 ≤ n)
     (b : windowBasedBumpFunctions) (f : ReductionNormalizedTuple n) (k : ℤ)
@@ -11193,7 +11193,7 @@ theorem leftBumpOne {n : ℕ} (hn : 2 ≤ n)
       (windowBasedBumpFunctions.phiTwo b k) f.1 := by
   exact aux_leftBumpOne_leftBumpOne hn b f k hk
 
-/-- The numerical estimate in Lemma [`Auto.constantLeftBumpOne`]. -/
+/-- The numerical estimate in Lemma `Auto.constantLeftBumpOne`. -/
 theorem aux_leftBumpOne_whitney_sharp {n : ℕ} (hn : 2 ≤ n) :
     C_inductPositiveTermsReductionWhitney n <
       (1397 / 2048 : ℝ) * (2 : ℝ) ^ 557 := by
@@ -11347,13 +11347,13 @@ $$
 C_{\text{lem:leftbump1}}<\tfrac{23}{32}2^{636}<2^{636}.
 $$
 
-See also [`Auto.leftBumpOne`].
+See also `Auto.leftBumpOne`.
 -/
 theorem constantLeftBumpOne {n : ℕ} (hn : 2 ≤ n) :
     C_leftBumpOne n < (23 / 32 : ℝ) * (2 : ℝ) ^ 636 := by
   exact aux_leftBumpOne_constant_sharp hn
 
-/-- The final constant in the proof of Theorem [`Auto.aux_main_twisted_theorem`]. -/
+/-- The final constant in the proof of Theorem `Auto.aux_main_twisted_theorem`. -/
 noncomputable def C_mainTwistedTheorem (n : ℕ) : ℝ :=
   (2 : ℝ) ^ 2 *
     (C_mainBumpOne n + (2 : ℝ) ^ 6 * C_mainBumpTwo n + C_leftBump n +
@@ -12799,7 +12799,7 @@ theorem aux_mainTwisted_low_high_phiZero_energy {n : ℕ} (hn : 2 ≤ n)
 
 /--
 The fixed-constant reduction-side form of Theorem
-[`Auto.aux_main_twisted_theorem`].
+`Auto.aux_main_twisted_theorem`.
 It is stated over the shared `Auto` twisted-average definitions to
 keep imports acyclic.
 -/

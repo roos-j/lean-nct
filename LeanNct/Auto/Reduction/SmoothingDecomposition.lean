@@ -24,7 +24,7 @@ open scoped BigOperators FourierTransform Real ENNReal DomAddAct Convolution
 noncomputable section
 /--
 The raw one-dimensional, $L^1$-normalized rescaling used throughout
-Definition [`Auto.windowBasedBumpFunctions`].
+Definition `Auto.windowBasedBumpFunctions`.
 -/
 noncomputable def aux_realRescaled (t : ℝ) (f : ℝ → ℝ) : ℝ → ℝ :=
   fun x ↦ t⁻¹ * f (t⁻¹ * x)
@@ -116,7 +116,7 @@ noncomputable def theta (b : windowBasedBumpFunctions) : ℝ → ℝ :=
 
 /--
 The primitive $\widetilde\theta=\mathbf 1_{[0,\infty)}*\theta$ fixed in
-Definition [`Auto.windowBasedBumpFunctions`].
+Definition `Auto.windowBasedBumpFunctions`.
 -/
 noncomputable def thetaTilde (b : windowBasedBumpFunctions) : ℝ → ℝ :=
   aux_realConvolution (aux_indicator (Set.Ici 0)) (theta b)
@@ -157,13 +157,13 @@ noncomputable def smoothingPartialSum (b : windowBasedBumpFunctions) (N : ℕ) :
 
 end windowBasedBumpFunctions
 
-/-- The constant in Lemma [`Auto.thetaDecay`]. -/
+/-- The constant in Lemma `Auto.thetaDecay`. -/
 def C_thetaDecay (N : ℕ) : ℝ :=
   (2 : ℝ) ^ (2 * N + 2) * C_uniPair
 
 /--
 The four explicit constants in Lemma
-[`Auto.absDerivFourierPhiThreeLe`].
+`Auto.absDerivFourierPhiThreeLe`.
 -/
 def C_absDerivFourierPhiThreeLe : ℕ → ℝ
   | 0 => 4
@@ -172,11 +172,11 @@ def C_absDerivFourierPhiThreeLe : ℕ → ℝ
   | 3 => 69 * (2 : ℝ) ^ 4 * C_uniPair ^ 2 + 47 * 2 * 5 ^ 2 * C_uniPair + 2 ^ 11
   | _ + 4 => 0
 
-/-- The constants in Lemma [`Auto.absDerivFourierTPhiThreeLe`]. -/
+/-- The constants in Lemma `Auto.absDerivFourierTPhiThreeLe`. -/
 def C_absDerivFourierTPhiThreeLe (m : ℕ) : ℝ :=
   m * C_absDerivFourierPhiThreeLe m + C_absDerivFourierPhiThreeLe (m + 1)
 
-/-- The constant in Lemma [`Auto.thetaPrimitive`]. -/
+/-- The constant in Lemma `Auto.thetaPrimitive`. -/
 def C_thetaPrimitive (N : ℕ) : ℝ :=
   (2 : ℝ) ^ (5 * N + 6) * C_uniPair
 
@@ -1933,8 +1933,8 @@ $$
 C_{\text{lem:theta\_decay},N}=2^{2N+2}C_{\text{Universal pair}}.
 $$
 
-See also [`Auto.thetaDecay`],
-[`Auto.uniPair`].
+See also `Auto.thetaDecay`,
+`Auto.uniPair`.
 -/
 theorem thetaDecay (b : windowBasedBumpFunctions) (N : ℕ)
     (hN_one : 1 ≤ N) (hN_three : N ≤ 3) :
@@ -2016,7 +2016,7 @@ $$
 C_{\text{lem:theta\_decay},N}\le2^{2N+17}.
 $$
 
-See also [`Auto.thetaDecay`].
+See also `Auto.thetaDecay`.
 -/
 theorem constantThetaDecay (N : ℕ) (hN_one : 1 ≤ N) (hN_three : N ≤ 3) :
     C_thetaDecay N ≤ (2 : ℝ) ^ (2 * N + 17) := by
@@ -2113,7 +2113,7 @@ theorem fourierPhiThreeEq (b : windowBasedBumpFunctions) (k : ℤ) (ξ : ℝ) :
   simp only [I, K, T, A, B]
   ring
 
-/-! ### Fourier derivative bounds for \(\varphi_{3,k}\) -/
+/-! ### Fourier derivative bounds for $\varphi_{3,k}$ -/
 
 namespace aux_phiThree
 
@@ -3014,8 +3014,8 @@ C_{\text{lem:abs\_deriv\_ft\_phi3\_le},3}=69\cdot2^4C_{\text{Universal
 pair}}^2+47\cdot2\cdot5^2C_{\text{Universal pair}}+2^{11}.
 $$
 
-See also [`Auto.absDerivFourierPhiThreeLe`],
-[`Auto.uniPair`].
+See also `Auto.absDerivFourierPhiThreeLe`,
+`Auto.uniPair`.
 -/
 theorem absDerivFourierPhiThreeLe (b : windowBasedBumpFunctions) (m : ℕ)
     (hm : m < 4) (k : ℤ) (ξ : ℝ) (hξ : |ξ| ≤ 1) :
@@ -3103,7 +3103,7 @@ $$
 C_{\text{lem:abs\_deriv\_ft\_phi3\_le},3}<2^{41}.
 $$
 
-See also [`Auto.absDerivFourierPhiThreeLe`].
+See also `Auto.absDerivFourierPhiThreeLe`.
 -/
 theorem constantPhiThreeDerivative :
     C_absDerivFourierPhiThreeLe 0 = (2 : ℝ) ^ 2 ∧
@@ -3517,9 +3517,9 @@ C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},2}=81\cdot2^4C_{\text{Universal
 pair}}^2+263\cdot2\cdot5C_{\text{Universal pair}}+555\cdot2^2.
 $$
 
-See also [`Auto.absDerivFourierTPhiThreeLe`],
-[`Auto.absDerivFourierPhiThreeLe`],
-[`Auto.uniPair`].
+See also `Auto.absDerivFourierTPhiThreeLe`,
+`Auto.absDerivFourierPhiThreeLe`,
+`Auto.uniPair`.
 -/
 theorem absDerivFourierTPhiThreeLe (b : windowBasedBumpFunctions) (m : ℕ)
     (hm : m < 3) (k : ℤ) (ξ : ℝ) (hξ : |ξ| ≤ 1) :
@@ -3595,7 +3595,7 @@ $$
 C_{\text{lem:abs\_deriv\_ft\_Tphi3\_le},2}<2^{41}.
 $$
 
-See also [`Auto.absDerivFourierTPhiThreeLe`].
+See also `Auto.absDerivFourierTPhiThreeLe`.
 -/
 theorem constantTPhiThreeDerivative :
     C_absDerivFourierTPhiThreeLe 0 < (2 : ℝ) ^ 20 ∧
@@ -4328,8 +4328,8 @@ C_{\text{lem:theta\_prim},N}
 =2^{5N+6}C_{\text{Universal pair}}.
 $$
 
-See also [`Auto.uniPair`],
-[`Auto.thetaPrimitive`].
+See also `Auto.uniPair`,
+`Auto.thetaPrimitive`.
 -/
 theorem thetaPrimitive (b : windowBasedBumpFunctions) (N : ℕ)
     (hN_two : 2 ≤ N) (hN_uni : N < N_uniPair) :
@@ -4366,8 +4366,8 @@ $$
 C_{\text{lem:theta\_prim},2}\le2^{31}.
 $$
 
-See also [`Auto.thetaPrimitive`],
-[`Auto.uniPair`].
+See also `Auto.thetaPrimitive`,
+`Auto.uniPair`.
 -/
 theorem constantThetaPrimitive (N : ℕ) (hN_two : 2 ≤ N) (hN_uni : N < N_uniPair) :
     C_thetaPrimitive N ≤ (2 : ℝ) ^ (5 * N + 21) ∧

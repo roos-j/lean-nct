@@ -125,7 +125,7 @@ theorem aux_squareRootGaussianDifference_integrable {a : ℤ → ℝ}
 /--
 This auxiliary equality identifies `squareRootGaussianDifference` with the diagonal
 square-root kernel from the preliminary estimates, so their decay theorems apply directly to
-the multipliers `s_\gamma`.
+the multipliers $s_\gamma$.
 -/
 theorem aux_squareRootGaussianDifference_eq_diagonalSquareRoot {a : ℤ → ℝ}
     (ha : SpacedSequence a) (j : ℤ) (x : ℝ) :
@@ -191,7 +191,7 @@ we have that $s(a,j)$ is a well-defined function in $W_0(\mathbb{R})$. Consequen
   \Gamma$ and $i\in [k)$, $j\in \mathbb{Z}$, then $(s_{\gamma})_{i,j}$ is a well-defined function in
   $W_0(\mathbb{R})$.
 
-See also [`Auto.sMultiplier_memW0`].
+See also `Auto.sMultiplier_memW0`.
 -/
 theorem squareRootGaussianDifference_memW0 {a : ℤ → ℝ}
     (ha : SpacedSequence a) (j : ℤ) :
@@ -207,7 +207,7 @@ theorem squareRootGaussianDifference_memW0 {a : ℤ → ℝ}
 /--
 Blueprint label `square root Gaussian difference W0`.
 
-See also [`Auto.squareRootGaussianDifference_memW0`].
+See also `Auto.squareRootGaussianDifference_memW0`.
 -/
 theorem sMultiplier_memW0 {n : ℕ} (γ : GeometricParameters n)
     (i : Fin γ.k) (j : ℤ) :
@@ -328,7 +328,7 @@ $$
 \lim_{t\to 0_+} (L_{\gamma,t})_{i,j} = (H_{\gamma})_{i,j} \quad\text{in}\;L^1.
 $$
 
-See also [`Auto.lMultiplierAtScale_tendsto_hMultiplier`].
+See also `Auto.lMultiplierAtScale_tendsto_hMultiplier`.
 -/
 theorem lMultiplierAtScale_memDoubleSequence {n : ℕ} (γ : GeometricParameters n)
     {t : ℝ} (ht : 0 < t) :
@@ -681,7 +681,7 @@ theorem aux_lMultiplierAtScale_tendsto_integral_norm
 /--
 Blueprint label `L:F_t`.
 
-See also [`Auto.lMultiplierAtScale_memDoubleSequence`].
+See also `Auto.lMultiplierAtScale_memDoubleSequence`.
 -/
 theorem lMultiplierAtScale_tendsto_hMultiplier
     {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) :
@@ -748,16 +748,16 @@ $$
  (\Phi_{(2^{h}a_i^1(j-\Delta_{\gamma}-1))}-\Phi_{(2^{h+1}a_i^1(j-\Delta_{\gamma}-1))})\, .
 $$
 
-See also [`Auto.lMultiplier`].
+See also `Auto.lMultiplier`.
 -/
 def multiplierIndexSet {n : ℕ} (γ : GeometricParameters n) : Set (ℤ × ℤ) :=
   {ι | (ι.1 ≠ 0 ∧ ι.2 = 0) ∨ (ι.1 = 0 ∧ ι.2.natAbs ≤ geometricDelta γ)}
 
-/-- An index belonging to the manuscript's set `\mathcal I_\gamma`. -/
+/-- An index belonging to the manuscript's set $\mathcal I_\gamma$. -/
 abbrev MultiplierIndex {n : ℕ} (γ : GeometricParameters n) :=
   {ι : ℤ × ℤ // ι ∈ multiplierIndexSet γ}
 
-/-- The finite truncation by `|\iota|\le N` used to define the manuscript sum. -/
+/-- The finite truncation by $|\iota|\le N$ used to define the manuscript sum. -/
 noncomputable def aux_multiplierIndexTruncation {n : ℕ} (γ : GeometricParameters n) (N : ℕ) :
     Finset (ℤ × ℤ) := by
   classical
@@ -796,7 +796,7 @@ noncomputable def sumOverMultiplierIndexENNReal {n : ℕ}
 /--
 Blueprint label `L multiplier`.
 
-See also [`Auto.multiplierIndexSet`].
+See also `Auto.multiplierIndexSet`.
 -/
 noncomputable def lMultiplier {n : ℕ} (γ : GeometricParameters n) (ι : MultiplierIndex γ) :
     DoubleSequence γ.k := fun i j v =>
@@ -819,7 +819,7 @@ noncomputable def lMultiplier {n : ℕ} (γ : GeometricParameters n) (ι : Multi
 
 /--
 This auxiliary raw Fourier transform is needed because the sandwich kernels use the product
-coordinate model `\mathbb R \times \mathbb R`; it is the manuscript's Fourier convention on
+coordinate model $\mathbb R \times \mathbb R$; it is the manuscript's Fourier convention on
 that concrete model.
 -/
 noncomputable def aux_fourierPlane (f : RealPlane → ℝ) (ξ : RealPlane) : ℂ :=
@@ -836,7 +836,7 @@ noncomputable def aux_inverseFourierPlane (f : RealPlane → ℂ) (v : RealPlane
 
 /--
 This auxiliary raw Fourier transform is the one-dimensional specialization used for the
-multiplier `\sigma_{\gamma,\iota,i,j}`.
+multiplier $\sigma_{\gamma,\iota,i,j}$.
 -/
 noncomputable def aux_fourierReal (f : ℝ → ℝ) (ξ : ℝ) : ℂ :=
   ∫ x : ℝ, (f x : ℂ) * Complex.exp (-((2 : ℂ) * Real.pi * Complex.I * x * ξ))
@@ -2286,7 +2286,7 @@ theorem aux_lMultiplierAtScale_largeScaleConvolution_bound
           aux_standardBumpRescale_translation_integral_norm t q ht
       rw [hscale]
 
-/-- The raw large-scale `L¹` convergence for `L_{γ,t}`. -/
+/-- The raw large-scale `L¹` convergence for $L_{\gamma,t}$. -/
 theorem aux_lMultiplierAtScale_tendsto_integral_norm_atTop
     {n : ℕ} (γ : GeometricParameters n) (i : Fin γ.k) (j : ℤ) :
     Tendsto (fun t : ℝ => ∫ v : RealPlane, |lMultiplierAtScale γ t i j v|)
@@ -3446,7 +3446,7 @@ $$
  .
 $$
 
-See also [`Auto.nMultiplier`].
+See also `Auto.nMultiplier`.
 -/
 noncomputable def sigmaMultiplier {n : ℕ} (γ : GeometricParameters n) (ι : MultiplierIndex γ)
     (i : Fin γ.k) (j : ℤ) : ℝ → ℝ :=
@@ -3967,7 +3967,7 @@ theorem aux_fourierReal_nMultiplierRho_negative {n : ℕ}
 /--
 Blueprint label `N multiplier`.
 
-See also [`Auto.sigmaMultiplier`].
+See also `Auto.sigmaMultiplier`.
 -/
 noncomputable def nMultiplier {n : ℕ} (γ : GeometricParameters n) (hkn : γ.k ≤ n - 1)
     (ι : MultiplierIndex γ) : DoubleSequence γ.k := fun i j v =>

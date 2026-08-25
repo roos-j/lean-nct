@@ -10,9 +10,9 @@ set_option linter.style.header false
 # `M` kernels
 
 This file formalizes the subsection ``M kernels'' of the manuscript.  We model
-`(\mathbb R^2)^k` by the canonically equivalent coordinate space
-`(\mathbb R^k) × (\mathbb R^k)`: the first and second components collect the
-first and second coordinates of every copy of `\mathbb R^2`.
+$(\mathbb R^2)^k$ by the canonically equivalent coordinate space
+$(\mathbb R^k) \times (\mathbb R^k)$: the first and second components collect the
+first and second coordinates of every copy of $\mathbb R^2$.
 -/
 
 namespace Auto
@@ -23,7 +23,7 @@ open scoped BigOperators ENNReal
 
 
 noncomputable section
-/-- A raw `M` kernel on `$(\mathbb R^2)^k$`, in its canonical two-coordinate-vector model. -/
+/-- A raw `M` kernel on $(\mathbb R^2)^k$, in its canonical two-coordinate-vector model. -/
 abbrev MKernel (k : ℕ) := RealVector k × RealVector k → ℝ
 
 /-- The last index of a nonempty finite coordinate vector. -/
@@ -436,8 +436,8 @@ $$
 \|K_k(M)\|_1 \le \|M\|_1.
 $$
 
-See also [`Auto.mToK_integrand_memW0`],
-[`Auto.mToK_memW0`], [`Auto.mToK_eLpNorm_one_le`].
+See also `Auto.mToK_integrand_memW0`,
+`Auto.mToK_memW0`, `Auto.mToK_eLpNorm_one_le`.
 -/
 def mToK (k : ℕ) (hk : 1 ≤ k) (M : MKernel k) : KKernel k :=
   fun z => ∫ p : RealVector (k - 1), M (mToKPoint k hk z p)
@@ -461,8 +461,8 @@ $$
 \|K_k(M)\|_1 \le \|M\|_1.
 $$
 
-See also [`Auto.mToK`], [`Auto.mToK_memW0`],
-[`Auto.mToK_eLpNorm_one_le`].
+See also `Auto.mToK`, `Auto.mToK_memW0`,
+`Auto.mToK_eLpNorm_one_le`.
 -/
 theorem mToK_integrand_memW0 (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MKernel k)
     (hM : MemW0 M) (z : RealVector k × ℝ) :
@@ -505,9 +505,9 @@ $$
 \|K_k(M)\|_1 \le \|M\|_1.
 $$
 
-See also [`Auto.mToK`],
-[`Auto.mToK_integrand_memW0`],
-[`Auto.mToK_eLpNorm_one_le`].
+See also `Auto.mToK`,
+`Auto.mToK_integrand_memW0`,
+`Auto.mToK_eLpNorm_one_le`.
 -/
 theorem mToK_memW0 (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MKernel k)
     (hM : MemW0 M) : MemW0 (mToK k hk M) := by
@@ -550,8 +550,8 @@ $$
 \|K_k(M)\|_1 \le \|M\|_1.
 $$
 
-See also [`Auto.mToK`],
-[`Auto.mToK_integrand_memW0`], [`Auto.mToK_memW0`].
+See also `Auto.mToK`,
+`Auto.mToK_integrand_memW0`, `Auto.mToK_memW0`.
 -/
 theorem mToK_eLpNorm_one_le (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MKernel k)
     (hM : MemW0 M) :
@@ -593,13 +593,13 @@ theorem mToK_eLpNorm_one_le (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n) (M : MKe
         (volume : Measure (RealVector k))) := hG_norm
 
 /--
-Auxiliary definition for Proposition [`Auto.positivityM_memW0`]; see
+Auxiliary definition for Proposition `Auto.positivityM_memW0`; see
  `positivityM_memW0`.
 -/
 def tensorSquare (phi : ℝ → ℝ) : ℝ × ℝ → ℝ := fun y => phi y.1 * phi y.2
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_memW0`.
 -/
 theorem aux_memW0_tensorSquare (phi : ℝ → ℝ) (hphi : MemW0 phi) :
@@ -613,8 +613,8 @@ def aux_diagonalShift {k : ℕ} (y : RealVector k × RealVector k) (i : Fin k) (
   (Function.update y.1 i (y.1 i - q), Function.update y.2 i (y.2 i - q))
 
 /--
-Auxiliary definition for Propositions [`Auto.cauchySchwarzKernel_memW0`] and
-[`Auto.doublyCauchySchwarzKernel_memW0`]; see `cauchySchwarzAtK_bound` and
+Auxiliary definition for Propositions `Auto.cauchySchwarzKernel_memW0` and
+`Auto.doublyCauchySchwarzKernel_memW0`; see `cauchySchwarzAtK_bound` and
 `cauchySchwarzAtNMinusOne`.
 -/
 def diagonalConvolution {k : ℕ} (rho : MKernel k) (i : Fin k) (phi : ℝ → ℝ) :
@@ -623,7 +623,7 @@ def diagonalConvolution {k : ℕ} (rho : MKernel k) (i : Fin k) (phi : ℝ → �
 
 /--
 Auxiliary definition for Proposition
- [`Auto.doublyCauchySchwarzKernel_memW0`]; see
+ `Auto.doublyCauchySchwarzKernel_memW0`; see
 `cauchySchwarzAtNMinusOne`.
 -/
 def realConvolution (phi psi : ℝ → ℝ) : ℝ → ℝ :=
@@ -686,8 +686,8 @@ theorem aux_memW0_convolutionAlong {E : Type*} [NormedAddCommGroup E]
   simpa [H, Function.comp_def, aux_convolutionAlongShear] using hIntegral
 
 /--
-Auxiliary definition for Propositions [`Auto.cauchySchwarzKernel_memW0`] and
-[`Auto.doublyCauchySchwarzKernel_memW0`]; see `cauchySchwarzAtK_bound` and
+Auxiliary definition for Propositions `Auto.cauchySchwarzKernel_memW0` and
+`Auto.doublyCauchySchwarzKernel_memW0`; see `cauchySchwarzAtK_bound` and
 `cauchySchwarzAtNMinusOne`.
 -/
 def diagonalDirection (k : ℕ) (i : Fin k) : RealVector k × RealVector k :=
@@ -714,8 +714,8 @@ theorem aux_sub_smul_diagonalDirection (k : ℕ) (i : Fin k)
     · simp [h]
 
 /--
-Auxiliary for Propositions [`Auto.cauchySchwarzKernel_memW0`] and
-[`Auto.doublyCauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Propositions `Auto.cauchySchwarzKernel_memW0` and
+`Auto.doublyCauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzKernel_memW0` and
 `doublyCauchySchwarzKernel_memW0`.
 -/
@@ -750,8 +750,8 @@ theorem aux_realConvolution_memW0 (phi psi : ℝ → ℝ) (hphi : MemW0 phi)
   simpa using h
 
 /--
-Auxiliary definition for Propositions [`Auto.cauchySchwarzKernel_memW0`] and
-[`Auto.doublyCauchySchwarzKernel_memW0`]; see `cauchySchwarzLift_memW0` and
+Auxiliary definition for Propositions `Auto.cauchySchwarzKernel_memW0` and
+`Auto.doublyCauchySchwarzKernel_memW0`; see `cauchySchwarzLift_memW0` and
 `cauchySchwarzAtNMinusOne`.
 -/
 def cauchySchwarzLift {k J : ℕ} (rho : Fin J → MKernel k)
@@ -807,7 +807,7 @@ theorem aux_cauchySchwarzLiftEquiv_apply (k : ℕ)
 
 /--
 Auxiliary `W₀` closure for one summand of the `M`-kernel Cauchy--Schwarz
-lift.  It pulls back `|\rho|\otimes\phi^{\otimes 2}` by the preceding
+lift.  It pulls back $|\rho|\otimes\phi^{\otimes 2}$ by the preceding
 coordinate equivalence.
 -/
 theorem aux_memW0_cauchySchwarzLiftSummand (k : ℕ) (rho : MKernel k)
@@ -892,11 +892,11 @@ $$
 \sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
 $$
 
-See also [`Auto.cauchySchwarzKernel_memW0`],
-[`Auto.cauchySchwarzAtK_bound`],
-[`Auto.doublyCauchySchwarzKernel_memW0`],
-[`Auto.cauchySchwarzAtNMinusOne_bound`],
-[`Auto.cauchySchwarzAtNMinusOne`].
+See also `Auto.cauchySchwarzKernel_memW0`,
+`Auto.cauchySchwarzAtK_bound`,
+`Auto.doublyCauchySchwarzKernel_memW0`,
+`Auto.cauchySchwarzAtNMinusOne_bound`,
+`Auto.cauchySchwarzAtNMinusOne`.
 -/
 theorem cauchySchwarzLift_memW0 (k J : ℕ) (rho : Fin J → MKernel k)
     (phi : Fin J → ℝ → ℝ) (hrho : ∀ j, MemW0 (rho j))
@@ -908,7 +908,7 @@ theorem cauchySchwarzLift_memW0 (k J : ℕ) (rho : Fin J → MKernel k)
   exact aux_memW0_cauchySchwarzLiftSummand k (rho j) (hrho j) (phi j) (hphi j)
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_memW0`.
 -/
 noncomputable def aux_tensorSquareExtensionEquiv (d : ℕ) (i : Fin (d + 1)) :
@@ -918,7 +918,7 @@ noncomputable def aux_tensorSquareExtensionEquiv (d : ℕ) (i : Fin (d + 1)) :
     (aux_cauchySchwarzLiftReassociate d)
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_memW0`.
 -/
 theorem aux_tensorSquareExtensionEquiv_apply (d : ℕ) (i : Fin (d + 1))
@@ -929,7 +929,7 @@ theorem aux_tensorSquareExtensionEquiv_apply (d : ℕ) (i : Fin (d + 1))
     aux_cauchySchwarzLiftReassociate]
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_memW0`.
 -/
 theorem aux_memW0_tensorSquareExtensionSucc (d : ℕ) (i : Fin (d + 1))
@@ -961,7 +961,7 @@ theorem aux_memW0_tensorSquareExtensionSucc (d : ℕ) (i : Fin (d + 1))
   simpa [H, Function.comp_def, aux_tensorSquareExtensionEquiv_apply] using hPullback
 
 /--
-Auxiliary definition for Proposition [`Auto.cauchySchwarzKernel_memW0`]; see
+Auxiliary definition for Proposition `Auto.cauchySchwarzKernel_memW0`; see
 `cauchySchwarzAtK_bound`.
 -/
 def cauchySchwarzKernel {k J : ℕ} (rho : Fin J → MKernel k) (phi : Fin J → ℝ → ℝ)
@@ -970,7 +970,7 @@ def cauchySchwarzKernel {k J : ℕ} (rho : Fin J → MKernel k) (phi : Fin J →
 
 /--
 Auxiliary definition for Proposition
- [`Auto.doublyCauchySchwarzKernel_memW0`]; see
+ `Auto.doublyCauchySchwarzKernel_memW0`; see
 `cauchySchwarzAtNMinusOne`.
 -/
 def doublyCauchySchwarzKernel {k J : ℕ} (rho : Fin J → MKernel k)
@@ -1003,8 +1003,8 @@ $$
 \Big(\sum_{j\in[J)}\|\rho_j\|_1\Big)^{1/2}.
 $$
 
-See also [`Auto.cauchySchwarzLift_memW0`],
-[`Auto.cauchySchwarzAtK_bound`].
+See also `Auto.cauchySchwarzLift_memW0`,
+`Auto.cauchySchwarzAtK_bound`.
 -/
 theorem cauchySchwarzKernel_memW0 (n k J : ℕ) (_hk : 1 ≤ k) (_hkn : k < n - 1)
     (_hJ : 1 ≤ J) (rho : Fin J → MKernel k) (phi : Fin J → ℝ → ℝ)
@@ -1042,9 +1042,9 @@ $$
 \sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
 $$
 
-See also [`Auto.cauchySchwarzLift_memW0`],
-[`Auto.cauchySchwarzAtNMinusOne_bound`],
-[`Auto.cauchySchwarzAtNMinusOne`].
+See also `Auto.cauchySchwarzLift_memW0`,
+`Auto.cauchySchwarzAtNMinusOne_bound`,
+`Auto.cauchySchwarzAtNMinusOne`.
 -/
 theorem doublyCauchySchwarzKernel_memW0 (n J : ℕ) (_hn : 1 ≤ n) (_hJ : 1 ≤ J)
     (rho : Fin J → MKernel (n - 1)) (phi : Fin J → ℝ → ℝ)
@@ -1057,7 +1057,7 @@ theorem doublyCauchySchwarzKernel_memW0 (n J : ℕ) (_hn : 1 ≤ n) (_hJ : 1 ≤
     (realConvolution (phi j) (phi j)) (aux_realConvolution_memW0 _ _ (hphi j) (hphi j))
 
 /--
-Auxiliary definition for Proposition [`Auto.positivityM_memW0`]; see
+Auxiliary definition for Proposition `Auto.positivityM_memW0`; see
  `positivityM_nonnegative`.
 -/
 def tensorSquareExtension (k : ℕ) (hk : 1 ≤ k) (i : Fin k) (tildeM : MKernel (k - 1))
@@ -1066,7 +1066,7 @@ def tensorSquareExtension (k : ℕ) (hk : 1 ≤ k) (i : Fin k) (tildeM : MKernel
     tensorSquare phi (y.1 i, y.2 i)
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_memW0`.
 -/
 theorem aux_tensorSquareExtension_memW0 (n k : ℕ) (hk : 1 ≤ k) (_hkn : k ≤ n)
@@ -1103,7 +1103,7 @@ $$
     \Lambda_k(M)(\mathbf{F})\ge 0.
 $$
 
-See also [`Auto.positivityM_nonnegative`].
+See also `Auto.positivityM_nonnegative`.
 -/
 theorem positivityM_memW0 (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n)
     (i : Fin k) (tildeM : MKernel (k - 1)) (htildeM : MemW0 tildeM)
@@ -1114,7 +1114,7 @@ theorem positivityM_memW0 (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n)
 /--
 **Definition (prism form).**
 
-Let $1\le k\le n$. By Proposition [`Auto.mToK`], $K_k(M)\in W_0(\mathbb{R}^{k+1})$ for every $M\in
+Let $1\le k\le n$. By Proposition `Auto.mToK`, $K_k(M)\in W_0(\mathbb{R}^{k+1})$ for every $M\in
 W_0((\mathbb{R}^2)^k)$. We define for such $M$ and $\mathbf{F}\in\mathfrak{F}$,
 
 $$
@@ -1126,7 +1126,7 @@ def prismForm (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n) (M : MKernel k)
   prismBrascampLiebForm n k hk hkn (mToK k hk M) F
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 def aux_nonlastIndex (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) : Fin n :=
@@ -1141,7 +1141,7 @@ def aux_nonlastIndex (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) : Fin n
     exact hi this⟩
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_nonlastIndex_castSucc (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) :
@@ -1150,7 +1150,7 @@ theorem aux_nonlastIndex_castSucc (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.la
   rfl
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_nonlastIndex_lt (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) :
@@ -1164,7 +1164,7 @@ theorem aux_nonlastIndex_lt (n : ℕ) (i : Fin (n + 1)) (hi : i ≠ Fin.last n) 
   omega
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_coordinateSum_insertNth (d : ℕ) (j : Fin (d + 1))
@@ -1179,7 +1179,7 @@ theorem aux_coordinateSum_insertNth (d : ℕ) (j : Fin (d + 1))
   exact Fin.insertNth_apply_succAbove (α := fun _ : Fin (d + 1) => ℝ) j q r a
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_succAbove_last (d : ℕ) (i : Fin (d + 2))
@@ -1204,7 +1204,7 @@ theorem aux_succAbove_last (d : ℕ) (i : Fin (d + 2))
   · exact le_of_not_gt hnot
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_succAbove_nonlast_comm (d : ℕ) (i : Fin (d + 2))
@@ -1218,7 +1218,7 @@ theorem aux_succAbove_nonlast_comm (d : ℕ) (i : Fin (d + 2))
   exact (congrArg Fin.castSucc (Fin.castPred_succAbove_castPred hi ha)).symm
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToKPoint_erase_nonlast (d : ℕ)
@@ -1281,7 +1281,7 @@ theorem aux_mToKPoint_erase_nonlast (d : ℕ)
         hbottom, hglobal, hcast]
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_eraseVector_eq (d : ℕ) (i : Fin (d + 2))
@@ -1291,7 +1291,7 @@ theorem aux_eraseVector_eq (d : ℕ) (i : Fin (d + 2))
   simp [aux_eraseVector, eraseVector]
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToKPoint_at_nonlast (d : ℕ)
@@ -1324,7 +1324,7 @@ theorem aux_mToKPoint_at_nonlast (d : ℕ)
 set_option maxHeartbeats 800000 in
 -- The dependent coordinate expansion below requires additional elaboration heartbeats.
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToK_tensorSquareExtension_eq_positivity_nonlast (d : ℕ)
@@ -1446,7 +1446,7 @@ theorem aux_mToK_tensorSquareExtension_eq_positivity_nonlast (d : ℕ)
     _ = _ := by rfl
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToK_nonnegative (k : ℕ) (hk : 1 ≤ k) (M : MKernel k)
@@ -1458,7 +1458,7 @@ theorem aux_mToK_nonnegative (k : ℕ) (hk : 1 ≤ k) (M : MKernel k)
   exact hM_nonneg _
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 noncomputable def aux_lastFibreEquiv (d : ℕ) (s : ℝ) :
@@ -1497,7 +1497,7 @@ noncomputable def aux_lastFibreEquiv (d : ℕ) (s : ℝ) :
     · simpa [Fin.lastCases, Function.comp_def] using (continuous_apply j).comp continuous_snd
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_measurePreserving_lastFibreEquiv (d : ℕ) (s : ℝ) :
@@ -1654,7 +1654,7 @@ theorem mToK_terminalFibreIntegral_general {k : ℕ} (hk : 1 ≤ k)
     exact mToK_terminalFibreIntegral d M hM z
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToKPoint_erase_last (d : ℕ)
@@ -1731,7 +1731,7 @@ theorem aux_mToKPoint_erase_last (d : ℕ)
       simp
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToKPoint_at_last (d : ℕ)
@@ -1752,7 +1752,7 @@ theorem aux_mToKPoint_at_last (d : ℕ)
 set_option maxHeartbeats 800000 in
 -- The last-coordinate expansion below requires additional elaboration heartbeats.
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToK_tensorSquareExtension_eq_positivity_last (d : ℕ)
@@ -1875,7 +1875,7 @@ theorem aux_mToK_tensorSquareExtension_eq_positivity_last (d : ℕ)
           rw [integral_mul_const, integral_mul_const]
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_integral_product_square_nonnegative
@@ -1899,7 +1899,7 @@ theorem aux_integral_product_square_nonnegative
     _ ≥ 0 := integral_nonneg fun p => sq_nonneg _
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 noncomputable def aux_baseReorderOne (n : ℕ) :
@@ -1914,7 +1914,7 @@ noncomputable def aux_baseReorderOne (n : ℕ) :
       (MeasurableEquiv.piUnique (fun _ : Fin 1 => ℝ))))
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_baseReorderOne_apply (n : ℕ)
@@ -1923,7 +1923,7 @@ theorem aux_baseReorderOne_apply (n : ℕ)
   rfl
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_measurePreserving_baseReorderOne (n : ℕ) :
@@ -1956,7 +1956,7 @@ theorem aux_measurePreserving_baseReorderOne (n : ℕ) :
   exact hright.comp hswap
 
 /--
-Auxiliary definition for Proposition [`Auto.positivityM_memW0`]; see
+Auxiliary definition for Proposition `Auto.positivityM_memW0`; see
  `positivityM_nonnegative`.
 -/
 def aux_rankOneFactor (n : ℕ) (hn : 1 ≤ n) (phi : ℝ → ℝ)
@@ -1968,7 +1968,7 @@ def aux_rankOneFactor (n : ℕ) (hn : 1 ≤ n) (phi : ℝ → ℝ)
         (concatVector n 1 hn (fun _ : Fin 1 => r) (eraseVector i x))
 
 /--
-Auxiliary definition for Proposition [`Auto.positivityM_memW0`]; see
+Auxiliary definition for Proposition `Auto.positivityM_memW0`; see
  `positivityM_nonnegative`.
 -/
 def aux_rankOneRawIntegrand (n : ℕ) (hn : 1 ≤ n) (c : ℝ) (phi : ℝ → ℝ)
@@ -1978,7 +1978,7 @@ def aux_rankOneRawIntegrand (n : ℕ) (hn : 1 ≤ n) (c : ℝ) (phi : ℝ → �
     aux_rankOneFactor n hn phi F p.2 (p.1.2 0)
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_prism_one_integrand_eq_rankOneRaw
@@ -2033,7 +2033,7 @@ theorem aux_prism_one_integrand_eq_rankOneRaw
   ring_nf
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_prism_one_rankOne_nonnegative
@@ -2102,7 +2102,7 @@ theorem aux_prism_one_rankOne_nonnegative
     _ ≥ 0 := by simpa only [G] using hnonneg
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_integral_realVector_zero (f : RealVector 0 → ℝ) :
@@ -2116,7 +2116,7 @@ theorem aux_integral_realVector_zero (f : RealVector 0 → ℝ) :
   exact Subsingleton.elim _ _
 
 /--
-Auxiliary for Proposition [`Auto.positivityM_memW0`], formalized as
+Auxiliary for Proposition `Auto.positivityM_memW0`, formalized as
  `positivityM_nonnegative`.
 -/
 theorem aux_mToK_tensorSquareExtension_one_eq
@@ -2152,7 +2152,7 @@ $$
     \Lambda_k(M)(\mathbf{F})\ge 0.
 $$
 
-See also [`Auto.positivityM_memW0`].
+See also `Auto.positivityM_memW0`.
 -/
 theorem positivityM_nonnegative
     (n k : ℕ) (hk : 1 ≤ k) (hkn : k ≤ n)
@@ -2198,7 +2198,7 @@ theorem positivityM_nonnegative
           (mToK (d + 1) (by omega) tildeM) hrho hrho_nonneg phi hphi i F hF
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It translates a predecessor fibre to compensate a
 diagonal shift in a nonfinal coordinate.
 -/
@@ -2207,7 +2207,7 @@ def aux_fibreTranslate (d : ℕ) (j : Fin d) (q : ℝ) (p : RealVector d) :
   p + q • Pi.single j 1
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It records the coordinate-sum change under
 `aux_fibreTranslate`.
 -/
@@ -2220,7 +2220,7 @@ theorem aux_coordinateSum_fibreTranslate (d : ℕ) (j : Fin d) (q : ℝ)
   rw [← Finset.mul_sum, Fintype.sum_pi_single', mul_one]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It unfolds the final first coordinate of the
 `mToKPoint` change of variables.
 -/
@@ -2232,7 +2232,7 @@ theorem aux_mToKPoint_fst_last (d : ℕ) (z : RealVector (d + 1) × ℝ)
   simp [mToKPoint, hlast]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It unfolds the final second coordinate of the
 `mToKPoint` change of variables.
 -/
@@ -2244,7 +2244,7 @@ theorem aux_mToKPoint_snd_last (d : ℕ) (z : RealVector (d + 1) × ℝ)
   simp [mToKPoint, hlast]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It unfolds a nonfinal first coordinate of the
 `mToKPoint` change of variables.
 -/
@@ -2257,7 +2257,7 @@ theorem aux_mToKPoint_fst_castSucc (d : ℕ) (a : Fin d)
   simp [mToKPoint, hlast, hne]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It unfolds a nonfinal second coordinate of the
 `mToKPoint` change of variables.
 -/
@@ -2269,7 +2269,7 @@ theorem aux_mToKPoint_snd_castSucc (d : ℕ) (a : Fin d)
   simp [mToKPoint, hlast, hne]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It transports a diagonal shift in a nonfinal
 coordinate through `mToKPoint`.
 -/
@@ -2309,7 +2309,7 @@ theorem aux_mToKPoint_diagonalShift_nonlast (d : ℕ) (j : Fin d)
         simp [aux_diagonalShift, hne, aux_mToKPoint_snd_castSucc, aux_fibreTranslate, haj]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It transports a diagonal shift in the final
 coordinate through `mToKPoint`.
 -/
@@ -2332,21 +2332,21 @@ theorem aux_mToKPoint_diagonalShift_last (d : ℕ)
       simp [aux_diagonalShift, hne, aux_mToKPoint_snd_castSucc]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It names the external variables in the raw
 diagonal-convolution change of variables.
 -/
 abbrev aux_mToKDiagonalZSpace (k : ℕ) := RealVector k × ℝ
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It names the predecessor fibre in the raw
 diagonal-convolution change of variables.
 -/
 abbrev aux_mToKDiagonalPSpace (k : ℕ) := RealVector (k - 1)
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It groups the variables needed for the raw
 diagonal-convolution Fubini calculation.
 -/
@@ -2354,7 +2354,7 @@ abbrev aux_mToKDiagonalQSpace (k : ℕ) :=
   aux_mToKDiagonalZSpace k × (aux_mToKDiagonalPSpace k × ℝ)
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It reassociates the variables of the raw
 diagonal-convolution change of variables.
 -/
@@ -2364,7 +2364,7 @@ noncomputable def aux_mToKDiagonalRawAssoc (k : ℕ) :
   (ContinuousLinearEquiv.prodAssoc ℝ (RealVector k × ℝ) (RealVector (k - 1)) ℝ).symm
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It is the global linear change of variables whose
 fibres give the raw diagonal-convolution integrands.
 -/
@@ -2376,7 +2376,7 @@ noncomputable def aux_mToKDiagonalRawEquiv (k : ℕ) (hk : 1 ≤ k) (i : Fin k) 
     (aux_convolutionAlongShear (diagonalDirection k i))
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It gives the coordinate formula for
 `aux_mToKDiagonalRawEquiv`.
 -/
@@ -2389,7 +2389,7 @@ theorem aux_mToKDiagonalRawEquiv_apply (k : ℕ) (hk : 1 ≤ k) (i : Fin k)
     aux_sub_smul_diagonalDirection]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It supplies the Fubini integrability certificate
 for the raw diagonal-convolution calculation.
 -/
@@ -2440,7 +2440,7 @@ theorem aux_integrable_mToKDiagonalRaw (k : ℕ) (hk : 1 ≤ k)
   exact aux_memW0_integrable_of_addHaar hs'
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It proves the M-to-K convolution identity when
 the shifted coordinate is final.
 -/
@@ -2512,7 +2512,7 @@ theorem aux_mToK_diagonalConvolution_last (d : ℕ)
       rw [integral_mul_const]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It proves the M-to-K convolution identity when
 the shifted coordinate is nonfinal.
 -/
@@ -2592,7 +2592,7 @@ theorem aux_mToK_diagonalConvolution_nonlast (d : ℕ) (j : Fin d)
       rw [integral_mul_const]
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It identifies diagonal convolution on an arbitrary
 M-coordinate with one-dimensional convolution after the M-to-K map.
 -/
@@ -2609,7 +2609,7 @@ theorem aux_mToK_diagonalConvolution
     · simpa using aux_mToK_diagonalConvolution_nonlast d j rho hrho phi hphi
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It bounds the absolute value of an M-to-K fibre
 integral by the M-to-K image of the absolute kernel.
 -/
@@ -2622,7 +2622,7 @@ theorem aux_abs_mToK_le_mToK_abs (k : ℕ) (hk : 1 ≤ k) (M : MKernel k)
       (f := fun p : RealVector (k - 1) => M (mToKPoint k hk z p)))
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It gives the pointwise nonnegativity of the M-to-K
 image of an absolute kernel.
 -/
@@ -2635,7 +2635,7 @@ theorem aux_mToK_abs_nonnegative (k : ℕ) (hk : 1 ≤ k) (M : MKernel k)
   exact abs_nonneg _
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It writes the K-level Cauchy--Schwarz lift as a
 finite sum of monotonicity kernels.
 -/
@@ -2657,7 +2657,7 @@ theorem aux_singlyCancellativeLift_eq_sum_monotonicity
   · rfl
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It rewrites the M-level Cauchy--Schwarz lift as a
 sum of tensor-square extensions.
 -/
@@ -2677,7 +2677,7 @@ theorem aux_cauchySchwarzLift_eq_sum_tensorSquareExtension
   rfl
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It commutes the M-to-K map with the finite kernel
 sum used in the Cauchy--Schwarz decomposition.
 -/
@@ -2693,7 +2693,7 @@ theorem aux_mToK_finset_sum
     (mToK_integrand_memW0 k k hk le_rfl (M j) (hM j) z)
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It identifies the M-to-K image of the original
 Cauchy--Schwarz kernel with the singly cancellative K-kernel.
 -/
@@ -2714,7 +2714,7 @@ theorem aux_mToK_cauchySchwarzKernel_eq_singlyCancellative
     exact diagonalConvolution_memW0 k (rho j) (hrho j) i (phi j) (hphi j)
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It identifies the M-to-K image of the
 Cauchy--Schwarz lift in successor dimension.
 -/
@@ -2757,7 +2757,7 @@ theorem aux_mToK_cauchySchwarzLift_succ
       (fun y => |rho j y|) (aux_memW0_abs (hrho j)) (phi j) (hphi j)) z
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It identifies the M-to-K image of the
 Cauchy--Schwarz lift in every positive dimension.
 -/
@@ -2774,7 +2774,7 @@ theorem aux_mToK_cauchySchwarzLift
         aux_mToK_cauchySchwarzLift_succ d J rho phi hrho hphi
 
 /--
-Auxiliary for Proposition [`Auto.cauchySchwarzKernel_memW0`], formalized as
+Auxiliary for Proposition `Auto.cauchySchwarzKernel_memW0`, formalized as
 `cauchySchwarzAtK_bound`.  It gives the finite-sum linearity of the prism
 Brascamp--Lieb form needed to apply monotonicity term by term.
 -/
@@ -2845,8 +2845,8 @@ $$
 \Big(\sum_{j\in[J)}\|\rho_j\|_1\Big)^{1/2}.
 $$
 
-See also [`Auto.cauchySchwarzKernel_memW0`],
-[`Auto.cauchySchwarzLift_memW0`].
+See also `Auto.cauchySchwarzKernel_memW0`,
+`Auto.cauchySchwarzLift_memW0`.
 -/
 theorem cauchySchwarzAtK_bound
     (n k J : ℕ) (hk : 1 ≤ k) (hkn : k < n - 1) (hJ : 1 ≤ J)
@@ -3024,7 +3024,7 @@ theorem cauchySchwarzAtK_bound
   exact hSquare
 
 /--
-Auxiliary for Proposition [`Auto.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition `Auto.doublyCauchySchwarzKernel_memW0`,
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3050,7 +3050,7 @@ theorem aux_measurePreserving_scalarCauchyShear :
   exact hshear.comp hswap
 
 /--
-Auxiliary for Proposition [`Auto.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition `Auto.doublyCauchySchwarzKernel_memW0`,
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3146,7 +3146,7 @@ theorem aux_realConvolution_to_doubleIntegral
     _ = ∫ r : ℝ, ∫ s : ℝ, rho (u.1, u.2 - r - s) * phi r * phi s := by rfl
 
 /--
-Auxiliary for Proposition [`Auto.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition `Auto.doublyCauchySchwarzKernel_memW0`,
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3175,7 +3175,7 @@ theorem aux_mToK_doublyCauchySchwarzKernel
         (hK j) (phi j) (hphi j) u
 
 /--
-Auxiliary for Proposition [`Auto.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition `Auto.doublyCauchySchwarzKernel_memW0`,
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3197,7 +3197,7 @@ theorem aux_mToK_cauchySchwarzLift_eq_doublyCancellativeLift
         (fun j => mToK k hk (fun y => |rho j y|)) phi).symm
 
 /--
-Auxiliary for Proposition [`Auto.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition `Auto.doublyCauchySchwarzKernel_memW0`,
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3213,7 +3213,7 @@ theorem aux_doublyCancellativeLift_eq_sum_monotonicity
       aux_singlyCancellativeLift_eq_sum_monotonicity k J rho phi
 
 /--
-Auxiliary for Proposition [`Auto.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition `Auto.doublyCauchySchwarzKernel_memW0`,
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3264,7 +3264,7 @@ theorem aux_doublyCancellativeLift_prism_le
     exact Finset.sum_le_sum fun j _ => hMono j
 
 /--
-Auxiliary for Proposition [`Auto.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition `Auto.doublyCauchySchwarzKernel_memW0`,
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3300,7 +3300,7 @@ theorem aux_doublyCancellativeLift_prism_nonnegative
     exact Finset.sum_nonneg fun j _ => hPos j
 
 /--
-Auxiliary for Proposition [`Auto.doublyCauchySchwarzKernel_memW0`],
+Auxiliary for Proposition `Auto.doublyCauchySchwarzKernel_memW0`,
  formalized as
 `cauchySchwarzAtNMinusOne`.
 -/
@@ -3372,9 +3372,9 @@ $$
 \sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
 $$
 
-See also [`Auto.doublyCauchySchwarzKernel_memW0`],
-[`Auto.cauchySchwarzLift_memW0`],
-[`Auto.cauchySchwarzAtNMinusOne`].
+See also `Auto.doublyCauchySchwarzKernel_memW0`,
+`Auto.cauchySchwarzLift_memW0`,
+`Auto.cauchySchwarzAtNMinusOne`.
 -/
 theorem cauchySchwarzAtNMinusOne_bound
     (k J : ℕ) (hk : 1 ≤ k) (hJ : 1 ≤ J)
@@ -3462,9 +3462,9 @@ $$
 \sup_{\mathbf{\tilde{F}}\in\mathfrak{F}}|\Lambda_{n}(\tilde{M})(\mathbf{\tilde{F}})|.
 $$
 
-See also [`Auto.doublyCauchySchwarzKernel_memW0`],
-[`Auto.cauchySchwarzLift_memW0`],
-[`Auto.cauchySchwarzAtNMinusOne_bound`].
+See also `Auto.doublyCauchySchwarzKernel_memW0`,
+`Auto.cauchySchwarzLift_memW0`,
+`Auto.cauchySchwarzAtNMinusOne_bound`.
 -/
 theorem cauchySchwarzAtNMinusOne
     (k J : ℕ) (hk : 1 ≤ k) (hJ : 1 ≤ J)

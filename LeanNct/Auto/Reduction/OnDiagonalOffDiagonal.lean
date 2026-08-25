@@ -32,7 +32,7 @@ noncomputable def aux_diagonalConvolution (M : RealPlane → ℝ) (phi : ℝ →
     RealPlane → ℝ :=
   fun v => ∫ q : ℝ, M (v.1 - q, v.2 - q) * phi q
 
-/-- The difference of standard-bump diagonal smoothings defining `L_{h,j}`. -/
+/-- The difference of standard-bump diagonal smoothings defining $L_{h,j}$. -/
 noncomputable def aux_diagonalBandKernel (M : ℤ → RealPlane → ℝ) (a : ℤ → ℝ)
     (h : ℕ) (j : ℤ) : RealPlane → ℝ :=
   aux_diagonalConvolution (M j)
@@ -44,7 +44,7 @@ noncomputable def aux_diagonalBandSequence (D : ReductionData) (h : ℕ) :
     KernelSequence 1 :=
   fun j => aux_liftPlaneKernel (aux_diagonalBandKernel D.kernel D.a h j)
 
-/-- The constant in Proposition [`Auto.diagonalBandReduction`]. -/
+/-- The constant in Proposition `Auto.diagonalBandReduction`. -/
 noncomputable def C_diagonalBandReduction : ℝ :=
   (2 : ℝ) ^ 4 * Real.sqrt (C_nReduction * C_increaseDataReduction) +
     (2 : ℝ) ^ 3 * C_increaseDataReduction
@@ -934,7 +934,7 @@ theorem quarterHeightTsum (C : ℝ) (hC : 0 ≤ C) :
 **Proposition (diagonal band - reduction variant).**
 
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \mathbb{Z}}$ be as in Proposition
-[`Auto.increaseDataReduction`]. For $h\in\mathbb{N}$ with $h\ge1$ and $j\in\mathbb{Z}$, define
+`Auto.increaseDataReduction`. For $h\in\mathbb{N}$ with $h\ge1$ and $j\in\mathbb{Z}$, define
 
 $$
 L_{h,j}= M_j \ast_{(1,1)} (\Phi_{(2^{h-1}a(j))}-\Phi_{(2^{h}a(j))}),
@@ -957,9 +957,9 @@ C_{\text{lem:N-reduction}}
 C_{\text{increase data - reduction variant}}
   )^{1/2} + 2^3 C_{\text{increase data - reduction variant}}$.
 
-See also [`Auto.diagonalBandReduction`],
-[`Auto.nReduction`],
-[`Auto.increaseDataReduction`].
+See also `Auto.diagonalBandReduction`,
+`Auto.nReduction`,
+`Auto.increaseDataReduction`.
 -/
 theorem diagonalBandReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData) :
     ∑' h : ℕ,
@@ -1012,7 +1012,7 @@ C_{\text{diagonal band - reduction variant}}
 <\tfrac{63}{64}2^{480}<2^{480}.
 $$
 
-See also [`Auto.diagonalBandReduction`].
+See also `Auto.diagonalBandReduction`.
 -/
 theorem constantDiagonalBandReduction :
     C_diagonalBandReduction < (63 / 64 : ℝ) * (2 : ℝ) ^ 480 := by
@@ -1204,7 +1204,7 @@ noncomputable def aux_planeFourier (M : RealPlane → ℝ) :
 
 /--
 The Fourier support hypothesis in Proposition
-[`Auto.vanishingDiagonalReduction`].
+`Auto.vanishingDiagonalReduction`.
 -/
 def aux_frequencyDiagonalBound (D : ReductionData) : Prop :=
   ∀ j : ℤ,
@@ -1630,7 +1630,7 @@ theorem aux_diagonalBand_prefix_bound {n : ℕ} (hn : 2 ≤ n)
 **Proposition (vanishing diagonal - reduction variant).**
 
 Let $a\in A$ and let $\mathcal P$, $(M_j)_{j\in \mathbb{Z}}$ be as in Proposition
-[`Auto.increaseDataReduction`]. In addition, assume that $\widehat{M_j}(\xi,\eta)$ is supported in
+`Auto.increaseDataReduction`. In addition, assume that $\widehat{M_j}(\xi,\eta)$ is supported in
 the set where $|\xi+\eta| \leq 2^{-1} (a(j-1))^{-1}$.
 Let $\mathbf{M}=(M_j)_{j\in \mathbb{Z}}$. Then
 
@@ -1638,7 +1638,7 @@ $$
 \|\mathbf{M}\|_{\rm M(1)} \leq C_{\text{diagonal band - reduction variant}}
 $$
 
-See also [`Auto.diagonalBandReduction`].
+See also `Auto.diagonalBandReduction`.
 -/
 theorem vanishingDiagonalReduction {n : ℕ} (hn : 2 ≤ n) (D : ReductionData)
     (hsupport : aux_frequencyDiagonalBound D) :
@@ -1665,7 +1665,7 @@ noncomputable def aux_windowRescale (phi : SchwartzMap ℝ ℝ) (t : ℝ) : ℝ 
 
 /--
 The telescoping window kernel from Proposition
-[`Auto.oneScaleEstimateWindow`].
+`Auto.oneScaleEstimateWindow`.
 -/
 noncomputable def aux_oneScaleWindowKernel (phi : SchwartzMap ℝ ℝ) (a : ℤ → ℝ)
     (j : ℤ) : RealPlane → ℝ :=
@@ -1677,7 +1677,7 @@ noncomputable def aux_oneScaleWindowSequence (phi : SchwartzMap ℝ ℝ) (a : �
     KernelSequence 1 :=
   fun j => aux_liftPlaneKernel (aux_oneScaleWindowKernel phi a j)
 
-/-- The constant in Proposition [`Auto.oneScaleEstimateWindow`]. -/
+/-- The constant in Proposition `Auto.oneScaleEstimateWindow`. -/
 noncomputable def C_oneScaleEstimateWindow : ℝ :=
   (2 : ℝ) ^ 9 * C_uniPair ^ 2
 
@@ -1909,8 +1909,8 @@ $$
 
 where $C_{\text{P:one-scale-estimate-window}}=2^9C_{\text{Universal pair}}^2$.
 
-See also [`Auto.oneScaleEstimateWindow`],
-[`Auto.uniPair`].
+See also `Auto.oneScaleEstimateWindow`,
+`Auto.uniPair`.
 -/
 theorem oneScaleEstimateWindow {n : ℕ} (hn : 2 ≤ n) (a : ℤ → ℝ)
     (ha : SpacedSequence a) (phi0 phi1 : SchwartzMap ℝ ℝ)
@@ -1953,7 +1953,7 @@ $$
 C_{\text{P:one-scale-estimate-window}}=2^{39}.
 $$
 
-See also [`Auto.oneScaleEstimateWindow`].
+See also `Auto.oneScaleEstimateWindow`.
 -/
 theorem constantOneScaleWindow : C_oneScaleEstimateWindow = (2 : ℝ) ^ 39 := by
   norm_num [C_oneScaleEstimateWindow, C_uniPair]
@@ -3193,11 +3193,11 @@ where $C_{\text{induct positive terms - reduction variant,
 non-Whitney}}=C_{\text{P:one-scale-estimate-window}}+ 128 \max(1,(C_{\text{Universal pair}}/2\pi)^4)
 C_{\text{lem:smoothdecay2},2}^2C_{\text{diagonal band - reduction variant}}$.
 
-See also [`Auto.inductPositiveTermsReductionNonWhitney`],
-[`Auto.oneScaleEstimateWindow`],
-[`Auto.uniPair`],
-[`Auto.smoothDecay2`],
-[`Auto.diagonalBandReduction`].
+See also `Auto.inductPositiveTermsReductionNonWhitney`,
+`Auto.oneScaleEstimateWindow`,
+`Auto.uniPair`,
+`Auto.smoothDecay2`,
+`Auto.diagonalBandReduction`.
 -/
 theorem inductPositiveTermsReductionNonWhitney {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a) (phi0 phi1 : SchwartzMap ℝ ℝ)
@@ -3276,7 +3276,7 @@ C_{\text{induct positive terms - reduction variant, non-Whitney}}
 <\tfrac89 2^{541}<2^{541}.
 $$
 
-See also [`Auto.inductPositiveTermsReductionNonWhitney`].
+See also `Auto.inductPositiveTermsReductionNonWhitney`.
 -/
 theorem constantNonWhitneyReduction :
     C_inductPositiveTermsReductionNonWhitney <
@@ -3583,8 +3583,8 @@ $$
 where $C_{\text{induct positive terms - reduction variant, non-Whitney, skip terms}}= 2^{1-2^{2-n}}
 C_{\text{induct positive terms - reduction variant, non-Whitney}}$.
 
-See also [`Auto.inductPositiveTermsReductionNonWhitneySkip`],
-[`Auto.inductPositiveTermsReductionNonWhitney`].
+See also `Auto.inductPositiveTermsReductionNonWhitneySkip`,
+`Auto.inductPositiveTermsReductionNonWhitney`.
 -/
 theorem inductPositiveTermsReductionNonWhitneySkip {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a) (phi0 phi1 : SchwartzMap ℝ ℝ)
@@ -3690,7 +3690,7 @@ C_{\text{induct positive terms - reduction variant, non-Whitney, skip terms}}
 <\tfrac89 2^{542}<2^{542}.
 $$
 
-See also [`Auto.inductPositiveTermsReductionNonWhitneySkip`].
+See also `Auto.inductPositiveTermsReductionNonWhitneySkip`.
 -/
 theorem constantNonWhitneySkipReduction {n : ℕ} (_hn : 2 ≤ n) :
     C_inductPositiveTermsReductionNonWhitneySkip n <
@@ -5237,11 +5237,11 @@ C_{\text{induct positive terms - reduction variant, Whitney, with gap}}
 variant}}.
 $$
 
-See also [`Auto.inductPositiveTermsReductionWhitneyGap`],
-[`Auto.inductPositiveTermsReductionNonWhitneySkip`],
-[`Auto.uniPair`],
-[`Auto.phiJProperties`],
-[`Auto.diagonalBandReduction`].
+See also `Auto.inductPositiveTermsReductionWhitneyGap`,
+`Auto.inductPositiveTermsReductionNonWhitneySkip`,
+`Auto.uniPair`,
+`Auto.phiJProperties`,
+`Auto.diagonalBandReduction`.
 -/
 theorem inductPositiveTermsReductionWhitneyGap {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a)
@@ -5470,7 +5470,7 @@ C_{\text{induct positive terms - reduction variant, Whitney, with gap}}
 <\tfrac{127}{128}2^{553}<2^{553}.
 $$
 
-See also [`Auto.inductPositiveTermsReductionWhitneyGap`].
+See also `Auto.inductPositiveTermsReductionWhitneyGap`.
 -/
 theorem constantWhitneyGapReduction {n : ℕ} (hn : 2 ≤ n) :
     C_inductPositiveTermsReductionWhitneyGap n <
@@ -5781,8 +5781,8 @@ C_{\text{induct positive terms - reduction variant, Whitney}}
 =11C_{\text{induct positive terms - reduction variant, Whitney, with gap}}.
 $$
 
-See also [`Auto.inductPositiveTermsReductionWhitney`],
-[`Auto.inductPositiveTermsReductionWhitneyGap`].
+See also `Auto.inductPositiveTermsReductionWhitney`,
+`Auto.inductPositiveTermsReductionWhitneyGap`.
 -/
 theorem inductPositiveTermsReductionWhitney {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a)
@@ -5842,7 +5842,7 @@ C_{\text{induct positive terms - reduction variant, Whitney}}
 <2^{557}.
 $$
 
-See also [`Auto.inductPositiveTermsReductionWhitney`].
+See also `Auto.inductPositiveTermsReductionWhitney`.
 -/
 theorem constantWhitneyReduction {n : ℕ} (hn : 2 ≤ n) :
     C_inductPositiveTermsReductionWhitney n < (2 : ℝ) ^ 557 := by
@@ -6594,8 +6594,8 @@ C_{\text{induct positive terms - reduction variant, Whitney, product-type}}
 =2^{12}C_{\text{induct positive terms - reduction variant, Whitney}}.
 $$
 
-See also [`Auto.inductPositiveTermsReductionWhitneyProduct`],
-[`Auto.inductPositiveTermsReductionWhitney`].
+See also `Auto.inductPositiveTermsReductionWhitneyProduct`,
+`Auto.inductPositiveTermsReductionWhitney`.
 -/
 theorem inductPositiveTermsReductionWhitneyProduct {n : ℕ} (hn : 2 ≤ n)
     (a : ℤ → ℝ) (ha : SpacedSequence a) (psi : SchwartzMap ℝ ℝ)
@@ -6639,7 +6639,7 @@ C_{\text{induct positive terms - reduction variant, Whitney, product-type}}
 <2^{569}.
 $$
 
-See also [`Auto.inductPositiveTermsReductionWhitneyProduct`].
+See also `Auto.inductPositiveTermsReductionWhitneyProduct`.
 -/
 theorem constantWhitneyProductReduction {n : ℕ} (hn : 2 ≤ n) :
     C_inductPositiveTermsReductionWhitneyProduct n < (2 : ℝ) ^ 569 := by
