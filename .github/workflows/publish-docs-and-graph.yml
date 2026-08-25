@@ -77,6 +77,17 @@ jobs:
           cp -r docbuild/.lake/build/doc/. _site/docs/
           echo '<!doctype html><meta http-equiv="refresh" content="0; url=docs/">' > _site/index.html
 
+      - name: Build blueprint PDF
+        uses: xu-cheng/texlive-action@22c04326a5d855880f9d39bb955138bf11c6df80 # v3
+        with:
+          docker_image: ghcr.io/xu-cheng/texlive-full:20251002
+          run: |
+            cd blueprint
+            latexmk -pdf -interaction=nonstopmode -halt-on-error blueprint.tex
+            cd ..
+            mkdir -p _site/blueprint
+            cp blueprint/blueprint.pdf _site/blueprint/nct-blueprint.pdf
+
       - name: Build dependency graph
         uses: xu-cheng/texlive-action@22c04326a5d855880f9d39bb955138bf11c6df80 # v3
         with:
