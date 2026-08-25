@@ -1,0 +1,227 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+#
+# Provenance and status metadata for the Lean 4 formalization in this repository, following the
+# formalization.yaml v0.4 reporting schema (https://github.com/mathlib-initiative/formalization.yaml).
+# It records what was formalized (the blueprint in blueprint/), how it was produced (largely by
+# autoformalization agents under human supervision), what has been checked and by what means, and
+# where the formal statements corresponding to the blueprint's statements live. This is
+# informational metadata only: nothing in the Lean build depends on it.
+#
+# Companion documents: blueprint/blueprint.tex (the source manuscript, carrying inline \lean{...}
+# and \leanok metadata), Instructions.md (the instruction set the formalization agents worked
+# from), Status.md (per-label formalization status), comparator.json together with Challenge.lean
+# (machine-checkable audit of the main statements), LeanNct.lean (axiom check on every build).
+#
+# This file has been created with the assistance of Claude Code.
+
+version: "v0.4"
+
+# project - the formalization itself (not the source).
+project:
+  name: lean-nct
+  description: >-
+    A Lean 4 formalization of quantitative norm-variation estimates for
+    multiple ergodic averages associated with n >= 2 commuting measure preserving transformations.
+    The main ergodic theorem bounds the r-variation seminorm of the averages
+    M_N(f) = N^{-1} sum_{i<N} prod_{j<n} f_j(T_j^i x) in L^2(X) by an explicit constant times
+    prod_j ||f_j||_{L^{2n}(X)}, for r > 2^{n-1} (and r >= 2 when n = 2). This is a quantitative
+    strengthening of Tao's norm-convergence theorem for commuting transformations and resolves a
+    problem raised by Avigad and Rute. The heart of the development is a real-variable estimate for
+    twisted multilinear averages A_t(1_{[0,1]}, f) on R^n, closely related to singular
+    Brascamp-Lieb inequalities, which is transferred to the ergodic setting by the Calderon
+    transference principle and multilinear complex interpolation. All constants are explicit:
+    2^666 in the real-variable theorem, and 2^344 (n = 2) resp. 2^{4n+337} (r/(r-2^{n-1}))^{1/r}
+    (n >= 3) in the ergodic theorem.
+  authors: # [required] who did the formalization
+    - "Joris Roos"
+    - "Polona Durcik"
+    - "Floris van Doorn"
+  responsible_maintainers: # people responsible for the formalization repository
+    - "Joris Roos"
+  license: "Apache-2.0"
+
+sources:
+  - title: "A blueprint for the formalization of norm-variation of multiple ergodic averages for commuting transformations"
+    authors:
+      - "Floris van Doorn"
+      - "Polona Durcik"
+      - "Joris Roos"
+      - "Lenka Slavíková"
+      - "Christoph Thiele"
+    type: "blueprint"
+    location: "Theorem 1.2 (thm:ergodicthm) and Theorem 1.4 (thm:nct main real); the whole document is in scope"
+    relationship: "formalizes"
+    license: "Apache-2.0"
+    author_endorsement: "participated"
+
+  - title: "Formalisation of the Calderón Transference Principle in Ergodic Theory"
+    authors:
+      - "Felix Pernegger"
+    type: "thesis"
+    location: "Theorem 2.5"
+    relationship: "background"
+    note: >-
+      Bachelor's thesis, Rheinische Friedrich-Wilhelms-Universität Bonn, September 2025. The
+      blueprint treats the Calderón transference principle as an external theorem on the grounds
+      that it had already been formalized in Lean by Pernegger. This repository nevertheless
+      contains its own complete proof of the instance it needs
+      (Auto.calderon_transference_external), so nothing is assumed.
+    author_endorsement: "n/a"
+
+  - title: "Interpolation Spaces: An Introduction"
+    authors:
+      - "Jöran Bergh"
+      - "Jörgen Löfström"
+    id: "Springer-Verlag, Berlin, 1976"
+    type: "book"
+    location: "multilinear complex interpolation"
+    relationship: "background"
+    note: >-
+      The blueprint treats multilinear complex interpolation as an external theorem. This
+      repository contains its own complete proof of the instance it needs
+      (Auto.multilinear_interpolation_external, LeanNct/Auto/MultilinearInterpolation.lean).
+    author_endorsement: "n/a"
+
+classification:
+  arxiv: ["math.CA", "math.DS"]
+  msc2020: ["42B20", "42B15", "37A30"]
+
+status:
+  scope: >-
+    Complete. The entire blueprint in scope is formalized and proved: 182 theorems and 37
+    definitions, all recorded as proof-completed/completed in Status.md, across 28 Lean files and
+    roughly 126k lines. 
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: ["propext", "Classical.choice", "Quot.sound"]
+  main_results:
+    - declaration: "nCT.main_ergodic_theorem"
+      file: "LeanNct/Theorems.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator.json"
+      literature_dependencies: []
+    - declaration: "nCT.main_twisted_theorem"
+      file: "LeanNct/Theorems.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator.json"
+      literature_dependencies: []
+
+automation:
+  methods:
+    - method: "agent"
+      models: ["gpt-5.6-terra-ultra"]
+      framework: "Codex"
+      tool_setup: >-
+        Long autonomous coding-agent sessions driven by a custom instruction set (Instructions.md)
+        that fixes scope, file organization, naming, faithfulness rules and proof obligations. The
+        supporting harness in this repository: Status.md, a continuously maintained per-label status
+        table (\label{...}: [Status] (Lean: name) (timestamp)) that the agent had to update in
+        lockstep with the code; ErrorReport.md, where the agent had to record substantive blueprint
+        errors and constant discrepancies instead of silently diverging; two Codex skills under
+        .codex/skills/ (update-lean-metadata, which syncs \lean{...}/\leanok metadata in
+        blueprint.tex from Status.md, and update-dependency-graph, which regenerates the blueprint
+        dependency graph); and the dependency_graph/ scripts that turn blueprint labels into a
+        browsable graph linked to the generated API docs. The workflow was two-stage: first
+        formalize all statements and definitions (proofs left as sorry), then discharge the proofs
+        one theorem at a time in blueprint order, with only local parallelization.
+      cost:
+        wall_time: "concentrated in many extended sessions over about one week"
+        spend_usd: "subscription-based usage, two $200/mo GPT Pro 20x subscriptions"
+      prompting_notes: >-
+        The instruction set was designed to counteract known failure modes of long agent runs:
+        drifting away from the target, substituting trivial wrapper lemmas for real work, and
+        creating an opaque zoo of auxiliary statements and files. Concretely it mandates one Lean
+        file per blueprint leaf subsection; a single flat namespace (Auto) with aux_-prefixed
+        auxiliary results; theorem (never lemma/def) for every source result; copied LaTeX
+        statements (never proofs) in docstrings; eLpNorm for L^p norms; raw function-to-function
+        maps rather than mathlib bundled operators; explicit named constants
+        def C_<theorem name> mirroring the blueprint's recursive definitions; no invented
+        definitions and no added hypotheses beyond those needed for faithful Lean semantics
+        (MemLp, measurability, junk-value guards). Where a displayed constant could not be
+        justified exactly but a proved bound was worse by at most about a factor of two, the agent
+        was instructed to keep the proved bound, log it in ErrorReport.md, and continue rather than
+        stall on sharpness.
+
+    - method: "agent"
+      models: ["opus-5-high"]
+      framework: "Claude Code"
+      tool_setup: >-
+        Post-completion cleanup on an already sorry-free development, run interactively with review
+        of every diff. Work included: docstring repair
+        (LaTeX delimiters converted to KaTeX-compatible $ / $$, math moved out of code spans,
+        removal of bracket artifacts around cross-references, and a fix to broken \left\langle
+        markup that failed to render); clearing linter warnings; and CI work.
+        No mathematical content was changed; the build stayed sorry-free with an unchanged axiom set
+        throughout.
+      cost:
+        wall_time: "less than one hour"
+        spend_usd: "subscription-based usage"
+      prompting_notes: ""
+  notes: >-
+    Division of labour: humans decided all mathematics and wrote the blueprint and the formal
+    statement surface; agents produced essentially all proof code. Agent commits are tagged
+    [codex] or [claude] in the git log. The source manuscript itself was also partly machine-edited
+    in a separate, earlier effort (several passes with GPT-5.6-Sol-Pro over a human-written draft,
+    mainly to compute and optimize explicit constants and to fill in routine or by-analogy
+    arguments); machine-generated blueprint content is tagged in the manuscript, and that work
+    concerns the source, not this formalization. Formalization feedback flowed back into the
+    blueprint: several constants and one definition were corrected there because the formalization
+    exposed problems, and a closing audit pass (Audit.md) reconciled the remaining blueprint
+    statements and constants with the formalization. ErrorReport.md is the historical log the
+    agents wrote while that reconciliation was still open; the items it lists have since been
+    resolved in the blueprint, so it no longer describes live divergences.
+
+fidelity:
+  divergences: >-
+    None of substance. The statements a reader has to trust are the hand-written ones in
+    LeanNct/Defs.lean and LeanNct/Theorems.lean, and each was compared directly against its
+    blueprint counterpart: nCT.multipleErgodicAverage against Definition \label{ergodic averages},
+    nCT.variationSeminorm against Definition \label{variation seminorm on positive integers},
+    nCT.rescale and nCT.twistedAverage / nCT.rescaledTwistedAverage against Definition
+    \label{A_def}, nCT.main_ergodic_theorem against Theorem \label{thm:ergodicthm}, and
+    nCT.main_twisted_theorem against Theorem \label{thm:nct main real}. Hypotheses, conclusions and
+    explicit constants agree throughout.
+    What differs is only Lean encoding, and in each case the Lean statement is at least as strong as
+    the blueprint's:
+    (1) Total functions. The blueprint defines M_N for positive integers N and A(chi, f) where the
+    integrand is measurable and integrable; the Lean definitions are total, taking the junk value 0
+    at N = 0 and, via the Bochner integral, on non-integrable integrands. Neither case is reachable
+    where it would matter: the variation seminorm ranges only over positive integers, and the
+    theorem's inputs are Schwartz functions, for which the integrand is integrable.
+    (2) ENNReal-valued norms. L^p norms are MeasureTheory.eLpNorm, a lower Lebesgue integral defined
+    for every function, rather than the norm on the L^p quotient space, and measurability plus
+    finiteness appear together as MemLp. On the functions occurring in the theorems the two agree;
+    the docstring of nCT.main_twisted_theorem spells out why.
+    (3) Trivial edge cases admitted: N = 0 in the ergodic theorem, where the assertion is about the
+    zero function, and J = 0 in the twisted theorem, where the sum is empty.
+    All three points are stated in the docstrings of the affected declarations.
+    Divergences at the level of intermediate lemmas are not tracked here: the closing audit pass made the blueprint's
+    intermediate statements and constants agree with the formalization rather than the reverse.
+
+review:
+  status: "author-verified"
+
+alignment:
+  namespace: nCT
+  statements:
+    - source: "\\label{thm:ergodicthm}"
+      lean: "nCT.main_ergodic_theorem"
+      module: "LeanNct/Theorems.lean"
+      status: "proved"
+      note: ""
+    - source: "\\label{thm:nct main real}"
+      lean: "nCT.main_twisted_theorem"
+      module: "LeanNct/Theorems.lean"
+      status: "proved"
+      note: ""
+
+acknowledgements: >-
+  Built on Lean 4 and mathlib. The API
+  documentation is generated with a fork of doc-gen4; the dependency graph is rendered with MathJax and
+  Graphviz. The comparator setup uses leanprover/comparator, leanprover/lean4export and landrun.
+  The Calderón transference principle was first formalized in Lean by Felix Pernegger. Funding
+  acknowledged in the blueprint: ERC Synergy Grant 101224275 and Germany's Excellence Strategy
+  grant EXC-2047/1-390685813; NSF grants DMS-2554859 and DMS-2154835 and grants from the Simons
+  Foundation; Czech Science Foundation grant 26-21107S.
