@@ -5745,12 +5745,10 @@ noncomputable def C_symmetric_ergodic_jump_estimate (n : ℕ) : ℝ :=
   (2 : ℝ) ^ (8 * n + 672)
 
 /-- For `n ≥ 2`, the symmetric ergodic jump constant is strictly positive. -/
-theorem C_symmetric_ergodic_jump_estimate_pos {n : ℕ} (hn : 2 ≤ n) :
+theorem C_symmetric_ergodic_jump_estimate_pos {n : ℕ} (_hn : 2 ≤ n) :
     0 < C_symmetric_ergodic_jump_estimate n := by
-  obtain ⟨hp, hsum, hlower⟩ := aux_symmetric_exponent_conditions hn
-  simpa [C_symmetric_ergodic_jump_estimate] using
-    C_ergodic_jump_estimate_interpolation_pos hn
-      (fun _ : Fin n ↦ (2 * n : ℝ≥0∞)) hp hsum hlower
+  unfold C_symmetric_ergodic_jump_estimate
+  positivity
 
 /--
 **Theorem (Symmetric ergodic jump estimate).**
@@ -6031,16 +6029,15 @@ theorem aux_main_ergodic_theorem {X : Type u} [MeasurableSpace X]
         (2 : ℝ) ^ (1 - 1 / r0) * (r / (r - r0)) ^ (1 / r) * (√C * P) ≤
           (2 : ℝ) ^ (4 * n + 337) * (r / (r - r0)) ^ (1 / r) * P := by
       rw [hsqrt, hpow_nat]
+      have hA : (0 : ℝ) ≤ (2 : ℝ) ^ (4 * n + 336) := by positivity
+      generalize (2 : ℝ) ^ (4 * n + 336) = A at hA ⊢
       calc
-        (2 : ℝ) ^ (1 - 1 / r0) * (r / (r - r0)) ^ (1 / r) *
-              ((2 : ℝ) ^ (4 * n + 336) * P) =
-            ((2 : ℝ) ^ (1 - 1 / r0) * (2 : ℝ) ^ (4 * n + 336)) *
+        (2 : ℝ) ^ (1 - 1 / r0) * (r / (r - r0)) ^ (1 / r) * (A * P) =
+            ((2 : ℝ) ^ (1 - 1 / r0) * A) *
               ((r / (r - r0)) ^ (1 / r) * P) := by ring
-        _ ≤ (2 * (2 : ℝ) ^ (4 * n + 336)) *
-              ((r / (r - r0)) ^ (1 / r) * P) := by
-          gcongr
-        _ = 2 * (2 : ℝ) ^ (4 * n + 336) *
-              (r / (r - r0)) ^ (1 / r) * P := by ring
+        _ ≤ (2 * A) * ((r / (r - r0)) ^ (1 / r) * P) :=
+          mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hpow hA) hRP
+        _ = 2 * A * (r / (r - r0)) ^ (1 / r) * P := by ring
     rw [C_main_ergodic_theorem, if_neg hn2]
     apply le_trans hvar
     exact ENNReal.ofReal_le_ofReal (by simpa [one_div] using hcoeff)
