@@ -16,3 +16,7 @@ rev = "v4.33.0-rc2"
 
 [[lean_lib]]
 name = "LeanNct"
+
+# The Comparator Challenge: the auditable statement surface.
+[[lean_lib]]
+name = "Challenge"

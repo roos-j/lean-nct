@@ -1,0 +1,14 @@
+{
+  "challenge_module": "Challenge",
+  "solution_module": "LeanNct.Theorems",
+  "theorem_names": [
+    "nCT.main_ergodic_theorem",
+    "nCT.main_twisted_theorem"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "enable_nanoda": false
+}
