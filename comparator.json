@@ -1,6 +1,6 @@
 {
   "challenge_module": "Challenge",
-  "solution_module": "LeanNct.Theorems",
+  "solution_module": "Solution",
   "theorem_names": [
     "nCT.main_ergodic_theorem",
     "nCT.main_twisted_theorem"

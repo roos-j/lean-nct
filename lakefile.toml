@@ -20,3 +20,7 @@ name = "LeanNct"
 # The Comparator Challenge: the auditable statement surface.
 [[lean_lib]]
 name = "Challenge"
+
+# The Comparator solution: re-exports the proved theorems for `comparator.json`.
+[[lean_lib]]
+name = "Solution"
