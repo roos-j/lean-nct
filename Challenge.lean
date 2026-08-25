@@ -114,13 +114,7 @@ def rescaledTwistedAverage (t : ℝ) (χ : ℝ → ℝ) (f : Fin n → ℝ^n →
 @[inherit_doc rescaledTwistedAverage]
 scoped notation "𝐀" => rescaledTwistedAverage
 
-end
-
 open scoped SchwartzMap
-
-variable {n : ℕ}
-
-variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
 
 /-- The constant appearing in the main ergodic theorem, `nCT.main_ergodic_theorem`. -/
 def C_main_ergodic_theorem (n : ℕ) (r : ℝ) : ℝ≥0∞ :=
