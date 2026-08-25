@@ -6981,7 +6981,8 @@ $$
   Then
 
 $$
-| \int_{\mathbb{R}} (\prod_{i=0}^1 \left\langle x_i-p\right\rangle^{n_i}_{(s_i)}) dp|\le C_{\text{two
+| \int_{\mathbb{R}} (\prod_{i=0}^1 \left\langle x_i-p\right\rangle^{n_i}_{(s_i)}) dp|
+\le C_{\text{two
    bump estimate},n_0,n_1}
 \left\langle x_0-x_1\right\rangle^{\min(n_0,n_1)}_{(s_0)}\, .
 $$

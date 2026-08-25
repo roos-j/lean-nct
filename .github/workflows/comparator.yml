@@ -1,0 +1,102 @@
+name: Run comparator
+
+# Manual only: this job rebuilds the project and three external tools, so it is not
+# something to run on every push. Trigger it from the Actions tab.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  comparator:
+    name: Check the main theorems with comparator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup to free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: false
+          large-packages: false
+          docker-images: false
+          swap-storage: false
+
+      - name: Checkout project
+        uses: actions/checkout@v5
+
+      # lean4export and comparator must be built with the same toolchain as this project,
+      # so the tag is derived from lean-toolchain rather than hard-coded.
+      - name: Determine toolchain version
+        id: toolchain
+        run: |
+          version="$(cut -d: -f2 lean-toolchain)"
+          echo "Using toolchain $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build project
+        uses: leanprover/lean-action@v1
+        with:
+          build: true
+          test: false
+          lint: false
+
+      - name: Put elan on PATH
+        run: echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      # `lake build` only builds the default target (LeanNct); comparator also needs the
+      # oleans for the challenge and solution modules named in comparator.json.
+      - name: Build challenge and solution modules
+        run: lake build Challenge Solution
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Build and install landrun
+        run: |
+          git clone --depth 1 https://github.com/zouuup/landrun.git /tmp/landrun
+          cd /tmp/landrun
+          go build -o landrun cmd/landrun/main.go
+          sudo install -m 0755 landrun /usr/local/bin/landrun
+          landrun --help >/dev/null 2>&1 || true
+
+      - name: Build and install lean4export
+        run: |
+          git clone --depth 1 --branch "${{ steps.toolchain.outputs.version }}" \
+            https://github.com/leanprover/lean4export.git /tmp/lean4export
+          cd /tmp/lean4export
+          lake build
+          sudo install -m 0755 .lake/build/bin/lean4export /usr/local/bin/lean4export
+
+      - name: Build and install comparator
+        run: |
+          git clone --depth 1 --branch "${{ steps.toolchain.outputs.version }}" \
+            https://github.com/leanprover/comparator.git /tmp/comparator
+          cd /tmp/comparator
+          lake build
+          sudo install -m 0755 .lake/build/bin/comparator /usr/local/bin/comparator
+
+      # comparator sandboxes the untrusted side with landrun (Landlock), which does not
+      # restrict sockets; the AF_UNIX restriction is what closes that gap. Fail loudly
+      # rather than silently running without the sandbox.
+      - name: Check that the systemd sandbox is available
+        run: |
+          if ! command -v systemd-run >/dev/null; then
+            echo "::error::systemd-run is unavailable, so the AF_UNIX restriction cannot be applied."
+            exit 1
+          fi
+          systemctl is-system-running || true
+
+      - name: Run comparator
+        run: |
+          sudo systemd-run \
+            --pipe --wait --collect \
+            --property=RestrictAddressFamilies=~AF_UNIX \
+            --uid="$(id -u)" --gid="$(id -g)" \
+            --working-directory="$PWD" \
+            -E PATH="$PATH" -E HOME="$HOME" \
+            -- bash -c 'lake env comparator comparator.json'
