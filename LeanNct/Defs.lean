@@ -92,7 +92,7 @@ where $\chi_{(t)}(x)=t^{-1}\chi(t^{-1}x)$ for $t>0$.
 *Implementation note:* The Lean formulation uses the Bochner integral, which takes the
 junk value $0$ when the integrand is not integrable.
 
-See also [`nCT.rescaledTwistedAverage`].
+See also `nCT.rescaledTwistedAverage`.
 -/
 def twistedAverage (χ : ℝ → ℝ) (f : Fin n → ℝ^n → ℝ)
     (x : ℝ^n) := ∫ s, χ s * ∏ i, f i (x + s • 𝐞 i)
@@ -109,7 +109,7 @@ whenever the integrand is measurable and integrable.
 Also set $A_t(\chi,\mathbf{f})=A(\chi_{(t)},\mathbf{f})$,
 where $\chi_{(t)}(x)=t^{-1}\chi(t^{-1}x)$ for $t>0$.
 
-See also [`nCT.twistedAverage`].
+See also `nCT.twistedAverage`.
 -/
 def rescaledTwistedAverage (t : ℝ) (χ : ℝ → ℝ) (f : Fin n → ℝ^n → ℝ) :=
     twistedAverage (rescale χ t) f

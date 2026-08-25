@@ -59,7 +59,7 @@ $$
 \le C_{\text{Main ergodic theorem},n,r}
  \prod_{j=0}^{n-1} \|f_j\|_{2n},
 $$
-where the constant is defined in [`nCT.C_main_ergodic_theorem`].
+where the constant is defined in `nCT.C_main_ergodic_theorem`.
 -/
 theorem main_ergodic_theorem (hn : 2 ≤ n) {r : ℝ} (hr : 2 ^ (n - 1) < r ∨ (n = 2 ∧ 2 ≤ r))
     [SigmaFinite μ] {T : Fin n → X → X} (hT : ∀ i, MeasurePreserving (T i) μ μ)
