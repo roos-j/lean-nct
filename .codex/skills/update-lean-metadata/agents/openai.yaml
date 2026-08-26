@@ -1,4 +1,4 @@
 interface:
   display_name: "Update Lean Metadata"
   short_description: "Synchronize Lean commands in the blueprint"
-  default_prompt: "Use $update-lean-metadata to synchronize blueprint Lean metadata from Status.md."
+  default_prompt: "Use $update-lean-metadata to synchronize blueprint Lean metadata from meta/Status.md."

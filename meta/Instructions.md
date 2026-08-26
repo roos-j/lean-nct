@@ -39,11 +39,11 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
   wording.  Conditions needed to avoid unintented weakening of statements due to Lean junk-value behaviour 
   should be added conservatively.
 - The manuscript is not expected to contain errors at this point, but if you do find an error, fix it and continue formalizing, but
-  report the error in the file 'ErrorReport.md'.
+  report the error in the file 'meta/ErrorReport.md'.
   Put date and timestamp on the errors found and specify which source line in blueprint.tex they occur in. Small gaps and omitted details in the reasoning
   that any beginning graduate student would be able to fill in do not qualify as errors. This is only about substantial definitive mathematical errors.
 - When a displayed absolute constant or cardinality cannot be justified exactly but a directly proved bound is only slightly worse
-  (normally by at most a factor of two), retain the proved Lean bound, record the discrepancy in `ErrorReport.md`, and continue.
+  (normally by at most a factor of two), retain the proved Lean bound, record the discrepancy in `meta/ErrorReport.md`, and continue.
   Do not hold up the formalization for a sharper constant unless it is needed by a later stated estimate.
 - Ignore LaTeX comments and author annotations. 
 - Each labeled manuscript definition and theorem must correspond to one, or
@@ -102,7 +102,7 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
 
 ## Status tracking
 
-- Maintain `Status.md` continuously as work
+- Maintain `meta/Status.md` continuously as work
   progresses.
 - Include one entry for every labeled LaTeX definition and theorem in the
   scoped manuscript, organized by section and subsection.  Do not list
@@ -114,7 +114,7 @@ formalization in `LeanNct`. User's instructions given in the chat may override t
 - Theorems use `Todo`, `Statement completed`, or `Proof completed`.
   Use `Proof completed` only for a sorry-free proof depending on standard
   axioms; otherwise use the appropriate earlier status.
-- If you find errors/inconsistencies in `Status.md`, fix them.
+- If you find errors/inconsistencies in `meta/Status.md`, fix them.
 - Entries should be organized by the sections and subsections they occur in. After every section/subsection heading also include a line
 for local path (treating LeanNct directory as home, and including filename if applicable) of the formalization of that section/subsection.
 The format should be:
@@ -122,11 +122,11 @@ Lean file: PATH HERE
 
 ## Blueprint Lean metadata update
 
-- Whenever you update a `Status.md` entry, you should also update the corresponding Lean metadata in `blueprint/blueprint.tex` as follows:
-find the appropriate label and inside of the def/thm environment update the metadata commands according to the instructions in `UpdateLeanMetadata.md`.
+- Whenever you update a `meta/Status.md` entry, you should also update the corresponding Lean metadata in `blueprint/blueprint.tex` as follows:
+find the appropriate label and inside of the def/thm environment update the metadata commands according to the instructions in `meta/UpdateLeanMetadata.md`.
 
 ## Workflow
 
-- Before beginning, make sure you are aware of the current state of the formalization as recorded in `Status.md`. Also familiarize yourself with the Lean files and the auxiliary setup left behind by previous agents. You should pick the work back up and avoid duplication of effort as much as possible.
-- Then the first stage is to formalize all the statements and definitions, and where proofs are still missing and leave proofs as sorry. Update `Status.md` appropriately.
+- Before beginning, make sure you are aware of the current state of the formalization as recorded in `meta/Status.md`. Also familiarize yourself with the Lean files and the auxiliary setup left behind by previous agents. You should pick the work back up and avoid duplication of effort as much as possible.
+- Then the first stage is to formalize all the statements and definitions, and where proofs are still missing and leave proofs as sorry. Update `meta/Status.md` appropriately.
 - Once all statements and definitions are formalized, you should focus on proving the theorems one by one, in the order they appear in the manuscript. You may locally parallelize independent pieces, but you should not try to do the whole formalization at once. Move on to the next theorem, or batch of theorems only when the previous is completely formalized.
