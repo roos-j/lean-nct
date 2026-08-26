@@ -59,7 +59,7 @@ finite $L^2(X)$ norm for every
 positive integer $N$ and
 $$
  \| M_{N} (\mathbf{f}) \|_{V_{r}(L^2(X))}
-\le C_{\ref{thm:ergodicthm},n,r}
+\le C_{n,r}
  \prod_{j\in [n)} \|f_j\|_{2n},
 $$
 where the constant is defined in `nCT.C_main_ergodic_theorem`.
