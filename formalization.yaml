@@ -21,17 +21,7 @@ project:
   name: lean-nct
   description: >-
     A Lean 4 formalization of quantitative norm-variation estimates for
-    multiple ergodic averages associated with n >= 2 commuting measure preserving transformations.
-    The main ergodic theorem bounds the r-variation seminorm of the averages
-    M_N(f) = N^{-1} sum_{i<N} prod_{j<n} f_j(T_j^i x) in L^2(X) by an explicit constant times
-    prod_j ||f_j||_{L^{2n}(X)}, for r > 2^{n-1} (and r >= 2 when n = 2). This is a quantitative
-    strengthening of Tao's norm-convergence theorem for commuting transformations and resolves a
-    problem raised by Avigad and Rute. The heart of the development is a real-variable estimate for
-    twisted multilinear averages A_t(1_{[0,1]}, f) on R^n, closely related to singular
-    Brascamp-Lieb inequalities, which is transferred to the ergodic setting by the Calderon
-    transference principle and multilinear complex interpolation. All constants are explicit:
-    2^666 in the real-variable theorem, and 2^344 (n = 2) resp. 2^{4n+337} (r/(r-2^{n-1}))^{1/r}
-    (n >= 3) in the ergodic theorem.
+    multiple ergodic averages associated with multiple commuting measure preserving transformations.
   authors: # [required] who did the formalization
     - "Joris Roos"
     - "Polona Durcik"
@@ -62,8 +52,7 @@ sources:
     relationship: "background"
     note: >-
       Bachelor's thesis, Rheinische Friedrich-Wilhelms-Universität Bonn, September 2025.
-      Formalization of the Calderón transference principle. This repository nevertheless
-      contains its own complete proof of the instance it needs
+      This repository contains its own complete proof of the instance it needs
       (Auto.calderon_transference_external), so nothing is assumed.
     author_endorsement: "n/a"
 
