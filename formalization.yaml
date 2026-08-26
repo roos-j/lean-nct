@@ -61,9 +61,8 @@ sources:
     location: "Theorem 2.5"
     relationship: "background"
     note: >-
-      Bachelor's thesis, Rheinische Friedrich-Wilhelms-Universität Bonn, September 2025. The
-      blueprint treats the Calderón transference principle as an external theorem on the grounds
-      that it had already been formalized in Lean by Pernegger. This repository nevertheless
+      Bachelor's thesis, Rheinische Friedrich-Wilhelms-Universität Bonn, September 2025.
+      Formalization of the Calderón transference principle. This repository nevertheless
       contains its own complete proof of the instance it needs
       (Auto.calderon_transference_external), so nothing is assumed.
     author_endorsement: "n/a"
@@ -77,8 +76,7 @@ sources:
     location: "multilinear complex interpolation"
     relationship: "background"
     note: >-
-      The blueprint treats multilinear complex interpolation as an external theorem. This
-      repository contains its own complete proof of the instance it needs
+      This repository contains a complete proof of the interpolation theorem it needs
       (Auto.multilinear_interpolation_external, LeanNct/Auto/MultilinearInterpolation.lean).
     author_endorsement: "n/a"
 
@@ -159,19 +157,7 @@ automation:
         wall_time: "less than one hour"
         spend_usd: "subscription-based usage"
       prompting_notes: ""
-  notes: >-
-    Division of labour: humans decided all mathematics and wrote the blueprint and the formal
-    statement surface; agents produced essentially all proof code. Agent commits are tagged
-    [codex] or [claude] in the git log. The source manuscript itself was also partly machine-edited
-    in a separate, earlier effort (several passes with GPT-5.6-Sol-Pro over a human-written draft,
-    mainly to compute and optimize explicit constants and to fill in routine or by-analogy
-    arguments); machine-generated blueprint content is tagged in the manuscript, and that work
-    concerns the source, not this formalization. Formalization feedback flowed back into the
-    blueprint: several constants and one definition were corrected there because the formalization
-    exposed problems, and a closing audit pass (Audit.md) reconciled the remaining blueprint
-    statements and constants with the formalization. ErrorReport.md is the historical log the
-    agents wrote while that reconciliation was still open; the items it lists have since been
-    resolved in the blueprint, so it no longer describes live divergences.
+  notes: ""
 
 fidelity:
   divergences: >-
