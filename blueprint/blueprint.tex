@@ -58,6 +58,13 @@
 \newcommand{\leanok}{}
 \newcommand{\lean}[1]{}
 
+\DeclareRobustCommand{\leanlink}[1]{%
+    \href
+    {https://pjroos.com/lean-nct/docs/find/?pattern=#1\&strict=false\#doc}
+    {\ensuremath{\forall}}
+}
+\pdfstringdefDisableCommands{\def\leanlink#1{}}
+
 \newcommand{\Z}{{\mathbb Z}}
 \newcommand{\R}{{\mathbb R}}
 \newcommand{\Rm}{{\mathbb R}^m}
@@ -164,14 +171,14 @@ Let $n$ be a natural number, $X$ a measurable space and $\mu$ a measure on $X$.
 Recall that that a map $T: X \to X$ is called a {\em measure preserving transformation} if for every measurable $A\subset X$ the set $T^{-1}(A)$ is measurable and has the
 same measure as $A$. For a non-negative integer $n$ let $[n)=\{k\in \N\,:\,0\le k<n\}$.
 
-\begin{definition}[Multiple ergodic average]\label{ergodic averages}\lean{nCT.multipleErgodicAverage}\uses{}\usesdefs{}
+\begin{definition}[Multiple ergodic average \leanlink{nCT.multipleErgodicAverage}]\label{ergodic averages}\lean{nCT.multipleErgodicAverage}\uses{}\usesdefs{}
 Let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $n$-tuple of complex-valued functions on $X$ and let $(T_j)_{j\in [n)}$ be an $n$-tuple of maps $X\to X$. For every positive integer $N$ and every $x\in X$, define the multiple ergodic average
 \begin{equation}\label{eq:averages-multiple}
 M_{N}(\mathbf{f})(x) = N^{-1} \sum_{i \in [N)} \prod_{j \in [n)} f_j(T_j^i x).
 \end{equation}
 \end{definition}
 
-\begin{theorem}[Main ergodic theorem]\label{thm:ergodicthm}\lean{nCT.main_ergodic_theorem}\leanok\uses{thm:ergodicthmJ,jump estimates imply variation}\usesdefs{ergodic averages}
+\begin{theorem}[Main ergodic theorem \leanlink{nCT.main_ergodic_theorem}]\label{thm:ergodicthm}\lean{nCT.main_ergodic_theorem}\leanok\uses{thm:ergodicthmJ,jump estimates imply variation}\usesdefs{ergodic averages}
 Let $n\ge 2$ be an integer and let $r>2^{n-1}$, or $r\ge 2$ if $n=2$. 
 Let $(X,\Sigma,\mu)$ be a $\sigma$-finite measure space, 
 let $(T_j)_{j\in [n)}$ be an $n$-tuple of mutually commuting measure 
@@ -208,7 +215,7 @@ It is closely related to the study of cancellation estimates for the simplex Hil
 
 
 
-\begin{definition}[Twisted average]\lean{nCT.twistedAverage,nCT.rescaledTwistedAverage}
+\begin{definition}[Twisted average \leanlink{nCT.twistedAverage}, \leanlink{nCT.rescaledTwistedAverage}]\lean{nCT.twistedAverage,nCT.rescaledTwistedAverage}
 Let $n\in\mathbb{N}$. For an $n$-tuple of real-valued functions $\mathbf f = (f_i)_{i\in [n)}$ on $\R^n$, a function $\chi:\R\to\R$ and $x\in\mathbb{R}^n$ denote
 \begin{equation}\label{A_def}\uses{}\usesdefs{}
 A(\chi,\mathbf f)(x) = \int_{\mathbb{R}} \chi(s)\Big(\prod_{i\in [n)} f_i(x+se_i)\Big)\,ds,
@@ -217,7 +224,7 @@ whenever the integrand is measurable and integrable.
 Also set $A_t(\chi,\mathbf{f})=A(\chi_{(t)},\mathbf{f})$, where $\chi_{(t)}(x)=t^{-1}\chi(t^{-1}x)$ for $t>0$.
 \end{definition}
 
-\begin{theorem}[Main twisted theorem]\label{thm:nct main real}\uses{lem:smoothingdecomp,lem:norm_A_sum_le_sum,lem:mainbump1,lem:mainbump2,lem:leftbump,lem:leftbump1,constant main bump one,constant main bump two,constant left bump,constant left bump one}\usesdefs{A_def,defn:window based bump functions}
+\begin{theorem}[Main twisted theorem \leanlink{nCT.main_twisted_theorem}]\label{thm:nct main real}\uses{lem:smoothingdecomp,lem:norm_A_sum_le_sum,lem:mainbump1,lem:mainbump2,lem:leftbump,lem:leftbump1,constant main bump one,constant main bump two,constant left bump,constant left bump one}\usesdefs{A_def,defn:window based bump functions}
 \lean{nCT.main_twisted_theorem}
 \leanok
 Let $n\ge 2$ be an integer. For every $J\in\mathbb{N}$, positive real numbers $t_0<t_1<\cdots<t_J$, and every $n$-tuple of real-valued Schwartz functions ${\mathbf f}=(f_i)_{i\in[n)}$ satisfying

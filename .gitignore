@@ -27,3 +27,5 @@ diagnostic-*.md
 graph-*.json
 Old*
 dependencygraph-*
+*.upa
+*.upb
