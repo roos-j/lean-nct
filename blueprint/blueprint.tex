@@ -128,7 +128,7 @@ mathx10
 
 \author[Roos]{Joris Roos}
  \address{Department of Mathematics and Statistics, \newline
-	University of Massachussetts Lowell, 1 University Ave,
+	University of Massachusetts Lowell, 1 University Ave,
 	Lowell, MA 01854, USA}
 \email{joris\_roos@uml.edu}
 
@@ -146,7 +146,7 @@ mathx10
 
 
 \date{\today}
-\subjclass[2020]{Primary 42B20, 68V20; Secondary 42B15, 37A30.}
+\subjclass[2020]{Primary 42B20, 37A30; Secondary 42B15, 68V20.}
 
 \begin{document}
 \tdplotsetmaincoords{70}{110}
@@ -154,15 +154,15 @@ mathx10
 \begin{abstract}
 This blueprint serves as a companion to a forthcoming, shorter traditional mathematical paper. The purpose of this blueprint is two-fold: first, it has served as the foundation for a formalization in Lean 4 of these results. This formalization has been completed largely automatically, making essential use of current frontier large language models. Second, it will serve as a resource to readers of the main paper who are interested in further technical details of the proofs.
 
-The main result concerns norm-variation estimates for multiple ergodic averages associated with $n\ge 2$ commuting measure preserving transformations, providing a quantitative strengthening of Tao's norm-convergence theorem. At the core of the analysis lies an explicit real-variable estimate for twisted multilinear averages that is closely related to certain singular Brascamp--Lieb inequalities.   \end{abstract}
+The main result concerns norm-variation estimates for multiple ergodic averages associated with $n\ge 2$ commuting measure preserving transformations, providing a quantitative strengthening of Tao's norm-convergence theorem and answering an open question of Avigad and Rute. At the core of the analysis lies an explicit real-variable estimate for twisted multilinear averages that is closely related to certain singular Brascamp--Lieb inequalities.   \end{abstract}
 
 \maketitle
 
 \section{Introduction}
 
 Let $n$ be a natural number, $X$ a measurable space and $\mu$ a measure on $X$. 
-Recall that that $T: X \to X$ is a {\em measure preserving transformation} if for every measurable $A\subset X$ the set $T^{-1}(A)$ is measurable and has the
-same measure as $A$. For a non-negative integer $n$ let $[n)=\{k\,:\,0\le k<n\}$.
+Recall that that a map $T: X \to X$ is called a {\em measure preserving transformation} if for every measurable $A\subset X$ the set $T^{-1}(A)$ is measurable and has the
+same measure as $A$. For a non-negative integer $n$ let $[n)=\{k\in \N\,:\,0\le k<n\}$.
 
 \begin{definition}[Multiple ergodic average]\label{ergodic averages}\lean{nCT.multipleErgodicAverage}\uses{}\usesdefs{}
 Let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $n$-tuple of complex-valued functions on $X$ and let $(T_j)_{j\in [n)}$ be an $n$-tuple of maps $X\to X$. For every positive integer $N$ and every $x\in X$, define the multiple ergodic average
@@ -198,7 +198,7 @@ $C_{\ref{thm:ergodicthm},n,r}
   The definition of the $r$-variation norm is given in Definition \ref{variation seminorm on positive integers}.
 Since finite variation of a sequence implies convergence of the sequence and since $L^\infty(X)\subset L^{2n}(X)$ if $X$ is a probability space, Theorem \ref{thm:ergodicthm} immediately recovers Tao's theorem  \cite[Theorem 1.1]{Tao07} for $n\ge 2$, which concerned qualitative norm convergence. Ergodic-theoretic proofs of Tao's theorem were also given by Austin \cite{Austin10}, Host \cite{Host09}, and a generalization to nilpotent groups was proved in \cite{Walsh12}.
 Norm-convergence for a single ergodic average with $n=1$ and  $r\ge 2$ was proved by Jones, Ostrovskii, and Rosenblatt \cite{JonesOstrovskiiRosenblatt96}. 
-Theorem \ref{thm:ergodicthm} resolves an open problem that was stated by Avigad and Rute in the closing section of \cite{AvigadRute15}. 
+Theorem \ref{thm:ergodicthm} answers a question that was stated by Avigad and Rute in the closing section of \cite{AvigadRute15}. 
 Versions of Theorem \ref{thm:ergodicthm} were proved for $n=2$ in \cite{DurcikKovacSkrebThiele19,Kovac16}, and for $n=3$ in \cite{DurcikSlavikovaThiele26}.
 
 Theorem~\ref{thm:ergodicthm} is  reduced  to Theorem~\ref{thm:nct main real} below  by the Calder\'on transference principle; see  \cite{DurcikKovacSkrebThiele19} and  Pernegger \cite{Pernegger2025}, who also formalized this reduction.  Theorem~\ref{thm:nct main real} is an a priori estimate over the real numbers. The proof of this latter estimate is the heart of the matter of this paper. 
@@ -242,20 +242,20 @@ Another goal was to fill in routine arguments, or arguments by analogy that were
 
 Consider for example Gaussian domination, Proposition \ref{Gaussian domination combined}, which features several slightly different cases. The proofs of the different cases differ largely only in a routine way (up to switching the function in which mean zero is exploited to obtain decay). Once the statements and the division into cases had been fixed by the authors, there was little value in typing out every local calculation by hand.\\
 
-For transparency, every machine-generated piece of content is tagged with \auto\; throughout the manuscript. Everything not tagged with \auto\; is entirely human-generated, up to automatic fixing of typos and minor inaccuracies, tweaking of constants and other minor automated changes.\\
+For transparency, every machine-generated piece of content is tagged with \auto\; throughout the manuscript. Everything not tagged with \auto\; is entirely human-generated, up to possible automatic fixing of typos and minor inaccuracies, tweaking of constants and other minor automated changes.\\
 
 Separate automation passes checked all arguments for local correctness. This of course does not replace mathematical expert review, but has decreased friction during the formalization stage.
 Nevertheless, the formalization still surfaced some minor discrepancies in the values of explicit constants in some intermediate propositions, which have then been fixed.
 
 \subsection{Formalization in Lean}
 
-After this blueprint was completed, its contents were formally verified using the proof assistant Lean 4 \cite{LeanPaper} and its mathematical library \texttt{mathlib} \cite{Mathlib}. The formalization is available at 
+After this blueprint was completed, its contents were formally verified using the proof assistant Lean 4 \cite{LeanPaper} and its mathematical library \texttt{mathlib} \cite{Mathlib}. The formalization is available on GitHub at 
 \begin{center}
 \href{https://github.com/roos-j/lean-nct}{https://github.com/roos-j/lean-nct}
 \end{center}
-and is registered on \href{TODO}{Palomar} and archived at \href{TODO}{Zenodo}.
-The formalization made heavy use of emerging autoformalization capabilities of current frontier models. The bulk of the work was completed using OpenAI's \texttt{Codex/5.6-terra-ultra}. While the statements of Theorem \ref{thm:ergodicthm} and Theorem \ref{thm:nct main real} and its associated definitions have been carefully formalized by hand, virtually all of the remaining formalization was machine-generated across many extended sessions during a one-week period, with a custom instruction set and careful human supervision. The timeline and required amount of human effort are in striking contrast to those of previous large formalization projects in analysis such as the Carleson project \cite{CarlesonBlueprint}, \cite{CarlesonPaper}, which was predominantly human-generated and concluded its main goals before the current set of highly formalization-capable models was made publicly available.
-Both the instruction set and the structure of the blueprint were designed with autoformalization in mind and to mitigate some of the problems with current coding agents during long formalization tasks, such as drifting away from target, avoiding the actual task in favor of creating more and more trivial wrappers, and creating an opaque zoo of auxiliary statements and files.
+%and is registered on \href{TODO}{Palomar} and archived at \href{TODO}{Zenodo}.
+The formalization made heavy use of emerging autoformalization capabilities of current frontier models. The bulk of the work was completed using OpenAI's Codex framework with the model \texttt{5.6-terra-ultra}, with some subsequent cleanup done by Anthropic's Claude Code framework with the model \texttt{opus-5-high}. While the statements of Theorem \ref{thm:ergodicthm} and Theorem \ref{thm:nct main real} and its associated definitions have been carefully formalized by hand, virtually all of the remaining formalization was machine-generated across many extended sessions during a one-week period, with a custom instruction set and human supervision. The timeline and required amount of human effort are in striking contrast to those of previous large formalization projects in analysis such as the Carleson project \cite{CarlesonBlueprint}, \cite{CarlesonPaper}, which was predominantly human-generated and concluded its main goals before the current set of highly formalization-capable models was made publicly available.
+Both the instruction set and the structure of the blueprint were designed with autoformalization in mind and to mitigate some of the problems with current Codex models during long formalization tasks, such as drifting away from target, avoiding the actual task in favor of creating more and more trivial wrappers, and creating an opaque zoo of auxiliary statements and files.
 
 \subsection{Blueprint choices}
 Several convention choices were crucial in guiding both the structure and the content of this blueprint.
@@ -265,7 +265,7 @@ Several convention choices were crucial in guiding both the structure and the co
 This naturally aligns the blueprint with the structure of the formalization.
 \item {\em Mathlib awareness.} Generally, only facts that are currently available in mathlib in some shape or form can pass as `standard theorems' that require no proof. 
 We make two exceptions to this rule: an instance of the Calder\'on transference principle (Theorem \ref{Calderon transference external}), and a multilinear complex interpolation theorem (Theorem \ref{multilinear interpolation external}). These were essentially already formalized prior to this formalization project: the Calder\'on transference principle was first hand-formalized by Pernegger \cite{Pernegger2025}; complex interpolation was autoformalized by one of the authors.
-\item {\em Explicit dependencies.} Whenever a named theorem is used in a proof it must be referred to explicitly. The parameters of the theorem should also usually be made explicit, unless it is clear from context (including proofs of hypotheses). This allows for reliable automatic generation of dependency graph metadata.
+\item {\em Explicit dependencies.} Whenever a named theorem is used in a proof it must be referred to explicitly. The parameters of the theorem should also usually be made explicit, unless it is clear from context (including proofs of hypotheses). This allows for reliable automatic generation of \href{https://pjroos.com/lean-nct/dependency_graph}{dependency graph} metadata.
 \item {\em Treatment of constants.} Every claimed inequality must come with an explicitly defined constant, rather than a constant introduced by an existential quantifier. Every constant must be named after the corresponding statement, e.g. $C_{\ref{H kernel derivative estimate Gaussian domination}}$ for the constant of Proposition \ref{H kernel derivative estimate Gaussian domination}. All dependencies on parameters must be explicitly specified and all constants must be recursively defined in terms of previously introduced constants.
 Most statements with such constants also have a separate lemma following it that unravels the recursion and provides an explicit estimate not depending on any other constants. The latter are exclusively automatically generated.
 \end{itemize}
