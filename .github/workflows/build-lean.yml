@@ -1,4 +1,4 @@
-name: Build Lean project
+name: Build Lean
 
 on:
 #  push:
