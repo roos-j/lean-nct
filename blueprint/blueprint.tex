@@ -251,8 +251,8 @@ Consider for example Gaussian domination, Proposition \ref{Gaussian domination c
 
 For transparency, every machine-generated piece of content is tagged with \auto\; throughout the manuscript. Everything not tagged with \auto\; is entirely human-generated, up to possible automatic fixing of typos and minor inaccuracies, tweaking of constants and other minor automated changes.\\
 
-Separate automation passes checked all arguments for local correctness. This of course does not replace mathematical expert review, but has decreased friction during the formalization stage.
-Nevertheless, the formalization still surfaced some minor discrepancies in the values of explicit constants in some intermediate propositions, which have then been fixed.
+Separate automation passes checked all arguments for local correctness. %This does not replace human mathematical expert review, but has decreased friction during the formalization stage.
+Nevertheless, the formalization still surfaced some minor discrepancies in the values of explicit constants in statements of some intermediate propositions, which have then been fixed. Automatically generated informal proofs \auto\, have undergone machine checks, but have not been thoroughly hand-checked. Thus it is possible they contain harmless inaccuracies. This is acceptable since all proofs have been successfully formalized in Lean.
 
 \subsection{Formalization in Lean}
 
@@ -261,8 +261,10 @@ After this blueprint was completed, its contents were formally verified using th
 \href{https://github.com/roos-j/lean-nct}{https://github.com/roos-j/lean-nct}
 \end{center}
 %and is registered on \href{TODO}{Palomar} and archived at \href{TODO}{Zenodo}.
+The main statements and definitions in this introduction are annotated with links to the respective Lean statements (\ensuremath{\forall}). 
 The formalization made heavy use of emerging autoformalization capabilities of current frontier models. The bulk of the work was completed using OpenAI's Codex framework with the model \texttt{5.6-terra-ultra}, with some subsequent cleanup done by Anthropic's Claude Code framework with the model \texttt{opus-5-high}. While the statements of Theorem \ref{thm:ergodicthm} and Theorem \ref{thm:nct main real} and its associated definitions have been carefully formalized by hand, virtually all of the remaining formalization was machine-generated across many extended sessions during a one-week period, with a custom instruction set and human supervision. The timeline and required amount of human effort are in striking contrast to those of previous large formalization projects in analysis such as the Carleson project \cite{CarlesonBlueprint}, \cite{CarlesonPaper}, which was predominantly human-generated and concluded its main goals before the current set of highly formalization-capable models was made publicly available.
 Both the instruction set and the structure of the blueprint were designed with autoformalization in mind and to mitigate some of the problems with current Codex models during long formalization tasks, such as drifting away from target, avoiding the actual task in favor of creating more and more trivial wrappers, and creating an opaque zoo of auxiliary statements and files.
+
 
 \subsection{Blueprint choices}
 Several convention choices were crucial in guiding both the structure and the content of this blueprint.
