@@ -207,30 +207,27 @@ private theorem cauchySeq_of_variationSeminorm_lt_top
     (ENNReal.rpow_ne_top_of_nonneg hr.le hvariation.ne)
   exact (not_lt_of_ge (hbound J)) hJ
 
-/--
-**Tao's norm-convergence theorem** (Theorem 1.1 of Tao's paper).
-
-Let `(X, μ)` be a probability space, let `T₁, …, Tₙ` be commuting,
-invertible, measure-preserving transformations, and let `f₁, …, fₙ` be
-bounded complex-valued functions.  Then the multiple ergodic averages
-`nCT.multipleErgodicAverage f T N` converge in `L²(X)` as `N → ∞`.
-
-For `n ≥ 2`, this is a corollary of `aux_nCT_main_ergodic_theorem`: bounded
-functions on a probability space lie in `L^(2n)`, and its finite
-`r`-variation bound makes the averages Cauchy in `L²`.  For `n = 1`, it is
-Mathlib's von Neumann mean ergodic theorem.  The stated bijectivity hypotheses
-are those in Tao's theorem; the stronger main ergodic theorem does not need
-them.
--/
+/-- **Tao's norm-convergence theorem** -/
 theorem tao_norm_convergence
-    {n : ℕ} (hn : 1 ≤ n) [IsProbabilityMeasure μ]
-    {T : Fin n → X → X} (hT : ∀ i, MeasurePreserving (T i) μ μ)
-    (hcomm : ∀ i j x, T i (T j x) = T j (T i x))
-    (hbij : ∀ i, Function.Bijective (T i))
-    {f : Fin n → X → ℂ} (hf : ∀ i, MemLp (f i) ∞ μ) :
+    {n : ℕ} [IsProbabilityMeasure μ]
+    {T : Fin n → X → X}
+    (hT : ∀ i, MeasurePreserving (T i) μ μ := by assumption)
+    (hT' : ∀ i j x, T i (T j x) = T j (T i x) := by assumption)
+    (hT'' : ∀ i, Function.Bijective (T i) := by assumption)
+    {f : Fin n → X → ℂ} (hf : ∀ i, MemLp (f i) ∞ μ := by assumption) :
     ∃ g : X → ℂ, MemLp g 2 μ ∧
       Tendsto (fun N => eLpNorm (nCT.multipleErgodicAverage f T N - g) 2 μ)
         atTop (𝓝 0) := by
+  by_cases hn_zero : n = 0
+  · subst n
+    refine ⟨fun _ => 1, memLp_const (1 : ℂ), ?_⟩
+    apply Tendsto.congr' ?_ tendsto_const_nhds
+    filter_upwards [eventually_gt_atTop (0 : ℕ)] with N hN
+    have haverage : nCT.multipleErgodicAverage f T N = fun _ => 1 := by
+      funext x
+      simp [nCT.multipleErgodicAverage, hN.ne']
+    rw [haverage]
+    simp
   by_cases hn_one : n = 1
   · subst n
     exact one_transform_converges T hT f fun i =>
@@ -248,7 +245,7 @@ theorem tao_norm_convergence
     measurePreserving := hT
     commutes := by
       intro i j x
-      exact hcomm i j x }
+      exact hT' i j x }
   have haverage (N : ℕ) :
       nCT.multipleErgodicAverage f T N = aux_ergodicAverage S N f := by
     simpa [S] using
@@ -288,7 +285,7 @@ theorem tao_norm_convergence
           aux_ergodicAverage S (t.1 j.castSucc) f x) 2 μ ^ r = _
     rw [aux_ergodicAverageLp_enorm_sub (by omega) S f hf']
   have hmain := aux_nCT_main_ergodic_theorem hn_two (r := r) (Or.inl hr)
-    hT hcomm hf'
+    hT hT' hf'
   have hvariation_raw :
       nCT.variationSeminorm (eLpNorm · 2 μ) r
           (nCT.multipleErgodicAverage f T) < ∞ := by
