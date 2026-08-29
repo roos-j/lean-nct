@@ -8,6 +8,7 @@ module
 
 public import LeanNct.Defs
 import LeanNct.Auto.RealToErgodic
+import LeanNct.Auto.Tao
 
 /-!
 # Main theorems
@@ -28,8 +29,8 @@ namespace nCT
 
 @[expose] public noncomputable section
 
-open MeasureTheory Set ENNReal
-open scoped SchwartzMap
+open MeasureTheory Set ENNReal Filter
+open scoped SchwartzMap Topology
 
 variable {n : ℕ}
 
@@ -72,6 +73,38 @@ theorem main_ergodic_theorem (hn : 2 ≤ n) {r : ℝ} (hr : 2 ^ (n - 1) < r ∨ 
     variationSeminorm (eLpNorm · 2 μ) r (multipleErgodicAverage f T)
       ≤ C_main_ergodic_theorem n r * ∏ i, eLpNorm (f i) (2 * n) μ :=
   Auto.aux_nCT_main_ergodic_theorem hn hr hT hT' hf
+
+/--
+**Tao's norm-convergence theorem**
+
+Let $n\ge 1$ be an integer.
+Let $(X,\Sigma,\mu)$ be a probability space,
+let $(T_j)_{j\in [n)}$ be an $n$-tuple of mutually commuting invertible measure
+preserving transformations on $X$,
+and let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $n$-tuple
+of complex-valued measurable functions on $X$
+such that $\|f_j\|_{L^{\infty}(X)}<\infty$ for all $j\in[n)$.
+
+Then $M_{N} (\mathbf{f})$ converges in $L^2(X)$ as $N\to\infty$.
+In other words, there exists a measurable, complex-valued function $g$ on $X$
+with $\|g\|_{L^2(X)}<\infty$ and
+$$\lim_{N\to\infty} \|M_{N} (\mathbf{f}) - g\|_{L^2(X)} \longrightarrow 0.$$
+
+*Notes:* 1. This is Theorem 1.1 of Tao's paper arXiv:0707.1117 written in our notation.
+It follows directly from `nCT.C_main_ergodic_theorem` for $n\ge 2$. For $n=1$ it is
+the classical mean ergodic theorem, which is contained in mathlib.
+
+2. This Lean formulation also includes the trivial case `n = 0`.
+-/
+theorem tao_norm_convergence
+    {n : ℕ} [IsProbabilityMeasure μ]
+    {T : Fin n → X → X} (hT : ∀ i, MeasurePreserving (T i) μ μ)
+    (hT' : ∀ i j x, T i (T j x) = T j (T i x))
+    (hT'' : ∀ i, Function.Bijective (T i))
+    {f : Fin n → X → ℂ} (hf : ∀ i, MemLp (f i) ∞ μ) :
+    ∃ g : X → ℂ, MemLp g 2 μ ∧
+      Tendsto (fun N ↦ eLpNorm (nCT.multipleErgodicAverage f T N - g) 2 μ) atTop (𝓝 0) :=
+  Auto.tao_norm_convergence hT hT' hT'' hf
 
 /--
 **Theorem (Main twisted theorem).**
