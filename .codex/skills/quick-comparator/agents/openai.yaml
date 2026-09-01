@@ -1,0 +1,4 @@
+interface:
+  display_name: "Quick Comparator"
+  short_description: "Validate a Lean comparator pair locally"
+  default_prompt: "Use $quick-comparator to validate the comparator pair in this Lean repository."
