@@ -3,6 +3,7 @@
   "solution_module": "Solution",
   "theorem_names": [
     "nCT.main_ergodic_theorem",
+    "nCT.tao_norm_convergence",
     "nCT.main_twisted_theorem"
   ],
   "permitted_axioms": [
