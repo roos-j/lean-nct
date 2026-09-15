@@ -1,4 +1,4 @@
-name: Build project and update site
+name: Full build
 
 on:
   workflow_dispatch:
