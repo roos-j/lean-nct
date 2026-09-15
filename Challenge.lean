@@ -133,9 +133,9 @@ Let $(X,\Sigma,\mu)$ be a $\sigma$-finite measure space,
 let $(T_j)_{j\in [n)}$ be an $n$-tuple of mutually commuting measure
 preserving transformations on $X$,
 and let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $n$-tuple
-of complex-valued measurable functions on $X$
+of complex-valued almost-everywhere strongly measurable functions on $X$
 such that $\|f_j\|_{L^{2n}(X)}<\infty$ for all $j\in[n)$.
-Then $M_N(\mathbf{f})$ is measurable with
+Then $M_N(\mathbf{f})$ is almost-everywhere strongly measurable with
 finite $L^2(X)$ norm for every
 positive integer $N$ and
 $$
@@ -162,11 +162,11 @@ Let $(X,\Sigma,\mu)$ be a probability space,
 let $(T_j)_{j\in [n)}$ be an $n$-tuple of mutually commuting invertible measure
 preserving transformations on $X$,
 and let $\mathbf{f}=(f_j)_{j\in [n)}$ be an $n$-tuple
-of complex-valued measurable functions on $X$
+of complex-valued almost-everywhere strongly measurable functions on $X$
 such that $\|f_j\|_{L^{\infty}(X)}<\infty$ for all $j\in[n)$.
 
 Then $M_{N} (\mathbf{f})$ converges in $L^2(X)$ as $N\to\infty$.
-In other words, there exists a measurable, complex-valued function $g$ on $X$
+In other words, there exists an almost-everywhere strongly measurable, complex-valued function $g$ on $X$
 with $\|g\|_{L^2(X)}<\infty$ and
 $$\lim_{N\to\infty} \|M_{N} (\mathbf{f}) - g\|_{L^2(X)} \longrightarrow 0.$$
 

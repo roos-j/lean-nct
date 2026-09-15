@@ -29,9 +29,9 @@ For a sequence $`a`$ in a normed space $`B`$, its $`r`$-variation seminorm is de
 
 ### Main ergodic theorem
 
-**`nCT.main_ergodic_theorem`.** Let $`n\ge2`$ be an integer and let $`r>2^{n-1}`$, or $`r\ge2`$ if $`n=2`$. Let $`(X,\Sigma,\mu)`$ be a $`\sigma`$-finite measure space, let $`(T_j)_{0\le j\lt n}`$ be mutually commuting measure-preserving transformations on $`X`$, and let $`\mathbf f=(f_j)_{0\le j\lt n}`$ be complex-valued measurable functions with $`\|f_j\|_{L^{2n}(X)}\lt \infty`$ for every $`j`$.
+**`nCT.main_ergodic_theorem`.** Let $`n\ge2`$ be an integer and let $`r>2^{n-1}`$, or $`r\ge2`$ if $`n=2`$. Let $`(X,\Sigma,\mu)`$ be a $`\sigma`$-finite measure space, let $`(T_j)_{0\le j\lt n}`$ be mutually commuting measure-preserving transformations on $`X`$, and let $`\mathbf f=(f_j)_{0\le j\lt n}`$ be complex-valued almost-everywhere strongly measurable functions with $`\|f_j\|_{L^{2n}(X)}\lt \infty`$ for every $`j`$.
 
-Then $`M_N(\mathbf f)`$ is measurable with finite $`L^2(X)`$ norm for every positive integer $`N`$, and
+Then $`M_N(\mathbf f)`$ is almost-everywhere strongly measurable with finite $`L^2(X)`$ norm for every positive integer $`N`$, and
 
 ```math
 \big\|\big(M_N(\mathbf f)\big)_{N\ge1}\big\|_{V_r(L^2(X))}
@@ -49,9 +49,9 @@ C_{n,r}=\begin{cases}
 
 ### Tao's norm-convergence theorem
 
-**`nCT.tao_norm_convergence`.** Let $`n\ge1`$ be an integer. Let $`(X,\Sigma,\mu)`$ be a probability space, let $`(T_j)_{0\le j\lt n}`$ be mutually commuting invertible measure-preserving transformations on $`X`$, and let $`\mathbf f=(f_j)_{0\le j\lt n}`$ be complex-valued measurable functions with $`\|f_j\|_{L^\infty(X)}\lt \infty`$ for every $`j`$.
+**`nCT.tao_norm_convergence`.** Let $`n\ge1`$ be an integer. Let $`(X,\Sigma,\mu)`$ be a probability space, let $`(T_j)_{0\le j\lt n}`$ be mutually commuting invertible measure-preserving transformations on $`X`$, and let $`\mathbf f=(f_j)_{0\le j\lt n}`$ be complex-valued almost-everywhere strongly measurable functions with $`\|f_j\|_{L^\infty(X)}\lt \infty`$ for every $`j`$.
 
-Then $`M_N(\mathbf f)`$ converges in $`L^2(X)`$ as $`N\to\infty`$. In other words, there exists a measurable complex-valued function $`g`$ with finite $`L^2(X)`$ norm such that
+Then $`M_N(\mathbf f)`$ converges in $`L^2(X)`$ as $`N\to\infty`$. In other words, there exists an almost-everywhere strongly measurable complex-valued function $`g`$ with finite $`L^2(X)`$ norm such that
 
 ```math
 \lim_{N\to\infty}\|M_N(\mathbf f)-g\|_{L^2(X)}=0.
