@@ -91,7 +91,7 @@ with $\|g\|_{L^2(X)}<\infty$ and
 $$\lim_{N\to\infty} \|M_{N} (\mathbf{f}) - g\|_{L^2(X)} \longrightarrow 0.$$
 
 *Notes:* 1. This is Theorem 1.1 of Tao's paper arXiv:0707.1117 written in our notation.
-It follows directly from `nCT.C_main_ergodic_theorem` for $n\ge 2$. For $n=1$ it is
+It follows directly from `nCT.main_ergodic_theorem` for $n\ge 2$. For $n=1$ it is
 the classical mean ergodic theorem, which is contained in mathlib.
 
 2. This Lean formulation also includes the trivial case `n = 0`.
