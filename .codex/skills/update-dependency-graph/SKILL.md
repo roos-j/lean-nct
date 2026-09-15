@@ -7,7 +7,7 @@ description: Regenerate the repository's dependency-graph JSON and standalone HT
 
 ## Workflow
 
-Run this workflow from the repository root. Confirm that `blueprint/`, `dependency_graph/latex_to_graph_json.py`, and `dependency_graph/graph_json_to_html.py` exist before doing any work.
+Run this workflow from the repository root. Confirm that `blueprint/`, `dependency_graph/run_yaddag.py`, and `dependency_graph/yaddag-revision.txt` exist before doing any work. The launcher fetches the exact pinned commit from `roos-j/yaddag` and caches it under `.lake/yaddag/`. Git and network access are required on the first run; subsequent runs reuse that commit. Do not substitute the branch tip or another revision.
 
 ### 1. Select the source blueprint
 
@@ -40,7 +40,7 @@ Use the equivalent local-time command when working in another shell. Check for e
 Invoke the extractor with the selected blueprint and timestamped JSON path:
 
 ```powershell
-python dependency_graph/latex_to_graph_json.py $blueprint $graph
+python dependency_graph/run_yaddag.py extract $blueprint $graph
 ```
 
 Preserve the extractor's stdout and stderr while diagnosing failures. The extractor may require LaTeX tooling because it normally compiles the source to resolve references.
@@ -52,7 +52,7 @@ Do not continue to HTML generation if extraction fails or the JSON file is absen
 Feed the generated JSON into the renderer:
 
 ```powershell
-python dependency_graph/graph_json_to_html.py $graph $html `
+python dependency_graph/run_yaddag.py render $graph $html `
   --lean-url-pattern 'https://roos-j.github.io/lean-nct/docs/find/?pattern={lean_name}&strict=false#doc'
 ```
 

@@ -93,11 +93,11 @@ jobs:
         with:
           docker_image: ghcr.io/xu-cheng/texlive-full:20251002
           run: |
-            apk add --no-cache graphviz nodejs npm python3
+            apk add --no-cache git graphviz nodejs npm python3
             npm install --no-save --prefix /tmp/mathjax mathjax-full@3.2.2
-            python3 dependency_graph/latex_to_graph_json.py blueprint/blueprint.tex /tmp/graph.json
+            python3 dependency_graph/run_yaddag.py extract blueprint/blueprint.tex /tmp/graph.json
             mkdir -p _site/dependency_graph
-            python3 dependency_graph/graph_json_to_html.py /tmp/graph.json _site/dependency_graph/index.html \
+            python3 dependency_graph/run_yaddag.py render /tmp/graph.json _site/dependency_graph/index.html \
               --mathjax-js /tmp/mathjax/node_modules/mathjax-full/es5/tex-svg-full.js \
               --lean-url-pattern 'https://roos-j.github.io/lean-nct/docs/find/?pattern={lean_name}&strict=false#doc'
 
