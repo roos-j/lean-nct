@@ -29,7 +29,11 @@ project:
     prerequisite theorems currently not in mathlib such as multilinear complex interpolation, 
     the Calderón transference principle, and properties of Wiener space functions.
   authors:
-    - "The Authors"
+      - "Floris van Doorn"
+      - "Polona Durcik"
+      - "Joris Roos"
+      - "Lenka Slavíková"
+      - "Christoph Thiele"
   responsible_maintainers: # people responsible for the formalization repository
     - "Joris Roos"
   license: "Apache-2.0"
