@@ -22,9 +22,7 @@ project:
   description: >-
     This is a Lean 4 formalization of norm-variation of multiple ergodic averages for commuting transformations, 
     including Tao's norm-convergence theorem.
-    This formalization is based on the blueprint available at arXiv:2608.27321;
-    intermediate statements and constants include corrections and weaker bounds recorded
-    in automation/ErrorReport.md.
+    This formalization is based on the blueprint available at arXiv:2608.27321.
     The statements of the main theorems have been hand-formalized, 
     while the proof was autoformalized during a one-week period using coding agents under human supervision. 
     This produced roughly 107k lines of code (excluding comments and blank lines) and includes proofs of several 
