@@ -22,7 +22,9 @@ project:
   description: >-
     This is a Lean 4 formalization of norm-variation of multiple ergodic averages for commuting transformations, 
     including Tao's norm-convergence theorem.
-    This formalization closely follows the blueprint available at arXiv:2608.27321. 
+    This formalization is based on the blueprint available at arXiv:2608.27321;
+    intermediate statements and constants include corrections and weaker bounds recorded
+    in automation/ErrorReport.md.
     The statements of the main theorems have been hand-formalized, 
     while the proof was autoformalized during a one-week period using coding agents under human supervision. 
     This produced roughly 107k lines of code (excluding comments and blank lines) and includes proofs of several 
@@ -48,8 +50,17 @@ sources:
       - "Christoph Thiele"
     type: "blueprint"
     id: "arXiv:2608.27321"
-    location: "Theorem 1.2 (thm:ergodicthm) and Theorem 1.4 (thm:nct main real); the whole document is in scope"
+    location: "Theorem 1.2 (thm:ergodicthm) and Theorem 1.4 (thm:nct main real), with adapted supporting results"
     relationship: "formalizes"
+    note: >-
+      The selected main quantitative theorems formalize these blueprint results.
+      The supporting development adapts some intermediate statements, definitions,
+      constructions, and constants as recorded in automation/ErrorReport.md and
+      fidelity.divergences. The relationship does not assert that every intermediate
+      blueprint statement or displayed constant is proved verbatim. Several report
+      entries explicitly leave the blueprint unchanged while Lean uses corrected or
+      weaker versions. The report at the reviewed source revision is:
+      https://github.com/roos-j/lean-nct/blob/ce643698d651a0824e672ef46894d40a6b69fb00/automation/ErrorReport.md
     license: "Apache-2.0"
     author_endorsement: "participated"
 
@@ -100,9 +111,13 @@ classification:
 
 status:
   scope: >-
-    Complete. The entire blueprint in scope is formalized and proved: 182 theorems and 37
-    definitions, all recorded as proof-completed/completed in automation/Status.md, across 28 Lean files and
-    roughly 126k lines. 
+    The three selected main results listed below are proved in Lean. The supporting
+    development follows the blueprint with corrections and adaptations recorded in
+    automation/ErrorReport.md. Completion entries in automation/Status.md describe
+    the implemented Lean versions, not a proof of every original blueprint statement
+    and constant verbatim. In particular, some intermediate cardinality estimates and
+    numerical bounds are weaker, and a series estimate uses an extended nonnegative
+    sum. These differences do not change the selected main theorem statements.
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -135,6 +150,25 @@ automation:
         the mathematical statements and proof organization and supervised the automated
         proof development; see blueprint/blueprint.tex, sections on the use of automation
         and formalization in Lean.
+    - method: "copilot"
+      models: ["GPT-5.6-Sol-Pro"]
+      tool_setup: >-
+        Manuscript editing, and mathematical communication with human
+        instructions and feedback. After a human-written first draft had fixed the
+        statements, proof organization, and dependencies, parts and eventually the
+        entire blueprint were processed over several automation passes. The model
+        generated and edited informal proof text, filled routine arguments and
+        arguments by analogy, and computed and optimized explicit constants.
+        Its communication role was the written exposition of the mathematics in
+        the blueprint. This is distinct from generating the Lean proofs.
+      prompting_notes: >-
+        The manuscript marks machine-generated content and reports separate automated
+        checks of local correctness. Automatically generated informal proofs were not
+        thoroughly hand-checked; those checks do not establish literal fidelity of
+        every manuscript statement to the corrected Lean development.
+        Fuller disclosure: blueprint/blueprint.tex, section "Use of automation",
+        at the immutable source revision:
+        https://github.com/roos-j/lean-nct/blob/ce643698d651a0824e672ef46894d40a6b69fb00/blueprint/blueprint.tex#L242-L255
     - method: "agent"
       models: ["gpt-5.6-terra-ultra"]
       framework: "Codex"
@@ -188,36 +222,60 @@ automation:
 
 fidelity:
   divergences: >-
-    None of substance. The statements a reader has to trust are the hand-written ones in
-    LeanNct/Defs.lean and LeanNct/Theorems.lean, and each was compared directly against its
-    blueprint counterpart: nCT.multipleErgodicAverage against Definition \label{ergodic averages},
-    nCT.variationSeminorm against Definition \label{variation seminorm on positive integers},
-    nCT.rescale and nCT.twistedAverage / nCT.rescaledTwistedAverage against Definition
-    \label{A_def}, nCT.main_ergodic_theorem against Theorem \label{thm:ergodicthm}, and
-    nCT.main_twisted_theorem against Theorem \label{thm:nct main real}. Hypotheses, conclusions and
-    explicit constants agree throughout.
-    What differs is only Lean encoding, and in each case the Lean statement is at least as strong as
-    the blueprint's:
-    (1) Total functions. The blueprint defines M_N for positive integers N and A(chi, f) where the
-    integrand is measurable and integrable; the Lean definitions are total, taking the junk value 0
-    at N = 0 and, via the Bochner integral, on non-integrable integrands. Neither case is reachable
-    where it would matter: the variation seminorm ranges only over positive integers, and the
-    theorem's inputs are Schwartz functions, for which the integrand is integrable.
-    (2) ENNReal-valued norms. L^p norms are MeasureTheory.eLpNorm, a lower Lebesgue integral defined
-    for every function, rather than the norm on the L^p quotient space, and measurability plus
-    finiteness appear together as MemLp. On the functions occurring in the theorems the two agree;
-    the docstring of nCT.main_twisted_theorem spells out why.
-    (3) Trivial edge cases admitted: N = 0 in the ergodic theorem, where the assertion is about the
-    zero function, and J = 0 in the twisted theorem, where the sum is empty.
-    All three points are stated in the docstrings of the affected declarations.
-    Divergences at the level of intermediate lemmas are not tracked here: the closing audit pass made the blueprint's
-    intermediate statements and constants agree with the formalization rather than the reverse.
+    The selected main quantitative theorem statements and their explicit constants
+    agree with the blueprint's Theorems 1.2 and 1.4. This statement is limited to
+    those final results and is not a claim of exact fidelity throughout the supporting
+    development. automation/ErrorReport.md records the following intermediate
+    differences for which it explicitly says the blueprint text was left unchanged.
+    (1) "prism sum le sum prism-L1": convergence of symmetric partial sums in L1
+    does not imply convergence of the real-valued absolute prism-form series. Lean
+    uses the supremum of symmetric finite partial sums in ENNReal, allowing infinity.
+    (2) "Gaussian domination combined": the case-1 construction requires 30 slots;
+    the shared Lean cardinality cap is 36 to accommodate case 3, rather than the
+    manuscript's cap 28. The case-1 proof also contains the smaller unsupported
+    intermediate counts 16 and 22 described in the report.
+    (3) "Gauss domination case 1": the Lean defining constant has an additional
+    factor 2, although the bound below 2^117 and common bound 2^153 are retained.
+    (4) Cases 2 and 3 use local coefficient 9 instead of 8. Case 2 requires 18
+    active labels in the orientation-zero branch instead of 14 and uses a padded
+    range-30 witness. Case 3 requires 36 multiplicity-preserving slots instead of 28.
+    Sharper later estimates retain the public case-2 and case-3 constant bounds.
+    (5) "constant induct positive terms imply increase data": the shared cap 36
+    gives 324 * 2^163, with the proved bound below 2^172 instead of below 2^171.
+    (6) "constant induct positive terms theorem": Lean proves a bound below 2^359
+    instead of the manuscript's bound below (253/256) * 2^358 and hence below 2^358.
+    The last two bounds are factor-two relaxations, not proofs of the sharper
+    manuscript inequalities.
+    The report distinguishes resolved changes: the mean-value bump constant was
+    reconciled in pass 8, and the finite-variation definition for "shortlongJumps"
+    was corrected to allow at most J jumps. Lean encodes the latter using monotone
+    chains with repeated entries, which contribute zero in the intended range r >= 1.
+    Statement-level Lean conventions also need interpretation: averages allow N = 0,
+    the Bochner integral is total with value zero for nonintegrable integrands,
+    eLpNorm is extended nonnegative valued, and MemLp includes almost-everywhere
+    strong measurability and finite norm. The variation seminorm uses positive
+    indices. The twisted theorem permits J = 0, and Tao's theorem permits n = 0.
+    These conventions are separate from the intermediate corrections above.
+  known_gaps: >-
+    Exact formal proofs of the unchanged, sharper intermediate blueprint claims
+    listed above are not supplied by the corrected or weaker Lean versions.
+    The discrepancy report has not been fully reconciled into the manuscript;
+    this metadata does not claim that all intermediate statements or constants
+    were made to agree. The machine-checked selected theorems do not certify the
+    correctness of every informal proof in the blueprint. Generated informal proofs
+    were not thoroughly hand-checked, and a complete human audit of the supporting
+    formal proofs is not claimed. This is a source-fidelity and review limitation,
+    not an additional axiom or an unproved selected Lean theorem.
+    Detailed report at the immutable source revision:
+    https://github.com/roos-j/lean-nct/blob/ce643698d651a0824e672ef46894d40a6b69fb00/automation/ErrorReport.md
 
 review:
   status: "author-verified"
   notes: >-
     Author verification concerns the hand-formalized main theorem statements and their
-    associated definitions, compared with the blueprint as described in fidelity.divergences.
+    associated definitions. It does not certify exact agreement of all supporting
+    statements and constants: the outstanding source differences are recorded in
+    fidelity.divergences, fidelity.known_gaps, and automation/ErrorReport.md.
     The proofs were developed largely by coding agents under human supervision and checked
     by Lean. This status does not claim independent peer review or a complete human audit
     of every generated proof. As disclosed in blueprint/blueprint.tex, automatically

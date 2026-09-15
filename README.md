@@ -6,7 +6,7 @@
 
 This is a formalization of norm-variation of multiple ergodic averages for commuting transformations, including Tao's norm-convergence theorem.
 
-This formalization closely follows the blueprint, also available on [arXiv](https://arxiv.org/abs/2608.27321).
+This formalization is based on the blueprint also available on [arXiv](https://arxiv.org/abs/2608.27321).
 The statements of the main theorems have been hand-formalized, while the proof was autoformalized during a one-week period using coding agents under human supervision. This produced roughly 107k lines of code (excluding comments and blank lines) and includes proofs of several prerequisite theorems currently not in mathlib such as multilinear complex interpolation, the Calderón transference principle, and properties of Wiener space functions.
 
 ## Main theorems
